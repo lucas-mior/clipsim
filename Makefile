@@ -1,6 +1,6 @@
 PREFIX ?= /usr/local
 
-objs = comm.o util.o clip.o hist.o main.o
+objs = comm.o util.o clip.o hist.o sig_dwmblocks.o main.o
 
 ldlibs = $(LDLIBS) -lX11 -lXfixes -pthread
 
@@ -22,10 +22,11 @@ bear: Makefile
 $(objs): Makefile clipsim.h config.h
 
 comm.o: clipsim.h config.h comm.h util.h hist.h
-clip.o: clipsim.h config.h clip.h util.h hist.h
+clip.o: clipsim.h config.h clip.h util.h hist.h sig_dwmblocks.h
 util.o: clipsim.h config.h util.h
 hist.o: clipsim.h config.h util.h hist.h
-main.o: clipsim.h config.h comm.h clip.h util.h hist.h
+sig_dwmblocks.o: clipsim.h config.h sig_dwmblocks.h
+main.o: clipsim.h config.h comm.h clip.h util.h hist.h sig_dwmblocks.h
 
 .c.o:
 	$(CC) -O2 -Weverything $(cflags) $(cppflags) -c -o $@ $<

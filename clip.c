@@ -31,6 +31,7 @@
 #include "config.h"
 #include "hist.h"
 #include "util.h"
+#include "sig_dwmblocks.h"
 
 static Display *display;
 static Window root;
@@ -72,6 +73,8 @@ void *daemon_watch_clip(void *unused) {
         nanosleep(&pause , NULL);
         (void) XNextEvent(display, &xev);
         pthread_mutex_lock(&lock);
+
+        signal_dwmblocks();
 
         switch (get_clipboard(&save, &len)) {
             case -1:
