@@ -1,0 +1,42 @@
+.TH clipsim 1 clipsim\-0.2
+.SH NAME
+clipsim \- Simple clipboard manager for X
+.SH SYNOPSIS
+.B clipsim
+.RB "[ daemon | print | save | copy <N> | delete <N> | info <N> ]"
+.SH DESCRIPTION
+clipsim is a simple clipboard manager for X.
+.TP
+.B "daemon"
+start clipsim daemon
+.TP
+.B "print"
+print clipboard history to stdout
+.TP
+.B "save"
+save clipboard history to $XDG_CACHE_HOME/clipsim/history
+.TP
+.B "copy <N>"
+copy entry number N to clipboard
+.TP
+.B "delete <N>"
+delete entry number N from history
+.TP
+.B "info <N>"
+print entry number <N> to stdout
+.EX
+.TP
+Source code:
+.EE
+https://codeberg.org/lucas.mior/clipsim
+.SH BUGS
+clipsim might have an weird behavior if you use it with applications that do not use UTF-8.
+Additionally, incremental buffer reading is not implemented,
+which means that if an application is to use that so called "feature",
+clipsim won't save that text to history.
+Please report other bugs on codeberg.
+.SH ENVIRONMENT VARIABLES
+XDG_CACHE_HOME
+.EX
+.SH SEE ALSO
+.BR xsel (1),
