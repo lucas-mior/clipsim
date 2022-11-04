@@ -14,7 +14,11 @@ CC=clang
 
 clipsim: $(objs)
 	$(CC) -O2 -Weverything $(cflags) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
+	ctags --kinds-C=+l *.h *.c
+	vtags.sed tags > .tags.vim
 
+bear: Makefile
+	bear -- make > compile_commands.json
 $(objs): Makefile clipsim.h config.h
 
 comm.o: clipsim.h config.h comm.h util.h hist.h
