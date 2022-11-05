@@ -84,6 +84,7 @@ void closef(Fifo *f) {
                             "%s\n", f->name, strerror(errno));
         f->file = NULL;
     }
+    return;
 }
 
 bool openf(Fifo *f, int flag) {
