@@ -53,10 +53,14 @@ bool estrtol(int *num, char *string, int base) {
     long x;
     errno = 0;
     x = strtol(string, &pend, base);
-    if ((x > INT_MAX) || (x < INT_MIN))
+    if ((errno != 0) || (string == pend) || (*pend != 0)) {
         return false;
-    *num = (int) x;
-    return (errno == 0) && (string != pend) && (*pend == 0);
+    } else if ((x > INT_MAX) || (x < INT_MIN)) {
+        return false;
+    } else {
+        *num = (int) x;
+        return true;
+    }
 }
 
 void segv_handler(int unused) {
