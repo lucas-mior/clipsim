@@ -84,6 +84,7 @@ void hist_read(void) {
     if ((c = fgetc(history)) != sep) {
         fprintf(stderr, "History file is corrupted. "
                         "Delete it and restart %s.\n", progname);
+        (void) fclose(history);
         return;
     }
 
