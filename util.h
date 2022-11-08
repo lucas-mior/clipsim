@@ -24,7 +24,5 @@ void *emalloc(size_t);
 void *erealloc(char *, size_t);
 bool estrtol(int *, char *, int);
 void segv_handler(int) __attribute__((noreturn));
-void closef(Fifo *);
-bool openf(Fifo *, int);
 
 #endif /* util_h */

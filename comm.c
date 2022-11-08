@@ -47,6 +47,8 @@ static void client_ask_id(int);
 static void daemon_hist_save(void);
 static inline void bundle_spaces(Entry *);
 static inline bool flush_dat(char *, size_t *);
+static void closef(Fifo *);
+static bool openf(Fifo *, int);
 
 void *daemon_listen_fifo(void *unused) {
     char command;
