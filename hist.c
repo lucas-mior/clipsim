@@ -91,10 +91,8 @@ void hist_read(void) {
     while ((c = fgetc(history)) != EOF) {
         if (c == sep) {
             if (i >= (to_alloc - 1)) {
-                fprintf(stderr, "Reallocing %lu...\n", to_alloc+1);
                 last_entry->data = erealloc(last_entry->data, to_alloc+1);
             } else if (i < to_alloc) {
-                fprintf(stderr, "Reallocing %lu...\n", i+1);
                 last_entry->data = erealloc(last_entry->data, i+1);
             }
 
@@ -114,7 +112,6 @@ void hist_read(void) {
                     last_entry->next = NULL;
                     new_entry(to_alloc = DEF_ALLOC);
                 }
-                fprintf(stderr, "Reallocing %lu...\n", to_alloc);
                 last_entry->data = erealloc(last_entry->data, to_alloc);
             }
             last_entry->data[i] = (char) c;
