@@ -37,7 +37,7 @@ static Fifo cmd = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimcmd.fifo" };
 static Fifo wid = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimwid.fifo" };
 static Fifo dat = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimdat.fifo" };
 
-static inline void make_fifos(void);
+static void make_fifos(void);
 static void create_fifo(const char *name);
 static void daemon_pipe_entries(void);
 static void daemon_pipe_id(int);
@@ -96,7 +96,7 @@ void *daemon_listen_fifo(void *unused) {
     }
 }
 
-static inline void make_fifos(void) {
+static void make_fifos(void) {
     unlink(cmd.name);
     unlink(wid.name);
     unlink(dat.name);
