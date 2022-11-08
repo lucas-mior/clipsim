@@ -24,6 +24,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "clipsim.h"
 #include "comm.h"
@@ -31,6 +33,12 @@
 #include "hist.h"
 #include "util.h"
 
+static Fifo cmd = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimcmd.fifo" };
+static Fifo wid = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimwid.fifo" };
+static Fifo dat = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimdat.fifo" };
+
+static inline void make_fifos(void);
+static void create_fifo(const char *name);
 static void daemon_pipe_entries(void);
 static void daemon_pipe_id(int);
 static void client_print_entries(void);
@@ -46,6 +54,8 @@ void *daemon_listen_fifo(void *unused) {
     (void) unused;
     pause.tv_sec = 0;
     pause.tv_nsec = PAUSE10MS;
+
+    make_fifos();
 
     while (true) {
         nanosleep(&pause, NULL);
@@ -83,6 +93,25 @@ void *daemon_listen_fifo(void *unused) {
         }
 
         pthread_mutex_unlock(&lock);
+    }
+}
+
+static inline void make_fifos(void) {
+    unlink(cmd.name);
+    unlink(wid.name);
+    unlink(dat.name);
+    create_fifo(cmd.name);
+    create_fifo(wid.name);
+    create_fifo(dat.name);
+}
+
+static void create_fifo(const char *name) {
+    if (mkfifo(name, 0711) < 0) {
+        if (errno != EEXIST) {
+            fprintf(stderr, "Failed to create fifo %s: %s\n",
+                             name, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
@@ -332,4 +361,29 @@ void client_ask_id(int id) {
 
     closef(&wid);
     return;
+}
+
+void closef(Fifo *f) {
+    if (f->fd != NOFD) {
+        if (close(f->fd) < 0)
+            fprintf(stderr, "close(%s) failed: "
+                            "%s\n", f->name, strerror(errno));
+        f->fd = NOFD;
+    }
+    if (f->file != NULL) {
+        if (fclose(f->file) != 0)
+            fprintf(stderr, "fclose(%s) failed: "
+                            "%s\n", f->name, strerror(errno));
+        f->file = NULL;
+    }
+    return;
+}
+
+bool openf(Fifo *f, int flag) {
+    if ((f->fd = open(f->name, flag)) < 0) {
+        fprintf(stderr, "open(%s) failed: %s\n", f->name, strerror(errno));
+        return false;
+    } else {
+        return true;
+    }
 }

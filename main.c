@@ -31,15 +31,10 @@
 #include "util.h"
 
 char *progname;
-Fifo cmd = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimcmd.fifo" };
-Fifo wid = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimwid.fifo" };
-Fifo dat = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimdat.fifo" };
 Entry *last_entry;
 pthread_mutex_t lock;
 
 static void usage(FILE *stream);
-static inline void make_fifos(void);
-static void create_fifo(const char *name);
 static void launch_daemon(void);
 
 int main(int argc, char *argv[]) {
@@ -99,8 +94,6 @@ static void launch_daemon(void) {
     int err_fifo = 0;
     int err_clip = 0;
 
-    make_fifos();
-
     if (pthread_mutex_init(&lock, NULL) != 0) {
         fprintf(stderr, "pthread_mutex_init() failed.\n");
         return;
@@ -135,24 +128,4 @@ static void launch_daemon(void) {
     pthread_join(clip_thread, NULL);
     pthread_mutex_destroy(&lock);
     return;
-}
-
-static void create_fifo(const char *name) {
-    if (mkfifo(name, 0711) < 0) {
-        if (errno != EEXIST) {
-            fprintf(stderr, "Failed to create fifo %s: %s\n",
-                             name, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-    }
-}
-
-
-static inline void make_fifos(void) {
-    unlink(cmd.name);
-    unlink(wid.name);
-    unlink(dat.name);
-    create_fifo(cmd.name);
-    create_fifo(wid.name);
-    create_fifo(dat.name);
 }

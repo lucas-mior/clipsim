@@ -55,9 +55,6 @@ typedef struct Fifo {
     const char *name;
 } Fifo;
 
-extern Fifo cmd;
-extern Fifo wid;
-extern Fifo dat;
 extern char *progname;
 extern Entry *last_entry;
 extern pthread_mutex_t lock;

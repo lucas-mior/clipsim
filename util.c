@@ -70,28 +70,3 @@ void segv_handler(int unused) {
     }
     exit(1);
 }
-
-void closef(Fifo *f) {
-    if (f->fd != NOFD) {
-        if (close(f->fd) < 0)
-            fprintf(stderr, "close(%s) failed: "
-                            "%s\n", f->name, strerror(errno));
-        f->fd = NOFD;
-    }
-    if (f->file != NULL) {
-        if (fclose(f->file) != 0)
-            fprintf(stderr, "fclose(%s) failed: "
-                            "%s\n", f->name, strerror(errno));
-        f->file = NULL;
-    }
-    return;
-}
-
-bool openf(Fifo *f, int flag) {
-    if ((f->fd = open(f->name, flag)) < 0) {
-        fprintf(stderr, "open(%s) failed: %s\n", f->name, strerror(errno));
-        return false;
-    } else {
-        return true;
-    }
-}
