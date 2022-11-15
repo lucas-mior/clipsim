@@ -69,6 +69,7 @@ void *daemon_listen_fifo(void *unused) {
             fprintf(stderr, "Failed to read command from pipe: "
                             "%s\n", strerror(errno));
             closef(&cmd);
+            pthread_mutex_unlock(&lock);
             continue;
         }
 
