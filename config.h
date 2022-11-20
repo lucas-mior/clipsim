@@ -36,8 +36,4 @@ static const size_t OUT_SIZE = 255;
  * X itens copied and only those items */
 static const int SAVE_INTERVAL = 256;
 
-/* How much bytes should be tried to allocate for each Entry
- * on history file to begin with? */
-static const uint DEFAULT_BYTES_TO_ALLOC = 64;
-
 #endif /* CONFIG_H */
