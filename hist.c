@@ -379,4 +379,5 @@ static void new_entry(size_t size) {
         last_entry->data = emalloc(size);
         last_entry->len = size - 1;
     }
+    return;
 }

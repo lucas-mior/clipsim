@@ -106,6 +106,7 @@ static void make_fifos(void) {
     create_fifo(cmd.name);
     create_fifo(wid.name);
     create_fifo(dat.name);
+    return;
 }
 
 static void create_fifo(const char *name) {
@@ -116,6 +117,7 @@ static void create_fifo(const char *name) {
             exit(EXIT_FAILURE);
         }
     }
+    return;
 }
 
 static void client_check_save(void) {
