@@ -17,8 +17,8 @@
 #include <stdbool.h>
 #include "clipsim.h"
 
-#ifndef hist_h
-#define hist_h
+#ifndef HIST_H
+#define HIST_H
 
 void hist_read(void);
 void hist_add(char *, ulong);
@@ -26,4 +26,4 @@ bool hist_save(void);
 void hist_rec(int);
 void hist_del(int);
 
-#endif /* hist_h */
+#endif /* HIST_H */

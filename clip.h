@@ -17,9 +17,9 @@
 #include <stdbool.h>
 #include "clipsim.h"
 
-#ifndef clip_h
-#define clip_h
+#ifndef CLIP_H
+#define CLIP_H
 
 void *daemon_watch_clip(void *);
 
-#endif /* clip_h */
+#endif /* CLIP_H */

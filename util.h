@@ -17,12 +17,12 @@
 #include "clipsim.h"
 #include "stdbool.h"
 
-#ifndef util_h
-#define util_h
+#ifndef UTIL_H
+#define UTIL_H
 
 void *emalloc(size_t);
 void *erealloc(char *, size_t);
 bool estrtol(int *, char *, int);
 void segv_handler(int) __attribute__((noreturn));
 
-#endif /* util_h */
+#endif /* UTIL_H */

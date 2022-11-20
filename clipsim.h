@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#ifndef clipsim_h
-#define clipsim_h
+#ifndef CLIPSIM_H
+#define CLIPSIM_H
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -59,4 +59,4 @@ extern char *progname;
 extern Entry *last_entry;
 extern pthread_mutex_t lock;
 
-#endif /* clipsim_h */
+#endif /* CLIPSIM_H */

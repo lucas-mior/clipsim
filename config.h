@@ -16,8 +16,8 @@
 
 #include "clipsim.h"
 
-#ifndef config_h
-#define config_h
+#ifndef CONFIG_H
+#define CONFIG_H
 
 /* Maximum size for a single clipboard Entry, in bytes.
  * In practice the maximum size will be smaller due to
@@ -40,4 +40,4 @@ static const int SAVE_INTERVAL = 256;
  * on history file to begin with? */
 static const uint DEFAULT_BYTES_TO_ALLOC = 64;
 
-#endif /* config_h */
+#endif /* CONFIG_H */

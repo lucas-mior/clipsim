@@ -16,10 +16,10 @@
 
 #include "clipsim.h"
 
-#ifndef comm_h
-#define comm_h
+#ifndef COMM_H
+#define COMM_H
 
 void *daemon_listen_fifo(void *);
 void client_speak_fifo(char, int);
 
-#endif /* comm_h */
+#endif /* COMM_H */
