@@ -12,14 +12,14 @@ is updated so that each entry is unique in the history.
 
 First, you need to start the daemon by running
 ```
-clipsim daemon
+$ clipsim daemon
 ```
 
 Start copying text into the X11 clipboard.
 
 Then, when you want to print the history, run:
 ```
-clipsim print
+$ clipsim print
 ```
 
 Which will print the entire clipboard history,
@@ -30,7 +30,7 @@ In order to select one of them, you can use
 [fzf](https://github.com/junegunn/fzf)
 and [xsel](https://github.com/kfish/xsel)
 ```
-clipsim print | fzf --read0 | xsel -b
+$ clipsim print | fzf --read0 | xsel -b
 ```
 
 In order to retrieve the entry with original white space and
@@ -48,24 +48,24 @@ My suggestion is [urxvtc](https://linux.die.net/man/1/urxvtc)
 (be sure to have [urxvtd](https://linux.die.net/man/1/urxvtd) running):
 
 ```
-urxvtc -e clip.sh # clip.sh is the script above
+$ urxvtc -e clip.sh # clip.sh is the script above
 ```
 If you know of some terminal emulator that opens faster than urxvtc,
 please let me know.
 
 To explicity save the clipboard history in `$XDG_CACHE_HOME/clipsim/history`:
 ```
-clipsim save
+$ clipsim save
 ```
 
 In order to delete an specific entry from history:
 ```
-clipsim delete <N>
+$ clipsim delete <N>
 ```
 
 In order to print an specific entry from history:
 ```
-clipsim info <N>
+$ clipsim info <N>
 ```
 
 ## Instalation
