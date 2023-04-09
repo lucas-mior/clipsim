@@ -302,6 +302,7 @@ void daemon_pipe_id(int32 id) {
     do {
         if (id == e->id) {
             found = true;
+            dprintf(dat.fd, "Lenght: \033[31;1m%lu\n\033[0;m", e->len);
             dprintf(dat.fd, "%s", e->data);
             break;
         }
