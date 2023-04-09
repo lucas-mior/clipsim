@@ -31,6 +31,7 @@
 #include "config.h"
 #include "hist.h"
 #include "util.h"
+#include "send_signal.h"
 
 static Display *display;
 static Window root;
@@ -40,6 +41,31 @@ static Window window;
 
 static int32 get_clipboard(char **, ulong *);
 static bool valid_content(uchar *);
+static void signal_program(void);
+
+typedef union Signal {
+    char *str;
+    int num;
+} Signal;
+
+void signal_program(void) {
+    Signal sig;
+    char *program;
+    if (!(sig.str = getenv("CLIPSIM_SIGNAL_CODE"))) {
+        fprintf(stderr, "CLIPSIM_SIGNAL_CODE environment variable not set.\n");
+        return;
+    }
+    if (!(program = getenv("CLIPSIM_SIGNAL_PROGRAM"))) {
+        fprintf(stderr, "CLIPSIM_SIGNAL_PROGRAM environment variable not set.\n");
+        return;
+    }
+    if ((sig.num = atoi(sig.str)) < 10) {
+        fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment variable.\n");
+        return;
+    }
+
+    send_signal(program, sig.num);
+}
 
 void *daemon_watch_clip(void *unused) {
     ulong color;
@@ -72,6 +98,8 @@ void *daemon_watch_clip(void *unused) {
         nanosleep(&pause , NULL);
         (void) XNextEvent(display, &xev);
         pthread_mutex_lock(&lock);
+
+        signal_program();
 
         switch (get_clipboard(&save, &len)) {
             case -1:
