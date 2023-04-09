@@ -49,18 +49,18 @@ int main(int argc, char *argv[]) {
     }
 
     if (!strcmp(argv[1], "print")) {
-        client_speak_fifo(CHAR_PRINT, 0);
+        client_speak_fifo(PRINT, 0);
     } else if (!strcmp(argv[1], "info") &&
                (argc == 3) && estrtol(&id, argv[2], 10)) {
-        client_speak_fifo(CHAR_INFO, id);
+        client_speak_fifo(INFO, id);
     } else if (!strcmp(argv[1], "copy") &&
                (argc == 3) && estrtol(&id, argv[2], 10)) {
-        client_speak_fifo(CHAR_COPY, id);
+        client_speak_fifo(COPY, id);
     } else if (!strcmp(argv[1], "delete") &&
                (argc == 3) && estrtol(&id, argv[2], 10)) {
-        client_speak_fifo(CHAR_DELETE, id);
+        client_speak_fifo(DELETE, id);
     } else if (!strcmp(argv[1], "save")) {
-        client_speak_fifo(CHAR_SAVE, 0);
+        client_speak_fifo(SAVE, 0);
     } else if (!strcmp(argv[1], "daemon")) {
         launch_daemon();
     } else if (!strcmp(argv[1], "help")) {

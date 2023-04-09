@@ -28,11 +28,13 @@
 #define OUT_BUF 8192
 #define DEF_ALLOC 32
 
-#define CHAR_PRINT 'p'
-#define CHAR_INFO 'i'
-#define CHAR_COPY 'c'
-#define CHAR_DELETE 'd'
-#define CHAR_SAVE 's'
+typedef enum Command {
+    PRINT = 'p',
+    INFO = 'i',
+    COPY = 'c',
+    DELETE = 'd',
+    SAVE = 's',
+} Command;
 
 typedef unsigned long ulong;
 typedef unsigned int uint;

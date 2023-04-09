@@ -75,19 +75,19 @@ void *daemon_listen_fifo(void *unused) {
 
         closef(&cmd);
         switch (command) {
-            case CHAR_PRINT:
+            case PRINT:
                 daemon_pipe_entries();
                 break;
-            case CHAR_SAVE:
+            case SAVE:
                 daemon_hist_save();
                 break;
-            case CHAR_COPY:
+            case COPY:
                 daemon_with_id(hist_rec);
                 break;
-            case CHAR_DELETE:
+            case DELETE:
                 daemon_with_id(hist_del);
                 break;
-            case CHAR_INFO:
+            case INFO:
                 daemon_with_id(daemon_pipe_id);
                 break;
             default:
@@ -169,17 +169,17 @@ void client_speak_fifo(char command, int id) {
     }
 
     switch (command) {
-        case CHAR_PRINT:
+        case PRINT:
             client_print_entries();
             break;
-        case CHAR_SAVE:
+        case SAVE:
             client_check_save();
             break;
-        case CHAR_COPY:
-        case CHAR_DELETE:
+        case COPY:
+        case DELETE:
             client_ask_id(id);
             break;
-        case CHAR_INFO:
+        case INFO:
             client_ask_id(id);
             client_print_entries();
             break;
