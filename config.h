@@ -34,6 +34,6 @@ static const size_t OUT_SIZE = 255;
 /* Number of entries between flushing history to cache file.
  * A Number of X means clipsim will save the history every
  * X itens copied and only those items */
-static const int SAVE_INTERVAL = 256;
+static const int32 SAVE_INTERVAL = 256;
 
 #endif /* CONFIG_H */

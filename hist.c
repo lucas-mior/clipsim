@@ -32,7 +32,7 @@
 static char *histfile = NULL;
 static volatile bool recovered = false;
 static const char sep = 0x01;
-static const int max_file_len = 1024;
+static const int32 max_file_len = 1024;
 
 static void hist_find(void);
 static Entry *equal_to_previous(char *, size_t);
@@ -225,7 +225,7 @@ bool hist_save(void) {
     }
 }
 
-void hist_rec(int id) {
+void hist_rec(int32 id) {
     Entry *e;
     bool found = false;
     pid_t child = -1;
@@ -286,7 +286,7 @@ void hist_rec(int id) {
     return;
 }
 
-void hist_del(int id) {
+void hist_del(int32 id) {
     Entry *e = last_entry->prev;
     Entry *aux;
 
@@ -343,7 +343,7 @@ static void hist_clean(uint save) {
     e = last_entry;
 
     while (e->prev && (save > 0)) {
-        e->id = (int) save;
+        e->id = (int32) save;
         save -= 1;
         e = e->prev;
     }

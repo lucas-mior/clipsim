@@ -38,7 +38,7 @@ static Atom clip_atom;
 static XEvent xev;
 static Window window;
 
-static int get_clipboard(char **, ulong *);
+static int32 get_clipboard(char **, ulong *);
 static bool valid_content(uchar *);
 
 void *daemon_watch_clip(void *unused) {
@@ -94,7 +94,7 @@ void *daemon_watch_clip(void *unused) {
     }
 }
 
-static int get_clipboard(char **save, ulong *len) {
+static int32 get_clipboard(char **save, ulong *len) {
     int resbits = 0;
     ulong ressize = 0, restail = 0;
     Atom utf8_atom = XInternAtom(display, "UTF8_STRING", False);

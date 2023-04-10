@@ -15,6 +15,7 @@
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #include <stdio.h>
+#include <stdint.h>
 #include <pthread.h>
 
 #ifndef CLIPSIM_H
@@ -40,9 +41,13 @@ typedef unsigned long ulong;
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
+typedef int64_t int64;
+typedef int32_t int32;
+typedef int16_t int16;
+
 typedef struct Entry Entry;
 struct Entry {
-    int id;
+    int32 id;
     size_t len;
     size_t olen;
     char *data;

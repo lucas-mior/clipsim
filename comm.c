@@ -40,10 +40,10 @@ static Fifo dat = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimdat.fifo" };
 static void make_fifos(void);
 static void create_fifo(const char *name);
 static void daemon_pipe_entries(void);
-static void daemon_pipe_id(int);
+static void daemon_pipe_id(int32);
 static void client_print_entries(void);
-static void daemon_with_id(void (*)(int));
-static void client_ask_id(int);
+static void daemon_with_id(void (*)(int32));
+static void client_ask_id(int32);
 static void daemon_hist_save(void);
 static inline void bundle_spaces(Entry *);
 static inline bool flush_dat(char *, size_t *);
@@ -152,7 +152,7 @@ static void daemon_hist_save(void) {
     return;
 }
 
-void client_speak_fifo(char command, int id) {
+void client_speak_fifo(char command, int32 id) {
     if (!openf(&cmd, O_WRONLY | O_NONBLOCK)) {
         fprintf(stderr, "Could not open Fifo for sending command to daemon. "
                         "Is `%s daemon` running?\n", progname);
@@ -286,7 +286,7 @@ void daemon_pipe_entries(void) {
     return;
 }
 
-void daemon_pipe_id(int id) {
+void daemon_pipe_id(int32 id) {
     Entry *e = last_entry;
     bool found = false;
 
@@ -331,8 +331,8 @@ void client_print_entries(void) {
     return;
 }
 
-void daemon_with_id(void (*what)(int)) {
-    int id;
+void daemon_with_id(void (*what)(int32)) {
+    int32 id;
 
     if (!(wid.file = fopen(wid.name, "r"))) {
         fprintf(stderr, "Error opening fifo for reading id: "
@@ -352,7 +352,7 @@ void daemon_with_id(void (*what)(int)) {
     return;
 }
 
-void client_ask_id(int id) {
+void client_ask_id(int32 id) {
     if (!(wid.file = fopen(wid.name, "w"))) {
         fprintf(stderr, "Error opening fifo for sending id to daemon: "
                         "%s\n", strerror(errno));

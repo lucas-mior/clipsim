@@ -38,7 +38,7 @@ static void usage(FILE *stream);
 static void launch_daemon(void);
 
 int main(int argc, char *argv[]) {
-    int id;
+    int32 id;
     progname = argv[0];
 
     signal(SIGSEGV, segv_handler);

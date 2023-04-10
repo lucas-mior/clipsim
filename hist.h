@@ -23,7 +23,7 @@
 void hist_read(void);
 void hist_add(char *, ulong);
 bool hist_save(void);
-void hist_rec(int);
-void hist_del(int);
+void hist_rec(int32);
+void hist_del(int32);
 
 #endif /* HIST_H */
