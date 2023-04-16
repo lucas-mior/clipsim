@@ -34,7 +34,7 @@ char *progname;
 Entry *last_entry;
 pthread_mutex_t lock;
 
-static void usage(FILE *stream);
+static void usage(FILE *);
 static void launch_daemon(void);
 
 int main(int argc, char *argv[]) {
@@ -99,7 +99,7 @@ static void launch_daemon(void) {
         return;
     }
 
-    last_entry = emalloc(sizeof(Entry));
+    last_entry = ealloc(NULL, sizeof(Entry));
 
     last_entry->id = 0;
     last_entry->len = 0;

@@ -20,8 +20,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-void *emalloc(size_t);
-void *erealloc(char *, size_t);
+void *ealloc(void *, size_t);
+void *ecalloc(size_t, size_t);
 bool estrtol(int *, char *, int);
 void segv_handler(int) __attribute__((noreturn));
 

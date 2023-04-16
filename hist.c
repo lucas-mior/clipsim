@@ -57,7 +57,7 @@ static inline void hist_find(void) {
     }
 
     min = min + 1 + strlen(clipsim);
-    histfile = emalloc(min+1);
+    histfile = ealloc(NULL, min+1);
 
     (void) snprintf(histfile, min+1, "%s/%s", cache, clipsim);
     return;
@@ -92,9 +92,9 @@ void hist_read(void) {
     while ((c = fgetc(history)) != EOF) {
         if (c == sep) {
             if (i >= (to_alloc - 1)) {
-                last_entry->data = erealloc(last_entry->data, to_alloc+1);
+                last_entry->data = ealloc(last_entry->data, to_alloc+1);
             } else if (i < to_alloc) {
-                last_entry->data = erealloc(last_entry->data, i+1);
+                last_entry->data = ealloc(last_entry->data, i+1);
             }
 
             last_entry->len = i;
@@ -113,14 +113,14 @@ void hist_read(void) {
                     last_entry->next = NULL;
                     new_entry(to_alloc = DEF_ALLOC);
                 }
-                last_entry->data = erealloc(last_entry->data, to_alloc);
+                last_entry->data = ealloc(last_entry->data, to_alloc);
             }
             last_entry->data[i] = (char) c;
             i += 1;
         }
     }
     if (i >= (to_alloc - 1))
-        last_entry->data = erealloc(last_entry->data, to_alloc+1);
+        last_entry->data = ealloc(last_entry->data, to_alloc+1);
 
     last_entry->len = i;
     last_entry->data[i] = '\0';
@@ -368,7 +368,7 @@ static void hist_clean(uint save) {
 static void new_entry(size_t size) {
     Entry *old = last_entry;
 
-    last_entry->next = emalloc(sizeof(Entry));
+    last_entry->next = ealloc(NULL, sizeof(Entry));
     last_entry = last_entry->next;
     last_entry->id = old->id + 1;
     last_entry->prev = old;
@@ -376,7 +376,7 @@ static void new_entry(size_t size) {
     last_entry->olen = 0;
     last_entry->out = NULL;
     if (size) {
-        last_entry->data = emalloc(size);
+        last_entry->data = ealloc(NULL, size);
         last_entry->len = size - 1;
     }
     return;

@@ -27,25 +27,23 @@
 #include "config.h"
 #include "util.h"
 
-void *emalloc(size_t size) {
-    char *temp;
-    if (!(temp = malloc(size))) {
-        fprintf(stderr, "Failed to allocate memory. Exiting.\n");
-        exit(EXIT_FAILURE);
-    } else {
-        return temp;
+void *ealloc(void *old, size_t size) {
+    void *p;
+    if ((p = realloc(old, size)) == NULL) {
+        fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
+        exit(1);
     }
+    return p;
 }
 
-void *erealloc(char *ptr, size_t size) {
-    void *temp;
-    if (!(temp = realloc(ptr, size))) {
-        fprintf(stderr, "Failed to reallocate more memory. "
-                        "Exiting.\n");
-        exit(EXIT_FAILURE);
-    } else {
-        return temp;
+void *ecalloc(size_t nmemb, size_t size) {
+    void *p;
+    if ((p = calloc(nmemb, size)) == NULL) {
+        fprintf(stderr, "Failed to allocate %zu members of %zu bytes each.\n", 
+                        nmemb, size);
+        exit(1);
     }
+    return p;
 }
 
 bool estrtol(int *num, char *string, int base) {

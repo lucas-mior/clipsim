@@ -197,7 +197,7 @@ static inline void bundle_spaces(Entry *e) {
     bool rectemp = false;
     char *c = e->data;
 
-    out = e->out = emalloc(MIN(e->len+1, OUT_SIZE+1));
+    out = e->out = ealloc(NULL, MIN(e->len+1, OUT_SIZE+1));
 
     if (e->len >= OUT_SIZE) {
         rectemp = true;
