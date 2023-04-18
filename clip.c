@@ -39,7 +39,14 @@ static Atom clip_atom;
 static XEvent xev;
 static Window window;
 
-static int32 get_clipboard(char **, ulong *);
+typedef enum ClipResult {
+    TEXT,
+    LARGE,
+    IMAGE,
+    ERROR,
+} ClipResult;
+
+static ClipResult get_clipboard(char **, ulong *);
 static bool valid_content(uchar *);
 static void signal_program(void);
 
@@ -94,7 +101,6 @@ void *daemon_watch_clip(void *unused) {
     while (true) {
         char *save = NULL;
         ulong len;
-        bool large_entry = false;
         nanosleep(&pause , NULL);
         (void) XNextEvent(display, &xev);
         pthread_mutex_lock(&lock);
@@ -102,33 +108,28 @@ void *daemon_watch_clip(void *unused) {
         signal_program();
 
         switch (get_clipboard(&save, &len)) {
-            case -2:
+            case TEXT:
+                if (valid_content((uchar *) save))
+                    hist_add(save, len);
+                break;
+            case IMAGE:
                 fprintf(stderr, "Image copied to clipboard. "
                                 "This won't be added to history.\n");
-                goto unlock;
                 break;
-            case -1:
-                save = NULL;
+            case ERROR:
+                hist_rec(0);
                 break;
-            case 0:
-                large_entry = true;
+            case LARGE:
+                fprintf(stderr, "Buffer is too large and "
+                                "INCR reading is not implemented yet. "
+                                "This entry won't be saved to history.\n");
                 break;
         }
-
-        if (save == NULL) {
-            hist_rec(0);
-        } else if (!large_entry) {
-            if (valid_content((uchar *) save))
-                hist_add(save, len);
-        }
-        large_entry = false;
-
-        unlock:
         pthread_mutex_unlock(&lock);
     }
 }
 
-static int32 get_clipboard(char **save, ulong *len) {
+static ClipResult get_clipboard(char **save, ulong *len) {
     int resbits = 0;
     ulong ressize = 0, restail = 0;
     Atom utf8_atom = XInternAtom(display, "UTF8_STRING", False);
@@ -149,13 +150,10 @@ static int32 get_clipboard(char **save, ulong *len) {
                            False, AnyPropertyType, &utf8_atom,
                            &resbits, &ressize, &restail, (uchar **) save);
         if (utf8_atom == incr_atom) {
-            fprintf(stderr, "Buffer is too large and "
-                            "INCR reading is not implemented yet. "
-                            "This entry won't be saved to history.\n");
-            return 0;
+            return LARGE;
         } else {
             *len = ressize;
-            return 1;
+            return TEXT;
         }
     } else { // request failed, e.g. owner can't convert to the target format
         XConvertSelection(display, clip_atom, image_atom, prop_atom,
@@ -166,9 +164,9 @@ static int32 get_clipboard(char **save, ulong *len) {
               || event.xselection.selection != clip_atom);
 
         if (event.xselection.property) {
-            return -2;
+            return IMAGE;
         } else {
-            return -1;
+            return ERROR;
         }
     }
 }
