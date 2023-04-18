@@ -14,6 +14,7 @@
 /* You should have received a copy of the GNU General Public License */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
+#include <X11/X.h>
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -134,21 +135,26 @@ void *daemon_watch_clip(void *unused) {
     }
 }
 
-static ClipResult get_clipboard(char **save, ulong *len) {
-    int actual_format_return;
-    ulong nitems_return;
-    ulong bytes_after_return;
-    Atom return_atom;
+static Atom get_target(Atom atom_target) {
     XEvent event;
 
-    XConvertSelection(display, clip_atom, utf8_atom, prop_atom,
+    XConvertSelection(display, clip_atom, atom_target, prop_atom,
                       window, CurrentTime);
     do {
         (void) XNextEvent(display, &event);
     } while (event.type != SelectionNotify
           || event.xselection.selection != clip_atom);
 
-    if (event.xselection.property) {
+    return event.xselection.property;
+}
+
+static ClipResult get_clipboard(char **save, ulong *len) {
+    int actual_format_return;
+    ulong nitems_return;
+    ulong bytes_after_return;
+    Atom return_atom;
+
+    if (get_target(utf8_atom)) {
         XGetWindowProperty(display, window, prop_atom, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
                            &actual_format_return, &nitems_return, 
@@ -159,20 +165,11 @@ static ClipResult get_clipboard(char **save, ulong *len) {
             *len = nitems_return;
             return TEXT;
         }
-    } else { // request failed, e.g. owner can't convert to the target format
-        XConvertSelection(display, clip_atom, imag_atom, prop_atom,
-                          window, CurrentTime);
-        do {
-            (void) XNextEvent(display, &event);
-        } while (event.type != SelectionNotify
-              || event.xselection.selection != clip_atom);
-
-        if (event.xselection.property) {
-            return IMAGE;
-        } else {
-            return ERROR;
-        }
     }
+    if (get_target(imag_atom)) {
+        return IMAGE;
+    }
+    return ERROR;
 }
 
 static bool valid_content(uchar *data) {
