@@ -36,6 +36,7 @@
 static Display *display;
 static Window root;
 static Atom clip_atom, prop_atom, incr_atom;
+static Atom utf8_atom, imag_atom;
 static XEvent xev;
 static Window window;
 
@@ -90,6 +91,8 @@ void *daemon_watch_clip(void *unused) {
     clip_atom = XInternAtom(display, "CLIPBOARD", False);
     prop_atom = XInternAtom(display, "XSEL_DATA", False);
     incr_atom = XInternAtom(display, "INCR", False);
+    utf8_atom = XInternAtom(display, "UTF8_STRING", False);
+    imag_atom = XInternAtom(display, "image/png", False);
 
     color = BlackPixel(display, DefaultScreen(display));
     window = XCreateSimpleWindow(display, DefaultRootWindow(display),
@@ -134,8 +137,6 @@ void *daemon_watch_clip(void *unused) {
 static ClipResult get_clipboard(char **save, ulong *len) {
     int resbits = 0;
     ulong ressize = 0, restail = 0;
-    Atom utf8_atom = XInternAtom(display, "UTF8_STRING", False);
-    Atom image_atom = XInternAtom(display, "image/png", False);
     Atom return_atom;
     XEvent event;
 
@@ -157,7 +158,7 @@ static ClipResult get_clipboard(char **save, ulong *len) {
             return TEXT;
         }
     } else { // request failed, e.g. owner can't convert to the target format
-        XConvertSelection(display, clip_atom, image_atom, prop_atom,
+        XConvertSelection(display, clip_atom, imag_atom, prop_atom,
                           window, CurrentTime);
         do {
             (void) XNextEvent(display, &event);
