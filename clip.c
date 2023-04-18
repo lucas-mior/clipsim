@@ -34,12 +34,12 @@
 #include "util.h"
 #include "send_signal.h"
 
-static Display *display;
-static Window root;
-static Atom clip_atom, prop_atom, incr_atom;
-static Atom utf8_atom, imag_atom, targ_atom;
-static XEvent xev;
-static Window window;
+static Display *DISPLAY;
+static Window ROOT;
+static Atom CLIPBOARD, PROPERTY, INCREMENT;
+static Atom UTF8, IMG, TARGET;
+static XEvent XEV;
+static Window WINDOW;
 
 typedef enum ClipResult {
     TEXT,
@@ -49,7 +49,7 @@ typedef enum ClipResult {
     ERROR,
 } ClipResult;
 
-static Atom get_target(Atom) {
+static Atom get_target(Atom);
 static ClipResult get_clipboard(char **, ulong *);
 static bool valid_content(uchar *);
 static void signal_program(void);
@@ -85,24 +85,24 @@ void *daemon_watch_clip(void *unused) {
     pause.tv_nsec = PAUSE10MS;
     (void) unused;
 
-    if (!(display = XOpenDisplay(NULL))) {
+    if (!(DISPLAY = XOpenDisplay(NULL))) {
         fprintf(stderr, "Can't open X display.\n");
         exit(1);
     }
 
-    root = DefaultRootWindow(display);
-    clip_atom = XInternAtom(display, "CLIPBOARD", False);
-    prop_atom = XInternAtom(display, "XSEL_DATA", False);
-    incr_atom = XInternAtom(display, "INCR", False);
-    utf8_atom = XInternAtom(display, "UTF8_STRING", False);
-    imag_atom = XInternAtom(display, "image/png", False);
-    targ_atom = XInternAtom(display, "TARGETS", False);
+    ROOT = DefaultRootWindow(DISPLAY);
+    CLIPBOARD = XInternAtom(DISPLAY, "CLIPBOARD", False);
+    PROPERTY  = XInternAtom(DISPLAY, "XSEL_DATA", False);
+    INCREMENT = XInternAtom(DISPLAY, "INCR", False);
+    UTF8      = XInternAtom(DISPLAY, "UTF8_STRING", False);
+    IMG       = XInternAtom(DISPLAY, "image/png", False);
+    TARGET    = XInternAtom(DISPLAY, "TARGETS", False);
 
-    color = BlackPixel(display, DefaultScreen(display));
-    window = XCreateSimpleWindow(display, DefaultRootWindow(display),
+    color = BlackPixel(DISPLAY, DefaultScreen(DISPLAY));
+    WINDOW = XCreateSimpleWindow(DISPLAY, DefaultRootWindow(DISPLAY),
                                  0,0, 1,1, 0, color, color);
 
-    XFixesSelectSelectionInput(display, root, clip_atom, (ulong)
+    XFixesSelectSelectionInput(DISPLAY, ROOT, CLIPBOARD, (ulong)
                                XFixesSetSelectionOwnerNotifyMask
                              | XFixesSelectionClientCloseNotifyMask
                              | XFixesSelectionWindowDestroyNotifyMask);
@@ -111,7 +111,7 @@ void *daemon_watch_clip(void *unused) {
         char *save = NULL;
         ulong len;
         nanosleep(&pause , NULL);
-        (void) XNextEvent(display, &xev);
+        (void) XNextEvent(DISPLAY, &XEV);
         pthread_mutex_lock(&lock);
 
         signal_program();
@@ -125,28 +125,32 @@ void *daemon_watch_clip(void *unused) {
                 fprintf(stderr, "Image copied to clipboard. "
                                 "This won't be added to history.\n");
                 break;
-            case ERROR:
-                hist_rec(0);
+            case OTHER:
+                fprintf(stderr, "Unsupported format. Clipsim only"
+                                " works with UTF-8.\n");
                 break;
             case LARGE:
                 fprintf(stderr, "Buffer is too large and "
                                 "INCR reading is not implemented yet. "
                                 "This entry won't be saved to history.\n");
                 break;
+            case ERROR:
+                hist_rec(0);
+                break;
         }
         pthread_mutex_unlock(&lock);
     }
 }
 
-static Atom get_target(Atom atom_target) {
+static Atom get_target(Atom target) {
     XEvent event;
 
-    XConvertSelection(display, clip_atom, atom_target, prop_atom,
-                      window, CurrentTime);
+    XConvertSelection(DISPLAY, CLIPBOARD, target, PROPERTY,
+                      WINDOW, CurrentTime);
     do {
-        (void) XNextEvent(display, &event);
+        (void) XNextEvent(DISPLAY, &event);
     } while (event.type != SelectionNotify
-          || event.xselection.selection != clip_atom);
+          || event.xselection.selection != CLIPBOARD);
 
     return event.xselection.property;
 }
@@ -157,22 +161,22 @@ static ClipResult get_clipboard(char **save, ulong *len) {
     ulong bytes_after_return;
     Atom return_atom;
 
-    if (get_target(utf8_atom)) {
-        XGetWindowProperty(display, window, prop_atom, 0, LONG_MAX/4,
+    if (get_target(UTF8)) {
+        XGetWindowProperty(DISPLAY, WINDOW, PROPERTY, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
                            &actual_format_return, &nitems_return, 
                            &bytes_after_return, (uchar **) save);
-        if (return_atom == incr_atom) {
+        if (return_atom == INCREMENT) {
             return LARGE;
         } else {
             *len = nitems_return;
             return TEXT;
         }
     }
-    if (get_target(imag_atom)) {
+    if (get_target(IMG)) {
         return IMAGE;
     }
-    if (get_target(targ_atom)) {
+    if (get_target(TARGET)) {
         return OTHER;
     }
     return ERROR;
