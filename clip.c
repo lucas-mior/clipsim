@@ -136,6 +136,7 @@ static ClipResult get_clipboard(char **save, ulong *len) {
     ulong ressize = 0, restail = 0;
     Atom utf8_atom = XInternAtom(display, "UTF8_STRING", False);
     Atom image_atom = XInternAtom(display, "image/png", False);
+    Atom return_atom;
     XEvent event;
 
     XConvertSelection(display, clip_atom, utf8_atom, prop_atom,
@@ -147,9 +148,9 @@ static ClipResult get_clipboard(char **save, ulong *len) {
 
     if (event.xselection.property) {
         XGetWindowProperty(display, window, prop_atom, 0, LONG_MAX/4,
-                           False, AnyPropertyType, &utf8_atom,
+                           False, AnyPropertyType, &return_atom,
                            &resbits, &ressize, &restail, (uchar **) save);
-        if (utf8_atom == incr_atom) {
+        if (return_atom == incr_atom) {
             return LARGE;
         } else {
             *len = ressize;
