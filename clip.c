@@ -135,8 +135,9 @@ void *daemon_watch_clip(void *unused) {
 }
 
 static ClipResult get_clipboard(char **save, ulong *len) {
-    int resbits = 0;
-    ulong ressize = 0, restail = 0;
+    int actual_format_return;
+    ulong nitems_return;
+    ulong bytes_after_return;
     Atom return_atom;
     XEvent event;
 
@@ -150,11 +151,12 @@ static ClipResult get_clipboard(char **save, ulong *len) {
     if (event.xselection.property) {
         XGetWindowProperty(display, window, prop_atom, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
-                           &resbits, &ressize, &restail, (uchar **) save);
+                           &actual_format_return, &nitems_return, 
+                           &bytes_after_return, (uchar **) save);
         if (return_atom == incr_atom) {
             return LARGE;
         } else {
-            *len = ressize;
+            *len = nitems_return;
             return TEXT;
         }
     } else { // request failed, e.g. owner can't convert to the target format
