@@ -172,11 +172,9 @@ static ClipResult get_clipboard(char **save, ulong *len) {
             *len = nitems_return;
             return TEXT;
         }
-    }
-    if (get_target(IMG)) {
+    } else if (get_target(IMG)) {
         return IMAGE;
-    }
-    if (get_target(TARGET)) {
+    } else if (get_target(TARGET)) {
         return OTHER;
     }
     return ERROR;
