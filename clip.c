@@ -37,7 +37,7 @@
 static Display *display;
 static Window root;
 static Atom clip_atom, prop_atom, incr_atom;
-static Atom utf8_atom, imag_atom;
+static Atom utf8_atom, imag_atom, targ_atom;
 static XEvent xev;
 static Window window;
 
@@ -45,9 +45,11 @@ typedef enum ClipResult {
     TEXT,
     LARGE,
     IMAGE,
+    OTHER,
     ERROR,
 } ClipResult;
 
+static Atom get_target(Atom) {
 static ClipResult get_clipboard(char **, ulong *);
 static bool valid_content(uchar *);
 static void signal_program(void);
@@ -94,6 +96,7 @@ void *daemon_watch_clip(void *unused) {
     incr_atom = XInternAtom(display, "INCR", False);
     utf8_atom = XInternAtom(display, "UTF8_STRING", False);
     imag_atom = XInternAtom(display, "image/png", False);
+    targ_atom = XInternAtom(display, "TARGETS", False);
 
     color = BlackPixel(display, DefaultScreen(display));
     window = XCreateSimpleWindow(display, DefaultRootWindow(display),
@@ -168,6 +171,9 @@ static ClipResult get_clipboard(char **save, ulong *len) {
     }
     if (get_target(imag_atom)) {
         return IMAGE;
+    }
+    if (get_target(targ_atom)) {
+        return OTHER;
     }
     return ERROR;
 }
