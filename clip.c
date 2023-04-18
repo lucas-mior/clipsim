@@ -102,6 +102,11 @@ void *daemon_watch_clip(void *unused) {
         signal_program();
 
         switch (get_clipboard(&save, &len)) {
+            case -2:
+                fprintf(stderr, "Image copied to clipboard. "
+                                "This won't be added to history.\n");
+                goto unlock;
+                break;
             case -1:
                 save = NULL;
                 break;
@@ -118,6 +123,7 @@ void *daemon_watch_clip(void *unused) {
         }
         large_entry = false;
 
+        unlock:
         pthread_mutex_unlock(&lock);
     }
 }
@@ -126,6 +132,7 @@ static int32 get_clipboard(char **save, ulong *len) {
     int resbits = 0;
     ulong ressize = 0, restail = 0;
     Atom utf8_atom = XInternAtom(display, "UTF8_STRING", False);
+    Atom image_atom = XInternAtom(display, "image/png", False);
     Atom prop_atom = XInternAtom(display, "XSEL_DATA", False);
     Atom incr_atom = XInternAtom(display, "INCR", False);
     XEvent event;
@@ -151,7 +158,18 @@ static int32 get_clipboard(char **save, ulong *len) {
             return 1;
         }
     } else { // request failed, e.g. owner can't convert to the target format
-        return -1;
+        XConvertSelection(display, clip_atom, image_atom, prop_atom,
+                          window, CurrentTime);
+        do {
+            (void) XNextEvent(display, &event);
+        } while (event.type != SelectionNotify
+              || event.xselection.selection != clip_atom);
+
+        if (event.xselection.property) {
+            return -2;
+        } else {
+            return -1;
+        }
     }
 }
 
