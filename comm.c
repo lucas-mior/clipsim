@@ -84,10 +84,10 @@ void *comm_daemon_listen_fifo(void *unused) {
                 comm_daemon_hist_save();
                 break;
             case COPY:
-                comm_daemon_with_id(hist_rec);
+                comm_daemon_with_id(hist_recover);
                 break;
             case DELETE:
-                comm_daemon_with_id(hist_del);
+                comm_daemon_with_id(hist_delete);
                 break;
             case INFO:
                 comm_daemon_with_id(comm_daemon_pipe_id);

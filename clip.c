@@ -136,7 +136,7 @@ void *clip_daemon_watch(void *unused) {
                                 "This entry won't be saved to history.\n");
                 break;
             case ERROR:
-                hist_rec(-1);
+                hist_recover(-1);
                 break;
         }
         pthread_mutex_unlock(&lock);

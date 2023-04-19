@@ -34,13 +34,13 @@ static volatile bool recovered = false;
 static const char sep = 0x01;
 static const int32 max_file_len = 1024;
 
-static void hist_find(void);
-static int32 hist_equal_to_previous(char *, size_t);
+static void hist_file_find(void);
+static int32 hist_repeated_index(char *, size_t);
 static void hist_new_entry(size_t);
 static void hist_reorder(int32);
 static void hist_clean(void);
 
-static inline void hist_find(void) {
+static inline void hist_file_find(void) {
     DEBUG_PRINT("static inline void hist_find(void) %d\n", __LINE__)
     char *cache = NULL;
     const char *clipsim = "/clipsim/history";
@@ -72,7 +72,7 @@ void hist_read(void) {
     size_t to_alloc;
     Entry *e = NULL;
 
-    hist_find();
+    hist_file_find();
     if (!histfile) {
         fprintf(stderr, "History file name unresolved. "
                         "History will start empty.\n");
@@ -128,7 +128,7 @@ void hist_read(void) {
     return;
 }
 
-int32 hist_equal_to_previous(char *save, size_t min) {
+int32 hist_repeated_index(char *save, size_t min) {
     DEBUG_PRINT("int32 hist_equal_to_previous(char *save, size_t min) %d\n", __LINE__)
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
@@ -160,7 +160,7 @@ void hist_add(char *save, ulong len) {
         min -= 1;
     }
 
-    if ((eindex = hist_equal_to_previous(save, min)) >= 0) {
+    if ((eindex = hist_repeated_index(save, min)) >= 0) {
         fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
         if (eindex != lastindex)
             hist_reorder(eindex);
@@ -214,8 +214,8 @@ bool hist_save(void) {
     }
 }
 
-void hist_rec(int32 id) {
-    DEBUG_PRINT("void hist_rec(int32 id) %d\n", __LINE__)
+void hist_recover(int32 id) {
+    DEBUG_PRINT("void hist_recover(int32 id) %d\n", __LINE__)
     pid_t child = -1;
     int fd[2];
     Entry *e;
@@ -271,8 +271,8 @@ void hist_rec(int32 id) {
     return;
 }
 
-void hist_del(int32 id) {
-    DEBUG_PRINT("void hist_del(int32 id) %d\n", __LINE__)
+void hist_delete(int32 id) {
+    DEBUG_PRINT("void hist_delete(int32 id) %d\n", __LINE__)
     Entry *e;
     if (lastindex == 0) {
         return;
@@ -281,8 +281,8 @@ void hist_del(int32 id) {
     if (id < 0) {
         id = lastindex + id + 1;
     } else if (id == lastindex) {
-        hist_rec(-2);
-        hist_del(-2);
+        hist_recover(-2);
+        hist_delete(-2);
         return;
     }
     if (id > lastindex) {
