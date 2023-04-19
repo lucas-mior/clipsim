@@ -32,6 +32,9 @@ In order to select one of them, you can use
 [fzf](https://github.com/junegunn/fzf)
 and [xsel](https://github.com/kfish/xsel)
 ```
+# Don't actually do this. The output from `clipsim print` has all white spaced
+# supressed in order to improve usage with fzf. See the next snippet on how to
+# overcome this.
 $ clipsim print | fzf --read0 | xsel -b
 ```
 
