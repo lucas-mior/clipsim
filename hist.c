@@ -128,63 +128,6 @@ void hist_read(void) {
     return;
 }
 
-int32 hist_repeated_index(char *save, size_t min) {
-    DEBUG_PRINT("int32 hist_equal_to_previous(char *save, size_t min) %d\n", __LINE__)
-    for (int32 i = lastindex; i >= 0; i -= 1) {
-        Entry *e = &entries[i];
-        if (e->len == min) {
-            if (!strcmp(e->data, save)) {
-                return i;
-            }
-        }
-    }
-    return -1;
-}
-
-void hist_add(char *save, ulong len) {
-    DEBUG_PRINT("void hist_add(char *save, ulong len) %d\n", __LINE__)
-    size_t min;
-    int32 eindex;
-    Entry *e;
-
-    if (recovered) {
-        recovered = false;
-        return;
-    }
-
-    if (!text_valid_content((uchar *) save, len))
-        return;
-
-    min = MIN(len, MAX_ENTRY_SIZE);
-    save[min] = '\0';
-
-    if (save[min-1] == '\n') {
-        save[min-1] = '\0';
-        min -= 1;
-    }
-
-    if ((eindex = hist_repeated_index(save, min)) >= 0) {
-        fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
-        if (eindex != lastindex)
-            hist_reorder(eindex);
-        free(save);
-        return;
-    }
-
-    hist_new_entry(0);
-    e = &entries[lastindex];
-    e->data = save;
-    e->data[min] = '\0';
-    e->len = min;
-
-    if (lastindex+1 >= (int32) HIST_SIZE) {
-        hist_clean();
-        hist_save();
-    }
-
-    return;
-}
-
 bool hist_save(void) {
     DEBUG_PRINT("bool hist_save(void) %d\n", __LINE__)
     int history;
@@ -215,6 +158,63 @@ bool hist_save(void) {
         (void) close(history);
         return true;
     }
+}
+
+int32 hist_repeated_index(char *save, size_t min) {
+    DEBUG_PRINT("int32 hist_repeated_index(char *save, size_t min) %d\n", __LINE__)
+    for (int32 i = lastindex; i >= 0; i -= 1) {
+        Entry *e = &entries[i];
+        if (e->len == min) {
+            if (!strcmp(e->data, save)) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+void hist_add(char *save, ulong len) {
+    DEBUG_PRINT("void hist_add(char *save, ulong len) %d\n", __LINE__)
+    size_t min;
+    int32 oldindex;
+    Entry *e;
+
+    if (recovered) {
+        recovered = false;
+        return;
+    }
+
+    if (!text_valid_content((uchar *) save, len))
+        return;
+
+    min = MIN(len, MAX_ENTRY_SIZE);
+    save[min] = '\0';
+
+    if (save[min-1] == '\n') {
+        save[min-1] = '\0';
+        min -= 1;
+    }
+
+    if ((oldindex = hist_repeated_index(save, min)) >= 0) {
+        fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
+        if (oldindex != lastindex)
+            hist_reorder(oldindex);
+        free(save);
+        return;
+    }
+
+    hist_new_entry(0);
+    e = &entries[lastindex];
+    e->data = save;
+    e->data[min] = '\0';
+    e->len = min;
+
+    if (lastindex+1 >= (int32) HIST_SIZE) {
+        hist_clean();
+        hist_save();
+    }
+
+    return;
 }
 
 void hist_recover(int32 id) {
@@ -308,11 +308,11 @@ void hist_delete(int32 id) {
     return;
 }
 
-void hist_reorder(int32 eindex) {
-    DEBUG_PRINT("void hist_reorder(int32 eindex) %d\n", __LINE__)
-    Entry aux = entries[eindex];
-    memmove(&entries[eindex], &entries[eindex+1], 
-            (size_t) (lastindex - eindex)*sizeof(Entry));
+void hist_reorder(int32 oldindex) {
+    DEBUG_PRINT("void hist_reorder(int32 oldindex) %d\n", __LINE__)
+    Entry aux = entries[oldindex];
+    memmove(&entries[oldindex], &entries[oldindex+1], 
+            (size_t) (lastindex - oldindex)*sizeof(Entry));
     memmove(&entries[lastindex], &aux, sizeof(Entry));
     return;
 }
