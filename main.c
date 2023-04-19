@@ -44,6 +44,7 @@ int main(int argc, char *argv[]) {
 
     signal(SIGSEGV, segv_handler);
     signal(SIGINT, int_handler);
+    signal(SIGTERM, int_handler);
 
     if (argc <= 1 || argc >= 4) {
         usage(stderr);
