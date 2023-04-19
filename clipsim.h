@@ -33,7 +33,7 @@
 #define PAUSE10MS (1000 * 1000 * 10)
 #define DEF_ALLOC 32
 #define HIST_SIZE 300U
-#define HIST_KEEP 150U
+#define HIST_KEEP (HIST_SIZE/2)
 
 typedef enum Command {
     PRINT = 'p',
