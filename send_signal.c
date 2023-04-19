@@ -24,7 +24,30 @@
 
 #include "send_signal.h"
 
-static pid_t check_pid(char *progname, char *name) {
+static pid_t check_pid(char *, char*);
+
+void send_signal(char *progname, int signum) {
+    DIR *proc_dir;
+    struct dirent *proc_dirent;
+    pid_t pid;
+
+    if (!(proc_dir = opendir("/proc"))) {
+        fprintf(stderr, "Error opening /proc: %s\n", strerror(errno));
+        return;
+    }
+
+    while ((proc_dirent = readdir(proc_dir))) {
+        if ((pid = check_pid(progname, proc_dirent->d_name))) {
+            kill(pid, SIGRTMIN+signum);
+            break;
+        }
+    }
+
+    closedir(proc_dir);
+    return;
+}
+
+pid_t check_pid(char *progname, char *name) {
     int pid;
     static char pid_stat[256];
     static char buffer[256];
@@ -60,23 +83,3 @@ static pid_t check_pid(char *progname, char *name) {
     return 0;
 }
 
-void send_signal(char *progname, int signum) {
-    DIR *proc_dir;
-    struct dirent *proc_dirent;
-    pid_t pid;
-
-    if (!(proc_dir = opendir("/proc"))) {
-        fprintf(stderr, "Error opening /proc: %s\n", strerror(errno));
-        return;
-    }
-
-    while ((proc_dirent = readdir(proc_dir))) {
-        if ((pid = check_pid(progname, proc_dirent->d_name))) {
-            kill(pid, SIGRTMIN+signum);
-            break;
-        }
-    }
-
-    closedir(proc_dir);
-    return;
-}

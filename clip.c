@@ -14,7 +14,6 @@
 /* You should have received a copy of the GNU General Public License */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
-#include <X11/X.h>
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,8 +23,9 @@
 #include <pthread.h>
 #include <time.h>
 #include <unistd.h>
-#include <X11/Xatom.h>
+#include <X11/X.h>
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <X11/extensions/Xfixes.h>
 
 #include "clip.h"
@@ -50,36 +50,36 @@ typedef enum ClipResult {
     ERROR,
 } ClipResult;
 
-static Atom get_target(Atom);
-static ClipResult get_clipboard(char **, ulong *);
-static bool valid_content(uchar *, ulong);
-static void signal_program(void);
+static Atom clip_check_target(Atom);
+static ClipResult clip_get_clipboard(char **, ulong *);
+static bool clip_valid_content(uchar *, ulong);
+static void clip_signal_program(void);
 
-typedef union Signal {
-    char *str;
-    int num;
-} Signal;
+void clip_signal_program(void) {
+    DEBUG_PRINT("void clip_signal_program(void) %d\n", __LINE__)
+    int signum;
+    char *CLIPSIM_SIGNAL_CODE;
+    char *CLIPSIM_SIGNAL_PROGRAM;
 
-void signal_program(void) {
-    Signal sig;
-    char *program;
-    if (!(sig.str = getenv("CLIPSIM_SIGNAL_CODE"))) {
+    if (!(CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE"))) {
         fprintf(stderr, "CLIPSIM_SIGNAL_CODE environment variable not set.\n");
         return;
     }
-    if (!(program = getenv("CLIPSIM_SIGNAL_PROGRAM"))) {
+    if (!(CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM"))) {
         fprintf(stderr, "CLIPSIM_SIGNAL_PROGRAM environment variable not set.\n");
         return;
     }
-    if ((sig.num = atoi(sig.str)) < 10) {
-        fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment variable.\n");
+    if ((signum = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {
+        fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment variable: %s.\n",
+                         CLIPSIM_SIGNAL_CODE);
         return;
     }
 
-    send_signal(program, sig.num);
+    send_signal(CLIPSIM_SIGNAL_PROGRAM, signum);
 }
 
-void *daemon_watch_clip(void *unused) {
+void *clip_daemon_watch(void *unused) {
+    DEBUG_PRINT("void *clip_daemon_watch(void *unused) %d\n", __LINE__)
     ulong color;
     struct timespec pause;
     pause.tv_sec = 0;
@@ -115,11 +115,11 @@ void *daemon_watch_clip(void *unused) {
         (void) XNextEvent(DISPLAY, &XEV);
         pthread_mutex_lock(&lock);
 
-        signal_program();
+        clip_signal_program();
 
-        switch (get_clipboard(&save, &len)) {
+        switch (clip_get_clipboard(&save, &len)) {
             case TEXT:
-                if (valid_content((uchar *) save, len))
+                if (clip_valid_content((uchar *) save, len))
                     hist_add(save, len);
                 break;
             case IMAGE:
@@ -136,14 +136,15 @@ void *daemon_watch_clip(void *unused) {
                                 "This entry won't be saved to history.\n");
                 break;
             case ERROR:
-                hist_rec(0);
+                hist_rec(-1);
                 break;
         }
         pthread_mutex_unlock(&lock);
     }
 }
 
-static Atom get_target(Atom target) {
+Atom clip_check_target(Atom target) {
+    DEBUG_PRINT("Atom clip_check_target(Atom target) %d\n", __LINE__)
     XEvent event;
 
     XConvertSelection(DISPLAY, CLIPBOARD, target, PROPERTY,
@@ -156,13 +157,14 @@ static Atom get_target(Atom target) {
     return event.xselection.property;
 }
 
-static ClipResult get_clipboard(char **save, ulong *len) {
+ClipResult clip_get_clipboard(char **save, ulong *len) {
+    DEBUG_PRINT("ClipResult clip_get_clipboard(char **save, ulong *len) %d\n", __LINE__);
     int actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
     Atom return_atom;
 
-    if (get_target(UTF8)) {
+    if (clip_check_target(UTF8)) {
         XGetWindowProperty(DISPLAY, WINDOW, PROPERTY, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
                            &actual_format_return, &nitems_return, 
@@ -173,15 +175,16 @@ static ClipResult get_clipboard(char **save, ulong *len) {
             *len = nitems_return;
             return TEXT;
         }
-    } else if (get_target(IMG)) {
+    } else if (clip_check_target(IMG)) {
         return IMAGE;
-    } else if (get_target(TARGET)) {
+    } else if (clip_check_target(TARGET)) {
         return OTHER;
     }
     return ERROR;
 }
 
-static bool valid_content(uchar *data, ulong len) {
+bool clip_valid_content(uchar *data, ulong len) {
+    DEBUG_PRINT("bool clip_valid_content(uchar *data, ulong len) %d\n", __LINE__)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
     { /* Check if it is made only of spaces and newlines */
@@ -198,7 +201,8 @@ static bool valid_content(uchar *data, ulong len) {
         }
     }
 
-    if (len <= 2) {
+    if (len <= 2) { /* Check if it is a single ascii character 
+                       possibly followed by new line */
         if ((' ' <= *data) && (*data <= '~')) {
             if (len == 1 || (*(data+1) == '\n')) {
                 fprintf(stderr, "Ignoring single character '%c'\n", *data);
@@ -214,5 +218,6 @@ static bool valid_content(uchar *data, ulong len) {
             return false;
         }
     }
+
     return true;
 }

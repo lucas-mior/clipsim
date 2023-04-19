@@ -20,6 +20,6 @@
 #ifndef CLIP_H
 #define CLIP_H
 
-void *daemon_watch_clip(void *);
+void *clip_daemon_watch(void *);
 
 #endif /* CLIP_H */

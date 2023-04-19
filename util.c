@@ -15,6 +15,7 @@
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -26,17 +27,22 @@
 #include "clipsim.h"
 #include "config.h"
 #include "util.h"
+#include "hist.h"
 
-void *ealloc(void *old, size_t size) {
+void *xalloc(void *old, size_t size) {
+    DEBUG_PRINT("void *xalloc(void *old, size_t size) %d\n", __LINE__)
     void *p;
     if ((p = realloc(old, size)) == NULL) {
         fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
+        if (old)
+            fprintf(stderr, "Reallocating from: %p", old);
         exit(1);
     }
     return p;
 }
 
-void *ecalloc(size_t nmemb, size_t size) {
+void *xcalloc(size_t nmemb, size_t size) {
+    DEBUG_PRINT("void *xcalloc(size_t nmemb, size_t size) %d\n", __LINE__)
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
         fprintf(stderr, "Failed to allocate %zu members of %zu bytes each.\n", 
@@ -46,14 +52,14 @@ void *ecalloc(size_t nmemb, size_t size) {
     return p;
 }
 
-bool estrtol(int *num, char *string, int base) {
+bool estrtol(int32 *num, char *string, int base) {
     char *pend;
     long x;
     errno = 0;
     x = strtol(string, &pend, base);
     if ((errno != 0) || (string == pend) || (*pend != 0)) {
         return false;
-    } else if ((x > INT_MAX) || (x < INT_MIN)) {
+    } else if ((x > INT32_MAX) || (x < INT32_MIN)) {
         return false;
     } else {
         *num = (int) x;
@@ -70,5 +76,13 @@ void segv_handler(int unused) {
         execl("/usr/bin/dunstify", "dunstify", "-u", "critical",
                                    progname, msg, NULL);
     }
+    exit(1);
+}
+
+void int_handler(int unused) {
+    extern char *histfile;
+    (void) unused;
+    hist_save();
+    free(histfile);
     exit(1);
 }

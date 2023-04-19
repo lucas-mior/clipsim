@@ -26,4 +26,6 @@ bool hist_save(void);
 void hist_rec(int32);
 void hist_del(int32);
 
+extern char *histfile;
+
 #endif /* HIST_H */

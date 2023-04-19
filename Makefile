@@ -15,6 +15,8 @@ CC=clang
 clipsim: $(objs)
 	$(CC) -O2 -Weverything $(cflags) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
 
+# CLIPSIM_DEBUG=-DCLIPSIM_DEBUG
+
 $(objs): Makefile clipsim.h config.h
 
 comm.o: clipsim.h config.h comm.h util.h hist.h
@@ -25,7 +27,7 @@ send_signal.o: clipsim.h config.h send_signal.h
 main.o: clipsim.h config.h comm.h clip.h util.h hist.h send_signal.h
 
 .c.o:
-	$(CC) -O2 -Weverything $(cflags) $(cppflags) -c -o $@ $<
+	$(CC) -O2 -Weverything $(cflags) $(cppflags) -c -o $@ $< $(CLIPSIM_DEBUG)
 
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin

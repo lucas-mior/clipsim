@@ -31,7 +31,8 @@
 #include "util.h"
 
 char *progname;
-Entry *last_entry;
+Entry entries[HIST_SIZE] = {0};
+int32 lastindex;
 pthread_mutex_t lock;
 
 static void usage(FILE *);
@@ -42,6 +43,7 @@ int main(int argc, char *argv[]) {
     progname = argv[0];
 
     signal(SIGSEGV, segv_handler);
+    signal(SIGINT, int_handler);
 
     if (argc <= 1 || argc >= 4) {
         usage(stderr);
@@ -49,18 +51,18 @@ int main(int argc, char *argv[]) {
     }
 
     if (!strcmp(argv[1], "print")) {
-        client_speak_fifo(PRINT, 0);
+        comm_client_speak_fifo(PRINT, 0);
     } else if (!strcmp(argv[1], "info") &&
                (argc == 3) && estrtol(&id, argv[2], 10)) {
-        client_speak_fifo(INFO, id);
+        comm_client_speak_fifo(INFO, id);
     } else if (!strcmp(argv[1], "copy") &&
                (argc == 3) && estrtol(&id, argv[2], 10)) {
-        client_speak_fifo(COPY, id);
+        comm_client_speak_fifo(COPY, id);
     } else if (!strcmp(argv[1], "delete") &&
                (argc == 3) && estrtol(&id, argv[2], 10)) {
-        client_speak_fifo(DELETE, id);
+        comm_client_speak_fifo(DELETE, id);
     } else if (!strcmp(argv[1], "save")) {
-        client_speak_fifo(SAVE, 0);
+        comm_client_speak_fifo(SAVE, 0);
     } else if (!strcmp(argv[1], "daemon")) {
         launch_daemon();
     } else if (!strcmp(argv[1], "help")) {
@@ -74,7 +76,8 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-static void usage(FILE *stream) {
+void usage(FILE *stream) {
+    DEBUG_PRINT("void usage(FILE *stream) %d\n", __LINE__)
     fprintf(stream,
             "usage: %s COMMAND [n]\n"
             "Available commands:\n"
@@ -88,7 +91,8 @@ static void usage(FILE *stream) {
     return;
 }
 
-static void launch_daemon(void) {
+void launch_daemon(void) {
+    DEBUG_PRINT("void launch_daemon(void) %d\n", __LINE__)
     pthread_t fifo_thread;
     pthread_t clip_thread;
     int err_fifo = 0;
@@ -99,20 +103,11 @@ static void launch_daemon(void) {
         return;
     }
 
-    last_entry = ealloc(NULL, sizeof(Entry));
-
-    last_entry->id = 0;
-    last_entry->len = 0;
-    last_entry->olen = 0;
-    last_entry->out = NULL;
-    last_entry->data = NULL;
-    last_entry->next = NULL;
-    last_entry->prev = NULL;
-
+    lastindex = -1;
     hist_read();
 
-    err_fifo = pthread_create(&fifo_thread, NULL, daemon_listen_fifo, NULL);
-    err_clip = pthread_create(&clip_thread, NULL, daemon_watch_clip, NULL);
+    err_fifo = pthread_create(&fifo_thread, NULL, comm_daemon_listen_fifo, NULL);
+    err_clip = pthread_create(&clip_thread, NULL, clip_daemon_watch, NULL);
     if (err_fifo) {
         fprintf(stderr, "Error on fifo thread: %s\n", strerror(err_clip));
         pthread_cancel(fifo_thread);

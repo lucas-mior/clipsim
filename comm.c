@@ -37,58 +37,60 @@ static Fifo cmd = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimcmd.fifo" };
 static Fifo wid = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimwid.fifo" };
 static Fifo dat = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimdat.fifo" };
 
-static void make_fifos(void);
-static void create_fifo(const char *name);
-static void daemon_pipe_entries(void);
-static void daemon_pipe_id(int32);
-static void client_print_entries(void);
-static void daemon_with_id(void (*)(int32));
-static void client_ask_id(int32);
-static void daemon_hist_save(void);
-static inline void bundle_spaces(Entry *);
-static inline bool flush_dat(char *, size_t *);
-static void closef(Fifo *);
-static bool openf(Fifo *, int);
+static void comm_client_check_save(void);
+static void comm_daemon_hist_save(void);
+static void comm_bundle_spaces(Entry *);
+static bool comm_flush_dat(char *, size_t *);
+static void comm_daemon_pipe_entries(void);
+static void comm_daemon_pipe_id(int32 id);
+static void comm_client_print_entries(void);
+static void comm_daemon_with_id(void (*what)(int32));
+static void comm_client_ask_id(int32 id);
+static void comm_make_fifos(void);
+static void comm_create_fifo(const char *);
+static void comm_closef(Fifo *);
+static bool comm_openf(Fifo *, int);
 
-void *daemon_listen_fifo(void *unused) {
+void *comm_daemon_listen_fifo(void *unused) {
+    DEBUG_PRINT("void *comm_daemon_listen_fifo(void *unused) %d\n", __LINE__)
     char command;
     struct timespec pause;
     (void) unused;
     pause.tv_sec = 0;
     pause.tv_nsec = PAUSE10MS;
 
-    make_fifos();
+    comm_make_fifos();
 
     while (true) {
         nanosleep(&pause, NULL);
-        if (!openf(&cmd, O_RDONLY))
+        if (!comm_openf(&cmd, O_RDONLY))
             continue;
         pthread_mutex_lock(&lock);
 
         if (read(cmd.fd, &command, sizeof(command)) < 0) {
             fprintf(stderr, "Failed to read command from pipe: "
                             "%s\n", strerror(errno));
-            closef(&cmd);
+            comm_closef(&cmd);
             pthread_mutex_unlock(&lock);
             continue;
         }
 
-        closef(&cmd);
+        comm_closef(&cmd);
         switch (command) {
             case PRINT:
-                daemon_pipe_entries();
+                comm_daemon_pipe_entries();
                 break;
             case SAVE:
-                daemon_hist_save();
+                comm_daemon_hist_save();
                 break;
             case COPY:
-                daemon_with_id(hist_rec);
+                comm_daemon_with_id(hist_rec);
                 break;
             case DELETE:
-                daemon_with_id(hist_del);
+                comm_daemon_with_id(hist_del);
                 break;
             case INFO:
-                daemon_with_id(daemon_pipe_id);
+                comm_daemon_with_id(comm_daemon_pipe_id);
                 break;
             default:
                 fprintf(stderr, "Invalid command received: '%c'\n", command);
@@ -99,32 +101,11 @@ void *daemon_listen_fifo(void *unused) {
     }
 }
 
-static void make_fifos(void) {
-    unlink(cmd.name);
-    unlink(wid.name);
-    unlink(dat.name);
-    create_fifo(cmd.name);
-    create_fifo(wid.name);
-    create_fifo(dat.name);
-    return;
-}
-
-static void create_fifo(const char *name) {
-    if (mkfifo(name, 0711) < 0) {
-        if (errno != EEXIST) {
-            fprintf(stderr, "Failed to create fifo %s: %s\n",
-                             name, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-    }
-    return;
-}
-
-static void client_check_save(void) {
+void comm_client_check_save(void) {
     ssize_t r;
     char saved;
     fprintf(stderr, "Trying to save history...\n");
-    if (!openf(&dat, O_RDONLY))
+    if (!comm_openf(&dat, O_RDONLY))
         return;
 
     if ((r = read(dat.fd, &saved, sizeof(saved))) > 0) {
@@ -134,26 +115,27 @@ static void client_check_save(void) {
             fprintf(stderr, "Error saving history to disk.\n");
     }
 
-    closef(&dat);
+    comm_closef(&dat);
     return;
 }
 
-static void daemon_hist_save(void) {
+void comm_daemon_hist_save(void) {
+    DEBUG_PRINT("void comm_daemon_hist_save(void) %d\n", __LINE__)
     char saved;
     fprintf(stderr, "Trying to save history...\n");
-    if (!openf(&dat, O_WRONLY))
+    if (!comm_openf(&dat, O_WRONLY))
         return;
 
     saved = hist_save();
 
     write(dat.fd, &saved, sizeof(saved));
 
-    closef(&dat);
+    comm_closef(&dat);
     return;
 }
 
-void client_speak_fifo(char command, int32 id) {
-    if (!openf(&cmd, O_WRONLY | O_NONBLOCK)) {
+void comm_client_speak_fifo(char command, int32 id) {
+    if (!comm_openf(&cmd, O_WRONLY | O_NONBLOCK)) {
         fprintf(stderr, "Could not open Fifo for sending command to daemon. "
                         "Is `%s daemon` running?\n", progname);
         return;
@@ -162,26 +144,26 @@ void client_speak_fifo(char command, int32 id) {
     if (write(cmd.fd, &command, sizeof(command)) < 0) {
         fprintf(stderr, "Failed to send command to daemon: "
                         "%s\n", strerror(errno));
-        closef(&cmd);
+        comm_closef(&cmd);
         return;
     } else {
-        closef(&cmd);
+        comm_closef(&cmd);
     }
 
     switch (command) {
         case PRINT:
-            client_print_entries();
+            comm_client_print_entries();
             break;
         case SAVE:
-            client_check_save();
+            comm_client_check_save();
             break;
         case COPY:
         case DELETE:
-            client_ask_id(id);
+            comm_client_ask_id(id);
             break;
         case INFO:
-            client_ask_id(id);
-            client_print_entries();
+            comm_client_ask_id(id);
+            comm_client_print_entries();
             break;
         default:
             fprintf(stderr, "Invalid command: '%c'\n", command);
@@ -191,13 +173,14 @@ void client_speak_fifo(char command, int32 id) {
     return;
 }
 
-static inline void bundle_spaces(Entry *e) {
+inline void comm_bundle_spaces(Entry *e) {
+    DEBUG_PRINT("inline void comm_bundle_spaces(Entry *e) %d\n", __LINE__)
     char *out;
     char temp = '\0';
     bool rectemp = false;
     char *c = e->data;
 
-    out = e->out = ealloc(NULL, MIN(e->len+1, OUT_SIZE+1));
+    out = e->out = xalloc(NULL, MIN(e->len+1, OUT_SIZE+1));
 
     if (e->len >= OUT_SIZE) {
         rectemp = true;
@@ -217,8 +200,11 @@ static inline void bundle_spaces(Entry *e) {
     }
     *out++ = '\0';
 
-    if (rectemp)
+    if (rectemp) {
         e->data[OUT_SIZE] = temp;
+        temp = '\0';
+        rectemp = false;
+    }
 
     if (e->olen == e->len) {
         free(e->out);
@@ -227,7 +213,8 @@ static inline void bundle_spaces(Entry *e) {
     return;
 }
 
-static inline bool flush_dat(char *pbuf, size_t *copied) {
+inline bool comm_flush_dat(char *pbuf, size_t *copied) {
+    DEBUG_PRINT("inline bool comm_flush_dat(char *pbuf, size_t *copied) %d\n", __LINE__)
     ssize_t w;
     while (*copied > 0) {
         if ((w = write(dat.fd, pbuf, *copied)) < 0) {
@@ -241,29 +228,30 @@ static inline bool flush_dat(char *pbuf, size_t *copied) {
     return true;
 }
 
-void daemon_pipe_entries(void) {
+void comm_daemon_pipe_entries(void) {
+    DEBUG_PRINT("void comm_daemon_pipe_entries(void) %d\n", __LINE__)
     static char buffer[OUT_BUF];
     char *pbuf;
     size_t copied = 0;
-    Entry *e = last_entry;
 
-    if (!openf(&dat, O_WRONLY))
+    if (!comm_openf(&dat, O_WRONLY))
         return;
 
-    if (!e->data) {
+    if (lastindex == -1) {
         fprintf(stderr, "Clipboard history empty. Start copying text.\n");
-        dprintf(dat.fd, "001 Clipboard history empty. Start copying text.\n");
+        dprintf(dat.fd, "000 Clipboard history empty. Start copying text.\n");
         goto close;
     }
 
     pbuf = buffer;
-    do {
+    for (int32 i = lastindex; i >= 0; i -= 1) {
+        Entry *e = &entries[i];
         if (e->out == NULL)
-            bundle_spaces(e);
+            comm_bundle_spaces(e);
 
         resetbuf:
         if ((copied + (PRINT_DIGITS+1) + (e->olen+1)) <= sizeof(buffer)) {
-            sprintf(pbuf, "%.*d ", PRINT_DIGITS, e->id);
+            sprintf(pbuf, "%.*d ", PRINT_DIGITS, i);
             pbuf += (PRINT_DIGITS+1);
             copied += (PRINT_DIGITS+1);
             memcpy(pbuf, e->out, (e->olen+1));
@@ -271,68 +259,58 @@ void daemon_pipe_entries(void) {
             pbuf += (e->olen+1);
         } else {
             pbuf = buffer;
-            if (flush_dat(pbuf, &copied))
+            if (comm_flush_dat(pbuf, &copied))
                 goto resetbuf;
             else
                 goto close;
         }
-        e = e->prev;
-    } while (e && e->data);
+    }
     pbuf = buffer;
-    flush_dat(pbuf, &copied);
+    comm_flush_dat(pbuf, &copied);
 
     close:
-    closef(&dat);
+    comm_closef(&dat);
     return;
 }
 
-void daemon_pipe_id(int32 id) {
-    Entry *e = last_entry;
-    bool found = false;
+void comm_daemon_pipe_id(int32 id) {
+    DEBUG_PRINT("void comm_daemon_pipe_id(int32 id) %d\n", __LINE__)
+    Entry *e;
 
-    if (!openf(&dat, O_WRONLY))
+    if (!comm_openf(&dat, O_WRONLY))
         return;
 
-    if (!e->data) {
+    if (lastindex == -1) {
         fprintf(stderr, "Clipboard history empty. Start copying text.\n");
-        dprintf(dat.fd, "001 Clipboard history empty. Start copying text.\n");
+        dprintf(dat.fd, "000 Clipboard history empty. Start copying text.\n");
         goto close;
     }
 
-    do {
-        if (id == e->id) {
-            found = true;
-            dprintf(dat.fd, "Lenght: \033[31;1m%lu\n\033[0;m", e->len);
-            dprintf(dat.fd, "%s", e->data);
-            break;
-        }
-        e = e->prev;
-    } while (e && e->data);
+    e = &entries[id];
+    dprintf(dat.fd, "Lenght: \033[31;1m%lu\n\033[0;m", e->len);
+    dprintf(dat.fd, "%s", e->data);
 
-    if (!found) {
-        dprintf(dat.fd, "Entry with id number %d not found.\n", id);
-        fprintf(stderr, "Entry with id number %d not found.\n", id);
-    }
     close:
-    closef(&dat);
+    comm_closef(&dat);
     return;
 }
 
-void client_print_entries(void) {
+void comm_client_print_entries(void) {
     static char buffer[OUT_BUF];
     ssize_t r;
 
-    if (!openf(&dat, O_RDONLY))
+    if (!comm_openf(&dat, O_RDONLY))
         return;
 
     while ((r = read(dat.fd, &buffer, sizeof(buffer))) > 0)
         fwrite(buffer, 1, (size_t) r, stdout);
 
-    closef(&dat);
+    comm_closef(&dat);
     return;
 }
 
-void daemon_with_id(void (*what)(int32)) {
+void comm_daemon_with_id(void (*what)(int32)) {
+    DEBUG_PRINT("void comm_daemon_with_id(void (*what)(int32)) %d\n", __LINE__)
     int32 id;
 
     if (!(wid.file = fopen(wid.name, "r"))) {
@@ -344,16 +322,17 @@ void daemon_with_id(void (*what)(int32)) {
     if (fread(&id, sizeof(id), 1, wid.file) != 1) {
         fprintf(stderr, "Failed to read id from pipe: "
                         "%s\n", strerror(errno));
-        closef(&wid);
+        comm_closef(&wid);
         return;
     }
-    closef(&wid);
+    comm_closef(&wid);
 
     what(id);
     return;
 }
 
-void client_ask_id(int32 id) {
+void comm_client_ask_id(int32 id) {
+    DEBUG_PRINT("void comm_client_ask_id(int32 id) %d\n", __LINE__)
     if (!(wid.file = fopen(wid.name, "w"))) {
         fprintf(stderr, "Error opening fifo for sending id to daemon: "
                         "%s\n", strerror(errno));
@@ -365,11 +344,33 @@ void client_ask_id(int32 id) {
                         "%s\n", strerror(errno));
     }
 
-    closef(&wid);
+    comm_closef(&wid);
     return;
 }
 
-void closef(Fifo *f) {
+void comm_make_fifos(void) {
+    DEBUG_PRINT("void comm_make_fifos(void) %d\n", __LINE__)
+    unlink(cmd.name);
+    unlink(wid.name);
+    unlink(dat.name);
+    comm_create_fifo(cmd.name);
+    comm_create_fifo(wid.name);
+    comm_create_fifo(dat.name);
+    return;
+}
+
+void comm_create_fifo(const char *name) {
+    if (mkfifo(name, 0711) < 0) {
+        if (errno != EEXIST) {
+            fprintf(stderr, "Failed to create fifo %s: %s\n",
+                             name, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+    }
+    return;
+}
+
+void comm_closef(Fifo *f) {
     if (f->fd != NOFD) {
         if (close(f->fd) < 0)
             fprintf(stderr, "close(%s) failed: "
@@ -385,7 +386,7 @@ void closef(Fifo *f) {
     return;
 }
 
-bool openf(Fifo *f, int flag) {
+bool comm_openf(Fifo *f, int flag) {
     if ((f->fd = open(f->name, flag)) < 0) {
         fprintf(stderr, "open(%s) failed: %s\n", f->name, strerror(errno));
         return false;

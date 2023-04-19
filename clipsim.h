@@ -23,11 +23,18 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#ifdef CLIPSIM_DEBUG
+#define DEBUG_PRINT(s, ...) printf(s, __VA_ARGS__);
+#else
+#define DEBUG_PRINT(s, ...) do { } while(0);
+#endif
 
 #define NOFD 1000
 #define PAUSE10MS (1000 * 1000 * 10)
 #define OUT_BUF 8192
 #define DEF_ALLOC 32
+#define HIST_SIZE 6U
+#define HIST_KEEP 3U
 
 typedef enum Command {
     PRINT = 'p',
@@ -44,16 +51,16 @@ typedef unsigned char uchar;
 typedef int64_t int64;
 typedef int32_t int32;
 typedef int16_t int16;
+typedef uint64_t uint64;
+typedef uint32_t uint32;
+typedef uint16_t uint16;
 
 typedef struct Entry Entry;
 struct Entry {
-    int32 id;
     size_t len;
     size_t olen;
     char *data;
     char *out;
-    Entry *next;
-    Entry *prev;
 };
 
 typedef struct Fifo {
@@ -63,7 +70,8 @@ typedef struct Fifo {
 } Fifo;
 
 extern char *progname;
-extern Entry *last_entry;
+extern Entry entries[HIST_SIZE];
+extern int32 lastindex;
 extern pthread_mutex_t lock;
 
 #endif /* CLIPSIM_H */

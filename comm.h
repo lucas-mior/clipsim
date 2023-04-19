@@ -19,7 +19,7 @@
 #ifndef COMM_H
 #define COMM_H
 
-void *daemon_listen_fifo(void *);
-void client_speak_fifo(char, int32);
+void *comm_daemon_listen_fifo(void *);
+void comm_client_speak_fifo(char, int32);
 
 #endif /* COMM_H */
