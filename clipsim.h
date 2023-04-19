@@ -26,7 +26,7 @@
 #ifdef CLIPSIM_DEBUG
 #define DEBUG_PRINT(s, ...) printf(s, __VA_ARGS__);
 #else
-#define DEBUG_PRINT(s, ...) do { } while(0);
+#define DEBUG_PRINT(s, ...)
 #endif
 
 #define NOFD 1000

@@ -158,7 +158,7 @@ Atom clip_check_target(Atom target) {
 }
 
 ClipResult clip_get_clipboard(char **save, ulong *len) {
-    DEBUG_PRINT("ClipResult clip_get_clipboard(char **save, ulong *len) %d\n", __LINE__);
+    DEBUG_PRINT("ClipResult clip_get_clipboard(char **save, ulong *len) %d\n", __LINE__)
     int actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
