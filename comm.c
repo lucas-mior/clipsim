@@ -101,39 +101,6 @@ void *comm_daemon_listen_fifo(void *unused) {
     }
 }
 
-void comm_client_check_save(void) {
-    ssize_t r;
-    char saved;
-    fprintf(stderr, "Trying to save history...\n");
-    if (!comm_openf(&dat, O_RDONLY))
-        return;
-
-    if ((r = read(dat.fd, &saved, sizeof(saved))) > 0) {
-        if (saved)
-            fprintf(stderr, "History saved to disk.\n");
-        else
-            fprintf(stderr, "Error saving history to disk.\n");
-    }
-
-    comm_closef(&dat);
-    return;
-}
-
-void comm_daemon_hist_save(void) {
-    DEBUG_PRINT("void comm_daemon_hist_save(void) %d\n", __LINE__)
-    char saved;
-    fprintf(stderr, "Trying to save history...\n");
-    if (!comm_openf(&dat, O_WRONLY))
-        return;
-
-    saved = hist_save();
-
-    write(dat.fd, &saved, sizeof(saved));
-
-    comm_closef(&dat);
-    return;
-}
-
 void comm_client_speak_fifo(char command, int32 id) {
     if (!comm_openf(&cmd, O_WRONLY | O_NONBLOCK)) {
         fprintf(stderr, "Could not open Fifo for sending command to daemon. "
@@ -170,6 +137,39 @@ void comm_client_speak_fifo(char command, int32 id) {
             break;
     }
 
+    return;
+}
+
+void comm_client_check_save(void) {
+    ssize_t r;
+    char saved;
+    fprintf(stderr, "Trying to save history...\n");
+    if (!comm_openf(&dat, O_RDONLY))
+        return;
+
+    if ((r = read(dat.fd, &saved, sizeof(saved))) > 0) {
+        if (saved)
+            fprintf(stderr, "History saved to disk.\n");
+        else
+            fprintf(stderr, "Error saving history to disk.\n");
+    }
+
+    comm_closef(&dat);
+    return;
+}
+
+void comm_daemon_hist_save(void) {
+    DEBUG_PRINT("void comm_daemon_hist_save(void) %d\n", __LINE__)
+    char saved;
+    fprintf(stderr, "Trying to save history...\n");
+    if (!comm_openf(&dat, O_WRONLY))
+        return;
+
+    saved = hist_save();
+
+    write(dat.fd, &saved, sizeof(saved));
+
+    comm_closef(&dat);
     return;
 }
 

@@ -54,29 +54,6 @@ static Atom clip_check_target(Atom);
 static ClipResult clip_get_clipboard(char **, ulong *);
 static void clip_signal_program(void);
 
-void clip_signal_program(void) {
-    DEBUG_PRINT("void clip_signal_program(void) %d\n", __LINE__)
-    int signum;
-    char *CLIPSIM_SIGNAL_CODE;
-    char *CLIPSIM_SIGNAL_PROGRAM;
-
-    if (!(CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE"))) {
-        fprintf(stderr, "CLIPSIM_SIGNAL_CODE environment variable not set.\n");
-        return;
-    }
-    if (!(CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM"))) {
-        fprintf(stderr, "CLIPSIM_SIGNAL_PROGRAM environment variable not set.\n");
-        return;
-    }
-    if ((signum = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {
-        fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment variable: %s.\n",
-                         CLIPSIM_SIGNAL_CODE);
-        return;
-    }
-
-    send_signal(CLIPSIM_SIGNAL_PROGRAM, signum);
-}
-
 void *clip_daemon_watch(void *unused) {
     DEBUG_PRINT("void *clip_daemon_watch(void *unused) %d\n", __LINE__)
     ulong color;
@@ -179,4 +156,27 @@ ClipResult clip_get_clipboard(char **save, ulong *len) {
         return OTHER;
     }
     return ERROR;
+}
+
+void clip_signal_program(void) {
+    DEBUG_PRINT("void clip_signal_program(void) %d\n", __LINE__)
+    int signum;
+    char *CLIPSIM_SIGNAL_CODE;
+    char *CLIPSIM_SIGNAL_PROGRAM;
+
+    if (!(CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE"))) {
+        fprintf(stderr, "CLIPSIM_SIGNAL_CODE environment variable not set.\n");
+        return;
+    }
+    if (!(CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM"))) {
+        fprintf(stderr, "CLIPSIM_SIGNAL_PROGRAM environment variable not set.\n");
+        return;
+    }
+    if ((signum = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {
+        fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment variable: %s.\n",
+                         CLIPSIM_SIGNAL_CODE);
+        return;
+    }
+
+    send_signal(CLIPSIM_SIGNAL_PROGRAM, signum);
 }
