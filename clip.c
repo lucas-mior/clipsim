@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <limits.h>
 #include <pthread.h>
 #include <time.h>
@@ -181,7 +182,7 @@ static ClipResult get_clipboard(char **save, ulong *len) {
 }
 
 static bool valid_content(uchar *data, ulong len) {
-    static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47, 0x00};
+    static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
     { /* Check if it is made only of spaces and newlines */
         uchar *aux = data;
@@ -206,17 +207,12 @@ static bool valid_content(uchar *data, ulong len) {
         }
     }
 
-    { /* check if it is an image */
-        int i = 0;
-        do {
-            if (data[i] == '\0')
-                return true;
-            if (data[i] != PNG[i])
-                return true;
-        } while (++i <= 3);
-
-        fprintf(stderr, "Image copied to clipboard. "
-                        "This won't be added to history.\n");
-        return false;
+    if (len >= 4) { /* check if it is an image */
+        if (!memcmp(data, PNG, 4)) {
+            fprintf(stderr, "Image copied to clipboard. "
+                            "This won't be added to history.\n");
+            return false;
+        }
     }
+    return true;
 }
