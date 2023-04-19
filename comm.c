@@ -189,7 +189,7 @@ inline bool comm_flush_dat(char *pbuf, size_t *copied) {
 
 void comm_daemon_pipe_entries(void) {
     DEBUG_PRINT("void comm_daemon_pipe_entries(void) %d\n", __LINE__)
-    static char buffer[OUT_BUF];
+    static char buffer[BUFSIZ];
     char *pbuf;
     size_t copied = 0;
 
@@ -255,7 +255,7 @@ void comm_daemon_pipe_id(int32 id) {
 }
 
 void comm_client_print_entries(void) {
-    static char buffer[OUT_BUF];
+    static char buffer[BUFSIZ];
     ssize_t r;
 
     if (!comm_openf(&dat, O_RDONLY))
