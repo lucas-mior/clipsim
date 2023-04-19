@@ -177,13 +177,11 @@ inline void comm_bundle_spaces(Entry *e) {
     DEBUG_PRINT("inline void comm_bundle_spaces(Entry *e) %d\n", __LINE__)
     char *out;
     char temp = '\0';
-    bool rectemp = false;
     char *c = e->data;
 
     out = e->out = xalloc(NULL, MIN(e->len+1, OUT_SIZE+1));
 
     if (e->len >= OUT_SIZE) {
-        rectemp = true;
         temp = e->data[OUT_SIZE];
         e->data[OUT_SIZE] = '\0';
     }
@@ -200,10 +198,9 @@ inline void comm_bundle_spaces(Entry *e) {
     }
     *out++ = '\0';
 
-    if (rectemp) {
+    if (temp) {
         e->data[OUT_SIZE] = temp;
         temp = '\0';
-        rectemp = false;
     }
 
     if (e->olen == e->len) {
