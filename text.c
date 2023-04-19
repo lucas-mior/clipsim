@@ -8,7 +8,7 @@
 #include "text.h"
 
 void text_bundle_spaces(Entry *e) {
-    DEBUG_PRINT("inline void comm_bundle_spaces(Entry *e) %d\n", __LINE__)
+    DEBUG_PRINT("void comm_bundle_spaces(Entry *e) %d\n", __LINE__)
     char *out;
     char temp = '\0';
     char *c = e->data;
