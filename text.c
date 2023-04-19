@@ -7,7 +7,7 @@
 #include "text.h"
 
 void text_bundle_spaces(Entry *e) {
-    DEBUG_PRINT("void comm_bundle_spaces(Entry *e) %d\n", __LINE__)
+    DEBUG_PRINT("comm_bundle_spaces(%.*s, %zu)\n", 30, e->data, e->len)
     char *out;
     char temp = '\0';
     char *c = e->data;
@@ -44,7 +44,7 @@ void text_bundle_spaces(Entry *e) {
 }
 
 bool text_valid_content(uchar *data, ulong len) {
-    DEBUG_PRINT("bool clip_valid_content(uchar *data, ulong len) %d\n", __LINE__)
+    DEBUG_PRINT("clip_valid_content(%.*s, %lu) %d\n", 20, data, len)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
     { /* Check if it is made only of spaces and newlines */

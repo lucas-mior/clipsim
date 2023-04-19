@@ -40,8 +40,8 @@ static void hist_new_entry(size_t);
 static void hist_reorder(int32);
 static void hist_clean(void);
 
-static inline void hist_file_find(void) {
-    DEBUG_PRINT("static inline void hist_find(void) %d\n", __LINE__)
+void hist_file_find(void) {
+    DEBUG_PRINT("hist_find(void) %d\n", __LINE__)
     char *cache = NULL;
     const char *clipsim = "/clipsim/history";
     size_t min;
@@ -65,7 +65,7 @@ static inline void hist_file_find(void) {
 }
 
 void hist_read(void) {
-    DEBUG_PRINT("void hist_read(void) %d\n", __LINE__)
+    DEBUG_PRINT("hist_read(void) %d\n", __LINE__)
     FILE *history = NULL;
     size_t i = 0;
     int c;
@@ -129,7 +129,7 @@ void hist_read(void) {
 }
 
 bool hist_save(void) {
-    DEBUG_PRINT("bool hist_save(void) %d\n", __LINE__)
+    DEBUG_PRINT("hist_save(void) %d\n", __LINE__)
     int history;
 
     if (!histfile) {
@@ -161,7 +161,7 @@ bool hist_save(void) {
 }
 
 int32 hist_repeated_index(char *save, size_t min) {
-    DEBUG_PRINT("int32 hist_repeated_index(char *save, size_t min) %d\n", __LINE__)
+    DEBUG_PRINT("hist_repeated_index(%.*s, %lu)\n", 20, save, min)
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->len == min) {
@@ -174,7 +174,7 @@ int32 hist_repeated_index(char *save, size_t min) {
 }
 
 void hist_add(char *save, ulong len) {
-    DEBUG_PRINT("void hist_add(char *save, ulong len) %d\n", __LINE__)
+    DEBUG_PRINT("hist_add(%.*s, %lu)\n", 20, save, len)
     size_t min;
     int32 oldindex;
     Entry *e;
@@ -218,7 +218,7 @@ void hist_add(char *save, ulong len) {
 }
 
 void hist_recover(int32 id) {
-    DEBUG_PRINT("void hist_recover(int32 id) %d\n", __LINE__)
+    DEBUG_PRINT("hist_recover(%d)", id)
     pid_t child = -1;
     int fd[2];
     Entry *e;
@@ -234,10 +234,10 @@ void hist_recover(int32 id) {
             dup2(fd[0], STDIN_FILENO);
             close(fd[0]);
             execlp("/usr/bin/xsel", "xsel", "-b", NULL);
-            fprintf(stderr, "execlp() returned");
+            fprintf(stderr, "Failed to exec(): %s", strerror(errno));
             return;
         case -1:
-            fprintf(stderr, "fork() failed.");
+            fprintf(stderr, "Failed to fork(): %s", strerror(errno));
             return;
         default:
             close(fd[0]);
@@ -275,7 +275,7 @@ void hist_recover(int32 id) {
 }
 
 void hist_delete(int32 id) {
-    DEBUG_PRINT("void hist_delete(int32 id) %d\n", __LINE__)
+    DEBUG_PRINT("hist_delete(%d)\n", id)
     Entry *e;
     if (lastindex == 0) {
         return;
@@ -309,7 +309,7 @@ void hist_delete(int32 id) {
 }
 
 void hist_reorder(int32 oldindex) {
-    DEBUG_PRINT("void hist_reorder(int32 oldindex) %d\n", __LINE__)
+    DEBUG_PRINT("hist_reorder(%d) %d\n", oldindex)
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex+1], 
             (size_t) (lastindex - oldindex)*sizeof(Entry));
@@ -318,7 +318,7 @@ void hist_reorder(int32 oldindex) {
 }
 
 void hist_clean(void) {
-    DEBUG_PRINT("void hist_clean(void) %d\n", __LINE__)
+    DEBUG_PRINT("hist_clean(void) %d\n", __LINE__)
     for (uint i = 0; i <= HIST_KEEP-1; i += 1) {
         Entry *e = &entries[i];
         free(e->data);
@@ -333,7 +333,7 @@ void hist_clean(void) {
 }
 
 void hist_new_entry(size_t size) {
-    DEBUG_PRINT("void hist_new_entry(size_t size) %d\n", __LINE__)
+    DEBUG_PRINT("hist_new_entry(%s)\n", size)
     Entry *e;
     lastindex += 1;
     e = &entries[lastindex];

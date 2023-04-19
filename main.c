@@ -34,7 +34,7 @@ Entry entries[HIST_SIZE] = {0};
 int32 lastindex;
 pthread_mutex_t lock;
 
-static void usage(FILE *);
+static void usage(FILE *) __attribute__((noreturn));
 static void launch_daemon(void);
 
 int main(int argc, char *argv[]) {
@@ -45,10 +45,8 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, int_handler);
     signal(SIGTERM, int_handler);
 
-    if (argc <= 1 || argc >= 4) {
+    if (argc <= 1 || argc >= 4)
         usage(stderr);
-        return 1;
-    }
 
     if (!strcmp(argv[1], "print")) {
         comm_client_speak_fifo(PRINT, 0);
@@ -67,17 +65,15 @@ int main(int argc, char *argv[]) {
         launch_daemon();
     } else if (!strcmp(argv[1], "help")) {
         usage(stdout);
-        return 0;
     } else {
         usage(stderr);
-        return 1;
     }
 
     return 0;
 }
 
 void usage(FILE *stream) {
-    DEBUG_PRINT("void usage(FILE *stream) %d\n", __LINE__)
+    DEBUG_PRINT("usage(%p)\n", stream)
     fprintf(stream,
             "usage: %s COMMAND [n]\n"
             "Available commands:\n"
@@ -88,11 +84,11 @@ void usage(FILE *stream) {
             "delete <n> : delete entry number <n> from history\n"
             "      save : save history to $XDG_CACHE_HOME/clipsim/history\n"
             "      help : print this help message to stdout\n", progname);
-    return;
+    exit(stream != stdout);
 }
 
 void launch_daemon(void) {
-    DEBUG_PRINT("void launch_daemon(void) %d\n", __LINE__)
+    DEBUG_PRINT("launch_daemon(void) %d\n", __LINE__)
     pthread_t fifo_thread;
     pthread_t clip_thread;
     int err_fifo = 0;

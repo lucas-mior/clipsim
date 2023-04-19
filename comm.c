@@ -51,7 +51,7 @@ static void comm_closef(Fifo *);
 static bool comm_openf(Fifo *, int);
 
 void *comm_daemon_listen_fifo(void *unused) {
-    DEBUG_PRINT("void *comm_daemon_listen_fifo(void *unused) %d\n", __LINE__)
+    DEBUG_PRINT("*comm_daemon_listen_fifo(void *unused) %d\n", __LINE__)
     char command;
     struct timespec pause;
     (void) unused;
@@ -158,7 +158,7 @@ void comm_client_check_save(void) {
 }
 
 void comm_daemon_hist_save(void) {
-    DEBUG_PRINT("void comm_daemon_hist_save(void) %d\n", __LINE__)
+    DEBUG_PRINT("comm_daemon_hist_save(void) %d\n", __LINE__)
     char saved;
     fprintf(stderr, "Trying to save history...\n");
     if (!comm_openf(&dat, O_WRONLY))
@@ -177,7 +177,7 @@ inline bool comm_flush_dat(char *pbuf, size_t *copied) {
     ssize_t w;
     while (*copied > 0) {
         if ((w = write(dat.fd, pbuf, *copied)) < 0) {
-            fprintf(stderr, "write() failed in flush_dat(): "
+            fprintf(stderr, "Error writing to client fifo: "
                             "%s\n", strerror(errno));
             return false;
         } else {
@@ -188,7 +188,7 @@ inline bool comm_flush_dat(char *pbuf, size_t *copied) {
 }
 
 void comm_daemon_pipe_entries(void) {
-    DEBUG_PRINT("void comm_daemon_pipe_entries(void) %d\n", __LINE__)
+    DEBUG_PRINT("comm_daemon_pipe_entries(void) %d\n", __LINE__)
     static char buffer[BUFSIZ];
     char *pbuf;
     size_t copied = 0;
@@ -233,7 +233,7 @@ void comm_daemon_pipe_entries(void) {
 }
 
 void comm_daemon_pipe_id(int32 id) {
-    DEBUG_PRINT("void comm_daemon_pipe_id(int32 id) %d\n", __LINE__)
+    DEBUG_PRINT("comm_daemon_pipe_id(%d) %d\n", id)
     Entry *e;
 
     if (!comm_openf(&dat, O_WRONLY))
@@ -269,7 +269,7 @@ void comm_client_print_entries(void) {
 }
 
 void comm_daemon_with_id(void (*what)(int32)) {
-    DEBUG_PRINT("void comm_daemon_with_id(void (*what)(int32)) %d\n", __LINE__)
+    DEBUG_PRINT("comm_daemon_with_id(void (*what)(int32)) %d\n", __LINE__)
     int32 id;
 
     if (!(wid.file = fopen(wid.name, "r"))) {
@@ -291,7 +291,7 @@ void comm_daemon_with_id(void (*what)(int32)) {
 }
 
 void comm_client_ask_id(int32 id) {
-    DEBUG_PRINT("void comm_client_ask_id(int32 id) %d\n", __LINE__)
+    DEBUG_PRINT("comm_client_ask_id(%d)\n", id)
     if (!(wid.file = fopen(wid.name, "w"))) {
         fprintf(stderr, "Error opening fifo for sending id to daemon: "
                         "%s\n", strerror(errno));
@@ -308,7 +308,7 @@ void comm_client_ask_id(int32 id) {
 }
 
 void comm_make_fifos(void) {
-    DEBUG_PRINT("void comm_make_fifos(void) %d\n", __LINE__)
+    DEBUG_PRINT("comm_make_fifos(void) %d\n", __LINE__)
     unlink(cmd.name);
     unlink(wid.name);
     unlink(dat.name);

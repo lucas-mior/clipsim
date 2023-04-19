@@ -54,7 +54,7 @@ static ClipResult clip_get_clipboard(char **, ulong *);
 static void clip_signal_program(void);
 
 void *clip_daemon_watch(void *unused) {
-    DEBUG_PRINT("void *clip_daemon_watch(void *unused) %d\n", __LINE__)
+    DEBUG_PRINT("*clip_daemon_watch(void *unused) %d\n", __LINE__)
     ulong color;
     struct timespec pause;
     pause.tv_sec = 0;
@@ -118,7 +118,7 @@ void *clip_daemon_watch(void *unused) {
 }
 
 Atom clip_check_target(Atom target) {
-    DEBUG_PRINT("Atom clip_check_target(Atom target) %d\n", __LINE__)
+    DEBUG_PRINT("Atom clip_check_target(%d)\n", target)
     XEvent event;
 
     XConvertSelection(DISPLAY, CLIPBOARD, target, PROPERTY,
@@ -132,7 +132,7 @@ Atom clip_check_target(Atom target) {
 }
 
 ClipResult clip_get_clipboard(char **save, ulong *len) {
-    DEBUG_PRINT("ClipResult clip_get_clipboard(char **save, ulong *len) %d\n", __LINE__)
+    DEBUG_PRINT("clip_get_clipboard(%p, %lu)\n", save, *len)
     int actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
@@ -158,7 +158,7 @@ ClipResult clip_get_clipboard(char **save, ulong *len) {
 }
 
 void clip_signal_program(void) {
-    DEBUG_PRINT("void clip_signal_program(void) %d\n", __LINE__)
+    DEBUG_PRINT("clip_signal_program(void) %d\n", __LINE__)
     int signum;
     char *CLIPSIM_SIGNAL_CODE;
     char *CLIPSIM_SIGNAL_PROGRAM;

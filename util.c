@@ -29,7 +29,7 @@
 #include "hist.h"
 
 void *xalloc(void *old, size_t size) {
-    DEBUG_PRINT("void *xalloc(void *old, size_t size) %d\n", __LINE__)
+    DEBUG_PRINT("*xalloc(%p, %zu)\n", old, size)
     void *p;
     if ((p = realloc(old, size)) == NULL) {
         fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
@@ -41,7 +41,7 @@ void *xalloc(void *old, size_t size) {
 }
 
 void *xcalloc(size_t nmemb, size_t size) {
-    DEBUG_PRINT("void *xcalloc(size_t nmemb, size_t size) %d\n", __LINE__)
+    DEBUG_PRINT("*xcalloc(%zu, %zu)\n", nmemb, size)
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
         fprintf(stderr, "Failed to allocate %zu members of %zu bytes each.\n", 
@@ -83,5 +83,5 @@ void int_handler(int unused) {
     (void) unused;
     hist_save();
     free(histfile);
-    exit(1);
+    exit(EXIT_FAILURE);
 }
