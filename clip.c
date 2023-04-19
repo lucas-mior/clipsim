@@ -51,7 +51,7 @@ typedef enum ClipResult {
 
 static Atom get_target(Atom);
 static ClipResult get_clipboard(char **, ulong *);
-static bool valid_content(uchar *);
+static bool valid_content(uchar *, ulong);
 static void signal_program(void);
 
 typedef union Signal {
@@ -118,7 +118,7 @@ void *daemon_watch_clip(void *unused) {
 
         switch (get_clipboard(&save, &len)) {
             case TEXT:
-                if (valid_content((uchar *) save))
+                if (valid_content((uchar *) save, len))
                     hist_add(save, len);
                 break;
             case IMAGE:
@@ -180,7 +180,7 @@ static ClipResult get_clipboard(char **save, ulong *len) {
     return ERROR;
 }
 
-static bool valid_content(uchar *data) {
+static bool valid_content(uchar *data, ulong len) {
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47, 0x00};
 
     { /* Check if it is made only of spaces and newlines */
@@ -194,6 +194,15 @@ static bool valid_content(uchar *data) {
             fprintf(stderr, "Only white space copied to clipboard. "
                             "This won't be added to history.\n");
             return false;
+        }
+    }
+
+    if (len <= 2) {
+        if ((' ' <= *data) && (*data <= '~')) {
+            if (len == 1 || (*(data+1) == '\n')) {
+                fprintf(stderr, "Ignoring single character '%c'\n", *data);
+                return false;
+            }
         }
     }
 

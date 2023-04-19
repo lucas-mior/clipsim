@@ -160,13 +160,6 @@ void hist_add(char *save, ulong len) {
         min -= 1;
     }
 
-    if (min <= 1) {
-        if ((' ' <= *save) && (*save <= '~')) {
-            fprintf(stderr, "Ignoring single character '%c'\n", *save);
-            return;
-        }
-    }
-
     if ((e = equal_to_previous(save, min))) {
         fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
         if (e->id != last_entry->id)
