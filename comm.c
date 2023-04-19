@@ -32,6 +32,7 @@
 #include "config.h"
 #include "hist.h"
 #include "util.h"
+#include "text.h"
 
 static Fifo cmd = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimcmd.fifo" };
 static Fifo wid = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimwid.fifo" };
@@ -39,7 +40,6 @@ static Fifo dat = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimdat.fifo" };
 
 static void comm_client_check_save(void);
 static void comm_daemon_hist_save(void);
-static void comm_bundle_spaces(Entry *);
 static bool comm_flush_dat(char *, size_t *);
 static void comm_daemon_pipe_entries(void);
 static void comm_daemon_pipe_id(int32 id);
@@ -173,43 +173,6 @@ void comm_client_speak_fifo(char command, int32 id) {
     return;
 }
 
-inline void comm_bundle_spaces(Entry *e) {
-    DEBUG_PRINT("inline void comm_bundle_spaces(Entry *e) %d\n", __LINE__)
-    char *out;
-    char temp = '\0';
-    char *c = e->data;
-
-    out = e->out = xalloc(NULL, MIN(e->len+1, OUT_SIZE+1));
-
-    if (e->len >= OUT_SIZE) {
-        temp = e->data[OUT_SIZE];
-        e->data[OUT_SIZE] = '\0';
-    }
-
-    while ((*c == ' ') || (*c == '\t') || (*c == '\n'))
-        c++;
-    while (*c != '\0') {
-        while (((*c == ' ') || (*c == '\t') || (*c == '\n'))
-            && ((*(c+1) == ' ') || (*(c+1) == '\t') || (*(c+1) == '\n')))
-            c++;
-
-       *out++ = *c++;
-       e->olen += 1;
-    }
-    *out++ = '\0';
-
-    if (temp) {
-        e->data[OUT_SIZE] = temp;
-        temp = '\0';
-    }
-
-    if (e->olen == e->len) {
-        free(e->out);
-        e->out = e->data;
-    }
-    return;
-}
-
 inline bool comm_flush_dat(char *pbuf, size_t *copied) {
     DEBUG_PRINT("inline bool comm_flush_dat(char *pbuf, size_t *copied) %d\n", __LINE__)
     ssize_t w;
@@ -244,7 +207,7 @@ void comm_daemon_pipe_entries(void) {
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->out == NULL)
-            comm_bundle_spaces(e);
+            text_bundle_spaces(e);
 
         resetbuf:
         if ((copied + (PRINT_DIGITS+1) + (e->olen+1)) <= sizeof(buffer)) {

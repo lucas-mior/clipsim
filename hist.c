@@ -28,6 +28,7 @@
 #include "config.h"
 #include "hist.h"
 #include "util.h"
+#include "text.h"
 
 char *histfile = NULL;
 static volatile bool recovered = false;
@@ -151,6 +152,9 @@ void hist_add(char *save, ulong len) {
         recovered = false;
         return;
     }
+
+    if (!text_valid_content((uchar *) save, len))
+        return;
 
     min = MIN(len, MAX_ENTRY_SIZE);
     save[min] = '\0';

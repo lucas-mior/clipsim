@@ -52,7 +52,6 @@ typedef enum ClipResult {
 
 static Atom clip_check_target(Atom);
 static ClipResult clip_get_clipboard(char **, ulong *);
-static bool clip_valid_content(uchar *, ulong);
 static void clip_signal_program(void);
 
 void clip_signal_program(void) {
@@ -119,8 +118,7 @@ void *clip_daemon_watch(void *unused) {
 
         switch (clip_get_clipboard(&save, &len)) {
             case TEXT:
-                if (clip_valid_content((uchar *) save, len))
-                    hist_add(save, len);
+                hist_add(save, len);
                 break;
             case IMAGE:
                 fprintf(stderr, "Image copied to clipboard. "
@@ -181,43 +179,4 @@ ClipResult clip_get_clipboard(char **save, ulong *len) {
         return OTHER;
     }
     return ERROR;
-}
-
-bool clip_valid_content(uchar *data, ulong len) {
-    DEBUG_PRINT("bool clip_valid_content(uchar *data, ulong len) %d\n", __LINE__)
-    static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
-
-    { /* Check if it is made only of spaces and newlines */
-        uchar *aux = data;
-        do {
-            aux++;
-        } while ((*(aux-1) == ' ')
-              || (*(aux-1) == '\t')
-              || (*(aux-1) == '\n'));
-        if (*(aux-1) == '\0') {
-            fprintf(stderr, "Only white space copied to clipboard. "
-                            "This won't be added to history.\n");
-            return false;
-        }
-    }
-
-    if (len <= 2) { /* Check if it is a single ascii character 
-                       possibly followed by new line */
-        if ((' ' <= *data) && (*data <= '~')) {
-            if (len == 1 || (*(data+1) == '\n')) {
-                fprintf(stderr, "Ignoring single character '%c'\n", *data);
-                return false;
-            }
-        }
-    }
-
-    if (len >= 4) { /* check if it is an image */
-        if (!memcmp(data, PNG, 4)) {
-            fprintf(stderr, "Image copied to clipboard. "
-                            "This won't be added to history.\n");
-            return false;
-        }
-    }
-
-    return true;
 }
