@@ -23,13 +23,13 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 #ifdef CLIPSIM_DEBUG
 #define DEBUG_PRINT(s, ...) printf(s, __VA_ARGS__);
 #else
 #define DEBUG_PRINT(s, ...)
 #endif
 
-#define NOFD 1000
 #define PAUSE10MS (1000 * 1000 * 10)
 #define OUT_BUF 8192
 #define DEF_ALLOC 32

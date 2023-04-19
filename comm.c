@@ -33,9 +33,9 @@
 #include "util.h"
 #include "text.h"
 
-static Fifo cmd = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimcmd.fifo" };
-static Fifo wid = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimwid.fifo" };
-static Fifo dat = { .file = NULL, .fd = NOFD, .name = "/tmp/clipsimdat.fifo" };
+static Fifo cmd = { .file = NULL, .fd = -1, .name = "/tmp/clipsimcmd.fifo" };
+static Fifo wid = { .file = NULL, .fd = -1, .name = "/tmp/clipsimwid.fifo" };
+static Fifo dat = { .file = NULL, .fd = -1, .name = "/tmp/clipsimdat.fifo" };
 
 static void comm_client_check_save(void);
 static void comm_daemon_hist_save(void);
@@ -330,11 +330,11 @@ void comm_create_fifo(const char *name) {
 }
 
 void comm_closef(Fifo *f) {
-    if (f->fd != NOFD) {
+    if (f->fd >= 0) {
         if (close(f->fd) < 0)
             fprintf(stderr, "close(%s) failed: "
                             "%s\n", f->name, strerror(errno));
-        f->fd = NOFD;
+        f->fd = -1;
     }
     if (f->file != NULL) {
         if (fclose(f->file) != 0)
