@@ -63,10 +63,11 @@ struct Entry {
     char *out;
 };
 
+#pragma clang diagnostic ignored "-Wpadded"
 typedef struct Fifo {
-    int fd;
     FILE *file;
     const char *name;
+    int fd;
 } Fifo;
 
 extern char *progname;
