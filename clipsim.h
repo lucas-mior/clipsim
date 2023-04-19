@@ -55,6 +55,18 @@ typedef uint64_t uint64;
 typedef uint32_t uint32;
 typedef uint16_t uint16;
 
+/* Maximum size for a single clipboard Entry, in bytes.
+ * In practice the maximum size will be smaller due to
+ * X11's convoluted inner workings */
+static const uint MAX_ENTRY_SIZE = 0xFFFF;
+
+/* Digits for printing id of each entry */
+static const uint PRINT_DIGITS = 3;
+
+/* How many bytes from each entry are to be printed when
+ * looking entire history */
+static const size_t OUT_SIZE = 255;
+
 typedef struct Entry Entry;
 struct Entry {
     size_t len;

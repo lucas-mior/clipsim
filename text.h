@@ -5,7 +5,6 @@
 #include <stdlib.h>
 
 #include "clipsim.h"
-#include "config.h"
 #include "util.h"
 
 void text_bundle_spaces(Entry *);

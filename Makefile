@@ -17,15 +17,15 @@ clipsim: $(objs)
 
 # CLIPSIM_DEBUG=-DCLIPSIM_DEBUG
 
-$(objs): Makefile clipsim.h config.h
+$(objs): Makefile clipsim.h
 
-comm.o: clipsim.h config.h comm.h util.h hist.h text.h
-clip.o: clipsim.h config.h clip.h util.h hist.h send_signal.h
-util.o: clipsim.h config.h util.h
-hist.o: clipsim.h config.h util.h hist.h
-text.o: clipsim.h config.h util.h text.h
-send_signal.o: clipsim.h config.h send_signal.h
-main.o: clipsim.h config.h comm.h clip.h util.h hist.h send_signal.h
+comm.o: clipsim.h comm.h util.h hist.h text.h
+clip.o: clipsim.h clip.h util.h hist.h send_signal.h
+util.o: clipsim.h util.h
+hist.o: clipsim.h util.h hist.h
+text.o: clipsim.h util.h text.h
+send_signal.o: clipsim.h send_signal.h
+main.o: clipsim.h comm.h clip.h util.h hist.h send_signal.h
 
 .c.o:
 	$(CC) -O2 -Weverything $(cflags) $(cppflags) -c -o $@ $< $(CLIPSIM_DEBUG)

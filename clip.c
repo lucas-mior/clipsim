@@ -30,7 +30,6 @@
 
 #include "clip.h"
 #include "clipsim.h"
-#include "config.h"
 #include "hist.h"
 #include "util.h"
 #include "send_signal.h"

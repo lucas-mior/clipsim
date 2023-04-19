@@ -25,7 +25,6 @@
 #include <limits.h>
 
 #include "clipsim.h"
-#include "config.h"
 #include "util.h"
 #include "hist.h"
 

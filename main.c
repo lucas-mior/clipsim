@@ -26,7 +26,6 @@
 #include "clip.h"
 #include "clipsim.h"
 #include "comm.h"
-#include "config.h"
 #include "hist.h"
 #include "util.h"
 

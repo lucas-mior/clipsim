@@ -84,7 +84,7 @@ $ make
 ```
 
 ## Configuration
-Edit `config.h` and recompile.
+Edit `clipsim.h` and recompile.
 
 ## Bugs
 Clipsim *might* have an weird behavior if you use it with applications that do

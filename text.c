@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "clipsim.h"
-#include "config.h"
 #include "util.h"
 #include "text.h"
 

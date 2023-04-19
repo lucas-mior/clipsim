@@ -25,7 +25,6 @@
 #include <sys/wait.h>
 
 #include "clipsim.h"
-#include "config.h"
 #include "hist.h"
 #include "util.h"
 #include "text.h"

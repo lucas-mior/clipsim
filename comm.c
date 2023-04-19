@@ -29,7 +29,6 @@
 
 #include "clipsim.h"
 #include "comm.h"
-#include "config.h"
 #include "hist.h"
 #include "util.h"
 #include "text.h"
