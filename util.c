@@ -26,7 +26,7 @@
 
 #include "clipsim.h"
 #include "util.h"
-#include "hist.h"
+#include "history.h"
 
 void *xalloc(void *old, size_t size) {
     DEBUG_PRINT("*xalloc(%p, %zu)\n", old, size)
@@ -79,9 +79,9 @@ void segv_handler(int unused) {
 }
 
 void int_handler(int unused) {
-    extern char *histfile;
+    extern char *history_file;
     (void) unused;
-    hist_save();
-    free(histfile);
+    history_save();
+    free(history_file);
     exit(EXIT_FAILURE);
 }

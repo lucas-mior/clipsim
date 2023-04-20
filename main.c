@@ -23,10 +23,10 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "clip.h"
+#include "clipboard.h"
 #include "clipsim.h"
-#include "comm.h"
-#include "hist.h"
+#include "ipc.h"
+#include "history.h"
 #include "util.h"
 
 char *progname;
@@ -49,18 +49,18 @@ int main(int argc, char *argv[]) {
         usage(stderr);
 
     if (!strcmp(argv[1], "print")) {
-        comm_client_speak_fifo(PRINT, 0);
+        ipc_client_speak_fifo(PRINT, 0);
     } else if (!strcmp(argv[1], "info") &&
                (argc == 3) && estrtol(&id, argv[2], 10)) {
-        comm_client_speak_fifo(INFO, id);
+        ipc_client_speak_fifo(INFO, id);
     } else if (!strcmp(argv[1], "copy") &&
                (argc == 3) && estrtol(&id, argv[2], 10)) {
-        comm_client_speak_fifo(COPY, id);
+        ipc_client_speak_fifo(COPY, id);
     } else if (!strcmp(argv[1], "delete") &&
                (argc == 3) && estrtol(&id, argv[2], 10)) {
-        comm_client_speak_fifo(DELETE, id);
+        ipc_client_speak_fifo(DELETE, id);
     } else if (!strcmp(argv[1], "save")) {
-        comm_client_speak_fifo(SAVE, 0);
+        ipc_client_speak_fifo(SAVE, 0);
     } else if (!strcmp(argv[1], "daemon")) {
         launch_daemon();
     } else if (!strcmp(argv[1], "help")) {
@@ -100,9 +100,9 @@ void launch_daemon(void) {
     }
 
     lastindex = -1;
-    hist_read();
+    history_read();
 
-    err_fifo = pthread_create(&fifo_thread, NULL, comm_daemon_listen_fifo, NULL);
+    err_fifo = pthread_create(&fifo_thread, NULL, ipc_daemon_listen_fifo, NULL);
     err_clip = pthread_create(&clip_thread, NULL, clip_daemon_watch, NULL);
     if (err_fifo) {
         fprintf(stderr, "Error on fifo thread: %s\n", strerror(err_clip));

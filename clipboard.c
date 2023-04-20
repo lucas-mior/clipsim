@@ -28,9 +28,9 @@
 #include <X11/Xatom.h>
 #include <X11/extensions/Xfixes.h>
 
-#include "clip.h"
+#include "clipboard.h"
 #include "clipsim.h"
-#include "hist.h"
+#include "history.h"
 #include "util.h"
 #include "send_signal.h"
 
@@ -94,7 +94,7 @@ void *clip_daemon_watch(void *unused) {
 
         switch (clip_get_clipboard(&save, &len)) {
             case TEXT:
-                hist_add(save, len);
+                history_add(save, len);
                 break;
             case IMAGE:
                 fprintf(stderr, "Image copied to clipboard. "
@@ -110,7 +110,7 @@ void *clip_daemon_watch(void *unused) {
                                 "This entry won't be saved to history.\n");
                 break;
             case ERROR:
-                hist_recover(-1);
+                history_recover(-1);
                 break;
         }
         pthread_mutex_unlock(&lock);

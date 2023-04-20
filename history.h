@@ -20,12 +20,12 @@
 #ifndef HIST_H
 #define HIST_H
 
-void hist_read(void);
-void hist_add(char *, ulong);
-bool hist_save(void);
-void hist_recover(int32);
-void hist_delete(int32);
+void history_read(void);
+void history_add(char *, ulong);
+bool history_save(void);
+void history_recover(int32);
+void history_delete(int32);
 
-extern char *histfile;
+extern char *history_file;
 
 #endif /* HIST_H */

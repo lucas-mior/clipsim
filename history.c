@@ -25,23 +25,23 @@
 #include <sys/wait.h>
 
 #include "clipsim.h"
-#include "hist.h"
+#include "history.h"
 #include "util.h"
 #include "text.h"
 
-char *histfile = NULL;
+char *history_file = NULL;
 static volatile bool recovered = false;
 static const char sep = 0x01;
 static const int32 max_file_len = 1024;
 
-static void hist_file_find(void);
-static int32 hist_repeated_index(char *, size_t);
-static void hist_new_entry(size_t);
-static void hist_reorder(int32);
-static void hist_clean(void);
+static void history_file_find(void);
+static int32 history_repeated_index(char *, size_t);
+static void history_new_entry(size_t);
+static void history_reorder(int32);
+static void history_clean(void);
 
-void hist_file_find(void) {
-    DEBUG_PRINT("hist_find(void) %d\n", __LINE__)
+void history_file_find(void) {
+    DEBUG_PRINT("history_find(void) %d\n", __LINE__)
     char *cache = NULL;
     const char *clipsim = "/clipsim/history";
     size_t min;
@@ -49,36 +49,36 @@ void hist_file_find(void) {
     if (!(cache = getenv("XDG_CACHE_HOME"))) {
         fprintf(stderr, "XDG_CACHE_HOME needs to be set. "
                         "History will not be saved.\n");
-        histfile = NULL;
+        history_file = NULL;
         return;
     } else if ((min = strlen(cache)) >= max_file_len) {
         fprintf(stderr, "Cache name too long. History will not be saved.\n");
-        histfile = NULL;
+        history_file = NULL;
         return;
     }
 
     min = min + 1 + strlen(clipsim);
-    histfile = xalloc(NULL, min+1);
+    history_file = xalloc(NULL, min+1);
 
-    (void) snprintf(histfile, min+1, "%s/%s", cache, clipsim);
+    (void) snprintf(history_file, min+1, "%s/%s", cache, clipsim);
     return;
 }
 
-void hist_read(void) {
-    DEBUG_PRINT("hist_read(void) %d\n", __LINE__)
+void history_read(void) {
+    DEBUG_PRINT("history_read(void) %d\n", __LINE__)
     FILE *history = NULL;
     size_t i = 0;
     int c;
     size_t to_alloc;
     Entry *e = NULL;
 
-    hist_file_find();
-    if (!histfile) {
+    history_file_find();
+    if (!history_file) {
         fprintf(stderr, "History file name unresolved. "
                         "History will start empty.\n");
         return;
     }
-    if (!(history = fopen(histfile, "r"))) {
+    if (!(history = fopen(history_file, "r"))) {
         fprintf(stderr, "Error opening history file for reading: %s\n"
                         "History will start empty.\n", strerror(errno));
         return;
@@ -91,7 +91,7 @@ void hist_read(void) {
         return;
     }
 
-    hist_new_entry(to_alloc = DEF_ALLOC);
+    history_new_entry(to_alloc = DEF_ALLOC);
     while ((c = fgetc(history)) != EOF) {
         e = &entries[lastindex];
         if (c == sep) {
@@ -103,7 +103,7 @@ void hist_read(void) {
             e->len = i;
             e->data[i] = '\0';
 
-            hist_new_entry(to_alloc = DEF_ALLOC);
+            history_new_entry(to_alloc = DEF_ALLOC);
             i = 0;
         } else {
             if (i >= (to_alloc - 1)) {
@@ -112,7 +112,7 @@ void hist_read(void) {
                 } else {
                     fprintf(stderr, "Too long entry. Skipping.\n");
                     free(e->data);
-                    hist_new_entry(to_alloc = DEF_ALLOC);
+                    history_new_entry(to_alloc = DEF_ALLOC);
                 }
                 e->data = xalloc(e->data, to_alloc);
             }
@@ -128,15 +128,15 @@ void hist_read(void) {
     return;
 }
 
-bool hist_save(void) {
-    DEBUG_PRINT("hist_save(void) %d\n", __LINE__)
+bool history_save(void) {
+    DEBUG_PRINT("history_save(void) %d\n", __LINE__)
     int history;
 
-    if (!histfile) {
+    if (!history_file) {
         fprintf(stderr, "History file name unresolved, can't save history.");
         return false;
     }
-    if ((history = open(histfile, O_WRONLY | O_CREAT | O_TRUNC,
+    if ((history = open(history_file, O_WRONLY | O_CREAT | O_TRUNC,
                                    S_IRUSR | S_IWUSR)) < 0) {
         fprintf(stderr, "Failed to open history file for saving: "
                         "%s\n", strerror(errno));
@@ -160,8 +160,8 @@ bool hist_save(void) {
     }
 }
 
-int32 hist_repeated_index(char *save, size_t min) {
-    DEBUG_PRINT("hist_repeated_index(%.*s, %lu)\n", 20, save, min)
+int32 history_repeated_index(char *save, size_t min) {
+    DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, save, min)
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->len == min) {
@@ -173,8 +173,8 @@ int32 hist_repeated_index(char *save, size_t min) {
     return -1;
 }
 
-void hist_add(char *save, ulong len) {
-    DEBUG_PRINT("hist_add(%.*s, %lu)\n", 20, save, len)
+void history_add(char *save, ulong len) {
+    DEBUG_PRINT("history_add(%.*s, %lu)\n", 20, save, len)
     size_t min;
     int32 oldindex;
     Entry *e;
@@ -195,30 +195,30 @@ void hist_add(char *save, ulong len) {
         min -= 1;
     }
 
-    if ((oldindex = hist_repeated_index(save, min)) >= 0) {
+    if ((oldindex = history_repeated_index(save, min)) >= 0) {
         fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
         if (oldindex != lastindex)
-            hist_reorder(oldindex);
+            history_reorder(oldindex);
         free(save);
         return;
     }
 
-    hist_new_entry(0);
+    history_new_entry(0);
     e = &entries[lastindex];
     e->data = save;
     e->data[min] = '\0';
     e->len = min;
 
     if (lastindex+1 >= (int32) HIST_SIZE) {
-        hist_clean();
-        hist_save();
+        history_clean();
+        history_save();
     }
 
     return;
 }
 
-void hist_recover(int32 id) {
-    DEBUG_PRINT("hist_recover(%d)", id)
+void history_recover(int32 id) {
+    DEBUG_PRINT("history_recover(%d)", id)
     pid_t child = -1;
     int fd[2];
     Entry *e;
@@ -268,14 +268,14 @@ void hist_recover(int32 id) {
     wait(NULL);
 
     if (id != lastindex)
-        hist_reorder(id);
+        history_reorder(id);
 
     recovered = true;
     return;
 }
 
-void hist_delete(int32 id) {
-    DEBUG_PRINT("hist_delete(%d)\n", id)
+void history_delete(int32 id) {
+    DEBUG_PRINT("history_delete(%d)\n", id)
     Entry *e;
     if (lastindex == 0) {
         return;
@@ -284,8 +284,8 @@ void hist_delete(int32 id) {
     if (id < 0) {
         id = lastindex + id + 1;
     } else if (id == lastindex) {
-        hist_recover(-2);
-        hist_delete(-2);
+        history_recover(-2);
+        history_delete(-2);
         return;
     }
     if (id > lastindex) {
@@ -308,8 +308,8 @@ void hist_delete(int32 id) {
     return;
 }
 
-void hist_reorder(int32 oldindex) {
-    DEBUG_PRINT("hist_reorder(%d) %d\n", oldindex)
+void history_reorder(int32 oldindex) {
+    DEBUG_PRINT("history_reorder(%d) %d\n", oldindex)
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex+1], 
             (size_t) (lastindex - oldindex)*sizeof(Entry));
@@ -317,8 +317,8 @@ void hist_reorder(int32 oldindex) {
     return;
 }
 
-void hist_clean(void) {
-    DEBUG_PRINT("hist_clean(void) %d\n", __LINE__)
+void history_clean(void) {
+    DEBUG_PRINT("history_clean(void) %d\n", __LINE__)
     for (uint i = 0; i <= HIST_KEEP-1; i += 1) {
         Entry *e = &entries[i];
         free(e->data);
@@ -332,8 +332,8 @@ void hist_clean(void) {
     return;
 }
 
-void hist_new_entry(size_t size) {
-    DEBUG_PRINT("hist_new_entry(%s)\n", size)
+void history_new_entry(size_t size) {
+    DEBUG_PRINT("history_new_entry(%s)\n", size)
     Entry *e;
     lastindex += 1;
     e = &entries[lastindex];
