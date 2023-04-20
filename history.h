@@ -21,7 +21,7 @@
 #define HIST_H
 
 void history_read(void);
-void history_add(char *, ulong);
+void history_append(char *, ulong);
 bool history_save(void);
 void history_recover(int32);
 void history_delete(int32);

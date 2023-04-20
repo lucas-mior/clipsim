@@ -94,7 +94,7 @@ void *clipboard_daemon_watch(void *unused) {
 
         switch (clipboard_get_clipboard(&save, &len)) {
             case TEXT:
-                history_add(save, len);
+                history_append(save, len);
                 break;
             case IMAGE:
                 fprintf(stderr, "Image copied to clipboard. "

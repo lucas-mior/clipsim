@@ -173,8 +173,8 @@ int32 history_repeated_index(char *save, size_t min) {
     return -1;
 }
 
-void history_add(char *save, ulong len) {
-    DEBUG_PRINT("history_add(%.*s, %lu)\n", 20, save, len)
+void history_append(char *save, ulong len) {
+    DEBUG_PRINT("history_append(%.*s, %lu)\n", 20, save, len)
     size_t min;
     int32 oldindex;
     Entry *e;
