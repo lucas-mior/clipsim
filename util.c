@@ -34,7 +34,7 @@ void *xalloc(void *old, size_t size) {
     if ((p = realloc(old, size)) == NULL) {
         fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
         if (old)
-            fprintf(stderr, "Reallocating from: %p", old);
+            fprintf(stderr, "Reallocating from: %p\n", old);
         exit(1);
     }
     return p;

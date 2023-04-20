@@ -95,11 +95,8 @@ void history_read(void) {
     while ((c = fgetc(history)) != EOF) {
         e = &entries[lastindex];
         if (c == sep) {
-            if (i >= (to_alloc - 1)) {
-                e->data = xalloc(e->data, to_alloc+1);
-            } else if (i < to_alloc) {
-                e->data = xalloc(e->data, i+1);
-            }
+            if (to_alloc != (i+2))
+                e->data = xalloc(e->data, i+2);
             e->len = i;
             e->data[i] = '\0';
 
@@ -107,12 +104,10 @@ void history_read(void) {
             i = 0;
         } else {
             if (i >= (to_alloc - 1)) {
-                if (to_alloc < 0xFFFF) {
-                    to_alloc *= 2;
-                } else {
-                    fprintf(stderr, "Too long entry. Skipping.\n");
-                    free(e->data);
-                    history_new_entry(to_alloc = DEF_ALLOC);
+                to_alloc *= 2;
+                if (to_alloc > MAX_ENTRY_SIZE) {
+                    fprintf(stderr, "Too long entry on history file.");
+                    exit(EXIT_FAILURE);
                 }
                 e->data = xalloc(e->data, to_alloc);
             }
@@ -121,6 +116,8 @@ void history_read(void) {
         }
     }
 
+    if (to_alloc != (i+2))
+        e->data = xalloc(e->data, i+2);
     e->len = i;
     e->data[i] = '\0';
 
