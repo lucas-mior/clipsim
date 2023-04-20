@@ -37,8 +37,8 @@ static Fifo command_fifo = { .file = NULL, .fd = -1, .name = "/tmp/clipsimcmd.fi
 static Fifo passid_fifo  = { .file = NULL, .fd = -1, .name = "/tmp/clipsimwid.fifo" };
 static Fifo content_fifo = { .file = NULL, .fd = -1, .name = "/tmp/clipsimdat.fifo" };
 
-static void ipc_client_check_save(void);
 static void ipc_daemon_history_save(void);
+static void ipc_client_check_save(void);
 static void ipc_daemon_pipe_entries(void);
 static void ipc_daemon_pipe_id(int32 id);
 static void ipc_client_print_entries(void);
@@ -138,6 +138,21 @@ void ipc_client_speak_fifo(char command, int32 id) {
     return;
 }
 
+void ipc_daemon_history_save(void) {
+    DEBUG_PRINT("ipc_daemon_history_save(void) %d\n", __LINE__)
+    char saved;
+    fprintf(stderr, "Trying to save history...\n");
+    if (!ipc_openf(&content_fifo, O_WRONLY))
+        return;
+
+    saved = history_save();
+
+    write(content_fifo.fd, &saved, sizeof(saved));
+
+    ipc_closef(&content_fifo);
+    return;
+}
+
 void ipc_client_check_save(void) {
     ssize_t r;
     char saved;
@@ -151,21 +166,6 @@ void ipc_client_check_save(void) {
         else
             fprintf(stderr, "Error saving history to disk.\n");
     }
-
-    ipc_closef(&content_fifo);
-    return;
-}
-
-void ipc_daemon_history_save(void) {
-    DEBUG_PRINT("ipc_daemon_history_save(void) %d\n", __LINE__)
-    char saved;
-    fprintf(stderr, "Trying to save history...\n");
-    if (!ipc_openf(&content_fifo, O_WRONLY))
-        return;
-
-    saved = history_save();
-
-    write(content_fifo.fd, &saved, sizeof(saved));
 
     ipc_closef(&content_fifo);
     return;
