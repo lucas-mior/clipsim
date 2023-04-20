@@ -39,7 +39,6 @@ static Fifo dat = { .file = NULL, .fd = -1, .name = "/tmp/clipsimdat.fifo" };
 
 static void comm_client_check_save(void);
 static void comm_daemon_hist_save(void);
-static bool comm_flush_dat(char *, size_t *);
 static void comm_daemon_pipe_entries(void);
 static void comm_daemon_pipe_id(int32 id);
 static void comm_client_print_entries(void);
@@ -172,29 +171,13 @@ void comm_daemon_hist_save(void) {
     return;
 }
 
-inline bool comm_flush_dat(char *pbuf, size_t *copied) {
-    DEBUG_PRINT("inline bool comm_flush_dat(char *pbuf, size_t *copied) %d\n", __LINE__)
-    ssize_t w;
-    while (*copied > 0) {
-        if ((w = write(dat.fd, pbuf, *copied)) < 0) {
-            fprintf(stderr, "Error writing to client fifo: "
-                            "%s\n", strerror(errno));
-            return false;
-        } else {
-            *copied -= (size_t) w;
-        }
-    }
-    return true;
-}
-
 void comm_daemon_pipe_entries(void) {
     DEBUG_PRINT("comm_daemon_pipe_entries(void) %d\n", __LINE__)
     static char buffer[BUFSIZ];
-    char *pbuf;
     size_t copied = 0;
 
-    if (!comm_openf(&dat, O_WRONLY))
-        return;
+    dat.file = fopen(dat.name, "w");
+    setvbuf(dat.file, buffer, _IOFBF, BUFSIZ);
 
     if (lastindex == -1) {
         fprintf(stderr, "Clipboard history empty. Start copying text.\n");
@@ -202,30 +185,19 @@ void comm_daemon_pipe_entries(void) {
         goto close;
     }
 
-    pbuf = buffer;
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->out == NULL)
             text_bundle_spaces(e);
 
-        resetbuf:
-        if ((copied + (PRINT_DIGITS+1) + (e->olen+1)) <= sizeof(buffer)) {
-            sprintf(pbuf, "%.*d ", PRINT_DIGITS, i);
-            pbuf += (PRINT_DIGITS+1);
-            copied += (PRINT_DIGITS+1);
-            memcpy(pbuf, e->out, (e->olen+1));
-            copied += (e->olen+1);
-            pbuf += (e->olen+1);
-        } else {
-            pbuf = buffer;
-            if (comm_flush_dat(pbuf, &copied))
-                goto resetbuf;
-            else
-                goto close;
+        fprintf(dat.file, "%.*d ", PRINT_DIGITS, i);
+        copied = fwrite(e->out, 1, (e->olen+1), dat.file);
+        if (copied < (e->olen+1)) {
+            fprintf(stderr, "Error writing to client fifo.\n");
+            goto close;
         }
     }
-    pbuf = buffer;
-    comm_flush_dat(pbuf, &copied);
+    fflush(dat.file);
 
     close:
     comm_closef(&dat);
