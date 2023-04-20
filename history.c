@@ -30,7 +30,6 @@
 #include "util.h"
 #include "text.h"
 
-char *history_file = NULL;
 static volatile bool recovered = false;
 static const char SEPARATOR = 0x01;
 static const int32 max_file_len = 1024;
@@ -40,6 +39,7 @@ static int32 history_repeated_index(char *, size_t);
 static void history_new_entry(size_t);
 static void history_reorder(int32);
 static void history_clean(void);
+File history = { .file = NULL, .fd = -1, .name = NULL };
 
 void history_file_find(void) {
     DEBUG_PRINT("history_find(void) %d\n", __LINE__)
@@ -50,50 +50,49 @@ void history_file_find(void) {
     if (!(cache = getenv("XDG_CACHE_HOME"))) {
         fprintf(stderr, "XDG_CACHE_HOME needs to be set. "
                         "History will not be saved.\n");
-        history_file = NULL;
+        history.name = NULL;
         return;
     } else if ((min = strlen(cache)) >= max_file_len) {
         fprintf(stderr, "Cache name too long. History will not be saved.\n");
-        history_file = NULL;
+        history.name = NULL;
         return;
     }
 
     min = min + 1 + strlen(clipsim);
-    history_file = xalloc(NULL, min+1);
+    history.name = xalloc(NULL, min+1);
 
-    (void) snprintf(history_file, min+1, "%s/%s", cache, clipsim);
+    (void) snprintf(history.name, min+1, "%s/%s", cache, clipsim);
     return;
 }
 
 void history_read(void) {
     DEBUG_PRINT("history_read(void) %d\n", __LINE__)
-    FILE *history = NULL;
     size_t i = 0;
     int c;
     size_t to_alloc;
     Entry *e = NULL;
 
     history_file_find();
-    if (!history_file) {
+    if (!history.name) {
         fprintf(stderr, "History file name unresolved. "
                         "History will start empty.\n");
         return;
     }
-    if (!(history = fopen(history_file, "r"))) {
+    if (!(history.file = fopen(history.name, "r"))) {
         fprintf(stderr, "Error opening history file for reading: %s\n"
                         "History will start empty.\n", strerror(errno));
         return;
     }
 
-    if ((c = fgetc(history)) != SEPARATOR) {
+    if ((c = fgetc(history.file)) != SEPARATOR) {
         fprintf(stderr, "History file is corrupted. "
                         "Delete it and restart %s.\n", progname);
-        (void) fclose(history);
+        (void) fclose(history.file);
         return;
     }
 
     history_new_entry(to_alloc = DEF_ALLOC);
-    while ((c = fgetc(history)) != EOF) {
+    while ((c = fgetc(history.file)) != EOF) {
         e = &entries[lastindex];
         if (c == SEPARATOR) {
             e->data = xalloc(e->data, i+1);
@@ -122,20 +121,19 @@ void history_read(void) {
     e->len = i;
     e->data[i] = '\0';
 
-    (void) fclose(history);
+    closef(&history);
     return;
 }
 
 bool history_save(void) {
     DEBUG_PRINT("history_save(void) %d\n", __LINE__)
-    int history;
 
-    if (!history_file) {
+    if (!history.name) {
         fprintf(stderr, "History file name unresolved, can't save history.");
         return false;
     }
-    if ((history = open(history_file, O_WRONLY | O_CREAT | O_TRUNC,
-                                      S_IRUSR | S_IWUSR)) < 0) {
+    if ((history.fd = open(history.name, O_WRONLY | O_CREAT | O_TRUNC,
+                                         S_IRUSR | S_IWUSR)) < 0) {
         fprintf(stderr, "Failed to open history file for saving: "
                         "%s\n", strerror(errno));
         return false;
@@ -143,17 +141,17 @@ bool history_save(void) {
 
     for (int i = 0; i <= lastindex; i += 1) {
         Entry *e = &entries[i];
-        write(history, &SEPARATOR, 1);
-        write(history, e->data, e->len);
+        write(history.fd, &SEPARATOR, 1);
+        write(history.fd, e->data, e->len);
     }
 
-    if (fsync(history) < 0) {
+    if (fsync(history.fd) < 0) {
         fprintf(stderr, "Error saving history to disk: %s\n", strerror(errno));
-        (void) close(history);
+        closef(&history);
         return false;
     } else {
         fprintf(stderr, "History saved to disk.\n");
-        (void) close(history);
+        closef(&history);
         return true;
     }
 }

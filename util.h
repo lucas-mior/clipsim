@@ -25,5 +25,7 @@ void *xcalloc(size_t, size_t);
 bool estrtol(int32 *, char *, int);
 void segv_handler(int) __attribute__((noreturn));
 void int_handler(int) __attribute__((noreturn));
+void closef(File *);
+bool openf(File *, int);
 
 #endif /* UTIL_H */

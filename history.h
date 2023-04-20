@@ -26,6 +26,6 @@ bool history_save(void);
 void history_recover(int32);
 void history_delete(int32);
 
-extern char *history_file;
+extern File history;
 
 #endif /* HIST_H */

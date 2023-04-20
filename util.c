@@ -82,6 +82,31 @@ void int_handler(int unused) {
     extern char *history_file;
     (void) unused;
     history_save();
-    free(history_file);
+    free(history.file);
     exit(EXIT_FAILURE);
+}
+
+void closef(File *f) {
+    if (f->fd >= 0) {
+        if (close(f->fd) < 0)
+            fprintf(stderr, "close(%s) failed: "
+                            "%s\n", f->name, strerror(errno));
+        f->fd = -1;
+    }
+    if (f->file != NULL) {
+        if (fclose(f->file) != 0)
+            fprintf(stderr, "fclose(%s) failed: "
+                            "%s\n", f->name, strerror(errno));
+        f->file = NULL;
+    }
+    return;
+}
+
+bool openf(File *f, int flag) {
+    if ((f->fd = open(f->name, flag)) < 0) {
+        fprintf(stderr, "open(%s) failed: %s\n", f->name, strerror(errno));
+        return false;
+    } else {
+        return true;
+    }
 }

@@ -75,11 +75,11 @@ struct Entry {
 };
 
 #pragma clang diagnostic ignored "-Wpadded"
-typedef struct Fifo {
+typedef struct File {
     FILE *file;
-    const char *name;
+    char *name;
     int fd;
-} Fifo;
+} File;
 
 extern char *progname;
 extern Entry entries[HIST_SIZE];
