@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <malloc.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -103,12 +104,14 @@ void history_read(void) {
             i = 0;
         } else {
             if (i >= (to_alloc - 1)) {
-                to_alloc *= 2;
+                if (malloc_usable_size(e->data) - 1 <= i) {
+                    to_alloc *= 2;
+                    e->data = xalloc(e->data, to_alloc);
+                }
                 if (to_alloc > MAX_ENTRY_SIZE) {
                     fprintf(stderr, "Too long entry on history file.");
                     exit(EXIT_FAILURE);
                 }
-                e->data = xalloc(e->data, to_alloc);
             }
             e->data[i] = (char) c;
             i += 1;
