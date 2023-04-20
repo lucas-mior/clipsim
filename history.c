@@ -128,6 +128,10 @@ void history_read(void) {
 bool history_save(void) {
     DEBUG_PRINT("history_save(void) %d\n", __LINE__)
 
+    if (lastindex < 0) {
+        fprintf(stderr, "History is empty. Not saving.\n");
+        return false;
+    }
     if (!history.name) {
         fprintf(stderr, "History file name unresolved, can't save history.");
         return false;
@@ -139,7 +143,7 @@ bool history_save(void) {
         return false;
     }
 
-    for (uint i = 0; i <= lastindex; i += 1) {
+    for (uint i = 0; i <= (uint) lastindex; i += 1) {
         Entry *e = &entries[i];
         write(history.fd, &SEPARATOR, 1);
         write(history.fd, e->data, e->len);
@@ -203,7 +207,7 @@ void history_append(char *save, ulong len) {
     e->data[len] = '\0';
     e->len = len;
 
-    if (lastindex+1 >= (int32) HIST_SIZE) {
+    if (lastindex+1 >= (int32) HISTORY_BUFFER_SIZE) {
         history_clean();
         history_save();
     }
@@ -313,16 +317,16 @@ void history_reorder(int32 oldindex) {
 
 void history_clean(void) {
     DEBUG_PRINT("history_clean(void) %d\n", __LINE__)
-    for (uint i = 0; i <= HIST_KEEP-1; i += 1) {
+    for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1) {
         Entry *e = &entries[i];
         free(e->data);
         if (e->out != e->data)
             free(e->out);
 
     }
-    memmove(&entries[0], &entries[HIST_KEEP], HIST_KEEP*sizeof(Entry));
-    memset(&entries[HIST_KEEP], 0, HIST_KEEP*sizeof(Entry));
-    lastindex = HIST_KEEP-1;
+    memmove(&entries[0], &entries[HISTORY_KEEP_SIZE], HISTORY_KEEP_SIZE*sizeof(Entry));
+    memset(&entries[HISTORY_KEEP_SIZE], 0, HISTORY_KEEP_SIZE*sizeof(Entry));
+    lastindex = HISTORY_KEEP_SIZE-1;
     return;
 }
 

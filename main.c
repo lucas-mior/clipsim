@@ -30,7 +30,7 @@
 #include "util.h"
 
 char *progname;
-Entry entries[HIST_SIZE] = {0};
+Entry entries[HISTORY_BUFFER_SIZE] = {0};
 int32 lastindex;
 pthread_mutex_t lock;
 

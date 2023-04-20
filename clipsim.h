@@ -32,8 +32,8 @@
 
 #define PAUSE10MS (1000 * 1000 * 10)
 #define DEF_ALLOC 32U
-#define HIST_SIZE 512U
-#define HIST_KEEP (HIST_SIZE/2)
+#define HISTORY_BUFFER_SIZE 512U
+#define HISTORY_KEEP_SIZE (HISTORY_BUFFER_SIZE/2)
 
 typedef enum Command {
     PRINT = 'p',
@@ -82,7 +82,7 @@ typedef struct File {
 } File;
 
 extern char *progname;
-extern Entry entries[HIST_SIZE];
+extern Entry entries[HISTORY_BUFFER_SIZE];
 extern int32 lastindex;
 extern pthread_mutex_t lock;
 
