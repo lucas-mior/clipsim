@@ -89,10 +89,10 @@ void usage(FILE *stream) {
 
 void launch_daemon(void) {
     DEBUG_PRINT("launch_daemon(void) %d\n", __LINE__)
-    pthread_t fifo_thread;
-    pthread_t clip_thread;
-    int err_fifo = 0;
-    int err_clip = 0;
+    pthread_t ipc_thread;
+    pthread_t clipboard_thread;
+    int ipc_error = 0;
+    int clipboard_error = 0;
 
     if (pthread_mutex_init(&lock, NULL) != 0) {
         fprintf(stderr, "pthread_mutex_init() failed.\n");
@@ -102,21 +102,21 @@ void launch_daemon(void) {
     lastindex = -1;
     history_read();
 
-    err_fifo = pthread_create(&fifo_thread, NULL, ipc_daemon_listen_fifo, NULL);
-    err_clip = pthread_create(&clip_thread, NULL, clip_daemon_watch, NULL);
-    if (err_fifo) {
-        fprintf(stderr, "Error on fifo thread: %s\n", strerror(err_clip));
-        pthread_cancel(fifo_thread);
-        pthread_cancel(clip_thread);
+    ipc_error = pthread_create(&ipc_thread, NULL, ipc_daemon_listen_fifo, NULL);
+    clipboard_error = pthread_create(&clipboard_thread, NULL, clipboard_daemon_watch, NULL);
+    if (ipc_error) {
+        fprintf(stderr, "Error on IPC thread: %s\n", strerror(clipboard_error));
+        pthread_cancel(ipc_thread);
+        pthread_cancel(clipboard_thread);
         return;
-    } else if (err_clip) {
-        fprintf(stderr, "Error on clip thread: %s\n", strerror(err_clip));
-        pthread_cancel(fifo_thread);
-        pthread_cancel(clip_thread);
+    } else if (clipboard_error) {
+        fprintf(stderr, "Error on clipboard thread: %s\n", strerror(clipboard_error));
+        pthread_cancel(ipc_thread);
+        pthread_cancel(clipboard_thread);
         return;
     }
-    pthread_join(fifo_thread, NULL);
-    pthread_join(clip_thread, NULL);
+    pthread_join(ipc_thread, NULL);
+    pthread_join(clipboard_thread, NULL);
     pthread_mutex_destroy(&lock);
     return;
 }

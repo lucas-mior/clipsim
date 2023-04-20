@@ -41,20 +41,20 @@ static Atom UTF8, IMG, TARGET;
 static XEvent XEV;
 static Window WINDOW;
 
-typedef enum ClipResult {
+typedef enum GetClipboardResult {
     TEXT,
     LARGE,
     IMAGE,
     OTHER,
     ERROR,
-} ClipResult;
+} GetClipboardResult;
 
-static Atom clip_check_target(Atom);
-static ClipResult clip_get_clipboard(char **, ulong *);
-static void clip_signal_program(void);
+static Atom clipboard_check_target(Atom);
+static GetClipboardResult clipboard_get_clipboard(char **, ulong *);
+static void clipboard_signal_program(void);
 
-void *clip_daemon_watch(void *unused) {
-    DEBUG_PRINT("*clip_daemon_watch(void *unused) %d\n", __LINE__)
+void *clipboard_daemon_watch(void *unused) {
+    DEBUG_PRINT("*clipboard_daemon_watch(void *unused) %d\n", __LINE__)
     ulong color;
     struct timespec pause;
     pause.tv_sec = 0;
@@ -90,9 +90,9 @@ void *clip_daemon_watch(void *unused) {
         (void) XNextEvent(DISPLAY, &XEV);
         pthread_mutex_lock(&lock);
 
-        clip_signal_program();
+        clipboard_signal_program();
 
-        switch (clip_get_clipboard(&save, &len)) {
+        switch (clipboard_get_clipboard(&save, &len)) {
             case TEXT:
                 history_add(save, len);
                 break;
@@ -117,8 +117,8 @@ void *clip_daemon_watch(void *unused) {
     }
 }
 
-Atom clip_check_target(Atom target) {
-    DEBUG_PRINT("Atom clip_check_target(%d)\n", target)
+Atom clipboard_check_target(Atom target) {
+    DEBUG_PRINT("Atom clipboard_check_target(%d)\n", target)
     XEvent event;
 
     XConvertSelection(DISPLAY, CLIPBOARD, target, PROPERTY,
@@ -131,14 +131,14 @@ Atom clip_check_target(Atom target) {
     return event.xselection.property;
 }
 
-ClipResult clip_get_clipboard(char **save, ulong *len) {
-    DEBUG_PRINT("clip_get_clipboard(%p, %lu)\n", save, *len)
+GetClipboardResult clipboard_get_clipboard(char **save, ulong *len) {
+    DEBUG_PRINT("clipboard_get_clipboard(%p, %lu)\n", save, *len)
     int actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
     Atom return_atom;
 
-    if (clip_check_target(UTF8)) {
+    if (clipboard_check_target(UTF8)) {
         XGetWindowProperty(DISPLAY, WINDOW, PROPERTY, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
                            &actual_format_return, &nitems_return, 
@@ -149,16 +149,16 @@ ClipResult clip_get_clipboard(char **save, ulong *len) {
             *len = nitems_return;
             return TEXT;
         }
-    } else if (clip_check_target(IMG)) {
+    } else if (clipboard_check_target(IMG)) {
         return IMAGE;
-    } else if (clip_check_target(TARGET)) {
+    } else if (clipboard_check_target(TARGET)) {
         return OTHER;
     }
     return ERROR;
 }
 
-void clip_signal_program(void) {
-    DEBUG_PRINT("clip_signal_program(void) %d\n", __LINE__)
+void clipboard_signal_program(void) {
+    DEBUG_PRINT("clipboard_signal_program(void) %d\n", __LINE__)
     int signum;
     char *CLIPSIM_SIGNAL_CODE;
     char *CLIPSIM_SIGNAL_PROGRAM;
