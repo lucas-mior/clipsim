@@ -42,7 +42,7 @@ static void ipc_daemon_history_save(void);
 static void ipc_daemon_pipe_entries(void);
 static void ipc_daemon_pipe_id(int32 id);
 static void ipc_client_print_entries(void);
-static void ipc_daemon_with_id(void (*what)(int32));
+static void ipc_daemon_with_id(void (*)(int32));
 static void ipc_client_ask_id(int32 id);
 static void ipc_make_fifos(void);
 static void ipc_create_fifo(const char *);
