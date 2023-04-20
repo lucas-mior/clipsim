@@ -135,7 +135,7 @@ bool history_save(void) {
         return false;
     }
     if ((history = open(history_file, O_WRONLY | O_CREAT | O_TRUNC,
-                                   S_IRUSR | S_IWUSR)) < 0) {
+                                      S_IRUSR | S_IWUSR)) < 0) {
         fprintf(stderr, "Failed to open history file for saving: "
                         "%s\n", strerror(errno));
         return false;

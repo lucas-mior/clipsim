@@ -163,17 +163,15 @@ void clipboard_signal_program(void) {
     char *CLIPSIM_SIGNAL_CODE;
     char *CLIPSIM_SIGNAL_PROGRAM;
 
-    if (!(CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE"))) {
-        fprintf(stderr, "CLIPSIM_SIGNAL_CODE environment variable not set.\n");
+    if (!(CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE")))
         return;
-    }
-    if (!(CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM"))) {
-        fprintf(stderr, "CLIPSIM_SIGNAL_PROGRAM environment variable not set.\n");
+
+    if (!(CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")))
         return;
-    }
+
     if ((signum = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {
-        fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment variable: %s.\n",
-                         CLIPSIM_SIGNAL_CODE);
+        fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment "
+                        "variable: %s\n", CLIPSIM_SIGNAL_CODE);
         return;
     }
 

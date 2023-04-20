@@ -33,9 +33,12 @@
 #include "util.h"
 #include "text.h"
 
-static Fifo command_fifo = { .file = NULL, .fd = -1, .name = "/tmp/clipsimcmd.fifo" };
-static Fifo passid_fifo  = { .file = NULL, .fd = -1, .name = "/tmp/clipsimwid.fifo" };
-static Fifo content_fifo = { .file = NULL, .fd = -1, .name = "/tmp/clipsimdat.fifo" };
+static Fifo command_fifo = { .file = NULL, .fd = -1,
+                             .name = "/tmp/clipsimcmd.fifo" };
+static Fifo passid_fifo  = { .file = NULL, .fd = -1,
+                             .name = "/tmp/clipsimwid.fifo" };
+static Fifo content_fifo = { .file = NULL, .fd = -1,
+                             .name = "/tmp/clipsimdat.fifo" };
 
 static void ipc_daemon_history_save(void);
 static void ipc_client_check_save(void);
@@ -181,7 +184,8 @@ void ipc_daemon_pipe_entries(void) {
 
     if (lastindex == -1) {
         fprintf(stderr, "Clipboard history empty. Start copying text.\n");
-        dprintf(content_fifo.fd, "000 Clipboard history empty. Start copying text.\n");
+        dprintf(content_fifo.fd, 
+                "000 Clipboard history empty. Start copying text.\n");
         goto close;
     }
 
@@ -213,7 +217,8 @@ void ipc_daemon_pipe_id(int32 id) {
 
     if (lastindex == -1) {
         fprintf(stderr, "Clipboard history empty. Start copying text.\n");
-        dprintf(content_fifo.fd, "000 Clipboard history empty. Start copying text.\n");
+        dprintf(content_fifo.fd, 
+                "000 Clipboard history empty. Start copying text.\n");
         goto close;
     }
 

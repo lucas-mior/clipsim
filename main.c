@@ -103,15 +103,19 @@ void launch_daemon(void) {
     lastindex = -1;
     history_read();
 
-    ipc_error = pthread_create(&ipc_thread, NULL, ipc_daemon_listen_fifo, NULL);
-    clipboard_error = pthread_create(&clipboard_thread, NULL, clipboard_daemon_watch, NULL);
+    ipc_error = pthread_create(&ipc_thread, NULL,
+                               ipc_daemon_listen_fifo, NULL);
+    clipboard_error = pthread_create(&clipboard_thread, NULL, 
+                                     clipboard_daemon_watch, NULL);
     if (ipc_error) {
-        fprintf(stderr, "Error on IPC thread: %s\n", strerror(clipboard_error));
+        fprintf(stderr, "Error on IPC thread: %s\n",
+                         strerror(clipboard_error));
         pthread_cancel(ipc_thread);
         pthread_cancel(clipboard_thread);
         return;
     } else if (clipboard_error) {
-        fprintf(stderr, "Error on clipboard thread: %s\n", strerror(clipboard_error));
+        fprintf(stderr, "Error on clipboard thread: %s\n",
+                strerror(clipboard_error));
         pthread_cancel(ipc_thread);
         pthread_cancel(clipboard_thread);
         return;
