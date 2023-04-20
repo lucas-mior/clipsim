@@ -139,7 +139,7 @@ bool history_save(void) {
         return false;
     }
 
-    for (int i = 0; i <= lastindex; i += 1) {
+    for (uint i = 0; i <= lastindex; i += 1) {
         Entry *e = &entries[i];
         write(history.fd, &SEPARATOR, 1);
         write(history.fd, e->data, e->len);
