@@ -93,9 +93,10 @@ void launch_daemon(void) {
     pthread_t clipboard_thread;
     int ipc_error = 0;
     int clipboard_error = 0;
+    int e;
 
-    if (pthread_mutex_init(&lock, NULL) != 0) {
-        fprintf(stderr, "pthread_mutex_init() failed.\n");
+    if ((e = pthread_mutex_init(&lock, NULL)) != 0) {
+        fprintf(stderr, "pthread_mutex_init() failed: %s\n", strerror(e));
         return;
     }
 
