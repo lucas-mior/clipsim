@@ -32,7 +32,7 @@
 
 char *history_file = NULL;
 static volatile bool recovered = false;
-static const char sep = 0x01;
+static const char SEPARATOR = 0x01;
 static const int32 max_file_len = 1024;
 
 static void history_file_find(void);
@@ -85,7 +85,7 @@ void history_read(void) {
         return;
     }
 
-    if ((c = fgetc(history)) != sep) {
+    if ((c = fgetc(history)) != SEPARATOR) {
         fprintf(stderr, "History file is corrupted. "
                         "Delete it and restart %s.\n", progname);
         (void) fclose(history);
@@ -95,7 +95,7 @@ void history_read(void) {
     history_new_entry(to_alloc = DEF_ALLOC);
     while ((c = fgetc(history)) != EOF) {
         e = &entries[lastindex];
-        if (c == sep) {
+        if (c == SEPARATOR) {
             e->data = xalloc(e->data, i+1);
             e->len = i;
             e->data[i] = '\0';
@@ -143,7 +143,7 @@ bool history_save(void) {
 
     for (int i = 0; i <= lastindex; i += 1) {
         Entry *e = &entries[i];
-        write(history, &sep, 1);
+        write(history, &SEPARATOR, 1);
         write(history, e->data, e->len);
     }
 
