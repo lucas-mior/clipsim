@@ -43,7 +43,7 @@ static void history_clean(void);
 void history_file_find(void) {
     DEBUG_PRINT("history_find(void) %d\n", __LINE__)
     char *cache = NULL;
-    const char *clipsim = "/clipsim/history";
+    const char *clipsim = "clipsim/history";
     size_t min;
 
     if (!(cache = getenv("XDG_CACHE_HOME"))) {
@@ -95,8 +95,7 @@ void history_read(void) {
     while ((c = fgetc(history)) != EOF) {
         e = &entries[lastindex];
         if (c == sep) {
-            if (to_alloc != (i+2))
-                e->data = xalloc(e->data, i+2);
+            e->data = xalloc(e->data, i+1);
             e->len = i;
             e->data[i] = '\0';
 
@@ -116,8 +115,7 @@ void history_read(void) {
         }
     }
 
-    if (to_alloc != (i+2))
-        e->data = xalloc(e->data, i+2);
+    e->data = xalloc(e->data, i+1);
     e->len = i;
     e->data[i] = '\0';
 
@@ -330,7 +328,7 @@ void history_clean(void) {
 }
 
 void history_new_entry(size_t size) {
-    DEBUG_PRINT("history_new_entry(%s)\n", size)
+    DEBUG_PRINT("history_new_entry(%zu)\n", size)
     Entry *e;
     lastindex += 1;
     e = &entries[lastindex];
