@@ -61,7 +61,7 @@ bool estrtol(int32 *num, char *string, int base) {
     } else if ((x > INT32_MAX) || (x < INT32_MIN)) {
         return false;
     } else {
-        *num = (int) x;
+        *num = (int32) x;
         return true;
     }
 }

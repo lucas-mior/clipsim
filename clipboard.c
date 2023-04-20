@@ -118,7 +118,7 @@ void *clipboard_daemon_watch(void *unused) {
 }
 
 Atom clipboard_check_target(Atom target) {
-    DEBUG_PRINT("Atom clipboard_check_target(%d)\n", target)
+    DEBUG_PRINT("clipboard_check_target(%d)\n", target)
     XEvent event;
 
     XConvertSelection(DISPLAY, CLIPBOARD, target, PROPERTY,
