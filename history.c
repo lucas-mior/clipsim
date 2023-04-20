@@ -171,7 +171,6 @@ int32 history_repeated_index(char *save, size_t min) {
 
 void history_append(char *save, ulong len) {
     DEBUG_PRINT("history_append(%.*s, %lu)\n", 20, save, len)
-    size_t min;
     int32 oldindex;
     Entry *e;
 
@@ -183,15 +182,14 @@ void history_append(char *save, ulong len) {
     if (!text_valid_content((uchar *) save, len))
         return;
 
-    min = MIN(len, MAX_ENTRY_SIZE);
-    save[min] = '\0';
+    save[len] = '\0';
 
-    if (save[min-1] == '\n') {
-        save[min-1] = '\0';
-        min -= 1;
+    if (save[len-1] == '\n') {
+        save[len-1] = '\0';
+        len -= 1;
     }
 
-    if ((oldindex = history_repeated_index(save, min)) >= 0) {
+    if ((oldindex = history_repeated_index(save, len)) >= 0) {
         fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
         if (oldindex != lastindex)
             history_reorder(oldindex);
@@ -202,8 +200,8 @@ void history_append(char *save, ulong len) {
     history_new_entry(0);
     e = &entries[lastindex];
     e->data = save;
-    e->data[min] = '\0';
-    e->len = min;
+    e->data[len] = '\0';
+    e->len = len;
 
     if (lastindex+1 >= (int32) HIST_SIZE) {
         history_clean();
