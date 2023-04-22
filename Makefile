@@ -13,6 +13,8 @@ all: clipsim
 CC=clang
 
 clipsim: $(objs)
+	ctags --kinds-C=+l *.h *.c
+	vtags.sed tags > .tags.vim
 	$(CC) -O2 -Weverything $(cflags) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
 
 # CLIPSIM_DEBUG=-DCLIPSIM_DEBUG
