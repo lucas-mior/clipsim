@@ -100,7 +100,7 @@ void *ipc_daemon_listen_fifo(void *unused) {
     }
 }
 
-void ipc_client_speak_fifo(char command, int32 id) {
+void ipc_client_speak_fifo(int command, int32 id) {
     if (!openf(&command_fifo, O_WRONLY | O_NONBLOCK)) {
         fprintf(stderr, "Could not open Fifo for sending command to daemon. "
                         "Is `%s daemon` running?\n", progname);

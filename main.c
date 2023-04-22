@@ -47,25 +47,31 @@ int main(int argc, char *argv[]) {
     if (argc <= 1 || argc >= 4)
         usage(stderr);
 
-    if (!strcmp(argv[1], "print")) {
-        ipc_client_speak_fifo(PRINT, 0);
-    } else if (!strcmp(argv[1], "info") &&
-               (argc == 3) && estrtol(&id, argv[2], 10)) {
-        ipc_client_speak_fifo(INFO, id);
-    } else if (!strcmp(argv[1], "copy") &&
-               (argc == 3) && estrtol(&id, argv[2], 10)) {
-        ipc_client_speak_fifo(COPY, id);
-    } else if (!strcmp(argv[1], "delete") &&
-               (argc == 3) && estrtol(&id, argv[2], 10)) {
-        ipc_client_speak_fifo(DELETE, id);
-    } else if (!strcmp(argv[1], "save")) {
-        ipc_client_speak_fifo(SAVE, 0);
-    } else if (!strcmp(argv[1], "daemon")) {
-        launch_daemon();
-    } else if (!strcmp(argv[1], "help")) {
-        usage(stdout);
-    } else {
-        usage(stderr);
+    for (int c = PRINT; c <= HELP; c += 1) {
+        if (!strcmp(argv[1], commands[c])) {
+            switch (c) {
+            case PRINT:
+                ipc_client_speak_fifo(PRINT, 0);
+                break;
+            case INFO:
+            case COPY:
+            case DELETE:
+                if (argc != 3 || !estrtol(&id, argv[2], 10))
+                    usage(stderr);
+                ipc_client_speak_fifo(c, id);
+                break;
+            case SAVE:
+                ipc_client_speak_fifo(SAVE, 0);
+                break;
+            case DAEMON:
+                launch_daemon();
+                break;
+            case HELP:
+                usage(stdout);
+            default:
+                usage(stderr);
+            }
+        }
     }
 
     return 0;

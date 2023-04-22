@@ -36,12 +36,24 @@
 #define HISTORY_KEEP_SIZE (HISTORY_BUFFER_SIZE/2)
 
 typedef enum Command {
-    PRINT = 'p',
-    INFO = 'i',
-    COPY = 'c',
-    DELETE = 'd',
-    SAVE = 's',
+    PRINT = 0,
+    INFO,
+    COPY,
+    DELETE,
+    SAVE,
+    DAEMON,
+    HELP,
 } Command;
+
+static const char *commands[] = {
+    [PRINT] = "print",
+    [INFO] = "info",
+    [COPY] = "copy",
+    [DELETE] = "delete",
+    [SAVE] = "save",
+    [DAEMON] = "daemon",
+    [HELP] = "help",
+};
 
 typedef unsigned char uchar;
 typedef unsigned int uint;

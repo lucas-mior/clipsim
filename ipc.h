@@ -20,6 +20,6 @@
 #define IPC_H
 
 void *ipc_daemon_listen_fifo(void *);
-void ipc_client_speak_fifo(char, int32);
+void ipc_client_speak_fifo(int, int32);
 
 #endif /* ipc_H */
