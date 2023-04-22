@@ -82,10 +82,10 @@ static const size_t OUT_SIZE = 255;
 
 typedef struct Entry Entry;
 struct Entry {
-    size_t len;
-    size_t olen;
-    char *data;
-    char *out;
+    size_t content_length;
+    size_t trimmed_length;
+    char *content;
+    char *trimmed;
 };
 
 #pragma clang diagnostic ignored "-Wpadded"

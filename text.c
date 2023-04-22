@@ -23,16 +23,16 @@
 #include "text.h"
 
 void text_bundle_spaces(Entry *e) {
-    DEBUG_PRINT("text_bundle_spaces(%.*s, %zu)\n", 30, e->data, e->len)
+    DEBUG_PRINT("text_bundle_spaces(%.*s, %zu)\n", 30, e->content, e->content_length)
     char *out;
     char temp = '\0';
-    char *c = e->data;
+    char *c = e->content;
 
-    out = e->out = xalloc(NULL, MIN(e->len+1, OUT_SIZE+1));
+    out = e->trimmed = xalloc(NULL, MIN(e->content_length+1, OUT_SIZE+1));
 
-    if (e->len >= OUT_SIZE) {
-        temp = e->data[OUT_SIZE];
-        e->data[OUT_SIZE] = '\0';
+    if (e->content_length >= OUT_SIZE) {
+        temp = e->content[OUT_SIZE];
+        e->content[OUT_SIZE] = '\0';
     }
 
     while ((*c == ' ') || (*c == '\t') || (*c == '\n'))
@@ -43,18 +43,18 @@ void text_bundle_spaces(Entry *e) {
             c++;
 
         *out++ = *c++;
-        e->olen += 1;
+        e->trimmed_length += 1;
     }
     *out++ = '\0';
 
     if (temp) {
-        e->data[OUT_SIZE] = temp;
+        e->content[OUT_SIZE] = temp;
         temp = '\0';
     }
 
-    if (e->olen == e->len) {
-        free(e->out);
-        e->out = e->data;
+    if (e->trimmed_length == e->content_length) {
+        free(e->trimmed);
+        e->trimmed = e->content;
     }
     return;
 }

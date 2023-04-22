@@ -85,16 +85,16 @@ void *clipboard_daemon_watch(void *unused) {
 
     while (true) {
         char *save = NULL;
-        ulong len;
+        ulong length;
         nanosleep(&pause , NULL);
         (void) XNextEvent(DISPLAY, &XEV);
         pthread_mutex_lock(&lock);
 
         clipboard_signal_program();
 
-        switch (clipboard_get_clipboard(&save, &len)) {
+        switch (clipboard_get_clipboard(&save, &length)) {
             case TEXT:
-                history_append(save, len);
+                history_append(save, length);
                 break;
             case IMAGE:
                 fprintf(stderr, "Image copied to clipboard. "
@@ -131,8 +131,8 @@ Atom clipboard_check_target(Atom target) {
     return event.xselection.property;
 }
 
-GetClipboardResult clipboard_get_clipboard(char **save, ulong *len) {
-    DEBUG_PRINT("clipboard_get_clipboard(%p, %lu)\n", (void *) save, *len)
+GetClipboardResult clipboard_get_clipboard(char **save, ulong *length) {
+    DEBUG_PRINT("clipboard_get_clipboard(%p, %lu)\n", (void *) save, *length)
     int actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
@@ -146,7 +146,7 @@ GetClipboardResult clipboard_get_clipboard(char **save, ulong *len) {
         if (return_atom == INCREMENT) {
             return LARGE;
         } else {
-            *len = nitems_return;
+            *length = nitems_return;
             return TEXT;
         }
     } else if (clipboard_check_target(IMG)) {

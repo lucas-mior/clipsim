@@ -96,16 +96,16 @@ void history_read(void) {
     }
 
     history_new_entry(to_alloc = DEF_ALLOC);
-    malloced = malloc_usable_size(entries[lastindex].data);
+    malloced = malloc_usable_size(entries[lastindex].content);
     while ((c = fgetc(history.file)) != EOF) {
         e = &entries[lastindex];
         if (c == SEPARATOR) {
-            e->data = xalloc(e->data, i+1);
-            e->len = i;
-            e->data[i] = '\0';
+            e->content = xalloc(e->content, i+1);
+            e->content_length = i;
+            e->content[i] = '\0';
 
             history_new_entry(to_alloc = DEF_ALLOC);
-            malloced = malloc_usable_size(entries[lastindex].data);
+            malloced = malloc_usable_size(entries[lastindex].content);
             i = 0;
         } else {
             if (i >= (malloced - 1)) {
@@ -114,17 +114,17 @@ void history_read(void) {
                     fprintf(stderr, "Too long entry on history file.");
                     exit(EXIT_FAILURE);
                 }
-                e->data = xalloc(e->data, to_alloc);
-                malloced = malloc_usable_size(e->data);
+                e->content = xalloc(e->content, to_alloc);
+                malloced = malloc_usable_size(e->content);
             }
-            e->data[i] = (char) c;
+            e->content[i] = (char) c;
             i += 1;
         }
     }
 
-    e->data = xalloc(e->data, i+1);
-    e->len = i;
-    e->data[i] = '\0';
+    e->content = xalloc(e->content, i+1);
+    e->content_length = i;
+    e->content[i] = '\0';
 
     closef(&history);
     return;
@@ -151,7 +151,7 @@ bool history_save(void) {
     for (uint i = 0; i <= (uint) lastindex; i += 1) {
         Entry *e = &entries[i];
         write(history.fd, &SEPARATOR, 1);
-        write(history.fd, e->data, e->len);
+        write(history.fd, e->content, e->content_length);
     }
 
     if (fsync(history.fd) < 0) {
@@ -165,12 +165,12 @@ bool history_save(void) {
     }
 }
 
-int32 history_repeated_index(char *data, size_t length) {
-    DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, data, length)
+int32 history_repeated_index(char *content, size_t length) {
+    DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, content, length)
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
-        if (e->len == length) {
-            if (!strcmp(e->data, data)) {
+        if (e->content_length == length) {
+            if (!strcmp(e->content, content)) {
                 return i;
             }
         }
@@ -178,8 +178,8 @@ int32 history_repeated_index(char *data, size_t length) {
     return -1;
 }
 
-void history_append(char *data, ulong len) {
-    DEBUG_PRINT("history_append(%.*s, %lu)\n", 20, data, len)
+void history_append(char *content, ulong length) {
+    DEBUG_PRINT("history_append(%.*s, %lu)\n", 20, content, length)
     int32 oldindex;
     Entry *e;
 
@@ -188,29 +188,29 @@ void history_append(char *data, ulong len) {
         return;
     }
 
-    if (!text_valid_content((uchar *) data, len))
+    if (!text_valid_content((uchar *) content, length))
         return;
 
-    data[len] = '\0';
+    content[length] = '\0';
 
-    if (data[len-1] == '\n') {
-        data[len-1] = '\0';
-        len -= 1;
+    if (content[length-1] == '\n') {
+        content[length-1] = '\0';
+        length -= 1;
     }
 
-    if ((oldindex = history_repeated_index(data, len)) >= 0) {
+    if ((oldindex = history_repeated_index(content, length)) >= 0) {
         fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
         if (oldindex != lastindex)
             history_reorder(oldindex);
-        free(data);
+        free(content);
         return;
     }
 
     history_new_entry(0);
     e = &entries[lastindex];
-    e->data = data;
-    e->data[len] = '\0';
-    e->len = len;
+    e->content = content;
+    e->content[length] = '\0';
+    e->content_length = length;
 
     if (lastindex+1 >= (int32) HISTORY_BUFFER_SIZE) {
         history_clean();
@@ -266,7 +266,7 @@ void history_recover(int32 id) {
     }
 
     e = &entries[id];
-    dprintf(fd[1], "%s", e->data);
+    dprintf(fd[1], "%s", e->content);
     close(fd[1]);
     wait(NULL);
 
@@ -297,9 +297,9 @@ void history_delete(int32 id) {
     }
 
     e = &entries[id];
-    free(e->data);
-    if (e->out != e->data)
-        free(e->out);
+    free(e->content);
+    if (e->trimmed != e->content)
+        free(e->trimmed);
 
     if (id < lastindex) {
         memmove(&entries[id], &entries[id+1], 
@@ -324,9 +324,9 @@ void history_clean(void) {
     DEBUG_PRINT("history_clean(void) %d\n", __LINE__)
     for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1) {
         Entry *e = &entries[i];
-        free(e->data);
-        if (e->out != e->data)
-            free(e->out);
+        free(e->content);
+        if (e->trimmed != e->content)
+            free(e->trimmed);
 
     }
     memmove(&entries[0], &entries[HISTORY_KEEP_SIZE],
@@ -343,8 +343,8 @@ void history_new_entry(size_t size) {
     e = &entries[lastindex];
 
     if (size) {
-        e->data = xalloc(NULL, size);
-        e->len = size - 1;
+        e->content = xalloc(NULL, size);
+        e->content_length = size - 1;
     }
     return;
 }
