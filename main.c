@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 }
 
 void usage(FILE *stream) {
-    DEBUG_PRINT("usage(%p)\n", stream)
+    DEBUG_PRINT("usage(%p)\n", (void *) stream)
     fprintf(stream,
             "usage: %s COMMAND [n]\n"
             "Available commands:\n"
