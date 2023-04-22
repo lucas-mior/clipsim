@@ -19,7 +19,6 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -36,7 +35,6 @@ static const char SEPARATOR = 0x01;
 
 static void history_file_find(void);
 static int32 history_repeated_index(char *, size_t);
-static void history_new_entry(size_t);
 static void history_reorder(int32);
 static void history_clean(void);
 File history = { .file = NULL, .fd = -1, .name = NULL };
@@ -69,11 +67,12 @@ void history_file_find(void) {
 
 void history_read(void) {
     DEBUG_PRINT("history_read(void) %d\n", __LINE__)
-    size_t i = 0;
+    char buffer[BUFSIZ + BUFSIZ/2];
+    size_t r;
+    char *p;
+    char *begin;
     int c;
-    size_t bytes_asked;
-    size_t bytes_malloced;
-    Entry *e = NULL;
+    Entry *e;
 
     lastindex = -1;
     history_file_find();
@@ -88,43 +87,40 @@ void history_read(void) {
         return;
     }
 
-    if ((c = fgetc(history.file)) != SEPARATOR) {
-        fprintf(stderr, "History file is corrupted. "
-                        "Delete it and restart %s.\n", "clipsim");
-        (void) fclose(history.file);
-        return;
-    }
+    begin = buffer;
+    do {
+        r = fread(buffer, 1, BUFSIZ, history.file);
+        begin = buffer;
+        for (p = buffer; p < buffer + r; p++) {
+            if (*p == SEPARATOR) {
+                *p = '\0';
 
-    history_new_entry(bytes_asked = MINIMUM_ALLOCATION);
-    bytes_malloced = malloc_usable_size(entries[lastindex].content);
-    while ((c = fgetc(history.file)) != EOF) {
-        e = &entries[lastindex];
-        if (c == SEPARATOR) {
-            e->content = xalloc(e->content, i+1);
-            e->content_length = i;
-            e->content[i] = '\0';
+                lastindex += 1;
+                e = &entries[lastindex];
+                e->content_length = p - begin;
+                e->content = strdup(begin);
 
-            history_new_entry(bytes_asked = MINIMUM_ALLOCATION);
-            bytes_malloced = malloc_usable_size(entries[lastindex].content);
-            i = 0;
-        } else {
-            if (i >= (bytes_malloced - 1)) {
-                bytes_asked *= 2;
-                if (bytes_asked > MAX_ENTRY_SIZE) {
-                    fprintf(stderr, "Too long entry on history file.");
-                    exit(EXIT_FAILURE);
-                }
-                e->content = xalloc(e->content, bytes_asked);
-                bytes_malloced = malloc_usable_size(e->content);
+                begin = p+1;
             }
-            e->content[i] = (char) c;
-            i += 1;
         }
-    }
+        if (*(p-1) != '\0') {
+            while ((c = fgetc(history.file)) != SEPARATOR)
+                *p++ = (char) c;
+            *p = '\0';
 
-    e->content = xalloc(e->content, i+1);
-    e->content_length = i;
-    e->content[i] = '\0';
+            lastindex += 1;
+            e = &entries[lastindex];
+            e->content_length = p - begin;
+            e->content = strdup(begin);
+        }
+        if (lastindex > (int32) HISTORY_KEEP_SIZE)
+            break;
+    } while (r >= BUFSIZ);
+
+    if (ferror(history.file)) {
+        printf("Error while reading history file.\n");
+        exit(1);
+    }
 
     closef(&history);
     return;
@@ -151,8 +147,8 @@ bool history_save(void) {
 
     for (uint i = 0; i <= (uint) lastindex; i += 1) {
         Entry *e = &entries[i];
-        write(history.fd, &SEPARATOR, 1);
         write(history.fd, e->content, e->content_length);
+        write(history.fd, &SEPARATOR, 1);
     }
 
     if ((saved = fsync(history.fd)) < 0)
@@ -204,7 +200,7 @@ void history_append(char *content, ulong length) {
         return;
     }
 
-    history_new_entry(0);
+    lastindex += 1;
     e = &entries[lastindex];
     e->content = content;
     e->content[length] = '\0';
@@ -331,18 +327,5 @@ void history_clean(void) {
             HISTORY_KEEP_SIZE*sizeof(Entry));
     memset(&entries[HISTORY_KEEP_SIZE], 0, HISTORY_KEEP_SIZE*sizeof(Entry));
     lastindex = HISTORY_KEEP_SIZE-1;
-    return;
-}
-
-void history_new_entry(size_t size) {
-    DEBUG_PRINT("history_new_entry(%zu)\n", size)
-    Entry *e;
-    lastindex += 1;
-    e = &entries[lastindex];
-
-    if (size) {
-        e->content = xalloc(NULL, size);
-        e->content_length = size - 1;
-    }
     return;
 }
