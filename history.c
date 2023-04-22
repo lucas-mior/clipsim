@@ -70,6 +70,7 @@ void history_read(void) {
     size_t i = 0;
     int c;
     size_t to_alloc;
+    size_t malloced;
     Entry *e = NULL;
 
     history_file_find();
@@ -92,6 +93,7 @@ void history_read(void) {
     }
 
     history_new_entry(to_alloc = DEF_ALLOC);
+    malloced = malloc_usable_size(entries[lastindex].data);
     while ((c = fgetc(history.file)) != EOF) {
         e = &entries[lastindex];
         if (c == SEPARATOR) {
@@ -100,13 +102,13 @@ void history_read(void) {
             e->data[i] = '\0';
 
             history_new_entry(to_alloc = DEF_ALLOC);
+            malloced = malloc_usable_size(entries[lastindex].data);
             i = 0;
         } else {
-            if (i >= (to_alloc - 1)) {
-                if (malloc_usable_size(e->data) - 1 <= i) {
-                    to_alloc *= 2;
-                    e->data = xalloc(e->data, to_alloc);
-                }
+            if (i >= (malloced - 1)) {
+                to_alloc *= 2;
+                e->data = xalloc(e->data, to_alloc);
+                malloced = malloc_usable_size(e->data);
                 if (to_alloc > MAX_ENTRY_SIZE) {
                     fprintf(stderr, "Too long entry on history file.");
                     exit(EXIT_FAILURE);
