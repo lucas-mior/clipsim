@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <sys/wait.h>
 
 #include "clipsim.h"
@@ -32,7 +33,6 @@
 
 static volatile bool recovered = false;
 static const char SEPARATOR = 0x01;
-static const int32 max_file_len = 1024;
 
 static void history_file_find(void);
 static int32 history_repeated_index(char *, size_t);
@@ -52,13 +52,10 @@ void history_file_find(void) {
                         "History will not be saved.\n");
         history.name = NULL;
         return;
-    } else if ((length = strlen(cache)) >= max_file_len) {
-        fprintf(stderr, "Cache name too long. History will not be saved.\n");
-        history.name = NULL;
-        return;
     }
-
-    length = length + 1 + strlen(clipsim);
+     
+    length = strlen(cache);
+    length += 1 + strlen(clipsim);
     history.name = xalloc(NULL, length+1);
 
     (void) snprintf(history.name, length+1, "%s/%s", cache, clipsim);
