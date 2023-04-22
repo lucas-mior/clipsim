@@ -107,7 +107,7 @@ void *clipboard_daemon_watch(void *unused) {
             case LARGE:
                 fprintf(stderr, "Buffer is too large and "
                                 "INCR reading is not implemented yet. "
-                                "This entry won't be saved to history.\n");
+                                "This data won't be saved to history.\n");
                 break;
             case ERROR:
                 history_recover(-1);
