@@ -29,7 +29,6 @@
 #include "history.h"
 #include "util.h"
 
-char *progname;
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
 pthread_mutex_t lock;
 
@@ -38,7 +37,6 @@ static void launch_daemon(void);
 
 int main(int argc, char *argv[]) {
     int32 id;
-    progname = argv[0];
 
     signal(SIGSEGV, segv_handler);
     signal(SIGINT, int_handler);
@@ -88,7 +86,7 @@ void usage(FILE *stream) {
             "  copy <n> : copy entry number <n> to clipboard\n"
             "delete <n> : delete entry number <n> from history\n"
             "      save : save history to $XDG_CACHE_HOME/clipsim/history\n"
-            "      help : print this help message to stdout\n", progname);
+            "      help : print this help message to stdout\n", "clipsim");
     exit(stream != stdout);
 }
 

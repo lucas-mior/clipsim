@@ -95,7 +95,6 @@ typedef struct File {
     int fd;
 } File;
 
-extern char *progname;
 extern Entry entries[HISTORY_BUFFER_SIZE];
 extern pthread_mutex_t lock;
 

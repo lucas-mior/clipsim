@@ -73,7 +73,7 @@ void segv_handler(int unused) {
     write(2, msg, strlen(msg));
     if (!access("/usr/bin/dunstify", X_OK)) {
         execl("/usr/bin/dunstify", "dunstify", "-u", "critical",
-                                   progname, msg, NULL);
+                                   "clipsim", msg, NULL);
     }
     exit(1);
 }

@@ -90,7 +90,7 @@ void history_read(void) {
 
     if ((c = fgetc(history.file)) != SEPARATOR) {
         fprintf(stderr, "History file is corrupted. "
-                        "Delete it and restart %s.\n", progname);
+                        "Delete it and restart %s.\n", "clipsim");
         (void) fclose(history.file);
         return;
     }
