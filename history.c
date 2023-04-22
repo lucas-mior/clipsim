@@ -132,6 +132,7 @@ void history_read(void) {
 
 bool history_save(void) {
     DEBUG_PRINT("history_save(void) %d\n", __LINE__)
+    int saved;
 
     if (lastindex < 0) {
         fprintf(stderr, "History is empty. Not saving.\n");
@@ -154,15 +155,12 @@ bool history_save(void) {
         write(history.fd, e->content, e->content_length);
     }
 
-    if (fsync(history.fd) < 0) {
+    if ((saved = fsync(history.fd)) < 0)
         fprintf(stderr, "Error saving history to disk: %s\n", strerror(errno));
-        closef(&history);
-        return false;
-    } else {
+    else
         fprintf(stderr, "History saved to disk.\n");
-        closef(&history);
-        return true;
-    }
+    closef(&history);
+    return saved >= 0;
 }
 
 int32 history_repeated_index(char *content, size_t length) {
