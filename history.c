@@ -324,7 +324,8 @@ void history_clean(void) {
             free(e->out);
 
     }
-    memmove(&entries[0], &entries[HISTORY_KEEP_SIZE], HISTORY_KEEP_SIZE*sizeof(Entry));
+    memmove(&entries[0], &entries[HISTORY_KEEP_SIZE],
+            HISTORY_KEEP_SIZE*sizeof(Entry));
     memset(&entries[HISTORY_KEEP_SIZE], 0, HISTORY_KEEP_SIZE*sizeof(Entry));
     lastindex = HISTORY_KEEP_SIZE-1;
     return;
