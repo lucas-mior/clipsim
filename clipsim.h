@@ -31,9 +31,12 @@
 #endif
 
 #define PAUSE10MS (1000 * 1000 * 10)
-#define DEF_ALLOC 32U
+#define MINIMUM_ALLOCATION 32U
 #define HISTORY_BUFFER_SIZE 512U
 #define HISTORY_KEEP_SIZE (HISTORY_BUFFER_SIZE/2)
+#define MAX_ENTRY_SIZE 0xFFFF
+#define PRINT_DIGITS 3
+#define OUT_SIZE 255
 
 typedef enum Command {
     PRINT = 0,
@@ -68,25 +71,12 @@ typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 
-/* Maximum size for a single clipboard Entry, in bytes.
- * In practice the maximum size will be smaller due to
- * X11's convoluted inner workings */
-static const uint MAX_ENTRY_SIZE = 0xFFFF;
-
-/* Digits for printing id of each entry */
-static const uint PRINT_DIGITS = 3;
-
-/* How many bytes from each entry are to be printed when
- * looking entire history */
-static const size_t OUT_SIZE = 255;
-
-typedef struct Entry Entry;
-struct Entry {
+typedef struct Entry {
     size_t content_length;
     size_t trimmed_length;
     char *content;
     char *trimmed;
-};
+} Entry;
 
 #pragma clang diagnostic ignored "-Wpadded"
 typedef struct File {

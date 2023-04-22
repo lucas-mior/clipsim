@@ -71,8 +71,8 @@ void history_read(void) {
     DEBUG_PRINT("history_read(void) %d\n", __LINE__)
     size_t i = 0;
     int c;
-    size_t to_alloc;
-    size_t malloced;
+    size_t bytes_asked;
+    size_t bytes_malloced;
     Entry *e = NULL;
 
     lastindex = -1;
@@ -95,8 +95,8 @@ void history_read(void) {
         return;
     }
 
-    history_new_entry(to_alloc = DEF_ALLOC);
-    malloced = malloc_usable_size(entries[lastindex].content);
+    history_new_entry(bytes_asked = MINIMUM_ALLOCATION);
+    bytes_malloced = malloc_usable_size(entries[lastindex].content);
     while ((c = fgetc(history.file)) != EOF) {
         e = &entries[lastindex];
         if (c == SEPARATOR) {
@@ -104,18 +104,18 @@ void history_read(void) {
             e->content_length = i;
             e->content[i] = '\0';
 
-            history_new_entry(to_alloc = DEF_ALLOC);
-            malloced = malloc_usable_size(entries[lastindex].content);
+            history_new_entry(bytes_asked = MINIMUM_ALLOCATION);
+            bytes_malloced = malloc_usable_size(entries[lastindex].content);
             i = 0;
         } else {
-            if (i >= (malloced - 1)) {
-                to_alloc *= 2;
-                if (to_alloc > MAX_ENTRY_SIZE) {
+            if (i >= (bytes_malloced - 1)) {
+                bytes_asked *= 2;
+                if (bytes_asked > MAX_ENTRY_SIZE) {
                     fprintf(stderr, "Too long entry on history file.");
                     exit(EXIT_FAILURE);
                 }
-                e->content = xalloc(e->content, to_alloc);
-                malloced = malloc_usable_size(e->content);
+                e->content = xalloc(e->content, bytes_asked);
+                bytes_malloced = malloc_usable_size(e->content);
             }
             e->content[i] = (char) c;
             i += 1;
