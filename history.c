@@ -45,23 +45,23 @@ void history_file_find(void) {
     DEBUG_PRINT("history_find(void) %d\n", __LINE__)
     char *cache = NULL;
     const char *clipsim = "clipsim/history";
-    size_t min;
+    size_t length;
 
     if (!(cache = getenv("XDG_CACHE_HOME"))) {
         fprintf(stderr, "XDG_CACHE_HOME needs to be set. "
                         "History will not be saved.\n");
         history.name = NULL;
         return;
-    } else if ((min = strlen(cache)) >= max_file_len) {
+    } else if ((length = strlen(cache)) >= max_file_len) {
         fprintf(stderr, "Cache name too long. History will not be saved.\n");
         history.name = NULL;
         return;
     }
 
-    min = min + 1 + strlen(clipsim);
-    history.name = xalloc(NULL, min+1);
+    length = length + 1 + strlen(clipsim);
+    history.name = xalloc(NULL, length+1);
 
-    (void) snprintf(history.name, min+1, "%s/%s", cache, clipsim);
+    (void) snprintf(history.name, length+1, "%s/%s", cache, clipsim);
     return;
 }
 
@@ -162,11 +162,11 @@ bool history_save(void) {
     }
 }
 
-int32 history_repeated_index(char *save, size_t min) {
-    DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, save, min)
+int32 history_repeated_index(char *save, size_t length) {
+    DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, save, length)
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
-        if (e->len == min) {
+        if (e->len == length) {
             if (!strcmp(e->data, save)) {
                 return i;
             }
