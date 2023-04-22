@@ -159,12 +159,12 @@ bool history_save(void) {
     }
 }
 
-int32 history_repeated_index(char *save, size_t length) {
-    DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, save, length)
+int32 history_repeated_index(char *data, size_t length) {
+    DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, data, length)
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->len == length) {
-            if (!strcmp(e->data, save)) {
+            if (!strcmp(e->data, data)) {
                 return i;
             }
         }
@@ -172,8 +172,8 @@ int32 history_repeated_index(char *save, size_t length) {
     return -1;
 }
 
-void history_append(char *save, ulong len) {
-    DEBUG_PRINT("history_append(%.*s, %lu)\n", 20, save, len)
+void history_append(char *data, ulong len) {
+    DEBUG_PRINT("history_append(%.*s, %lu)\n", 20, data, len)
     int32 oldindex;
     Entry *e;
 
@@ -182,27 +182,27 @@ void history_append(char *save, ulong len) {
         return;
     }
 
-    if (!text_valid_content((uchar *) save, len))
+    if (!text_valid_content((uchar *) data, len))
         return;
 
-    save[len] = '\0';
+    data[len] = '\0';
 
-    if (save[len-1] == '\n') {
-        save[len-1] = '\0';
+    if (data[len-1] == '\n') {
+        data[len-1] = '\0';
         len -= 1;
     }
 
-    if ((oldindex = history_repeated_index(save, len)) >= 0) {
+    if ((oldindex = history_repeated_index(data, len)) >= 0) {
         fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
         if (oldindex != lastindex)
             history_reorder(oldindex);
-        free(save);
+        free(data);
         return;
     }
 
     history_new_entry(0);
     e = &entries[lastindex];
-    e->data = save;
+    e->data = data;
     e->data[len] = '\0';
     e->len = len;
 
