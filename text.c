@@ -42,8 +42,8 @@ void text_bundle_spaces(Entry *e) {
             && ((*(c+1) == ' ') || (*(c+1) == '\t') || (*(c+1) == '\n')))
             c++;
 
-       *out++ = *c++;
-       e->olen += 1;
+        *out++ = *c++;
+        e->olen += 1;
     }
     *out++ = '\0';
 

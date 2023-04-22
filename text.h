@@ -14,14 +14,11 @@
 /* You should have received a copy of the GNU General Public License */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
+#include <stdbool.h>
+#include "clipsim.h"
+
 #ifndef TEXT_H
 #define TEXT_H
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "clipsim.h"
-#include "util.h"
 
 void text_bundle_spaces(Entry *);
 bool text_valid_content(uchar *, ulong);
