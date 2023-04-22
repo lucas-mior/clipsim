@@ -107,12 +107,12 @@ void history_read(void) {
         } else {
             if (i >= (malloced - 1)) {
                 to_alloc *= 2;
-                e->data = xalloc(e->data, to_alloc);
-                malloced = malloc_usable_size(e->data);
                 if (to_alloc > MAX_ENTRY_SIZE) {
                     fprintf(stderr, "Too long entry on history file.");
                     exit(EXIT_FAILURE);
                 }
+                e->data = xalloc(e->data, to_alloc);
+                malloced = malloc_usable_size(e->data);
             }
             e->data[i] = (char) c;
             i += 1;
