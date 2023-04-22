@@ -4,7 +4,7 @@ objs = ipc.o util.o clipboard.o history.o text.o send_signal.o main.o
 
 ldlibs = $(LDLIBS) -lX11 -lXfixes -pthread
 
-all: clipsim
+all: release
 
 .PHONY: all clean install uninstall
 .SUFFIXES:
@@ -12,12 +12,17 @@ all: clipsim
 
 CC=clang
 
+release: cflags += -O2
+release: clipsim
+
+debug: cflags += -DCLIPSIM_DEBUG -g
+debug: clean
+debug: clipsim
+
 clipsim: $(objs)
 	ctags --kinds-C=+l *.h *.c
 	vtags.sed tags > .tags.vim
-	$(CC) -O2 -Weverything $(cflags) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
-
-# CLIPSIM_DEBUG=-DCLIPSIM_DEBUG
+	$(CC) -Weverything $(cflags) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
 
 $(objs): Makefile clipsim.h
 
@@ -30,7 +35,7 @@ send_signal.o: clipsim.h send_signal.h
 main.o: clipsim.h ipc.h clipboard.h util.h history.h send_signal.h
 
 .c.o:
-	$(CC) -O2 -Weverything $(cflags) $(cppflags) -c -o $@ $< $(CLIPSIM_DEBUG)
+	$(CC) -Weverything $(cflags) $(cppflags) -c -o $@ $<
 
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
