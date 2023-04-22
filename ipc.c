@@ -176,9 +176,12 @@ void ipc_daemon_pipe_entries(void) {
     DEBUG_PRINT("ipc_daemon_pipe_entries(void) %d\n", __LINE__)
     static char buffer[BUFSIZ];
     size_t copied = 0;
+    int32 lastindex;
 
     content_fifo.file = fopen(content_fifo.name, "w");
     setvbuf(content_fifo.file, buffer, _IOFBF, BUFSIZ);
+
+    lastindex = history_lastindex();
 
     if (lastindex == -1) {
         fprintf(stderr, "Clipboard history empty. Start copying text.\n");
@@ -209,9 +212,12 @@ void ipc_daemon_pipe_entries(void) {
 void ipc_daemon_pipe_id(int32 id) {
     DEBUG_PRINT("ipc_daemon_pipe_id(%d) %d\n", id)
     Entry *e;
+    int32 lastindex;
 
     if (!openf(&content_fifo, O_WRONLY))
         return;
+
+    lastindex = history_lastindex();
 
     if (lastindex == -1) {
         fprintf(stderr, "Clipboard history empty. Start copying text.\n");

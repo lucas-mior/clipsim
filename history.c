@@ -40,6 +40,11 @@ static void history_new_entry(size_t);
 static void history_reorder(int32);
 static void history_clean(void);
 File history = { .file = NULL, .fd = -1, .name = NULL };
+static int32 lastindex;
+
+int32 history_lastindex(void) {
+    return lastindex;
+}
 
 void history_file_find(void) {
     DEBUG_PRINT("history_find(void) %d\n", __LINE__)
@@ -70,6 +75,7 @@ void history_read(void) {
     size_t malloced;
     Entry *e = NULL;
 
+    lastindex = -1;
     history_file_find();
     if (!history.name) {
         fprintf(stderr, "History file name unresolved. "

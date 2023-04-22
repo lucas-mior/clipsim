@@ -31,7 +31,6 @@
 
 char *progname;
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
-int32 lastindex;
 pthread_mutex_t lock;
 
 static void usage(FILE *) __attribute__((noreturn));
@@ -100,7 +99,6 @@ void launch_daemon(void) {
         return;
     }
 
-    lastindex = -1;
     history_read();
 
     ipc_error = pthread_create(&ipc_thread, NULL,

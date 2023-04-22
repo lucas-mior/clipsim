@@ -20,6 +20,7 @@
 #ifndef HIST_H
 #define HIST_H
 
+int32 history_lastindex(void);
 void history_read(void);
 void history_append(char *, ulong);
 bool history_save(void);

@@ -85,7 +85,6 @@ typedef struct File {
 
 extern char *progname;
 extern Entry entries[HISTORY_BUFFER_SIZE];
-extern int32 lastindex;
 extern pthread_mutex_t lock;
 
 #endif /* CLIPSIM_H */
