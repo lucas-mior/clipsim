@@ -23,7 +23,8 @@
 #include "text.h"
 
 void text_bundle_spaces(Entry *e) {
-    DEBUG_PRINT("text_bundle_spaces(%.*s, %zu)\n", 30, e->content, e->content_length)
+    DEBUG_PRINT("text_bundle_spaces(%.*s, %zu)\n", 
+                30, e->content, e->content_length)
     char *out;
     char temp = '\0';
     char *c = e->content;
@@ -60,7 +61,7 @@ void text_bundle_spaces(Entry *e) {
 }
 
 bool text_valid_content(uchar *data, ulong len) {
-    DEBUG_PRINT("text_valid_content(%.*s, %lu) %d\n", 20, data, len)
+    DEBUG_PRINT("text_valid_content(%.*s, %lu)\n", 20, data, len)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
     if (len > ENTRY_MAX_LENGTH) {

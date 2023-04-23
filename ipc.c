@@ -175,7 +175,7 @@ void ipc_client_check_save(void) {
 void ipc_daemon_pipe_entries(void) {
     DEBUG_PRINT("ipc_daemon_pipe_entries(void) %d\n", __LINE__)
     static char buffer[BUFSIZ];
-    size_t copied = 0;
+    size_t w = 0;
     int32 lastindex;
 
     content_fifo.file = fopen(content_fifo.name, "w");
@@ -196,8 +196,8 @@ void ipc_daemon_pipe_entries(void) {
             text_bundle_spaces(e);
 
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
-        copied = fwrite(e->trimmed, 1, (e->trimmed_length+1), content_fifo.file);
-        if (copied < (e->trimmed_length+1)) {
+        w = fwrite(e->trimmed, 1, (e->trimmed_length+1), content_fifo.file);
+        if (w < (e->trimmed_length+1)) {
             fprintf(stderr, "Error writing to client fifo.\n");
             goto close;
         }
@@ -210,7 +210,7 @@ void ipc_daemon_pipe_entries(void) {
 }
 
 void ipc_daemon_pipe_id(int32 id) {
-    DEBUG_PRINT("ipc_daemon_pipe_id(%d) %d\n", id)
+    DEBUG_PRINT("ipc_daemon_pipe_id(%d)\n", id)
     Entry *e;
     int32 lastindex;
 
@@ -227,7 +227,8 @@ void ipc_daemon_pipe_id(int32 id) {
     }
 
     e = &entries[id];
-    dprintf(content_fifo.fd, "Lenght: \033[31;1m%lu\n\033[0;m", e->content_length);
+    dprintf(content_fifo.fd,
+            "Lenght: \033[31;1m%lu\n\033[0;m", e->content_length);
     dprintf(content_fifo.fd, "%s", e->content);
 
     close:

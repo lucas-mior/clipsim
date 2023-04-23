@@ -306,7 +306,7 @@ void history_delete(int32 id) {
 }
 
 void history_reorder(int32 oldindex) {
-    DEBUG_PRINT("history_reorder(%d) %d\n", oldindex)
+    DEBUG_PRINT("history_reorder(%d)\n", oldindex)
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex+1], 
             (size_t) (lastindex - oldindex)*sizeof(Entry));
