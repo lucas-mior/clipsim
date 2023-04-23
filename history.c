@@ -203,7 +203,6 @@ void history_append(char *content, ulong length) {
     lastindex += 1;
     e = &entries[lastindex];
     e->content = content;
-    e->content[length] = '\0';
     e->content_length = length;
 
     if (lastindex+1 >= (int32) HISTORY_BUFFER_SIZE) {
