@@ -86,7 +86,7 @@ void *clipboard_daemon_watch(void *unused) {
     while (true) {
         char *save = NULL;
         ulong length;
-        nanosleep(&pause , NULL);
+        nanosleep(&pause, NULL);
         (void) XNextEvent(DISPLAY, &XEV);
         pthread_mutex_lock(&lock);
 
