@@ -67,7 +67,7 @@ void history_file_find(void) {
 
 void history_read(void) {
     DEBUG_PRINT("history_read(void) %d\n", __LINE__)
-    char buffer[BUFSIZ + BUFSIZ/2];
+    char buffer[BUFSIZ + ENTRY_MAX_LENGTH];
     size_t r;
     char *p;
     char *begin;
