@@ -103,7 +103,7 @@ void history_read(void) {
                 begin = p+1;
             }
         }
-        if (*(p-1) != '\0') {
+        if (r > 0 && *(p-1) != '\0') {
             while ((c = fgetc(history.file)) != SEPARATOR)
                 *p++ = (char) c;
             *p = '\0';
