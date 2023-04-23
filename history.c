@@ -98,7 +98,8 @@ void history_read(void) {
                 lastindex += 1;
                 e = &entries[lastindex];
                 e->content_length = p - begin;
-                e->content = strdup(begin);
+                e->content = xalloc(NULL, e->content_length+1);
+                strcpy(e->content, begin);
 
                 begin = p+1;
             }
@@ -111,7 +112,8 @@ void history_read(void) {
             lastindex += 1;
             e = &entries[lastindex];
             e->content_length = p - begin;
-            e->content = strdup(begin);
+            e->content = xalloc(NULL, e->content_length+1);
+            strcpy(e->content, begin);
         }
         if (lastindex > (int32) HISTORY_KEEP_SIZE)
             break;
