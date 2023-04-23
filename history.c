@@ -87,7 +87,6 @@ void history_read(void) {
         return;
     }
 
-    begin = buffer;
     do {
         r = fread(buffer, 1, BUFSIZ, history.file);
         begin = buffer;
