@@ -28,11 +28,11 @@ void text_bundle_spaces(Entry *e) {
     char temp = '\0';
     char *c = e->content;
 
-    out = e->trimmed = xalloc(NULL, MIN(e->content_length+1, OUT_SIZE+1));
+    out = e->trimmed = xalloc(NULL, MIN(e->content_length+1, TRIMMED_SIZE+1));
 
-    if (e->content_length >= OUT_SIZE) {
-        temp = e->content[OUT_SIZE];
-        e->content[OUT_SIZE] = '\0';
+    if (e->content_length >= TRIMMED_SIZE) {
+        temp = e->content[TRIMMED_SIZE];
+        e->content[TRIMMED_SIZE] = '\0';
     }
 
     while ((*c == ' ') || (*c == '\t') || (*c == '\n'))
@@ -48,7 +48,7 @@ void text_bundle_spaces(Entry *e) {
     *out++ = '\0';
 
     if (temp) {
-        e->content[OUT_SIZE] = temp;
+        e->content[TRIMMED_SIZE] = temp;
         temp = '\0';
     }
 
@@ -63,7 +63,7 @@ bool text_valid_content(uchar *data, ulong len) {
     DEBUG_PRINT("text_valid_content(%.*s, %lu) %d\n", 20, data, len)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
-    if (len > BUFSIZ/2) {
+    if (len > ENTRY_MAX_LENGTH) {
         printf("Too large entry. This wont' be added to history.\n");
         return false;
     }

@@ -32,13 +32,13 @@
 
 static volatile bool recovered = false;
 static const char SEPARATOR = 0x01;
+File history = { .file = NULL, .fd = -1, .name = NULL };
+static int32 lastindex;
 
 static void history_file_find(void);
 static int32 history_repeated_index(char *, size_t);
 static void history_reorder(int32);
 static void history_clean(void);
-File history = { .file = NULL, .fd = -1, .name = NULL };
-static int32 lastindex;
 
 int32 history_lastindex(void) {
     return lastindex;
