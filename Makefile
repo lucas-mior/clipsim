@@ -12,17 +12,17 @@ all: release
 
 CC=clang
 
-release: cflags += -O2
+release: cflags += -O2 -Weverything
 release: clipsim
 
-debug: cflags += -DCLIPSIM_DEBUG -g
+debug: cflags += -DCLIPSIM_DEBUG -g -Wall -Wextra
 debug: clean
 debug: clipsim
 
 clipsim: $(objs)
 	ctags --kinds-C=+l *.h *.c
 	vtags.sed tags > .tags.vim
-	$(CC) -Weverything $(cflags) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
+	$(CC) $(cflags) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
 
 $(objs): Makefile clipsim.h
 
@@ -35,7 +35,7 @@ send_signal.o: clipsim.h send_signal.h
 main.o: clipsim.h ipc.h clipboard.h util.h history.h send_signal.h
 
 .c.o:
-	$(CC) -Weverything $(cflags) $(cppflags) -c -o $@ $<
+	$(CC) $(cflags) $(cppflags) -c -o $@ $<
 
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
