@@ -96,7 +96,7 @@ void history_read(void) {
 
                 lastindex += 1;
                 e = &entries[lastindex];
-                e->content_length = p - begin;
+                e->content_length = (size_t) (p - begin);
                 e->content = xalloc(NULL, e->content_length+1);
                 strcpy(e->content, begin);
 
@@ -110,7 +110,7 @@ void history_read(void) {
 
             lastindex += 1;
             e = &entries[lastindex];
-            e->content_length = p - begin;
+            e->content_length = (size_t) (p - begin);
             e->content = xalloc(NULL, e->content_length+1);
             strcpy(e->content, begin);
         }
