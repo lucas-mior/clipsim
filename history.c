@@ -104,8 +104,11 @@ void history_read(void) {
             }
         }
         if (r > 0 && *(p-1) != '\0') {
-            while ((c = fgetc(history.file)) != SEPARATOR)
+            while ((c = fgetc(history.file)) != EOF) {
+                if (c == SEPARATOR)
+                    break;
                 *p++ = (char) c;
+            }
             *p = '\0';
 
             lastindex += 1;
