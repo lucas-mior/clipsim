@@ -37,6 +37,7 @@ static void launch_daemon(void);
 
 int main(int argc, char *argv[]) {
     int32 id;
+    bool spell = false;
 
     signal(SIGSEGV, segv_handler);
     signal(SIGINT, int_handler);
@@ -47,6 +48,7 @@ int main(int argc, char *argv[]) {
 
     for (int c = PRINT; c <= HELP; c += 1) {
         if (!strcmp(argv[1], commands[c])) {
+            spell = true;
             switch (c) {
             case PRINT:
                 ipc_client_speak_fifo(PRINT, 0);
@@ -71,6 +73,9 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    if (!spell)
+        usage(stderr);
 
     return 0;
 }
