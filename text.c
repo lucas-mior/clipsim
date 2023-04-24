@@ -36,11 +36,10 @@ void text_bundle_spaces(Entry *e) {
         e->content[TRIMMED_SIZE] = '\0';
     }
 
-    while ((*c == ' ') || (*c == '\t') || (*c == '\n'))
+    while (IS_SPACE(*c))
         c++;
     while (*c != '\0') {
-        while (((*c == ' ') || (*c == '\t') || (*c == '\n'))
-            && ((*(c+1) == ' ') || (*(c+1) == '\t') || (*(c+1) == '\n')))
+        while (IS_SPACE(*c) && IS_SPACE(*(c+1)))
             c++;
 
         *out++ = *c++;
@@ -73,9 +72,7 @@ bool text_valid_content(uchar *data, ulong len) {
         uchar *aux = data;
         do {
             aux++;
-        } while ((*(aux-1) == ' ')
-              || (*(aux-1) == '\t')
-              || (*(aux-1) == '\n'));
+        } while (IS_SPACE(*(aux-1)));
         if (*(aux-1) == '\0') {
             fprintf(stderr, "Only white space copied to clipboard. "
                             "This won't be added to history.\n");

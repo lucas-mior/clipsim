@@ -23,6 +23,7 @@
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n'))
 
 #ifdef CLIPSIM_DEBUG
 #define DEBUG_PRINT(s, ...) printf(s, __VA_ARGS__);
