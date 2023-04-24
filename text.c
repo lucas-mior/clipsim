@@ -44,9 +44,9 @@ void text_bundle_spaces(Entry *e) {
             c++;
 
         *out++ = *c++;
-        e->trimmed_length += 1;
     }
     *out++ = '\0';
+    e->trimmed_length = (size_t) (out - e->trimmed);
 
     if (temp) {
         e->content[TRIMMED_SIZE] = temp;
