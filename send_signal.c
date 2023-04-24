@@ -48,38 +48,37 @@ void send_signal(char *executable, int signum) {
 }
 
 pid_t check_pid(char *executable, char *number) {
-    int pid;
-    static char pid_stat[256];
     static char buffer[256];
-    char *pbuf;
-    FILE *stat_file;
+    int pid;
+    FILE *stat;
+    char *command;
 
     if ((pid = atoi(number)) <= 0)
         return 0;
 
-    snprintf(pid_stat, sizeof(pid_stat), "/proc/%s/stat", number);
-    pid_stat[255] = '\0';
-    if (!(stat_file = fopen(pid_stat, "r"))) {
-        fprintf(stderr, "Error opening %s: %s\n", pid_stat, strerror(errno));
+    snprintf(buffer, sizeof(buffer), "/proc/%s/stat", number);
+    buffer[255] = '\0';
+    if (!(stat = fopen(buffer, "r"))) {
+        fprintf(stderr, "Error opening %s: %s\n", buffer, strerror(errno));
         return 0;
     }
-    if (!(pbuf = fgets(buffer, sizeof(buffer), stat_file))) {
-        fprintf(stderr, "Error reading %s: %s\n", pid_stat, strerror(errno));
+    if (!fgets(buffer, sizeof(buffer), stat)) {
+        fprintf(stderr, "Error reading stat file: %s\n", strerror(errno));
         goto close;
     }
-    if (!strtok(buffer, "(") || !(pbuf = strtok(NULL, ")"))) {
-        fprintf(stderr, "Stat file for pid %d misses "
+    if (!strtok(buffer, "(") || !(command = strtok(NULL, ")"))) {
+        fprintf(stderr, "Stat file for pid %s misses "
                         "command name between parenthesis: %s\n",
-                        pid, buffer);
+                        number, buffer);
         goto close;
     }
-    if (!strcmp(pbuf, executable)) {
-        fclose(stat_file);
+    if (!strcmp(command, executable)) {
+        fclose(stat);
         return pid;
     }
 
     close:
-    fclose(stat_file);
+    fclose(stat);
     return 0;
 }
 
