@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
         usage(stderr);
 
     for (int c = PRINT; c <= HELP; c += 1) {
-        if (!strcmp(argv[1], commands[c])) {
+        if (!strcmp(argv[1], commands[c].name)) {
             spell = true;
             switch (c) {
             case PRINT:
@@ -84,13 +84,10 @@ void usage(FILE *stream) {
     DEBUG_PRINT("usage(%p)\n", (void *) stream)
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
-    fprintf(stream, " %-*s : spawn daemon\n", 8, commands[DAEMON]);
-    fprintf(stream, " %-*s : print history\n", 8, commands[PRINT]);
-    fprintf(stream, " %-*s : print entry number <n>\n", 8, commands[INFO]);
-    fprintf(stream, " %-*s : copy entry number <n> to clipboard\n", 8,  commands[COPY]);
-    fprintf(stream, " %-*s : delete entry number <n> from history\n", 8, commands[DELETE]);
-    fprintf(stream, " %-*s : save history to $XDG_CACHE_HOME/clipsim/history\n", 8, commands[SAVE]);
-    fprintf(stream, " %-*s : print this help message to stdout\n", 8, commands[HELP]);
+    for (int i = PRINT; i <= HELP; i += 1) {
+        fprintf(stream, " %-*s : %s\n", 7, 
+                commands[i].name, commands[i].description);
+    }
     exit(stream != stdout);
 }
 

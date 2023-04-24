@@ -37,7 +37,7 @@
 #define PRINT_DIGITS 3
 #define TRIMMED_SIZE 255
 
-typedef enum Command {
+enum {
     PRINT = 0,
     INFO,
     COPY,
@@ -45,16 +45,21 @@ typedef enum Command {
     SAVE,
     DAEMON,
     HELP,
+};
+
+typedef struct Command {
+    const char *name;
+    const char *description;
 } Command;
 
-static const char *commands[] = {
-    [PRINT] = "print",
-    [INFO] = "info",
-    [COPY] = "copy",
-    [DELETE] = "delete",
-    [SAVE] = "save",
-    [DAEMON] = "daemon",
-    [HELP] = "help",
+static const Command commands[] = {
+    [PRINT]  = {"print", "print history" },
+    [INFO]   = {"info", "print entry number <n>" },
+    [COPY]   = {"copy", "copy entry number <n>" },
+    [DELETE] = {"delete", "delete entry number <n>" },
+    [SAVE]   = {"save", "save history to $XDG_CACHE_HOME/clipsim/history" },
+    [DAEMON] = {"daemon", "spawn daemon" },
+    [HELP]   = {"help", "print help message" },
 };
 
 typedef unsigned char uchar;
