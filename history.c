@@ -14,6 +14,7 @@
 /* You should have received a copy of the GNU General Public License */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
+#include <linux/limits.h>
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <errno.h>
@@ -45,6 +46,7 @@ int32 history_lastindex(void) {
 }
 
 void history_file_find(void) {
+    static char buffer[PATH_MAX];
     DEBUG_PRINT("history_find(void) %d\n", __LINE__)
     char *cache = NULL;
     const char *clipsim = "clipsim/history";
@@ -59,9 +61,15 @@ void history_file_find(void) {
 
     length = strlen(cache);
     length += 1 + strlen(clipsim);
-    history.name = xalloc(NULL, length+1);
+    if (length > (PATH_MAX - 1)) {
+        fprintf(stderr, "XDG_CACHE_HOME is too long. "
+                        "History will not be saved.\n");
+        history.name = NULL;
+        return;
+    }
 
-    (void) snprintf(history.name, length+1, "%s/%s", cache, clipsim);
+    (void) snprintf(buffer, sizeof(buffer), "%s/%s", cache, clipsim);
+    history.name = buffer;
     return;
 }
 
