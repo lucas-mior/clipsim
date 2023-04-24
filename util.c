@@ -79,10 +79,8 @@ void segv_handler(int unused) {
 }
 
 void int_handler(int unused) {
-    extern char *history_file;
     (void) unused;
     history_save();
-    free(history.file);
     exit(EXIT_FAILURE);
 }
 
