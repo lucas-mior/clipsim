@@ -75,8 +75,7 @@ void *clipboard_daemon_watch(void *unused) {
     TARGET    = XInternAtom(DISPLAY, "TARGETS", False);
 
     color = BlackPixel(DISPLAY, DefaultScreen(DISPLAY));
-    WINDOW = XCreateSimpleWindow(DISPLAY, DefaultRootWindow(DISPLAY),
-                                 0,0, 1,1, 0, color, color);
+    WINDOW = XCreateSimpleWindow(DISPLAY, ROOT, 0,0, 1,1, 0, color, color);
 
     XFixesSelectSelectionInput(DISPLAY, ROOT, CLIPBOARD, (ulong)
                                XFixesSetSelectionOwnerNotifyMask
