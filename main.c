@@ -77,16 +77,15 @@ int main(int argc, char *argv[]) {
 
 void usage(FILE *stream) {
     DEBUG_PRINT("usage(%p)\n", (void *) stream)
-    fprintf(stream,
-            "usage: %s COMMAND [n]\n"
-            "Available commands:\n"
-            "    daemon : spawn daemon\n"
-            "     print : print history\n"
-            "  info <n> : print entry number <n>\n"
-            "  copy <n> : copy entry number <n> to clipboard\n"
-            "delete <n> : delete entry number <n> from history\n"
-            "      save : save history to $XDG_CACHE_HOME/clipsim/history\n"
-            "      help : print this help message to stdout\n", "clipsim");
+    fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
+    fprintf(stream, "Available commands:\n");
+    fprintf(stream, " %s : spawn daemon\n", commands[DAEMON]);
+    fprintf(stream, " %s : print history\n", commands[PRINT]);
+    fprintf(stream, " %s : print entry number <n>\n", commands[INFO]);
+    fprintf(stream, " %s : copy entry number <n> to clipboard\n", commands[COPY]);
+    fprintf(stream, " %s : delete entry number <n> from history\n", commands[DELETE]);
+    fprintf(stream, " %s : save history to $XDG_CACHE_HOME/clipsim/history\n", commands[SAVE]);
+    fprintf(stream, " %s : print this help message to stdout\n", commands[HELP]);
     exit(stream != stdout);
 }
 
