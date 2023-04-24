@@ -26,38 +26,38 @@
 
 static pid_t check_pid(char *, char*);
 
-void send_signal(char *progname, int signum) {
-    DIR *proc_dir;
-    struct dirent *proc_dirent;
+void send_signal(char *executable, int signum) {
+    DIR *processes;
+    struct dirent *program;
     pid_t pid;
 
-    if (!(proc_dir = opendir("/proc"))) {
+    if (!(processes = opendir("/proc"))) {
         fprintf(stderr, "Error opening /proc: %s\n", strerror(errno));
         return;
     }
 
-    while ((proc_dirent = readdir(proc_dir))) {
-        if ((pid = check_pid(progname, proc_dirent->d_name))) {
+    while ((program = readdir(processes))) {
+        if ((pid = check_pid(executable, program->d_name))) {
             kill(pid, SIGRTMIN+signum);
             break;
         }
     }
 
-    closedir(proc_dir);
+    closedir(processes);
     return;
 }
 
-pid_t check_pid(char *progname, char *name) {
+pid_t check_pid(char *executable, char *number) {
     int pid;
     static char pid_stat[256];
     static char buffer[256];
     char *pbuf;
     FILE *stat_file;
 
-    if ((pid = atoi(name)) <= 0)
+    if ((pid = atoi(number)) <= 0)
         return 0;
 
-    snprintf(pid_stat, sizeof(pid_stat), "/proc/%s/stat", name);
+    snprintf(pid_stat, sizeof(pid_stat), "/proc/%s/stat", number);
     pid_stat[255] = '\0';
     if (!(stat_file = fopen(pid_stat, "r"))) {
         fprintf(stderr, "Error opening %s: %s\n", pid_stat, strerror(errno));
@@ -73,7 +73,7 @@ pid_t check_pid(char *progname, char *name) {
                         pid, buffer);
         goto close;
     }
-    if (!strcmp(pbuf, progname)) {
+    if (!strcmp(pbuf, executable)) {
         fclose(stat_file);
         return pid;
     }

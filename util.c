@@ -44,7 +44,7 @@ void *xcalloc(size_t nmemb, size_t size) {
     DEBUG_PRINT("*xcalloc(%zu, %zu)\n", nmemb, size)
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
-        fprintf(stderr, "Failed to allocate %zu members of %zu bytes each.\n", 
+        fprintf(stderr, "Failed to allocate %zu members of %zu bytes each.\n",
                         nmemb, size);
         exit(1);
     }

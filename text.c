@@ -23,7 +23,7 @@
 #include "text.h"
 
 void text_bundle_spaces(Entry *e) {
-    DEBUG_PRINT("text_bundle_spaces(%.*s, %zu)\n", 
+    DEBUG_PRINT("text_bundle_spaces(%.*s, %zu)\n",
                 30, e->content, e->content_length)
     char *out;
     char temp = '\0';
@@ -83,7 +83,7 @@ bool text_valid_content(uchar *data, ulong len) {
         }
     }
 
-    if (len <= 2) { /* Check if it is a single ascii character 
+    if (len <= 2) { /* Check if it is a single ascii character
                        possibly followed by new line */
         if ((' ' <= *data) && (*data <= '~')) {
             if (len == 1 || (*(data+1) == '\n')) {

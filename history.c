@@ -56,7 +56,7 @@ void history_file_find(void) {
         history.name = NULL;
         return;
     }
-     
+
     length = strlen(cache);
     length += 1 + strlen(clipsim);
     history.name = xalloc(NULL, length+1);
@@ -191,7 +191,7 @@ void history_append(char *content, ulong length) {
 
     content[length] = '\0';
 
-    if (content[length-1] == '\n') {
+    while (content[length-1] == '\n') {
         content[length-1] = '\0';
         length -= 1;
     }
@@ -299,7 +299,7 @@ void history_delete(int32 id) {
         free(e->trimmed);
 
     if (id < lastindex) {
-        memmove(&entries[id], &entries[id+1], 
+        memmove(&entries[id], &entries[id+1],
                 (size_t) (lastindex - id)*sizeof(Entry));
         memset(&entries[lastindex], 0, sizeof(Entry));
     }
@@ -311,7 +311,7 @@ void history_delete(int32 id) {
 void history_reorder(int32 oldindex) {
     DEBUG_PRINT("history_reorder(%d)\n", oldindex)
     Entry aux = entries[oldindex];
-    memmove(&entries[oldindex], &entries[oldindex+1], 
+    memmove(&entries[oldindex], &entries[oldindex+1],
             (size_t) (lastindex - oldindex)*sizeof(Entry));
     memmove(&entries[lastindex], &aux, sizeof(Entry));
     return;
@@ -324,7 +324,6 @@ void history_clean(void) {
         free(e->content);
         if (e->trimmed != e->content)
             free(e->trimmed);
-
     }
     memmove(&entries[0], &entries[HISTORY_KEEP_SIZE],
             HISTORY_KEEP_SIZE*sizeof(Entry));

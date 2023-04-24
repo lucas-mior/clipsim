@@ -141,7 +141,7 @@ GetClipboardResult clipboard_get_clipboard(char **save, ulong *length) {
     if (clipboard_check_target(UTF8)) {
         XGetWindowProperty(DISPLAY, WINDOW, PROPERTY, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
-                           &actual_format_return, &nitems_return, 
+                           &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
         if (return_atom == INCREMENT) {
             return LARGE;

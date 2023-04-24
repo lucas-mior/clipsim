@@ -185,7 +185,7 @@ void ipc_daemon_pipe_entries(void) {
 
     if (lastindex == -1) {
         fprintf(stderr, "Clipboard history empty. Start copying text.\n");
-        dprintf(content_fifo.fd, 
+        dprintf(content_fifo.fd,
                 "000 Clipboard history empty. Start copying text.\n");
         goto close;
     }
@@ -221,7 +221,7 @@ void ipc_daemon_pipe_id(int32 id) {
 
     if (lastindex == -1) {
         fprintf(stderr, "Clipboard history empty. Start copying text.\n");
-        dprintf(content_fifo.fd, 
+        dprintf(content_fifo.fd,
                 "000 Clipboard history empty. Start copying text.\n");
         goto close;
     }
