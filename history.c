@@ -42,7 +42,7 @@ static int32 history_repeated_index(char *, size_t);
 static void history_reorder(int32);
 static void history_clean(void);
 static void free_entry(Entry *);
-static void history_save_image(char *, ulong);
+static void history_save_image(char **, ulong *);
 
 int32 history_lastindex(void) {
     return lastindex;
@@ -207,7 +207,7 @@ int32 history_repeated_index(char *content, size_t length) {
     return -1;
 }
 
-void history_save_image(char *content, ulong length) {
+void history_save_image(char **content, ulong *length) {
     time_t t = time(NULL);
     int fp;
     ssize_t w = 0;
@@ -224,15 +224,16 @@ void history_save_image(char *content, ulong length) {
     }
 
     do {
-        w = write(fp, content + copied, length);
+        w = write(fp, *(content + copied), *length);
         if (w <= 0)
             break;
         copied += (size_t) w;
-        length -= (size_t) w;
-    } while (length > 0);
-    length = strlen(buffer);
-    content = xalloc(content, length+1);
-    strcpy(content, buffer);
+        *length -= (size_t) w;
+    } while (*length > 0);
+    *length = strlen(buffer);
+    *content = xalloc(*content, *length+1);
+    strcpy(*content, buffer);
+    return;
 }
 
 void history_append(char *content, ulong length) {
@@ -254,7 +255,7 @@ void history_append(char *content, ulong length) {
             length -= 1;
         }
     } else if (kind == IMAGE) {
-        history_save_image(content, length);
+        history_save_image(&content, &length);
     } else {
         return;
     }
