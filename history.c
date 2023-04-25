@@ -279,49 +279,55 @@ void history_recover(int32 id) {
     pid_t child = -1;
     int fd[2];
     Entry *e;
+    char **argv;
+    bool istext;
 
-    if (pipe(fd)){
-        perror("pipe failed");
+    if (id < 0)
+        id = lastindex + id + 1;
+    if (lastindex < 0) {
+        fprintf(stderr, "Clipboard history empty. Start copying text.\n");
         return;
+    }
+    if (id > lastindex) {
+        fprintf(stderr, "Invalid index: %d\n", id);
+        recovered = true;
+        return;
+    }
+
+    e = &entries[id];
+    istext = (e->image_path == NULL);
+    if (istext) {
+        if (pipe(fd)){
+            perror("pipe failed");
+            return;
+        }
     }
 
     switch ((child = fork())) {
         case 0:
-            close(fd[1]);
-            dup2(fd[0], STDIN_FILENO);
-            close(fd[0]);
-            execlp("/usr/bin/xsel", "xsel", "-b", NULL);
+            if (istext) {
+                close(fd[1]);
+                dup2(fd[0], STDIN_FILENO);
+                close(fd[0]);
+                execlp("/usr/bin/xsel", "xsel", "-b", NULL);
+            } else {
+                execlp("/usr/bin/xclip", "xclip", "-selection", "clipboard",
+                       "-target", "image/png", e->image_path, NULL);
+            }
             fprintf(stderr, "Failed to exec(): %s", strerror(errno));
             return;
         case -1:
             fprintf(stderr, "Failed to fork(): %s", strerror(errno));
             return;
         default:
-            close(fd[0]);
+            if (istext)
+                close(fd[0]);
     }
 
-    if (id < 0)
-        id = lastindex + id + 1;
-
-    if (lastindex < 0) {
-        fprintf(stderr, "Clipboard history empty. Start copying text.\n");
-        dprintf(fd[1], "Clipboard history empty. Start copying text.\n");
+    if (istext) {
+        dprintf(fd[1], "%s", e->content);
         close(fd[1]);
-        wait(NULL);
-        return;
     }
-
-    if (id > lastindex) {
-        fprintf(stderr, "Invalid index: %d\n", id);
-        close(fd[1]);
-        kill(child, SIGKILL);
-        recovered = true;
-        return;
-    }
-
-    e = &entries[id];
-    dprintf(fd[1], "%s", e->content);
-    close(fd[1]);
     wait(NULL);
 
     if (id != lastindex)
