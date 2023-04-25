@@ -3,8 +3,9 @@
 clipsim is a simple X11 clipboard manager written in C.
 It retrives clipboard text when the window owning it is closed,
 and keeps a clipboard history.
-Images are ignored.
-The primary and secondary selection buffers are also ignored.
+If an image is detected, it is saved in `/tmp`, and the respective
+filename is saved on history.
+The primary and secondary selection buffers are ignored.
 When copying text equal to some previous text, the history order
 is updated so that each entry is unique in the history.
 
@@ -73,9 +74,15 @@ In order to print an specific entry from history:
 $ clipsim info <N>
 ```
 
+## Images
+Clipsim stores the images in `/tmp`, and `clipsim info`
+will show them using `stiv` or `chafa`.
+When retrieving images from the history, `xclip` is used.
+
 ## Instalation
-Make sure you have [libxfixes](https://gitlab.freedesktop.org/xorg/lib/libxfixes)
-and [xsel](https://github.com/kfish/xsel) installed.
+Make sure you have [libxfixes](https://gitlab.freedesktop.org/xorg/lib/libxfixes),
+[xsel](https://github.com/kfish/xsel) and 
+[xclip](https://github.com/astrand/xclip) installed.
 ```
 $ git clone https://codeberg.org/lucas.mior/clipsim.git clipsim
 $ cd clipsim
