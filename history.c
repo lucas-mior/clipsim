@@ -394,8 +394,11 @@ void free_entry(Entry *e) {
     free(e->content);
     if (e->trimmed != e->content)
         free(e->trimmed);
-    if (e->image_path)
+    if (e->image_path) {
+        // image_path does not have to be freed
+        // because e->content is the same pointer
         unlink(e->image_path);
+    }
     return;
 }
 
