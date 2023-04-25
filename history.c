@@ -298,7 +298,7 @@ void history_recover(int32 id) {
     istext = (e->image_path == NULL);
     if (istext) {
         if (pipe(fd)){
-            perror("pipe failed");
+            fprintf(stderr, "Error creating pipe: %s\n", strerror(errno));
             return;
         }
     }
