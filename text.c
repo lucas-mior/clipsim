@@ -22,8 +22,8 @@
 #include "util.h"
 #include "text.h"
 
-void text_bundle_spaces(Entry *e) {
-    DEBUG_PRINT("text_bundle_spaces(%.*s, %zu)\n",
+void text_trim_spaces(Entry *e) {
+    DEBUG_PRINT("text_trim_spaces(%.*s, %zu)\n",
                 30, e->content, e->content_length)
     char *out;
     char temp = '\0';

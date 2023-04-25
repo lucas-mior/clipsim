@@ -217,7 +217,7 @@ void history_append(char *content, ulong length) {
     e->content = content;
     e->content_length = length;
 
-    text_bundle_spaces(e);
+    text_trim_spaces(e);
 
     if (lastindex+1 >= (int32) HISTORY_BUFFER_SIZE) {
         history_clean();
