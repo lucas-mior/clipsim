@@ -83,7 +83,16 @@ typedef struct Entry {
     size_t trimmed_length;
     char *content;
     char *trimmed;
+    char *image_path;
 } Entry;
+
+typedef enum GetClipboardResult {
+    TEXT,
+    LARGE,
+    IMAGE,
+    OTHER,
+    ERROR,
+} GetClipboardResult;
 
 #pragma clang diagnostic ignored "-Wpadded"
 typedef struct File {
@@ -94,5 +103,6 @@ typedef struct File {
 
 extern Entry entries[HISTORY_BUFFER_SIZE];
 extern pthread_mutex_t lock;
+static const char IMG_SEPARATOR = 0x02;
 
 #endif /* CLIPSIM_H */

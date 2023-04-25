@@ -41,14 +41,6 @@ static Atom UTF8, IMG, TARGET;
 static XEvent XEV;
 static Window WINDOW;
 
-typedef enum GetClipboardResult {
-    TEXT,
-    LARGE,
-    IMAGE,
-    OTHER,
-    ERROR,
-} GetClipboardResult;
-
 static Atom clipboard_check_target(Atom);
 static GetClipboardResult clipboard_get_clipboard(char **, ulong *);
 static void clipboard_signal_program(void);

@@ -21,6 +21,6 @@
 #define TEXT_H
 
 void text_trim_spaces(Entry *);
-bool text_valid_content(uchar *, ulong);
+GetClipboardResult text_valid_content(uchar *, ulong);
 
 #endif /* TEXT_H */

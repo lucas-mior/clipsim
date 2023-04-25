@@ -223,14 +223,19 @@ void ipc_daemon_pipe_id(int32 id) {
     }
 
     e = &entries[id];
-    dprintf(content_fifo.fd,
-            "Lenght: \033[31;1m%lu\n\033[0;m", e->content_length);
+    if (e->image_path) {
+        write(content_fifo.fd, &IMG_SEPARATOR, 1);
+    } else {
+        dprintf(content_fifo.fd,
+                "Lenght: \033[31;1m%lu\n\033[0;m", e->content_length);
+    }
     dprintf(content_fifo.fd, "%s", e->content);
 
     close:
     closef(&content_fifo);
     return;
 }
+
 
 void ipc_client_print_entries(void) {
     static char buffer[BUFSIZ];
@@ -239,8 +244,17 @@ void ipc_client_print_entries(void) {
     if (!openf(&content_fifo, O_RDONLY))
         return;
 
-    while ((r = read(content_fifo.fd, &buffer, sizeof(buffer))) > 0)
-        fwrite(buffer, 1, (size_t) r, stdout);
+    r = read(content_fifo.fd, &buffer, sizeof(buffer));
+    if (buffer[0] != IMG_SEPARATOR) {
+        do {
+            fwrite(buffer, 1, (size_t) r, stdout);
+        } while ((r = read(content_fifo.fd, &buffer, sizeof(buffer))) > 0);
+    } else {
+        if (r <= 1)
+            read(content_fifo.fd, buffer+1, sizeof(buffer));
+        closef(&content_fifo);
+        execlp("stiv", "stiv", buffer+1, "30", "15", NULL);   
+    }
 
     closef(&content_fifo);
     return;

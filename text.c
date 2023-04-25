@@ -59,7 +59,7 @@ void text_trim_spaces(Entry *e) {
     return;
 }
 
-bool text_valid_content(uchar *data, ulong len) {
+GetClipboardResult text_valid_content(uchar *data, ulong len) {
     DEBUG_PRINT("text_valid_content(%.*s, %lu)\n", 20, data, len)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
@@ -72,7 +72,7 @@ bool text_valid_content(uchar *data, ulong len) {
         if (*(aux-1) == '\0') {
             fprintf(stderr, "Only white space copied to clipboard. "
                             "This won't be added to history.\n");
-            return false;
+            return ERROR;
         }
     }
 
@@ -81,7 +81,7 @@ bool text_valid_content(uchar *data, ulong len) {
         if ((' ' <= *data) && (*data <= '~')) {
             if (len == 1 || (*(data+1) == '\n')) {
                 fprintf(stderr, "Ignoring single character '%c'\n", *data);
-                return false;
+                return ERROR;
             }
         }
     }
@@ -90,14 +90,14 @@ bool text_valid_content(uchar *data, ulong len) {
         if (!memcmp(data, PNG, 4)) {
             fprintf(stderr, "Image copied to clipboard. "
                             "This won't be added to history.\n");
-            return false;
+            return IMAGE;
         }
     }
 
     if (len > ENTRY_MAX_LENGTH) {
         printf("Too large entry. This wont' be added to history.\n");
-        return false;
+        return ERROR;
     }
 
-    return true;
+    return TEXT;
 }

@@ -100,7 +100,8 @@ void history_read(void) {
         r = fread(buffer, 1, BUFSIZ, history.file);
         begin = buffer;
         for (p = buffer; p < buffer + r; p++) {
-            if (*p == SEPARATOR) {
+            if ((*p == SEPARATOR) || (*p == IMG_SEPARATOR)) {
+                c = *p;
                 *p = '\0';
 
                 lastindex += 1;
@@ -108,13 +109,21 @@ void history_read(void) {
                 e->content_length = (size_t) (p - begin);
                 e->content = xalloc(NULL, e->content_length+1);
                 strcpy(e->content, begin);
+                if (c == IMG_SEPARATOR) {
+                    e->trimmed = e->content;
+                    e->image_path = e->content;
+                    e->trimmed_length = e->content_length;
+                } else {
+                    text_trim_spaces(e);
+                    e->image_path = NULL;
+                }
 
                 begin = p+1;
             }
         }
         if (r > 0 && *(p-1) != '\0') {
             while ((c = fgetc(history.file)) != EOF) {
-                if (c == SEPARATOR)
+                if ((c == SEPARATOR) || (c == IMG_SEPARATOR))
                     break;
                 *p++ = (char) c;
             }
@@ -125,6 +134,14 @@ void history_read(void) {
             e->content_length = (size_t) (p - begin);
             e->content = xalloc(NULL, e->content_length+1);
             strcpy(e->content, begin);
+            if (c == IMG_SEPARATOR) {
+                e->trimmed = e->content;
+                e->image_path = e->content;
+                e->trimmed_length = e->content_length;
+            } else {
+                text_trim_spaces(e);
+                e->image_path = NULL;
+            }
         }
         if (lastindex > (int32) HISTORY_KEEP_SIZE)
             break;
@@ -161,7 +178,11 @@ bool history_save(void) {
     for (uint i = 0; i <= (uint) lastindex; i += 1) {
         Entry *e = &entries[i];
         write(history.fd, e->content, e->content_length);
-        write(history.fd, &SEPARATOR, 1);
+        if (e->image_path) {
+            write(history.fd, &IMG_SEPARATOR, 1);
+        } else {
+            write(history.fd, &SEPARATOR, 1);
+        }
     }
 
     if ((saved = fsync(history.fd)) < 0)
@@ -194,22 +215,43 @@ void history_append(char *content, ulong length) {
         return;
     }
 
-    if (!text_valid_content((uchar *) content, length))
+    GetClipboardResult kind;
+    switch ((kind = text_valid_content((uchar *) content, length))) {
+    case TEXT:
+        content[length] = '\0';
+        while (content[length-1] == '\n') {
+            content[length-1] = '\0';
+            length -= 1;
+        }
+        break;
+    case IMAGE:
+        printf("IM!\n");
+        int fp;
+        size_t w = 0;
+        if ((fp = open("/tmp/image.png", O_WRONLY | O_CREAT | O_TRUNC,
+                                        S_IRUSR | S_IWUSR)) < 0) {
+            fprintf(stderr, "Failed to open image file for saving: "
+                            "%s\n", strerror(errno));
+            return;
+        }
+        while ((w = write(fp, content + w, length - w)) > 0);
+        free(content);
+        content = strdup("/tmp/image.png");
+        length = strlen(content);
+        printf("wrote!\n");
+        break;
+    default:
         return;
-
-    content[length] = '\0';
-
-    while (content[length-1] == '\n') {
-        content[length-1] = '\0';
-        length -= 1;
     }
 
-    if ((oldindex = history_repeated_index(content, length)) >= 0) {
-        fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
-        if (oldindex != lastindex)
-            history_reorder(oldindex);
-        free(content);
-        return;
+    if (kind == TEXT) {
+        if ((oldindex = history_repeated_index(content, length)) >= 0) {
+            fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
+            if (oldindex != lastindex)
+                history_reorder(oldindex);
+            free(content);
+            return;
+        }
     }
 
     lastindex += 1;
@@ -217,7 +259,14 @@ void history_append(char *content, ulong length) {
     e->content = content;
     e->content_length = length;
 
-    text_trim_spaces(e);
+    if (kind == TEXT) {
+        text_trim_spaces(e);
+        e->image_path = NULL;
+    } else {
+        e->trimmed = e->content;
+        e->trimmed_length = e->content_length;
+        e->image_path = e->content;
+    }
 
     if (lastindex+1 >= (int32) HISTORY_BUFFER_SIZE) {
         history_clean();
