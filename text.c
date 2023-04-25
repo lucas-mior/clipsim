@@ -63,10 +63,6 @@ bool text_valid_content(uchar *data, ulong len) {
     DEBUG_PRINT("text_valid_content(%.*s, %lu)\n", 20, data, len)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
-    if (len > ENTRY_MAX_LENGTH) {
-        printf("Too large entry. This wont' be added to history.\n");
-        return false;
-    }
 
     { /* Check if it is made only of spaces and newlines */
         uchar *aux = data;
@@ -96,6 +92,11 @@ bool text_valid_content(uchar *data, ulong len) {
                             "This won't be added to history.\n");
             return false;
         }
+    }
+
+    if (len > ENTRY_MAX_LENGTH) {
+        printf("Too large entry. This wont' be added to history.\n");
+        return false;
     }
 
     return true;
