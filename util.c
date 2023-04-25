@@ -75,7 +75,7 @@ void segv_handler(int unused) {
         execl("/usr/bin/dunstify", "dunstify", "-u", "critical",
                                    "clipsim", msg, NULL);
     }
-    exit(1);
+    exit(EXIT_FAILURE);
 }
 
 void int_handler(int unused) {
@@ -86,15 +86,17 @@ void int_handler(int unused) {
 
 void closef(File *f) {
     if (f->fd >= 0) {
-        if (close(f->fd) < 0)
-            fprintf(stderr, "close(%s) failed: "
-                            "%s\n", f->name, strerror(errno));
+        if (close(f->fd) < 0) {
+            fprintf(stderr, "Error closing %s: %s\n",
+                            f->name, strerror(errno));
+        }
         f->fd = -1;
     }
     if (f->file != NULL) {
-        if (fclose(f->file) != 0)
-            fprintf(stderr, "fclose(%s) failed: "
-                            "%s\n", f->name, strerror(errno));
+        if (fclose(f->file) != 0) {
+            fprintf(stderr, "Error closing %s: %s\n",
+                            f->name, strerror(errno));
+        }
         f->file = NULL;
     }
     return;
@@ -102,7 +104,8 @@ void closef(File *f) {
 
 bool openf(File *f, int flag) {
     if ((f->fd = open(f->name, flag)) < 0) {
-        fprintf(stderr, "open(%s) failed: %s\n", f->name, strerror(errno));
+        fprintf(stderr, "Error opening %s: %s\n",
+                        f->name, strerror(errno));
         return false;
     } else {
         return true;

@@ -177,9 +177,8 @@ int32 history_repeated_index(char *content, size_t length) {
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->content_length == length) {
-            if (!strcmp(e->content, content)) {
+            if (!strcmp(e->content, content))
                 return i;
-            }
         }
     }
     return -1;
@@ -217,6 +216,8 @@ void history_append(char *content, ulong length) {
     e = &entries[lastindex];
     e->content = content;
     e->content_length = length;
+
+    text_bundle_spaces(e);
 
     if (lastindex+1 >= (int32) HISTORY_BUFFER_SIZE) {
         history_clean();
@@ -285,10 +286,8 @@ void history_recover(int32 id) {
 
 void history_delete(int32 id) {
     DEBUG_PRINT("history_delete(%d)\n", id)
-    Entry *e;
-    if (lastindex == 0) {
+    if (lastindex <= 0)
         return;
-    }
 
     if (id < 0) {
         id = lastindex + id + 1;

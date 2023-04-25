@@ -118,16 +118,16 @@ void *clipboard_daemon_watch(void *unused) {
 
 Atom clipboard_check_target(Atom target) {
     DEBUG_PRINT("clipboard_check_target(%lu)\n", target)
-    XEvent event;
+    XEvent xevent;
 
     XConvertSelection(DISPLAY, CLIPBOARD, target, PROPERTY,
                       WINDOW, CurrentTime);
     do {
-        (void) XNextEvent(DISPLAY, &event);
-    } while (event.type != SelectionNotify
-          || event.xselection.selection != CLIPBOARD);
+        (void) XNextEvent(DISPLAY, &xevent);
+    } while (xevent.type != SelectionNotify
+          || xevent.xselection.selection != CLIPBOARD);
 
-    return event.xselection.property;
+    return xevent.xselection.property;
 }
 
 GetClipboardResult clipboard_get_clipboard(char **save, ulong *length) {

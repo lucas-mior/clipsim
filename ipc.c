@@ -31,7 +31,6 @@
 #include "ipc.h"
 #include "history.h"
 #include "util.h"
-#include "text.h"
 
 static File command_fifo = { .file = NULL, .fd = -1,
                              .name = "/tmp/clipsimcmd.fifo" };
@@ -192,9 +191,6 @@ void ipc_daemon_pipe_entries(void) {
 
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
-        if (e->trimmed == NULL)
-            text_bundle_spaces(e);
-
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
         w = fwrite(e->trimmed, 1, (e->trimmed_length+1), content_fifo.file);
         if (w < (e->trimmed_length+1)) {
