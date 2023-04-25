@@ -259,6 +259,7 @@ void ipc_client_print_entries(void) {
             close(test);
         }
         execlp("stiv", "stiv", buffer+1, "30", "15", NULL);   
+        /* execlp("chafa", "chafa", buffer+1, "-s", "40x", NULL); */
     }
 
     closef(&content_fifo);
