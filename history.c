@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <sys/wait.h>
+#include <time.h>
 
 #include "clipsim.h"
 #include "history.h"
@@ -215,43 +216,40 @@ void history_append(char *content, ulong length) {
         return;
     }
 
-    GetClipboardResult kind;
-    switch ((kind = text_valid_content((uchar *) content, length))) {
-    case TEXT:
+    GetClipboardResult kind = text_valid_content((uchar *) content, length);
+    if (kind == TEXT) {
         content[length] = '\0';
         while (content[length-1] == '\n') {
             content[length-1] = '\0';
             length -= 1;
         }
-        break;
-    case IMAGE:
-        printf("IM!\n");
+    } else if (kind == IMAGE) {
+        time_t t = time(NULL);
         int fp;
         size_t w = 0;
-        if ((fp = open("/tmp/image.png", O_WRONLY | O_CREAT | O_TRUNC,
-                                        S_IRUSR | S_IWUSR)) < 0) {
+        char buffer[256];
+        snprintf(buffer, sizeof(buffer), "/tmp/%lu.png", t);
+        buffer[sizeof(buffer)-1] = '\0';
+        if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
+                                          S_IRUSR | S_IWUSR)) < 0) {
             fprintf(stderr, "Failed to open image file for saving: "
                             "%s\n", strerror(errno));
             return;
         }
         while ((w = write(fp, content + w, length - w)) > 0);
-        free(content);
-        content = strdup("/tmp/image.png");
-        length = strlen(content);
-        printf("wrote!\n");
-        break;
-    default:
+        length = strlen(buffer);
+        content = xalloc(content, length+1);
+        strcpy(content, buffer);
+    } else {
         return;
     }
 
-    if (kind == TEXT) {
-        if ((oldindex = history_repeated_index(content, length)) >= 0) {
-            fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
-            if (oldindex != lastindex)
-                history_reorder(oldindex);
-            free(content);
-            return;
-        }
+    if ((oldindex = history_repeated_index(content, length)) >= 0) {
+        fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
+        if (oldindex != lastindex)
+            history_reorder(oldindex);
+        free(content);
+        return;
     }
 
     lastindex += 1;
@@ -375,6 +373,8 @@ void free_entry(Entry *e) {
     free(e->content);
     if (e->trimmed != e->content)
         free(e->trimmed);
+    if (e->image_path)
+        unlink(e->image_path);
     return;
 }
 

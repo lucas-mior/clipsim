@@ -253,6 +253,11 @@ void ipc_client_print_entries(void) {
         if (r <= 1)
             read(content_fifo.fd, buffer+1, sizeof(buffer));
         closef(&content_fifo);
+        int test;
+        if ((test = open(buffer+1, O_RDONLY)) < 0) {
+            fprintf(stderr, "Error opening %s: %s\n", buffer+1, strerror(errno));
+            close(test);
+        }
         execlp("stiv", "stiv", buffer+1, "30", "15", NULL);   
     }
 
