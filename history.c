@@ -42,6 +42,7 @@ static int32 history_repeated_index(char *, size_t);
 static void history_reorder(int32);
 static void history_clean(void);
 static void free_entry(Entry *);
+static void history_save_image(char *, ulong);
 
 int32 history_lastindex(void) {
     return lastindex;
@@ -206,17 +207,46 @@ int32 history_repeated_index(char *content, size_t length) {
     return -1;
 }
 
+void history_save_image(char *content, ulong length) {
+    time_t t = time(NULL);
+    int fp;
+    ssize_t w = 0;
+    size_t copied = 0;
+    char buffer[256];
+
+    snprintf(buffer, sizeof(buffer), "/tmp/%lu.png", t);
+    buffer[sizeof(buffer)-1] = '\0';
+    if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
+                                      S_IRUSR | S_IWUSR)) < 0) {
+        fprintf(stderr, "Failed to open image file for saving: "
+                        "%s\n", strerror(errno));
+        return;
+    }
+
+    do {
+        w = write(fp, content + copied, length);
+        if (w <= 0)
+            break;
+        copied += (size_t) w;
+        length -= (size_t) w;
+    } while (length > 0);
+    length = strlen(buffer);
+    content = xalloc(content, length+1);
+    strcpy(content, buffer);
+}
+
 void history_append(char *content, ulong length) {
     DEBUG_PRINT("history_append(%.*s, %lu)\n", 20, content, length)
     int32 oldindex;
     Entry *e;
+    GetClipboardResult kind;
 
     if (recovered) {
         recovered = false;
         return;
     }
 
-    GetClipboardResult kind = text_valid_content((uchar *) content, length);
+    kind = text_valid_content((uchar *) content, length);
     if (kind == TEXT) {
         content[length] = '\0';
         while (content[length-1] == '\n') {
@@ -224,22 +254,7 @@ void history_append(char *content, ulong length) {
             length -= 1;
         }
     } else if (kind == IMAGE) {
-        time_t t = time(NULL);
-        int fp;
-        size_t w = 0;
-        char buffer[256];
-        snprintf(buffer, sizeof(buffer), "/tmp/%lu.png", t);
-        buffer[sizeof(buffer)-1] = '\0';
-        if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
-                                          S_IRUSR | S_IWUSR)) < 0) {
-            fprintf(stderr, "Failed to open image file for saving: "
-                            "%s\n", strerror(errno));
-            return;
-        }
-        while ((w = write(fp, content + w, length - w)) > 0);
-        length = strlen(buffer);
-        content = xalloc(content, length+1);
-        strcpy(content, buffer);
+        history_save_image(content, length);
     } else {
         return;
     }
@@ -279,7 +294,6 @@ void history_recover(int32 id) {
     pid_t child = -1;
     int fd[2];
     Entry *e;
-    char **argv;
     bool istext;
 
     if (id < 0)
