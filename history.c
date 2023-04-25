@@ -302,8 +302,7 @@ void history_delete(int32 id) {
         return;
     }
 
-    e = &entries[id];
-    free_entry(e);
+    free_entry(&entries[id]);
 
     if (id < lastindex) {
         memmove(&entries[id], &entries[id+1],
@@ -333,10 +332,9 @@ void free_entry(Entry *e) {
 
 void history_clean(void) {
     DEBUG_PRINT("history_clean(void) %d\n", __LINE__)
-    for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1) {
-        Entry *e = &entries[i];
-        free_entry(e);
-    }
+    for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1)
+        free_entry(&entries[i]);
+
     memmove(&entries[0], &entries[HISTORY_KEEP_SIZE],
             HISTORY_KEEP_SIZE*sizeof(Entry));
     memset(&entries[HISTORY_KEEP_SIZE], 0, HISTORY_KEEP_SIZE*sizeof(Entry));
