@@ -27,6 +27,6 @@ void util_segv_handler(int) __attribute__((noreturn));
 void util_int_handler(int) __attribute__((noreturn));
 void util_close(File *);
 bool util_open(File *, int);
-int util_copy_file(const char *, const char *);
+bool util_copy_file(const char *, const char *);
 
 #endif /* UTIL_H */

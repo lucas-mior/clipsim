@@ -115,43 +115,47 @@ bool util_open(File *f, int flag) {
     }
 }
 
-int util_copy_file(const char *destination, const char *source) {
+bool util_copy_file(const char *destination, const char *source) {
     int source_fd, destination_fd;
     char buffer[BUFSIZ];
-    ssize_t bytes_read, bytes_written;
+    ssize_t bytes_read = 0;
+    ssize_t bytes_written = 0;
 
-    source_fd = open(source, O_RDONLY);
-    if (source_fd == -1) {
-        fprintf(stderr, "Error opening %s: %s\n", source, strerror(errno));
-        return -1;
+    
+    if ((source_fd = open(source, O_RDONLY)) < 0) {
+        fprintf(stderr, "Error opening %s for reading: %s\n", 
+                        source, strerror(errno));
+        return false;
     }
 
-    destination_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 
-                                S_IRUSR | S_IWUSR);
-    if (destination_fd == -1) {
-        fprintf(stderr, "Error opening %s: %s\n", destination, strerror(errno));
+    if ((destination_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 
+                                            S_IRUSR | S_IWUSR)) < 0) {
+        fprintf(stderr, "Error opening %s for writing: %s\n",
+                         destination, strerror(errno));
         close(source_fd);
-        return -1;
+        return false;
     }
 
     while ((bytes_read = read(source_fd, buffer, BUFSIZ)) > 0) {
         bytes_written = write(destination_fd, buffer, (size_t) bytes_read);
         if (bytes_written != bytes_read) {
-            fprintf(stderr, "Error: Unable to write data to target file");
+            fprintf(stderr, "Error writing data to %s: %s",
+                            destination, strerror(errno));
             close(source_fd);
             close(destination_fd);
-            return -1;
+            return false;
         }
     }
 
-    if (bytes_read == -1) {
-        fprintf(stderr, "Error: Unable to read data from source file");
+    if (bytes_read < 0) {
+        fprintf(stderr, "Error reading data from %s: %s\n",
+                        source, strerror(errno));
         close(source_fd);
         close(destination_fd);
-        return -1;
+        return false;
     }
 
     close(source_fd);
     close(destination_fd);
-    return 0;
+    return true;
 }
