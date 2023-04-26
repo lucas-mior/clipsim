@@ -256,7 +256,7 @@ void ipc_client_print_entries(void) {
     } else {
         int test;
         if (r == 1)
-            read(content_fifo.fd, buffer+1, sizeof(buffer));
+            read(content_fifo.fd, buffer+1, sizeof(buffer)-1);
         closef(&content_fifo);
         if ((test = open(buffer+1, O_RDONLY)) < 0) {
             fprintf(stderr, "Error opening %s: %s\n", buffer+1, strerror(errno));
