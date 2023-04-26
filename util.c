@@ -127,7 +127,7 @@ int util_copy_file(const char *destination, const char *source) {
     }
 
     dest_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 
-                                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+                                S_IRUSR | S_IWUSR);
     if (dest_fd == -1) {
         fprintf(stderr, "Error opening %s: %s\n", destination, strerror(errno));
         close(src_fd);
