@@ -272,10 +272,11 @@ void history_append(char *content, ulong length) {
     if (kind == TEXT) {
         content_trim_spaces(e);
         e->image_path = NULL;
-    } else {
+    } else if (kind == IMAGE) {
         e->trimmed = e->content;
         e->trimmed_length = e->content_length;
         e->image_path = e->content;
+    } else {
     }
 
     if (lastindex+1 >= (int32) HISTORY_BUFFER_SIZE) {
