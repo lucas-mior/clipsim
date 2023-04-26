@@ -23,8 +23,8 @@
 void *xalloc(void *, size_t);
 void *xcalloc(size_t, size_t);
 bool util_strtol(int32 *, char *, int);
-void segv_handler(int) __attribute__((noreturn));
-void int_handler(int) __attribute__((noreturn));
+void util_segv_handler(int) __attribute__((noreturn));
+void util_int_handler(int) __attribute__((noreturn));
 void util_close(File *);
 bool util_open(File *, int);
 

@@ -66,7 +66,7 @@ bool util_strtol(int32 *num, char *string, int base) {
     }
 }
 
-void segv_handler(int unused) {
+void util_segv_handler(int unused) {
     char *msg = "Memory error. Please send a bug report.\n";
     char *notifiers[2] = { "dunstify", "notify-send" };
     (void) unused;
@@ -77,7 +77,7 @@ void segv_handler(int unused) {
     exit(EXIT_FAILURE);
 }
 
-void int_handler(int unused) {
+void util_int_handler(int unused) {
     (void) unused;
     history_save();
     exit(EXIT_FAILURE);

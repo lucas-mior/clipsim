@@ -39,9 +39,9 @@ int main(int argc, char *argv[]) {
     int32 id;
     bool spell = false;
 
-    signal(SIGSEGV, segv_handler);
-    signal(SIGINT, int_handler);
-    signal(SIGTERM, int_handler);
+    signal(SIGSEGV, util_segv_handler);
+    signal(SIGINT, util_int_handler);
+    signal(SIGTERM, util_int_handler);
 
     if (argc <= 1 || argc >= 4)
         usage(stderr);
