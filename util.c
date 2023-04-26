@@ -70,7 +70,7 @@ void segv_handler(int unused) {
     char *msg = "Memory error. Please send a bug report.\n";
     (void) unused;
 
-    write(2, msg, strlen(msg));
+    write(STDERR_FILENO, msg, strlen(msg));
     if (!access("/usr/bin/dunstify", X_OK)) {
         execl("/usr/bin/dunstify", "dunstify", "-u", "critical",
                                    "clipsim", msg, NULL);
