@@ -88,8 +88,7 @@ GetClipboardResult text_valid_content(uchar *data, ulong len) {
 
     if (len >= 4) { /* check if it is an image */
         if (!memcmp(data, PNG, 4)) {
-            fprintf(stderr, "Image copied to clipboard. "
-                            "This won't be added to history.\n");
+            fprintf(stderr, "Image copied to clipboard.\n");
             return IMAGE;
         }
     }
