@@ -66,8 +66,8 @@ void *ipc_daemon_listen_fifo(void *unused) {
         pthread_mutex_lock(&lock);
 
         if (read(command_fifo.fd, &command, sizeof(command)) < 0) {
-            fprintf(stderr, "Failed to read command from pipe: "
-                            "%s\n", strerror(errno));
+            fprintf(stderr, "Failed to read command from %s: %s\n",
+                            command_fifo.name, strerror(errno));
             util_close(&command_fifo);
             pthread_mutex_unlock(&lock);
             continue;
@@ -107,8 +107,8 @@ void ipc_client_speak_fifo(int command, int32 id) {
     }
 
     if (write(command_fifo.fd, &command, sizeof(command)) < 0) {
-        fprintf(stderr, "Failed to send command to daemon: "
-                        "%s\n", strerror(errno));
+            fprintf(stderr, "Failed to write command to %s: %s\n",
+                            command_fifo.name, strerror(errno));
         util_close(&command_fifo);
         return;
     } else {
@@ -246,6 +246,8 @@ void ipc_client_print_entries(void) {
 
     r = read(content_fifo.fd, &buffer, sizeof(buffer));
     if (r <= 0) {
+        fprintf(stderr, "Error reading data from %s: %s\n",
+                        content_fifo.name, strerror(errno));
         util_close(&content_fifo);
         return;
     }
