@@ -22,7 +22,7 @@
 
 void *xalloc(void *, size_t);
 void *xcalloc(size_t, size_t);
-bool estrtol(int32 *, char *, int);
+bool util_strtol(int32 *, char *, int);
 void segv_handler(int) __attribute__((noreturn));
 void int_handler(int) __attribute__((noreturn));
 void util_close(File *);

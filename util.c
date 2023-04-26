@@ -51,7 +51,7 @@ void *xcalloc(size_t nmemb, size_t size) {
     return p;
 }
 
-bool estrtol(int32 *num, char *string, int base) {
+bool util_strtol(int32 *num, char *string, int base) {
     char *pend;
     long x;
     errno = 0;

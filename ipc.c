@@ -224,7 +224,7 @@ void ipc_daemon_pipe_id(int32 id) {
 
     e = &entries[id];
     if (e->image_path) {
-        write(content_fifo.fd, &IMG_SEPARATOR, 1);
+        write(content_fifo.fd, &IMAGE_END, 1);
     } else {
         dprintf(content_fifo.fd,
                 "Lenght: \033[31;1m%lu\n\033[0;m", e->content_length);
@@ -249,7 +249,7 @@ void ipc_client_print_entries(void) {
         util_close(&content_fifo);
         return;
     }
-    if (buffer[0] != IMG_SEPARATOR) {
+    if (buffer[0] != IMAGE_END) {
         do {
             fwrite(buffer, 1, (size_t) r, stdout);
         } while ((r = read(content_fifo.fd, &buffer, sizeof(buffer))) > 0);

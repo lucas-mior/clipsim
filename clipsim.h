@@ -104,6 +104,7 @@ typedef struct File {
 
 extern Entry entries[HISTORY_BUFFER_SIZE];
 extern pthread_mutex_t lock;
-static const char IMG_SEPARATOR = 0x02;
+static const char IMAGE_END = 0x02;
+static const char TEXT_END = 0x01;
 
 #endif /* CLIPSIM_H */

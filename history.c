@@ -33,7 +33,6 @@
 #include "content.h"
 
 static volatile bool recovered = false;
-static const char SEPARATOR = 0x01;
 static int32 lastindex;
 static File history = { .file = NULL, .fd = -1, .name = NULL };
 
@@ -102,7 +101,7 @@ void history_read(void) {
         r = fread(buffer, 1, BUFSIZ, history.file);
         begin = buffer;
         for (p = buffer; p < buffer + r; p++) {
-            if ((*p == SEPARATOR) || (*p == IMG_SEPARATOR)) {
+            if ((*p == TEXT_END) || (*p == IMAGE_END)) {
                 c = *p;
                 *p = '\0';
 
@@ -111,7 +110,7 @@ void history_read(void) {
                 e->content_length = (size_t) (p - begin);
                 e->content = xalloc(NULL, e->content_length+1);
                 strcpy(e->content, begin);
-                if (c == IMG_SEPARATOR) {
+                if (c == IMAGE_END) {
                     e->trimmed = e->content;
                     e->image_path = e->content;
                     e->trimmed_length = e->content_length;
@@ -125,7 +124,7 @@ void history_read(void) {
         }
         if (r > 0 && *(p-1) != '\0') {
             while ((c = fgetc(history.file)) != EOF) {
-                if ((c == SEPARATOR) || (c == IMG_SEPARATOR))
+                if ((c == TEXT_END) || (c == IMAGE_END))
                     break;
                 *p++ = (char) c;
             }
@@ -136,7 +135,7 @@ void history_read(void) {
             e->content_length = (size_t) (p - begin);
             e->content = xalloc(NULL, e->content_length+1);
             strcpy(e->content, begin);
-            if (c == IMG_SEPARATOR) {
+            if (c == IMAGE_END) {
                 e->trimmed = e->content;
                 e->image_path = e->content;
                 e->trimmed_length = e->content_length;
@@ -181,9 +180,9 @@ bool history_save(void) {
         Entry *e = &entries[i];
         write(history.fd, e->content, e->content_length);
         if (e->image_path) {
-            write(history.fd, &IMG_SEPARATOR, 1);
+            write(history.fd, &IMAGE_END, 1);
         } else {
-            write(history.fd, &SEPARATOR, 1);
+            write(history.fd, &TEXT_END, 1);
         }
     }
 
