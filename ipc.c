@@ -245,13 +245,17 @@ void ipc_client_print_entries(void) {
         return;
 
     r = read(content_fifo.fd, &buffer, sizeof(buffer));
+    if (r <= 0) {
+        closef(&content_fifo);
+        return;
+    }
     if (buffer[0] != IMG_SEPARATOR) {
         do {
             fwrite(buffer, 1, (size_t) r, stdout);
         } while ((r = read(content_fifo.fd, &buffer, sizeof(buffer))) > 0);
     } else {
         int test;
-        if (r <= 1)
+        if (r == 1)
             read(content_fifo.fd, buffer+1, sizeof(buffer));
         closef(&content_fifo);
         if ((test = open(buffer+1, O_RDONLY)) < 0) {
