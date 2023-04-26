@@ -88,12 +88,11 @@ void *clipboard_daemon_watch(void *unused) {
                 history_append(save, length);
                 break;
             case IMAGE:
-                fprintf(stderr, "Image copied to clipboard. "
-                                "This won't be added to history.\n");
+                history_append(save, length);
                 break;
             case OTHER:
                 fprintf(stderr, "Unsupported format. Clipsim only"
-                                " works with UTF-8.\n");
+                                " works with UTF-8 and images.\n");
                 break;
             case LARGE:
                 fprintf(stderr, "Buffer is too large and "
@@ -141,7 +140,16 @@ GetClipboardResult clipboard_get_clipboard(char **save, ulong *length) {
             return TEXT;
         }
     } else if (clipboard_check_target(IMG)) {
-        return IMAGE;
+        XGetWindowProperty(DISPLAY, WINDOW, PROPERTY, 0, LONG_MAX/4,
+                           False, AnyPropertyType, &return_atom,
+                           &actual_format_return, &nitems_return,
+                           &bytes_after_return, (uchar **) save);
+        if (return_atom == INCREMENT) {
+            return LARGE;
+        } else {
+            *length = nitems_return;
+            return IMAGE;
+        }
     } else if (clipboard_check_target(TARGET)) {
         return OTHER;
     }
