@@ -394,6 +394,7 @@ void history_reorder(int32 oldindex) {
 }
 
 void history_free_entry(Entry *e) {
+    length_counts[e->content_length] -= 1;
     free(e->content);
     if (e->trimmed != e->content)
         free(e->trimmed);
@@ -402,7 +403,6 @@ void history_free_entry(Entry *e) {
         // because e->content is the same pointer
         unlink(e->image_path);
     }
-    length_counts[e->content_length] -= 1;
     return;
 }
 
