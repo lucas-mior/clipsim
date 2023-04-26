@@ -35,7 +35,6 @@
 #include "send_signal.h"
 
 static Display *DISPLAY;
-static Window ROOT;
 static Atom CLIPBOARD, PROPERTY, INCREMENT;
 static Atom UTF8, IMG, TARGET;
 static XEvent XEV;
@@ -48,6 +47,7 @@ static void clipboard_signal_program(void);
 void *clipboard_daemon_watch(void *unused) {
     DEBUG_PRINT("*clipboard_daemon_watch(void *unused) %d\n", __LINE__)
     ulong color;
+    Window root;
     struct timespec pause;
     pause.tv_sec = 0;
     pause.tv_nsec = PAUSE10MS;
@@ -58,7 +58,6 @@ void *clipboard_daemon_watch(void *unused) {
         exit(EXIT_FAILURE);
     }
 
-    ROOT = DefaultRootWindow(DISPLAY);
     CLIPBOARD = XInternAtom(DISPLAY, "CLIPBOARD", False);
     PROPERTY  = XInternAtom(DISPLAY, "XSEL_DATA", False);
     INCREMENT = XInternAtom(DISPLAY, "INCR", False);
@@ -66,10 +65,11 @@ void *clipboard_daemon_watch(void *unused) {
     IMG       = XInternAtom(DISPLAY, "image/png", False);
     TARGET    = XInternAtom(DISPLAY, "TARGETS", False);
 
+    root = DefaultRootWindow(DISPLAY);
     color = BlackPixel(DISPLAY, DefaultScreen(DISPLAY));
-    WINDOW = XCreateSimpleWindow(DISPLAY, ROOT, 0,0, 1,1, 0, color, color);
+    WINDOW = XCreateSimpleWindow(DISPLAY, root, 0,0, 1,1, 0, color, color);
 
-    XFixesSelectSelectionInput(DISPLAY, ROOT, CLIPBOARD, (ulong)
+    XFixesSelectSelectionInput(DISPLAY, root, CLIPBOARD, (ulong)
                                XFixesSetSelectionOwnerNotifyMask
                              | XFixesSelectionClientCloseNotifyMask
                              | XFixesSelectionWindowDestroyNotifyMask);
