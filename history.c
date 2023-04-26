@@ -188,7 +188,8 @@ bool history_save(void) {
                 int length;
                 length = snprintf(image_save, sizeof(image_save), 
                                   "%s/clipsim/%s", cache, basename(e->image_path));
-                util_copy_file(image_save, e->image_path);
+                if (strcmp(image_save, e->image_path))
+                    util_copy_file(image_save, e->image_path);
                 write(history.fd, image_save, (size_t) length);
             } else {
                 write(history.fd, e->content, e->content_length);
