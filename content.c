@@ -68,8 +68,8 @@ void content_trim_spaces(Entry *e) {
     return;
 }
 
-GetClipboardResult content_valid_content(uchar *data, ulong len) {
-    DEBUG_PRINT("content_valid_content(%.*s, %lu)\n", 20, data, len)
+GetClipboardResult content_valid_content(uchar *data, ulong length) {
+    DEBUG_PRINT("content_valid_content(%.*s, %lu)\n", 20, data, length)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
 
@@ -85,24 +85,24 @@ GetClipboardResult content_valid_content(uchar *data, ulong len) {
         }
     }
 
-    if (len <= 2) { /* Check if it is a single ascii character
+    if (length <= 2) { /* Check if it is a single ascii character
                        possibly followed by new line */
         if ((' ' <= *data) && (*data <= '~')) {
-            if (len == 1 || (*(data+1) == '\n')) {
+            if (length == 1 || (*(data+1) == '\n')) {
                 fprintf(stderr, "Ignoring single character '%c'\n", *data);
                 return ERROR;
             }
         }
     }
 
-    if (len >= 4) { /* check if it is an image */
+    if (length >= 4) { /* check if it is an image */
         if (!memcmp(data, PNG, 4)) {
             fprintf(stderr, "Image copied to clipboard.\n");
             return IMAGE;
         }
     }
 
-    if (len > ENTRY_MAX_LENGTH) {
+    if (length > ENTRY_MAX_LENGTH) {
         printf("Too large entry. This wont' be added to history.\n");
         return ERROR;
     }
