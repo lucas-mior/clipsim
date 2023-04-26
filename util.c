@@ -68,13 +68,15 @@ bool estrtol(int32 *num, char *string, int base) {
 
 void segv_handler(int unused) {
     char *msg = "Memory error. Please send a bug report.\n";
+    char *notifiers[2] = {
+        "dunstify",
+        "notify-send",
+    };
     (void) unused;
 
     write(STDERR_FILENO, msg, strlen(msg));
-    if (!access("/usr/bin/dunstify", X_OK)) {
-        execl("/usr/bin/dunstify", "dunstify", "-u", "critical",
-                                   "clipsim", msg, NULL);
-    }
+    for (uint i = 0; i < ARRLEN(notifiers); i += 1)
+        execlp(notifiers[i], notifiers[i], "-u", "critical", "clipsim", msg, NULL);
     exit(EXIT_FAILURE);
 }
 
