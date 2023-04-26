@@ -22,8 +22,8 @@
 #include "util.h"
 #include "content.h"
 
-void text_trim_spaces(Entry *e) {
-    DEBUG_PRINT("text_trim_spaces(%.*s, %zu)\n",
+void content_trim_spaces(Entry *e) {
+    DEBUG_PRINT("content_trim_spaces(%.*s, %zu)\n",
                 30, e->content, e->content_length)
     char *out;
     char temp = '\0';
@@ -59,8 +59,8 @@ void text_trim_spaces(Entry *e) {
     return;
 }
 
-GetClipboardResult text_valid_content(uchar *data, ulong len) {
-    DEBUG_PRINT("text_valid_content(%.*s, %lu)\n", 20, data, len)
+GetClipboardResult content_valid_content(uchar *data, ulong len) {
+    DEBUG_PRINT("content_valid_content(%.*s, %lu)\n", 20, data, len)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
 
