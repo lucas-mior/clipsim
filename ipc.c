@@ -262,8 +262,13 @@ void ipc_client_print_entries(void) {
             fprintf(stderr, "Error opening %s: %s\n", buffer+1, strerror(errno));
             close(test);
         }
-        execlp("stiv", "stiv", buffer+1, "30", "15", NULL);   
-        /* execlp("chafa", "chafa", buffer+1, "-s", "40x", NULL); */
+        char *CLIPSIM_IMAGE_PREVIEW = getenv("CLIPSIM_IMAGE_PREVIEW");
+        if (CLIPSIM_IMAGE_PREVIEW == NULL)
+            CLIPSIM_IMAGE_PREVIEW = "chafa";
+        if (!strcmp(CLIPSIM_IMAGE_PREVIEW, "stiv"))
+            execlp("stiv", "stiv", buffer+1, "30", "15", NULL);   
+        else
+            execlp("chafa", "chafa", buffer+1, "-s", "40x", NULL);
     }
 
     closef(&content_fifo);
