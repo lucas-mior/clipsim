@@ -20,7 +20,7 @@
 
 #include "clipsim.h"
 #include "util.h"
-#include "text.h"
+#include "content.h"
 
 void text_trim_spaces(Entry *e) {
     DEBUG_PRINT("text_trim_spaces(%.*s, %zu)\n",

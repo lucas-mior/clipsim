@@ -30,7 +30,7 @@
 #include "clipsim.h"
 #include "history.h"
 #include "util.h"
-#include "text.h"
+#include "content.h"
 
 static volatile bool recovered = false;
 static const char SEPARATOR = 0x01;

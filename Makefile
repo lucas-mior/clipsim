@@ -1,6 +1,6 @@
 PREFIX ?= /usr/local
 
-objs = ipc.o util.o clipboard.o history.o text.o send_signal.o main.o
+objs = ipc.o util.o clipboard.o history.o content.o send_signal.o main.o
 
 ldlibs = $(LDLIBS) -lX11 -lXfixes -pthread
 
@@ -26,11 +26,11 @@ clipsim: $(objs)
 
 $(objs): Makefile clipsim.h
 
-ipc.o: clipsim.h ipc.h util.h history.h text.h
+ipc.o: clipsim.h ipc.h util.h history.h content.h
 clipboard.o: clipsim.h clipboard.h util.h history.h send_signal.h
 util.o: clipsim.h util.h
 history.o: clipsim.h util.h history.h
-text.o: clipsim.h util.h text.h
+content.o: clipsim.h util.h content.h
 send_signal.o: clipsim.h send_signal.h
 main.o: clipsim.h ipc.h clipboard.h util.h history.h send_signal.h
 
