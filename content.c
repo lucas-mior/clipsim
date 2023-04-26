@@ -22,6 +22,15 @@
 #include "util.h"
 #include "content.h"
 
+void content_remove_newline(char *text, ulong *length) {
+    text[*length] = '\0';
+    while (text[*length-1] == '\n') {
+        text[*length-1] = '\0';
+        *length -= 1;
+    }
+    return;
+}
+
 void content_trim_spaces(Entry *e) {
     DEBUG_PRINT("content_trim_spaces(%.*s, %zu)\n",
                 30, e->content, e->content_length)

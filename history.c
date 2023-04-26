@@ -249,11 +249,7 @@ void history_append(char *content, ulong length) {
 
     kind = content_valid_content((uchar *) content, length);
     if (kind == TEXT) {
-        content[length] = '\0';
-        while (content[length-1] == '\n') {
-            content[length-1] = '\0';
-            length -= 1;
-        }
+        content_remove_newline(content, &length);
     } else if (kind == IMAGE) {
         history_save_image(&content, &length);
     } else {

@@ -20,6 +20,7 @@
 #ifndef TEXT_H
 #define TEXT_H
 
+void content_remove_newline(char *, ulong *);
 void content_trim_spaces(Entry *);
 GetClipboardResult content_valid_content(uchar *, ulong);
 
