@@ -54,8 +54,8 @@ void *clipboard_daemon_watch(void *unused) {
     (void) unused;
 
     if (!(DISPLAY = XOpenDisplay(NULL))) {
-        fprintf(stderr, "Can't open X display.\n");
-        exit(1);
+        fprintf(stderr, "Error opening X display.");
+        exit(EXIT_FAILURE);
     }
 
     ROOT = DefaultRootWindow(DISPLAY);
