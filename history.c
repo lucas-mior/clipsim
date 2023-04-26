@@ -41,7 +41,7 @@ static void history_file_find(void);
 static int32 history_repeated_index(char *, size_t);
 static void history_reorder(int32);
 static void history_clean(void);
-static void free_entry(Entry *);
+static void history_free_entry(Entry *);
 static void history_save_image(char **, ulong *);
 
 int32 history_lastindex(void) {
@@ -366,7 +366,7 @@ void history_delete(int32 id) {
         return;
     }
 
-    free_entry(&entries[id]);
+    history_free_entry(&entries[id]);
 
     if (id < lastindex) {
         memmove(&entries[id], &entries[id+1],
@@ -387,7 +387,7 @@ void history_reorder(int32 oldindex) {
     return;
 }
 
-void free_entry(Entry *e) {
+void history_free_entry(Entry *e) {
     free(e->content);
     if (e->trimmed != e->content)
         free(e->trimmed);
@@ -402,7 +402,7 @@ void free_entry(Entry *e) {
 void history_clean(void) {
     DEBUG_PRINT("history_clean(void) %d\n", __LINE__)
     for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1)
-        free_entry(&entries[i]);
+        history_free_entry(&entries[i]);
 
     memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
            HISTORY_KEEP_SIZE*sizeof(Entry));
