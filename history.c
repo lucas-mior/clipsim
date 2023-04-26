@@ -35,6 +35,7 @@
 static volatile bool recovered = false;
 static int32 lastindex;
 static File history = { .file = NULL, .fd = -1, .name = NULL };
+static uint8 length_counts[ENTRY_MAX_LENGTH];
 
 static void history_file_find(void);
 static int32 history_repeated_index(char *, size_t);
@@ -119,6 +120,7 @@ void history_read(void) {
                     e->image_path = NULL;
                 }
 
+                length_counts[e->content_length] += 1;
                 begin = p+1;
             }
         }
@@ -143,6 +145,7 @@ void history_read(void) {
                 content_trim_spaces(e);
                 e->image_path = NULL;
             }
+            length_counts[e->content_length] += 1;
         }
         if (lastindex > (int32) HISTORY_KEEP_SIZE)
             break;
@@ -196,6 +199,9 @@ bool history_save(void) {
 
 int32 history_repeated_index(char *content, size_t length) {
     DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, content, length)
+    if (length_counts[length] == 0)
+        return -1;
+
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->content_length == length) {
@@ -267,6 +273,7 @@ void history_append(char *content, ulong length) {
     e = &entries[lastindex];
     e->content = content;
     e->content_length = length;
+    length_counts[length] += 1;
 
     if (kind == TEXT) {
         content_trim_spaces(e);
@@ -395,6 +402,7 @@ void history_free_entry(Entry *e) {
         // because e->content is the same pointer
         unlink(e->image_path);
     }
+    length_counts[e->content_length] -= 1;
     return;
 }
 
