@@ -154,7 +154,7 @@ void history_read(void) {
         exit(1);
     }
 
-    closef(&history);
+    util_close(&history);
     return;
 }
 
@@ -191,7 +191,7 @@ bool history_save(void) {
         fprintf(stderr, "Error saving history to disk: %s\n", strerror(errno));
     else
         fprintf(stderr, "History saved to disk.\n");
-    closef(&history);
+    util_close(&history);
     return saved >= 0;
 }
 

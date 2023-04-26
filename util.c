@@ -84,7 +84,7 @@ void int_handler(int unused) {
     exit(EXIT_FAILURE);
 }
 
-void closef(File *f) {
+void util_close(File *f) {
     if (f->fd >= 0) {
         if (close(f->fd) < 0) {
             fprintf(stderr, "Error closing %s: %s\n",
@@ -102,7 +102,7 @@ void closef(File *f) {
     return;
 }
 
-bool openf(File *f, int flag) {
+bool util_open(File *f, int flag) {
     if ((f->fd = open(f->name, flag)) < 0) {
         fprintf(stderr, "Error opening %s: %s\n",
                         f->name, strerror(errno));

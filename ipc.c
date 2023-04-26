@@ -61,19 +61,19 @@ void *ipc_daemon_listen_fifo(void *unused) {
 
     while (true) {
         nanosleep(&pause, NULL);
-        if (!openf(&command_fifo, O_RDONLY))
+        if (!util_open(&command_fifo, O_RDONLY))
             continue;
         pthread_mutex_lock(&lock);
 
         if (read(command_fifo.fd, &command, sizeof(command)) < 0) {
             fprintf(stderr, "Failed to read command from pipe: "
                             "%s\n", strerror(errno));
-            closef(&command_fifo);
+            util_close(&command_fifo);
             pthread_mutex_unlock(&lock);
             continue;
         }
 
-        closef(&command_fifo);
+        util_close(&command_fifo);
         switch (command) {
             case PRINT:
                 ipc_daemon_pipe_entries();
@@ -100,7 +100,7 @@ void *ipc_daemon_listen_fifo(void *unused) {
 }
 
 void ipc_client_speak_fifo(int command, int32 id) {
-    if (!openf(&command_fifo, O_WRONLY | O_NONBLOCK)) {
+    if (!util_open(&command_fifo, O_WRONLY | O_NONBLOCK)) {
         fprintf(stderr, "Could not open Fifo for sending command to daemon. "
                         "Is `%s daemon` running?\n", "clipsim");
         return;
@@ -109,10 +109,10 @@ void ipc_client_speak_fifo(int command, int32 id) {
     if (write(command_fifo.fd, &command, sizeof(command)) < 0) {
         fprintf(stderr, "Failed to send command to daemon: "
                         "%s\n", strerror(errno));
-        closef(&command_fifo);
+        util_close(&command_fifo);
         return;
     } else {
-        closef(&command_fifo);
+        util_close(&command_fifo);
     }
 
     switch (command) {
@@ -142,14 +142,14 @@ void ipc_daemon_history_save(void) {
     DEBUG_PRINT("ipc_daemon_history_save(void) %d\n", __LINE__)
     char saved;
     fprintf(stderr, "Trying to save history...\n");
-    if (!openf(&content_fifo, O_WRONLY))
+    if (!util_open(&content_fifo, O_WRONLY))
         return;
 
     saved = history_save();
 
     write(content_fifo.fd, &saved, sizeof(saved));
 
-    closef(&content_fifo);
+    util_close(&content_fifo);
     return;
 }
 
@@ -157,7 +157,7 @@ void ipc_client_check_save(void) {
     ssize_t r;
     char saved;
     fprintf(stderr, "Trying to save history...\n");
-    if (!openf(&content_fifo, O_RDONLY))
+    if (!util_open(&content_fifo, O_RDONLY))
         return;
 
     if ((r = read(content_fifo.fd, &saved, sizeof(saved))) > 0) {
@@ -167,7 +167,7 @@ void ipc_client_check_save(void) {
             fprintf(stderr, "Error saving history to disk.\n");
     }
 
-    closef(&content_fifo);
+    util_close(&content_fifo);
     return;
 }
 
@@ -201,7 +201,7 @@ void ipc_daemon_pipe_entries(void) {
     fflush(content_fifo.file);
 
     close:
-    closef(&content_fifo);
+    util_close(&content_fifo);
     return;
 }
 
@@ -210,7 +210,7 @@ void ipc_daemon_pipe_id(int32 id) {
     Entry *e;
     int32 lastindex;
 
-    if (!openf(&content_fifo, O_WRONLY))
+    if (!util_open(&content_fifo, O_WRONLY))
         return;
 
     lastindex = history_lastindex();
@@ -232,7 +232,7 @@ void ipc_daemon_pipe_id(int32 id) {
     dprintf(content_fifo.fd, "%s", e->content);
 
     close:
-    closef(&content_fifo);
+    util_close(&content_fifo);
     return;
 }
 
@@ -241,12 +241,12 @@ void ipc_client_print_entries(void) {
     static char buffer[BUFSIZ];
     ssize_t r;
 
-    if (!openf(&content_fifo, O_RDONLY))
+    if (!util_open(&content_fifo, O_RDONLY))
         return;
 
     r = read(content_fifo.fd, &buffer, sizeof(buffer));
     if (r <= 0) {
-        closef(&content_fifo);
+        util_close(&content_fifo);
         return;
     }
     if (buffer[0] != IMG_SEPARATOR) {
@@ -257,7 +257,7 @@ void ipc_client_print_entries(void) {
         int test;
         if (r == 1)
             read(content_fifo.fd, buffer+1, sizeof(buffer)-1);
-        closef(&content_fifo);
+        util_close(&content_fifo);
         if ((test = open(buffer+1, O_RDONLY)) < 0) {
             fprintf(stderr, "Error opening %s: %s\n", buffer+1, strerror(errno));
             close(test);
@@ -271,7 +271,7 @@ void ipc_client_print_entries(void) {
             execlp("chafa", "chafa", buffer+1, "-s", "40x", NULL);
     }
 
-    closef(&content_fifo);
+    util_close(&content_fifo);
     return;
 }
 
@@ -288,10 +288,10 @@ void ipc_daemon_with_id(void (*what)(int32)) {
     if (fread(&id, sizeof(id), 1, passid_fifo.file) != 1) {
         fprintf(stderr, "Failed to read id from pipe: "
                         "%s\n", strerror(errno));
-        closef(&passid_fifo);
+        util_close(&passid_fifo);
         return;
     }
-    closef(&passid_fifo);
+    util_close(&passid_fifo);
 
     what(id);
     return;
@@ -310,7 +310,7 @@ void ipc_client_ask_id(int32 id) {
                         "%s\n", strerror(errno));
     }
 
-    closef(&passid_fifo);
+    util_close(&passid_fifo);
     return;
 }
 
