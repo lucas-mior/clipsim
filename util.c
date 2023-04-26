@@ -68,10 +68,7 @@ bool estrtol(int32 *num, char *string, int base) {
 
 void segv_handler(int unused) {
     char *msg = "Memory error. Please send a bug report.\n";
-    char *notifiers[2] = {
-        "dunstify",
-        "notify-send",
-    };
+    char *notifiers[2] = { "dunstify", "notify-send" };
     (void) unused;
 
     write(STDERR_FILENO, msg, strlen(msg));
