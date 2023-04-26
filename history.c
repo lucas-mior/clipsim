@@ -404,8 +404,8 @@ void history_clean(void) {
     for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1)
         free_entry(&entries[i]);
 
-    memmove(&entries[0], &entries[HISTORY_KEEP_SIZE],
-            HISTORY_KEEP_SIZE*sizeof(Entry));
+    memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
+           HISTORY_KEEP_SIZE*sizeof(Entry));
     memset(&entries[HISTORY_KEEP_SIZE], 0, HISTORY_KEEP_SIZE*sizeof(Entry));
     lastindex = HISTORY_KEEP_SIZE-1;
     return;
