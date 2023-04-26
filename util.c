@@ -23,6 +23,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "clipsim.h"
 #include "util.h"
@@ -111,4 +113,45 @@ bool util_open(File *f, int flag) {
     } else {
         return true;
     }
+}
+
+int util_copy_file(const char *destination, const char *source) {
+    int src_fd, dest_fd;
+    char buffer[BUFSIZ];
+    ssize_t bytes_read, bytes_written;
+
+    src_fd = open(source, O_RDONLY);
+    if (src_fd == -1) {
+        fprintf(stderr, "Error opening %s: %s\n", source, strerror(errno));
+        return -1;
+    }
+
+    dest_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 
+                                S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (dest_fd == -1) {
+        fprintf(stderr, "Error opening %s: %s\n", destination, strerror(errno));
+        close(src_fd);
+        return -1;
+    }
+
+    while ((bytes_read = read(src_fd, buffer, BUFSIZ)) > 0) {
+        bytes_written = write(dest_fd, buffer, bytes_read);
+        if (bytes_written != bytes_read) {
+            fprintf(stderr, "Error: Unable to write data to target file");
+            close(src_fd);
+            close(dest_fd);
+            return -1;
+        }
+    }
+
+    if (bytes_read == -1) {
+        fprintf(stderr, "Error: Unable to read data from source file");
+        close(src_fd);
+        close(dest_fd);
+        return -1;
+    }
+
+    close(src_fd);
+    close(dest_fd);
+    return 0;
 }

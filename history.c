@@ -26,6 +26,7 @@
 #include <limits.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <libgen.h>
 
 #include "clipsim.h"
 #include "history.h"
@@ -35,6 +36,7 @@
 static volatile bool recovered = false;
 static int32 lastindex;
 static File history = { .file = NULL, .fd = -1, .name = NULL };
+static char *cache = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH];
 
 static void history_file_find(void);
@@ -51,7 +53,6 @@ int32 history_lastindex(void) {
 void history_file_find(void) {
     static char buffer[PATH_MAX];
     DEBUG_PRINT("history_find(void) %d\n", __LINE__)
-    char *cache = NULL;
     const char *clipsim = "clipsim/history";
     size_t length;
 
@@ -163,6 +164,7 @@ void history_read(void) {
 bool history_save(void) {
     DEBUG_PRINT("history_save(void) %d\n", __LINE__)
     int saved;
+    char image_save[PATH_MAX];
 
     if (lastindex < 0) {
         fprintf(stderr, "History is empty. Not saving.\n");
@@ -181,10 +183,19 @@ bool history_save(void) {
 
     for (uint i = 0; i <= (uint) lastindex; i += 1) {
         Entry *e = &entries[i];
-        write(history.fd, e->content, e->content_length);
         if (e->image_path) {
+            if (cache) {
+                int length;
+                length = snprintf(image_save, sizeof(image_save), 
+                                  "%s/clipsim/%s", cache, basename(e->image_path));
+                util_copy_file(image_save, e->image_path);
+                write(history.fd, image_save, (size_t) length);
+            } else {
+                write(history.fd, e->content, e->content_length);
+            }
             write(history.fd, &IMAGE_END, 1);
         } else {
+            write(history.fd, e->content, e->content_length);
             write(history.fd, &TEXT_END, 1);
         }
     }
@@ -218,12 +229,8 @@ void history_save_image(char **content, ulong *length) {
     ssize_t w = 0;
     size_t copied = 0;
     char buffer[256];
-    char *CLIPSIM_IMAGE_CACHE;
-    CLIPSIM_IMAGE_CACHE = getenv("CLIPSIM_IMAGE_CACHE");
-    if (CLIPSIM_IMAGE_CACHE == NULL)
-        CLIPSIM_IMAGE_CACHE = "/tmp";
 
-    snprintf(buffer, sizeof(buffer), "%s/%lu.png", CLIPSIM_IMAGE_CACHE, t);
+    snprintf(buffer, sizeof(buffer), "/tmp/%lu.png", t);
     buffer[sizeof(buffer)-1] = '\0';
     if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
                                       S_IRUSR | S_IWUSR)) < 0) {
