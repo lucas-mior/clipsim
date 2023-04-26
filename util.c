@@ -135,7 +135,7 @@ int util_copy_file(const char *destination, const char *source) {
     }
 
     while ((bytes_read = read(src_fd, buffer, BUFSIZ)) > 0) {
-        bytes_written = write(dest_fd, buffer, bytes_read);
+        bytes_written = write(dest_fd, buffer, (size_t) bytes_read);
         if (bytes_written != bytes_read) {
             fprintf(stderr, "Error: Unable to write data to target file");
             close(src_fd);
