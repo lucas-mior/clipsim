@@ -395,14 +395,14 @@ void history_reorder(int32 oldindex) {
 
 void history_free_entry(Entry *e) {
     length_counts[e->content_length] -= 1;
-    free(e->content);
-    if (e->trimmed != e->content)
-        free(e->trimmed);
     if (e->image_path) {
         // image_path does not have to be freed
         // because e->content is the same pointer
         unlink(e->image_path);
     }
+    free(e->content);
+    if (e->trimmed != e->content)
+        free(e->trimmed);
     return;
 }
 
