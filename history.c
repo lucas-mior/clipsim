@@ -153,7 +153,7 @@ void history_read(void) {
 
     if (ferror(history.file)) {
         printf("Error while reading history file.\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     util_close(&history);

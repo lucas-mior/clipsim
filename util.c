@@ -35,7 +35,7 @@ void *xalloc(void *old, size_t size) {
         fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
         if (old)
             fprintf(stderr, "Reallocating from: %p\n", old);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     return p;
 }
@@ -46,7 +46,7 @@ void *xcalloc(size_t nmemb, size_t size) {
     if ((p = calloc(nmemb, size)) == NULL) {
         fprintf(stderr, "Failed to allocate %zu members of %zu bytes each.\n",
                         nmemb, size);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     return p;
 }
