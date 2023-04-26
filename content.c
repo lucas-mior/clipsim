@@ -38,7 +38,7 @@ void content_trim_spaces(Entry *e) {
     char temp = '\0';
     char *c = e->content;
 
-    out = e->trimmed = xalloc(NULL, MIN(e->content_length+1, TRIMMED_SIZE+1));
+    out = e->trimmed = util_realloc(NULL, MIN(e->content_length+1, TRIMMED_SIZE+1));
 
     if (e->content_length >= TRIMMED_SIZE) {
         temp = e->content[TRIMMED_SIZE];

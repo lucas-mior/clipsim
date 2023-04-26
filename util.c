@@ -28,8 +28,8 @@
 #include "util.h"
 #include "history.h"
 
-void *xalloc(void *old, size_t size) {
-    DEBUG_PRINT("*xalloc(%p, %zu)\n", old, size)
+void *util_realloc(void *old, size_t size) {
+    DEBUG_PRINT("*util_realloc(%p, %zu)\n", old, size)
     void *p;
     if ((p = realloc(old, size)) == NULL) {
         fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
@@ -40,7 +40,7 @@ void *xalloc(void *old, size_t size) {
     return p;
 }
 
-void *xcalloc(size_t nmemb, size_t size) {
+void *util_calloc(size_t nmemb, size_t size) {
     DEBUG_PRINT("*xcalloc(%zu, %zu)\n", nmemb, size)
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {

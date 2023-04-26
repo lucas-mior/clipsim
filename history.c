@@ -109,7 +109,7 @@ void history_read(void) {
                 lastindex += 1;
                 e = &entries[lastindex];
                 e->content_length = (size_t) (p - begin);
-                e->content = xalloc(NULL, e->content_length+1);
+                e->content = util_realloc(NULL, e->content_length+1);
                 strcpy(e->content, begin);
                 if (c == IMAGE_END) {
                     e->trimmed = e->content;
@@ -135,7 +135,7 @@ void history_read(void) {
             lastindex += 1;
             e = &entries[lastindex];
             e->content_length = (size_t) (p - begin);
-            e->content = xalloc(NULL, e->content_length+1);
+            e->content = util_realloc(NULL, e->content_length+1);
             strcpy(e->content, begin);
             if (c == IMAGE_END) {
                 e->trimmed = e->content;
@@ -236,7 +236,7 @@ void history_save_image(char **content, ulong *length) {
         *length -= (size_t) w;
     } while (*length > 0);
     *length = strlen(buffer);
-    *content = xalloc(*content, *length+1);
+    *content = util_realloc(*content, *length+1);
     strcpy(*content, buffer);
     return;
 }

@@ -20,8 +20,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-void *xalloc(void *, size_t);
-void *xcalloc(size_t, size_t);
+void *util_realloc(void *, size_t);
+void *util_calloc(size_t, size_t);
 bool util_strtol(int32 *, char *, int);
 void util_segv_handler(int) __attribute__((noreturn));
 void util_int_handler(int) __attribute__((noreturn));
