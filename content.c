@@ -64,6 +64,8 @@ void content_trim_spaces(Entry *e) {
     if (e->trimmed_length == e->content_length) {
         free(e->trimmed);
         e->trimmed = e->content;
+    } else {
+        e->trimmed = util_realloc(e->trimmed, e->trimmed_length+1);
     }
     return;
 }
