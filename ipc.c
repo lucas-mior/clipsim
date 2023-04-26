@@ -33,11 +33,11 @@
 #include "util.h"
 
 static File command_fifo = { .file = NULL, .fd = -1,
-                             .name = "/tmp/clipsimcmd.fifo" };
+                             .name = "/tmp/clipsim_command.fifo" };
 static File passid_fifo  = { .file = NULL, .fd = -1,
-                             .name = "/tmp/clipsimwid.fifo" };
+                             .name = "/tmp/clipsim_passid.fifo" };
 static File content_fifo = { .file = NULL, .fd = -1,
-                             .name = "/tmp/clipsimdat.fifo" };
+                             .name = "/tmp/clipsim_content.fifo" };
 
 static void ipc_daemon_history_save(void);
 static void ipc_client_check_save(void);
