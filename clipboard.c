@@ -158,7 +158,7 @@ GetClipboardResult clipboard_get_clipboard(char **save, ulong *length) {
 
 void clipboard_signal_program(void) {
     DEBUG_PRINT("clipboard_signal_program(void) %d\n", __LINE__)
-    int signum;
+    int signal_number;
     char *CLIPSIM_SIGNAL_CODE;
     char *CLIPSIM_SIGNAL_PROGRAM;
 
@@ -168,11 +168,11 @@ void clipboard_signal_program(void) {
     if (!(CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")))
         return;
 
-    if ((signum = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {
+    if ((signal_number = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {
         fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment "
                         "variable: %s\n", CLIPSIM_SIGNAL_CODE);
         return;
     }
 
-    send_signal(CLIPSIM_SIGNAL_PROGRAM, signum);
+    send_signal(CLIPSIM_SIGNAL_PROGRAM, signal_number);
 }

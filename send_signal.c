@@ -26,7 +26,7 @@
 
 static pid_t check_pid(char *, char*);
 
-void send_signal(char *executable, int signum) {
+void send_signal(char *executable, int signal_number) {
     DIR *processes;
     struct dirent *program;
     pid_t pid;
@@ -38,7 +38,7 @@ void send_signal(char *executable, int signum) {
 
     while ((program = readdir(processes))) {
         if ((pid = check_pid(executable, program->d_name))) {
-            kill(pid, SIGRTMIN+signum);
+            kill(pid, SIGRTMIN+signal_number);
             break;
         }
     }

@@ -67,13 +67,15 @@ bool util_strtol(int32 *num, char *string, int base) {
 }
 
 void util_segv_handler(int unused) {
-    char *msg = "Memory error. Please send a bug report.\n";
+    char *message = "Memory error. Please send a bug report.\n";
     char *notifiers[2] = { "dunstify", "notify-send" };
     (void) unused;
 
-    write(STDERR_FILENO, msg, strlen(msg));
-    for (uint i = 0; i < ARRLEN(notifiers); i += 1)
-        execlp(notifiers[i], notifiers[i], "-u", "critical", "clipsim", msg, NULL);
+    write(STDERR_FILENO, message, strlen(message));
+    for (uint i = 0; i < ARRLEN(notifiers); i += 1) {
+        execlp(notifiers[i], notifiers[i], "-u", "critical", 
+               "clipsim", message, NULL);
+    }
     exit(EXIT_FAILURE);
 }
 
