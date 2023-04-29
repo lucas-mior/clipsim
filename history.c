@@ -42,6 +42,7 @@ static void history_reorder(int32);
 static void history_clean(void);
 static void history_free_entry(Entry *);
 static void history_save_image(char **, ulong *);
+static void history_save_entry(Entry *);
 
 int32 history_lastindex(void) {
     return lastindex;
@@ -158,10 +159,35 @@ void history_read(void) {
     return;
 }
 
+void history_save_entry(Entry *e) {
+    char image_save[PATH_MAX];
+    if (e->image_path) {
+        if (cache) {
+            int length;
+            length = snprintf(image_save, sizeof(image_save), 
+                              "%s/clipsim/%s", cache, basename(e->image_path));
+            if (strcmp(image_save, e->image_path)) {
+                if (!util_copy_file(image_save, e->image_path)) {
+                    fprintf(stderr, "Error copying %s to %s: %s.\n", 
+                                     e->image_path, image_save, strerror(errno));
+                    return;
+                }
+                unlink(e->image_path);
+            }
+            write(history.fd, image_save, (size_t) length);
+        } else {
+            write(history.fd, e->content, e->content_length);
+        }
+        write(history.fd, &IMAGE_END, 1);
+    } else {
+        write(history.fd, e->content, e->content_length);
+        write(history.fd, &TEXT_END, 1);
+    }
+}
+
 bool history_save(void) {
     DEBUG_PRINT("history_save(void) %d\n", __LINE__)
     int saved;
-    char image_save[PATH_MAX];
 
     if (lastindex < 0) {
         fprintf(stderr, "History is empty. Not saving.\n");
@@ -178,25 +204,8 @@ bool history_save(void) {
         return false;
     }
 
-    for (uint i = 0; i <= (uint) lastindex; i += 1) {
-        Entry *e = &entries[i];
-        if (e->image_path) {
-            if (cache) {
-                int length;
-                length = snprintf(image_save, sizeof(image_save), 
-                                  "%s/clipsim/%s", cache, basename(e->image_path));
-                if (strcmp(image_save, e->image_path))
-                    util_copy_file(image_save, e->image_path);
-                write(history.fd, image_save, (size_t) length);
-            } else {
-                write(history.fd, e->content, e->content_length);
-            }
-            write(history.fd, &IMAGE_END, 1);
-        } else {
-            write(history.fd, e->content, e->content_length);
-            write(history.fd, &TEXT_END, 1);
-        }
-    }
+    for (uint i = 0; i <= (uint) lastindex; i += 1)
+        history_save_entry(&entries[i]);
 
     if ((saved = fsync(history.fd)) < 0)
         fprintf(stderr, "Error saving history to disk: %s\n", strerror(errno));
