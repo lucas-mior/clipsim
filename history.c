@@ -115,7 +115,8 @@ void history_read(void) {
                     e->image_path = e->content;
                     e->trimmed_length = e->content_length;
                 } else {
-                    content_trim_spaces(e);
+                    content_trim_spaces(&e->trimmed, &e->trimmed_length, 
+                                         e->content, e->content_length);
                     e->image_path = NULL;
                 }
 
@@ -141,7 +142,8 @@ void history_read(void) {
                 e->image_path = e->content;
                 e->trimmed_length = e->content_length;
             } else {
-                content_trim_spaces(e);
+                content_trim_spaces(&e->trimmed, &e->trimmed_length, 
+                                     e->content, e->content_length);
                 e->image_path = NULL;
             }
             length_counts[e->content_length] += 1;
@@ -294,7 +296,8 @@ void history_append(char *content, ulong length) {
     length_counts[length] += 1;
 
     if (kind == TEXT) {
-        content_trim_spaces(e);
+       content_trim_spaces(&e->trimmed, &e->trimmed_length, 
+                            e->content, e->content_length);
         e->image_path = NULL;
     } else if (kind == IMAGE) {
         e->trimmed = e->content;

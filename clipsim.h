@@ -111,7 +111,7 @@ static const char IMAGE_END = 0x02;
 
 void *clipboard_daemon_watch(void *);
 void content_remove_newline(char *, ulong *);
-void content_trim_spaces(Entry *);
+void content_trim_spaces(char **, ulong *, char *, ulong);
 int32 content_check_content(uchar *, ulong);
 int32 history_lastindex(void);
 void history_read(void);

@@ -29,18 +29,18 @@ void content_remove_newline(char *text, ulong *length) {
     return;
 }
 
-void content_trim_spaces(Entry *e) {
-    DEBUG_PRINT("content_trim_spaces(%.*s, %zu)\n",
-                30, e->content, e->content_length)
-    char *out;
+void content_trim_spaces(char **trimmed, ulong *trimmed_length, char *content, ulong length) {
+    DEBUG_PRINT("content_trim_spaces(%p, %p, %s, %lu)\n", 
+                trimmed, trimmed_length, content, length)
+    char *p;
     char temp = '\0';
-    char *c = e->content;
+    char *c = content;
 
-    out = e->trimmed = util_realloc(NULL, MIN(e->content_length+1, TRIMMED_SIZE+1));
+    *trimmed = p = util_realloc(NULL, MIN(length+1, TRIMMED_SIZE+1));
 
-    if (e->content_length >= TRIMMED_SIZE) {
-        temp = e->content[TRIMMED_SIZE];
-        e->content[TRIMMED_SIZE] = '\0';
+    if (length >= TRIMMED_SIZE) {
+        temp = content[TRIMMED_SIZE];
+        content[TRIMMED_SIZE] = '\0';
     }
 
     while (IS_SPACE(*c))
@@ -49,21 +49,21 @@ void content_trim_spaces(Entry *e) {
         while (IS_SPACE(*c) && IS_SPACE(*(c+1)))
             c++;
 
-        *out++ = *c++;
+        *p++ = *c++;
     }
-    *out = '\0';
-    e->trimmed_length = (size_t) (out - e->trimmed);
+    *p = '\0';
+    *trimmed_length = (size_t) (p - *trimmed);
 
     if (temp) {
-        e->content[TRIMMED_SIZE] = temp;
+        content[TRIMMED_SIZE] = temp;
         temp = '\0';
     }
 
-    if (e->trimmed_length == e->content_length) {
-        free(e->trimmed);
-        e->trimmed = e->content;
+    if (*trimmed_length == length) {
+        free(*trimmed);
+        *trimmed = content;
     } else {
-        e->trimmed = util_realloc(e->trimmed, e->trimmed_length+1);
+        *trimmed = util_realloc(*trimmed, *trimmed_length+1);
     }
     return;
 }
