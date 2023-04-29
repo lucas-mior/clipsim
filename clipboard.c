@@ -54,12 +54,12 @@ void *clipboard_daemon_watch(void *unused) {
         exit(EXIT_FAILURE);
     }
 
-    CLIPBOARD = XInternAtom(DISPLAY, "CLIPBOARD", False);
-    PROPERTY  = XInternAtom(DISPLAY, "XSEL_DATA", False);
-    INCREMENT = XInternAtom(DISPLAY, "INCR", False);
+    CLIPBOARD = XInternAtom(DISPLAY, "CLIPBOARD",   False);
+    PROPERTY  = XInternAtom(DISPLAY, "XSEL_DATA",   False);
+    INCREMENT = XInternAtom(DISPLAY, "INCR",        False);
     UTF8      = XInternAtom(DISPLAY, "UTF8_STRING", False);
-    IMG       = XInternAtom(DISPLAY, "image/png", False);
-    TARGET    = XInternAtom(DISPLAY, "TARGETS", False);
+    IMG       = XInternAtom(DISPLAY, "image/png",   False);
+    TARGET    = XInternAtom(DISPLAY, "TARGETS",     False);
 
     root = DefaultRootWindow(DISPLAY);
     color = BlackPixel(DISPLAY, DefaultScreen(DISPLAY));
