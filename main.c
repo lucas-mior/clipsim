@@ -19,8 +19,8 @@
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
 pthread_mutex_t lock;
 
-static void usage(FILE *) __attribute__((noreturn));
-static void launch_daemon(void);
+static void main_usage(FILE *) __attribute__((noreturn));
+static void main_launch_daemon(void);
 
 int main(int argc, char *argv[]) {
     int32 id;
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, util_int_handler);
 
     if (argc <= 1 || argc >= 4)
-        usage(stderr);
+        main_usage(stderr);
 
     for (int c = PRINT; c <= HELP; c += 1) {
         if (!strcmp(argv[1], commands[c].shortname)
@@ -45,30 +45,30 @@ int main(int argc, char *argv[]) {
             case COPY:
             case REMOVE:
                 if (argc != 3 || !util_string_int32(&id, argv[2], 10))
-                    usage(stderr);
+                    main_usage(stderr);
                 ipc_client_speak_fifo(c, id);
                 break;
             case SAVE:
                 ipc_client_speak_fifo(SAVE, 0);
                 break;
             case DAEMON:
-                launch_daemon();
+                main_launch_daemon();
                 break;
             case HELP:
-                usage(stdout);
+                main_usage(stdout);
             default:
-                usage(stderr);
+                main_usage(stderr);
             }
         }
     }
 
     if (!spell)
-        usage(stderr);
+        main_usage(stderr);
 
     return 0;
 }
 
-void usage(FILE *stream) {
+void main_usage(FILE *stream) {
     DEBUG_PRINT("usage(%p)\n", (void *) stream)
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
@@ -80,7 +80,7 @@ void usage(FILE *stream) {
     exit(stream != stdout);
 }
 
-void launch_daemon(void) {
+void main_launch_daemon(void) {
     DEBUG_PRINT("launch_daemon(void) %d\n", __LINE__)
     pthread_t ipc_thread;
     pthread_t clipboard_thread;
