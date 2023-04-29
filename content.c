@@ -29,7 +29,8 @@ void content_remove_newline(char *text, ulong *length) {
     return;
 }
 
-void content_trim_spaces(char **trimmed, ulong *trimmed_length, char *content, ulong length) {
+void content_trim_spaces(char **trimmed, ulong *trimmed_length,
+                         char *content, const ulong length) {
     DEBUG_PRINT("content_trim_spaces(%p, %p, %s, %lu)\n", 
                 trimmed, trimmed_length, content, length)
     char *p;
@@ -68,7 +69,7 @@ void content_trim_spaces(char **trimmed, ulong *trimmed_length, char *content, u
     return;
 }
 
-int32 content_check_content(uchar *data, ulong length) {
+int32 content_check_content(const uchar *data, const ulong length) {
     DEBUG_PRINT("content_check_content(%.*s, %lu)\n", 20, data, length)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
