@@ -134,7 +134,7 @@ bool history_save(void);
 void history_recover(int32);
 void history_remove(int32);
 void *ipc_daemon_listen_fifo(void *);
-void ipc_client_speak_fifo(int, int32);
+void ipc_client_speak_fifo(uint, int32);
 void send_signal(char *, int);
 void *util_realloc(void *, size_t);
 void *util_calloc(size_t, size_t);

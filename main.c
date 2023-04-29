@@ -33,11 +33,11 @@ int main(int argc, char *argv[]) {
     if (argc <= 1 || argc >= 4)
         main_usage(stderr);
 
-    for (int c = PRINT; c <= HELP; c += 1) {
-        if (!strcmp(argv[1], commands[c].shortname)
-            || !strcmp(argv[1], commands[c].longname)) {
+    for (uint i = 0; i < ARRAY_LENGTH(commands); i += 1) {
+        if (!strcmp(argv[1], commands[i].shortname)
+            || !strcmp(argv[1], commands[i].longname)) {
             spell = true;
-            switch (c) {
+            switch (i) {
             case PRINT:
                 ipc_client_speak_fifo(PRINT, 0);
                 break;
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
             case REMOVE:
                 if (argc != 3 || !util_string_int32(&id, argv[2], 10))
                     main_usage(stderr);
-                ipc_client_speak_fifo(c, id);
+                ipc_client_speak_fifo(i, id);
                 break;
             case SAVE:
                 ipc_client_speak_fifo(SAVE, 0);
