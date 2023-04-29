@@ -14,18 +14,6 @@
 /* You should have received a copy of the GNU General Public License */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
 #include "clipsim.h"
 
 void *util_realloc(void *old, size_t size) {

@@ -14,20 +14,6 @@
 /* You should have received a copy of the GNU General Public License */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
-#include <linux/limits.h>
-#define _POSIX_C_SOURCE 200809L
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <sys/wait.h>
-#include <time.h>
-#include <libgen.h>
-
 #include "clipsim.h"
 
 static volatile bool recovered = false;
