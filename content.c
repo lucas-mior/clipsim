@@ -68,8 +68,8 @@ void content_trim_spaces(Entry *e) {
     return;
 }
 
-GetClipboardResult content_valid_content(uchar *data, ulong length) {
-    DEBUG_PRINT("content_valid_content(%.*s, %lu)\n", 20, data, length)
+int32 content_check_content(uchar *data, ulong length) {
+    DEBUG_PRINT("content_check_content(%.*s, %lu)\n", 20, data, length)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
     { /* Check if it is made only of spaces and newlines */

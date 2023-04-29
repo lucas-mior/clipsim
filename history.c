@@ -262,15 +262,15 @@ void history_save_image(char **content, ulong *length) {
 void history_append(char *content, ulong length) {
     DEBUG_PRINT("history_append(%.*s, %lu)\n", 20, content, length)
     int32 oldindex;
+    int32 kind;
     Entry *e;
-    GetClipboardResult kind;
 
     if (recovered) {
         recovered = false;
         return;
     }
 
-    kind = content_valid_content((uchar *) content, length);
+    kind = content_check_content((uchar *) content, length);
     if (kind == TEXT) {
         content_remove_newline(content, &length);
     } else if (kind == IMAGE) {

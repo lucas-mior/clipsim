@@ -112,7 +112,7 @@ static const char IMAGE_END = 0x02;
 void *clipboard_daemon_watch(void *);
 void content_remove_newline(char *, ulong *);
 void content_trim_spaces(Entry *);
-GetClipboardResult content_valid_content(uchar *, ulong);
+int32 content_check_content(uchar *, ulong);
 int32 history_lastindex(void);
 void history_read(void);
 void history_append(char *, ulong);
