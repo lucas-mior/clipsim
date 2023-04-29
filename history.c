@@ -174,7 +174,6 @@ void history_save_entry(Entry *e) {
                                      e->image_path, image_save, strerror(errno));
                     return;
                 }
-                unlink(e->image_path);
             }
             write(history.fd, image_save, (size_t) length);
         } else {
