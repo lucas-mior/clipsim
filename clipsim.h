@@ -114,7 +114,7 @@ static const Command commands[] = {
     [COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace" },
     [REMOVE] = {"-r", "--remove", "remove entry number <n>" },
     [SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history" },
-    [DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command listener" },
+    [DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command listener)" },
     [HELP]   = {"-h", "--help",   "print this help message" },
 };
 
