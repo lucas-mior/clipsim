@@ -37,10 +37,10 @@ static char *cache = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH];
 
 static void history_file_find(void);
-static int32 history_repeated_index(char *, size_t);
+static int32 history_repeated_index(const char *, const size_t);
 static void history_reorder(int32);
 static void history_clean(void);
-static void history_free_entry(Entry *);
+static void history_free_entry(const Entry *);
 static void history_save_image(char **, ulong *);
 static void history_save_entry(Entry *);
 
@@ -217,7 +217,7 @@ bool history_save(void) {
     return saved >= 0;
 }
 
-int32 history_repeated_index(char *content, size_t length) {
+int32 history_repeated_index(const char *content, const size_t length) {
     DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, content, length)
     if (length_counts[length] == 0)
         return -1;
@@ -414,7 +414,7 @@ void history_reorder(int32 oldindex) {
     return;
 }
 
-void history_free_entry(Entry *e) {
+void history_free_entry(const Entry *e) {
     length_counts[e->content_length] -= 1;
     if (e->image_path)
         unlink(e->image_path);

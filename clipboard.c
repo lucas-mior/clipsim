@@ -103,7 +103,7 @@ void *clipboard_daemon_watch(void *unused) {
     }
 }
 
-Atom clipboard_check_target(Atom target) {
+Atom clipboard_check_target(const Atom target) {
     DEBUG_PRINT("clipboard_check_target(%lu)\n", target)
     XEvent xevent;
 

@@ -69,7 +69,7 @@ void content_trim_spaces(char **trimmed, ulong *trimmed_length,
     return;
 }
 
-int32 content_check_content(const uchar *data, const ulong length) {
+int32 content_check_content(uchar *data, const ulong length) {
     DEBUG_PRINT("content_check_content(%.*s, %lu)\n", 20, data, length)
     static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
 
