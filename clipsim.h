@@ -40,32 +40,6 @@
 #define PRINT_DIGITS 3
 #define TRIMMED_SIZE 255
 
-enum {
-    PRINT = 0,
-    INFO,
-    COPY,
-    EXCLUDE,
-    SAVE,
-    DAEMON,
-    HELP,
-};
-
-typedef struct Command {
-    const char *shortname;
-    const char *longname;
-    const char *description;
-} Command;
-
-static const Command commands[] = {
-    [PRINT]  =  {"-p", "--print", "print history" },
-    [INFO]   =  {"-i", "--info", "print entry number <n>" },
-    [COPY]   =  {"-c", "--copy", "copy entry number <n>" },
-    [EXCLUDE] = {"-x", "--exclude", "exclude entry number <n>" },
-    [SAVE]   =  {"-s", "--save", "save history to $XDG_CACHE_HOME/clipsim/history" },
-    [DAEMON] =  {"-d", "--daemon", "spawn daemon" },
-    [HELP]   =  {"-h", "--help", "print help message" },
-};
-
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
@@ -103,6 +77,32 @@ typedef struct File {
     char *name;
     int fd;
 } File;
+
+enum {
+    PRINT = 0,
+    INFO,
+    COPY,
+    EXCLUDE,
+    SAVE,
+    DAEMON,
+    HELP,
+};
+
+typedef struct Command {
+    const char *shortname;
+    const char *longname;
+    const char *description;
+} Command;
+
+static const Command commands[] = {
+    [PRINT]  =  {"-p", "--print", "print history" },
+    [INFO]   =  {"-i", "--info", "print entry number <n>" },
+    [COPY]   =  {"-c", "--copy", "copy entry number <n>" },
+    [EXCLUDE] = {"-x", "--exclude", "exclude entry number <n>" },
+    [SAVE]   =  {"-s", "--save", "save history to $XDG_CACHE_HOME/clipsim/history" },
+    [DAEMON] =  {"-d", "--daemon", "spawn daemon" },
+    [HELP]   =  {"-h", "--help", "print help message" },
+};
 
 extern Entry entries[HISTORY_BUFFER_SIZE];
 extern pthread_mutex_t lock;
