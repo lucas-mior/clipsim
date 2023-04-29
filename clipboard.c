@@ -31,7 +31,7 @@ static Atom clipboard_check_target(Atom);
 static GetClipboardResult clipboard_get_clipboard(char **, ulong *);
 static void clipboard_signal_program(void);
 
-void *clipboard_daemon_watch(void *unused) {
+int clipboard_daemon_watch(void *unused) {
     DEBUG_PRINT("*clipboard_daemon_watch(void *unused) %d\n", __LINE__)
     ulong color;
     Window root;

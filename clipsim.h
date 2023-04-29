@@ -123,7 +123,7 @@ extern mtx_t lock;
 static const char TEXT_END = (char) 0x01;
 static const char IMAGE_END = (char) 0x02;
 
-void *clipboard_daemon_watch(void *);
+int clipboard_daemon_watch(void *);
 void content_remove_newline(char *, ulong *);
 void content_trim_spaces(char **, ulong *, char *, ulong);
 int32 content_check_content(uchar *, ulong);
@@ -133,7 +133,7 @@ void history_append(char *, ulong);
 bool history_save(void);
 void history_recover(int32);
 void history_remove(int32);
-void *ipc_daemon_listen_fifo(void *);
+int ipc_daemon_listen_fifo(void *);
 void ipc_client_speak_fifo(uint, int32);
 void send_signal(const char *, const int);
 void *util_realloc(void *, const size_t);
