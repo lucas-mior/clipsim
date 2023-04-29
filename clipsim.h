@@ -120,8 +120,8 @@ static const Command commands[] = {
 
 extern Entry entries[HISTORY_BUFFER_SIZE];
 extern mtx_t lock;
-static const char TEXT_END = 0x01;
-static const char IMAGE_END = 0x02;
+static const char TEXT_END = (char) 0x01;
+static const char IMAGE_END = (char) 0x02;
 
 void *clipboard_daemon_watch(void *);
 void content_remove_newline(char *, ulong *);

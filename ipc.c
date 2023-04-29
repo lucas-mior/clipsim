@@ -60,7 +60,7 @@ void *ipc_daemon_listen_fifo(void *unused) {
             fprintf(stderr, "Failed to read command from %s: %s\n",
                             command_fifo.name, strerror(errno));
             util_close(&command_fifo);
-            pthread_mutex_unlock(&lock);
+            mtx_unlock(&lock);
             continue;
         }
 
