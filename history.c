@@ -224,7 +224,7 @@ void history_save_image(char **content, ulong *length) {
     size_t copied = 0;
     char buffer[256];
 
-    snprintf(buffer, sizeof(buffer), "/tmp/%lu.png", t);
+    snprintf(buffer, sizeof(buffer), "/tmp/clipsim/%lu.png", t);
     buffer[sizeof(buffer)-1] = '\0';
     if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
                                       S_IRUSR | S_IWUSR)) < 0) {
