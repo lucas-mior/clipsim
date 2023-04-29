@@ -15,6 +15,7 @@
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #include "clipsim.h"
+#include <sys/mman.h>
 
 static volatile bool recovered = false;
 static int32 lastindex;
@@ -63,12 +64,10 @@ void history_file_find(void) {
 
 void history_read(void) {
     DEBUG_PRINT("history_read(void) %d\n", __LINE__)
-    char buffer[BUFSIZ + ENTRY_MAX_LENGTH];
-    size_t r;
-    char *p;
+    struct stat history_stat;
+    size_t history_length;
+    char *history_content;
     char *begin;
-    int c;
-    Entry *e;
 
     lastindex = -1;
     history_file_find();
@@ -77,45 +76,34 @@ void history_read(void) {
                         "History will start empty.\n");
         return;
     }
-    if (!(history.file = fopen(history.name, "r"))) {
+    if (!(history.fd = open(history.name, O_RDWR))) {
         fprintf(stderr, "Error opening history file for reading: %s\n"
                         "History will start empty.\n", strerror(errno));
         return;
     }
 
-    do {
-        r = fread(buffer, 1, BUFSIZ, history.file);
-        begin = buffer;
-        for (p = buffer; p < buffer + r; p++) {
-            if ((*p == TEXT_END) || (*p == IMAGE_END)) {
-                c = *p;
-                *p = '\0';
+    if (fstat(history.fd, &history_stat) < 0) {
+        fprintf(stderr, "Error getting file information: %s\n"
+                        "History will start empty.\n", strerror(errno));
+        close(history.fd);
+        return;
+    }
+    history_length = history_stat.st_size;
 
-                lastindex += 1;
-                e = &entries[lastindex];
-                e->content_length = (size_t) (p - begin);
-                e->content = util_realloc(NULL, e->content_length+1);
-                strcpy(e->content, begin);
-                if (c == IMAGE_END) {
-                    e->trimmed = e->content;
-                    e->image_path = e->content;
-                    e->trimmed_length = e->content_length;
-                } else {
-                    content_trim_spaces(&e->trimmed, &e->trimmed_length, 
-                                         e->content, e->content_length);
-                    e->image_path = NULL;
-                }
+    history_content = mmap(NULL, history_length, PROT_READ | PROT_WRITE, MAP_PRIVATE, history.fd, 0);
+    if (history_content == MAP_FAILED) {
+        fprintf(stderr, "Error mapping history file to memory: %s"
+                        "History will start empty.\n", strerror(errno));
+        close(history.fd);
+        return;
+    }
 
-                length_counts[e->content_length] += 1;
-                begin = p+1;
-            }
-        }
-        if (r > 0 && *(p-1) != '\0') {
-            while ((c = fgetc(history.file)) != EOF) {
-                if ((c == TEXT_END) || (c == IMAGE_END))
-                    break;
-                *p++ = (char) c;
-            }
+    begin = history_content;
+    for (char *p = history_content; p < history_content + history_length; p++) {
+        Entry *e;
+        int c;
+        if ((*p == TEXT_END) || (*p == IMAGE_END)) {
+            c = *p;
             *p = '\0';
 
             lastindex += 1;
@@ -132,17 +120,15 @@ void history_read(void) {
                                      e->content, e->content_length);
                 e->image_path = NULL;
             }
+
             length_counts[e->content_length] += 1;
+            begin = p+1;
         }
         if (lastindex > (int32) HISTORY_KEEP_SIZE)
             break;
-    } while (r >= BUFSIZ);
-
-    if (ferror(history.file)) {
-        printf("Error while reading history file.\n");
-        exit(EXIT_FAILURE);
     }
 
+    munmap(history_content, history_length);
     util_close(&history);
     return;
 }
