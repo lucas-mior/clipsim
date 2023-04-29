@@ -22,7 +22,7 @@
 #ifndef CLIPSIM_H
 #define CLIPSIM_H
 
-#define ARRLEN(x) (sizeof(x) / sizeof(x[0]))
+#define ARRAY_LENGTH(x) (sizeof(x) / sizeof(x[0]))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n'))

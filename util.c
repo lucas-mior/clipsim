@@ -72,7 +72,7 @@ void util_segv_handler(int unused) {
     (void) unused;
 
     write(STDERR_FILENO, message, strlen(message));
-    for (uint i = 0; i < ARRLEN(notifiers); i += 1) {
+    for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
                "clipsim", message, NULL);
     }
