@@ -82,7 +82,7 @@ enum {
     PRINT = 0,
     INFO,
     COPY,
-    EXCLUDE,
+    REMOVE,
     SAVE,
     DAEMON,
     HELP,
@@ -95,13 +95,13 @@ typedef struct Command {
 } Command;
 
 static const Command commands[] = {
-    [PRINT]   = {"-p", "--print", "print history" },
-    [INFO]    = {"-i", "--info", "print entry number <n>" },
-    [COPY]    = {"-c", "--copy", "copy entry number <n>" },
-    [EXCLUDE] = {"-x", "--exclude", "exclude entry number <n>" },
-    [SAVE]    = {"-s", "--save", "save history to $XDG_CACHE_HOME/clipsim/history" },
-    [DAEMON]  = {"-d", "--daemon", "spawn daemon" },
-    [HELP]    = {"-h", "--help", "print help message" },
+    [PRINT]  = {"-p", "--print",  "print history" },
+    [INFO]   = {"-i", "--info",   "print entry number <n>" },
+    [COPY]   = {"-c", "--copy",   "copy entry number <n>" },
+    [REMOVE] = {"-r", "--remove", "remove entry number <n>" },
+    [SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history" },
+    [DAEMON] = {"-d", "--daemon", "spawn daemon" },
+    [HELP]   = {"-h", "--help",   "print help message" },
 };
 
 extern Entry entries[HISTORY_BUFFER_SIZE];
@@ -118,7 +118,7 @@ void history_read(void);
 void history_append(char *, ulong);
 bool history_save(void);
 void history_recover(int32);
-void history_exclude(int32);
+void history_remove(int32);
 void *ipc_daemon_listen_fifo(void *);
 void ipc_client_speak_fifo(int, int32);
 void send_signal(char *, int);

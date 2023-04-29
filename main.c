@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
                 break;
             case INFO:
             case COPY:
-            case EXCLUDE:
+            case REMOVE:
                 if (argc != 3 || !util_string_int32(&id, argv[2], 10))
                     usage(stderr);
                 ipc_client_speak_fifo(c, id);

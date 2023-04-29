@@ -81,8 +81,8 @@ void *ipc_daemon_listen_fifo(void *unused) {
             case COPY:
                 ipc_daemon_with_id(history_recover);
                 break;
-            case EXCLUDE:
-                ipc_daemon_with_id(history_exclude);
+            case REMOVE:
+                ipc_daemon_with_id(history_remove);
                 break;
             case INFO:
                 ipc_daemon_with_id(ipc_daemon_pipe_id);
@@ -120,7 +120,7 @@ void ipc_client_speak_fifo(int command, int32 id) {
             ipc_client_check_save();
             break;
         case COPY:
-        case EXCLUDE:
+        case REMOVE:
             ipc_client_ask_id(id);
             break;
         case INFO:

@@ -376,8 +376,8 @@ void history_recover(int32 id) {
     return;
 }
 
-void history_exclude(int32 id) {
-    DEBUG_PRINT("history_exclude(%d)\n", id)
+void history_remove(int32 id) {
+    DEBUG_PRINT("history_remove(%d)\n", id)
     if (lastindex <= 0)
         return;
 
@@ -385,7 +385,7 @@ void history_exclude(int32 id) {
         id = lastindex + id + 1;
     } else if (id == lastindex) {
         history_recover(-2);
-        history_exclude(-2);
+        history_remove(-2);
         return;
     }
     if (id > lastindex) {
