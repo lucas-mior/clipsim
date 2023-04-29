@@ -9,8 +9,6 @@ The primary and secondary selection buffers are ignored.
 When copying text equal to some previous text, the history order
 is updated so that each entry is unique in the history.
 
-![demo](https://github.com/lucas-mior/clipsim/blob/master/demo.gif?raw=true)
-
 ## Usage
 
 First, you need to start the daemon by running
