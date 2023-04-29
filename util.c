@@ -16,7 +16,7 @@
 
 #include "clipsim.h"
 
-void *util_realloc(void *old, size_t size) {
+void *util_realloc(void *old, const size_t size) {
     DEBUG_PRINT("*util_realloc(%p, %zu)\n", old, size)
     void *p;
     if ((p = realloc(old, size)) == NULL) {
@@ -28,7 +28,7 @@ void *util_realloc(void *old, size_t size) {
     return p;
 }
 
-void *util_calloc(size_t nmemb, size_t size) {
+void *util_calloc(const size_t nmemb, const size_t size) {
     DEBUG_PRINT("*xcalloc(%zu, %zu)\n", nmemb, size)
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
@@ -39,7 +39,7 @@ void *util_calloc(size_t nmemb, size_t size) {
     return p;
 }
 
-bool util_string_int32(int32 *number, char *string, int base) {
+bool util_string_int32(int32 *number, const char *string, const int base) {
     char *endptr;
     long x;
     errno = 0;
@@ -91,7 +91,7 @@ void util_close(File *f) {
     return;
 }
 
-bool util_open(File *f, int flag) {
+bool util_open(File *f, const int flag) {
     if ((f->fd = open(f->name, flag)) < 0) {
         fprintf(stderr, "Error opening %s: %s\n",
                         f->name, strerror(errno));

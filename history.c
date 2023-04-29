@@ -24,7 +24,7 @@ static uint8 length_counts[ENTRY_MAX_LENGTH];
 
 static void history_file_find(void);
 static int32 history_repeated_index(const char *, const size_t);
-static void history_reorder(int32);
+static void history_reorder(const int32);
 static void history_clean(void);
 static void history_free_entry(const Entry *);
 static void history_save_image(char **, ulong *);
@@ -281,7 +281,7 @@ void history_append(char *content, ulong length) {
     length_counts[length] += 1;
 
     if (kind == TEXT) {
-       content_trim_spaces(&e->trimmed, &e->trimmed_length, 
+       content_trim_spaces(&(e->trimmed), &(e->trimmed_length), 
                             e->content, e->content_length);
         e->image_path = NULL;
     } else if (kind == IMAGE) {
@@ -390,7 +390,7 @@ void history_remove(int32 id) {
     return;
 }
 
-void history_reorder(int32 oldindex) {
+void history_reorder(const int32 oldindex) {
     DEBUG_PRINT("history_reorder(%d)\n", oldindex)
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex+1],

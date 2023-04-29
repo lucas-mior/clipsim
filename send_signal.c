@@ -16,9 +16,9 @@
 
 #include "clipsim.h"
 
-static pid_t check_pid(char *, char*);
+static pid_t check_pid(const char *, const char*);
 
-void send_signal(char *executable, int signal_number) {
+void send_signal(const char *executable, const int signal_number) {
     DIR *processes;
     struct dirent *program;
     pid_t pid;
@@ -39,7 +39,7 @@ void send_signal(char *executable, int signal_number) {
     return;
 }
 
-pid_t check_pid(char *executable, char *number) {
+pid_t check_pid(const char *executable, const char *number) {
     static char buffer[256];
     int pid;
     FILE *stat;

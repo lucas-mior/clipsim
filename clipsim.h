@@ -135,14 +135,14 @@ void history_recover(int32);
 void history_remove(int32);
 void *ipc_daemon_listen_fifo(void *);
 void ipc_client_speak_fifo(uint, int32);
-void send_signal(char *, int);
-void *util_realloc(void *, size_t);
-void *util_calloc(size_t, size_t);
-bool util_string_int32(int32 *, char *, int);
+void send_signal(const char *, const int);
+void *util_realloc(void *, const size_t);
+void *util_calloc(const size_t, const size_t);
+bool util_string_int32(int32 *, const char *, const int);
 void util_segv_handler(int) __attribute__((noreturn));
 void util_int_handler(int) __attribute__((noreturn));
 void util_close(File *);
-bool util_open(File *, int);
+bool util_open(File *, const int);
 bool util_copy_file(const char *, const char *);
 
 #endif /* CLIPSIM_H */
