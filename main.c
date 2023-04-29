@@ -106,7 +106,6 @@ void main_launch_daemon(void) {
         fprintf(stderr, "Error on clipboard thread: %s\n",
                 strerror(clipboard_error));
         exit(EXIT_FAILURE);
-        return;
     }
 
     thrd_join(ipc_thread, NULL);
