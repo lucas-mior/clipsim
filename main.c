@@ -81,7 +81,7 @@ void usage(FILE *stream) {
     DEBUG_PRINT("usage(%p)\n", (void *) stream)
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
-    for (int i = PRINT; i <= HELP; i += 1) {
+    for (uint i = 0; i < ARRAY_LENGTH(commands); i += 1) {
         fprintf(stream, "%s | %-*s : %s\n",
                 commands[i].shortname, 8, commands[i].longname, 
                 commands[i].description);
