@@ -88,7 +88,7 @@ void history_read(void) {
         close(history.fd);
         return;
     }
-    history_length = history_stat.st_size;
+    history_length = (size_t) history_stat.st_size;
 
     history_content = mmap(NULL, history_length, PROT_READ | PROT_WRITE, MAP_PRIVATE, history.fd, 0);
     if (history_content == MAP_FAILED) {
