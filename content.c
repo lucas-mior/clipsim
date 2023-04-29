@@ -19,8 +19,6 @@
 #include <string.h>
 
 #include "clipsim.h"
-#include "util.h"
-#include "content.h"
 
 void content_remove_newline(char *text, ulong *length) {
     text[*length] = '\0';

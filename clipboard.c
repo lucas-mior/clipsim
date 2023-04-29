@@ -28,11 +28,7 @@
 #include <X11/Xatom.h>
 #include <X11/extensions/Xfixes.h>
 
-#include "clipboard.h"
 #include "clipsim.h"
-#include "history.h"
-#include "util.h"
-#include "send_signal.h"
 
 static Display *DISPLAY;
 static Atom CLIPBOARD, PROPERTY, INCREMENT;

@@ -23,11 +23,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "clipboard.h"
 #include "clipsim.h"
-#include "ipc.h"
-#include "history.h"
-#include "util.h"
 
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
 pthread_mutex_t lock;

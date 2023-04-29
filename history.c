@@ -29,9 +29,6 @@
 #include <libgen.h>
 
 #include "clipsim.h"
-#include "history.h"
-#include "util.h"
-#include "content.h"
 
 static volatile bool recovered = false;
 static int32 lastindex;

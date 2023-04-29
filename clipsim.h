@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <pthread.h>
 
 #ifndef CLIPSIM_H
@@ -106,5 +107,27 @@ extern Entry entries[HISTORY_BUFFER_SIZE];
 extern pthread_mutex_t lock;
 static const char IMAGE_END = 0x02;
 static const char TEXT_END = 0x01;
+
+void *clipboard_daemon_watch(void *);
+void content_remove_newline(char *, ulong *);
+void content_trim_spaces(Entry *);
+GetClipboardResult content_valid_content(uchar *, ulong);
+int32 history_lastindex(void);
+void history_read(void);
+void history_append(char *, ulong);
+bool history_save(void);
+void history_recover(int32);
+void history_delete(int32);
+void *ipc_daemon_listen_fifo(void *);
+void ipc_client_speak_fifo(int, int32);
+void send_signal(char *, int);
+void *util_realloc(void *, size_t);
+void *util_calloc(size_t, size_t);
+bool util_strtol(int32 *, char *, int);
+void util_segv_handler(int) __attribute__((noreturn));
+void util_int_handler(int) __attribute__((noreturn));
+void util_close(File *);
+bool util_open(File *, int);
+bool util_copy_file(const char *, const char *);
 
 #endif /* CLIPSIM_H */

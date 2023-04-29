@@ -28,9 +28,6 @@
 #include <sys/stat.h>
 
 #include "clipsim.h"
-#include "ipc.h"
-#include "history.h"
-#include "util.h"
 
 static File command_fifo = { .file = NULL, .fd = -1,
                              .name = "/tmp/clipsim_command.fifo" };

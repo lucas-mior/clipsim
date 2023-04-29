@@ -26,13 +26,13 @@ clipsim: $(objs)
 
 $(objs): Makefile clipsim.h
 
-ipc.o: clipsim.h ipc.h util.h history.h content.h
-clipboard.o: clipsim.h clipboard.h util.h history.h send_signal.h
-util.o: clipsim.h util.h
-history.o: clipsim.h util.h history.h
-content.o: clipsim.h util.h content.h
-send_signal.o: clipsim.h send_signal.h
-main.o: clipsim.h ipc.h clipboard.h util.h history.h send_signal.h
+ipc.o: clipsim.h
+clipboard.o: clipsim.h
+util.o: clipsim.h
+history.o: clipsim.h
+content.o: clipsim.h
+send_signal.o: clipsim.h
+main.o: clipsim.h
 
 .c.o:
 	$(CC) $(cflags) $(cppflags) -c -o $@ $<

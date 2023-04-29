@@ -27,8 +27,6 @@
 #include <sys/stat.h>
 
 #include "clipsim.h"
-#include "util.h"
-#include "history.h"
 
 void *util_realloc(void *old, size_t size) {
     DEBUG_PRINT("*util_realloc(%p, %zu)\n", old, size)

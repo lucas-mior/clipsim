@@ -22,7 +22,7 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include "send_signal.h"
+#include "clipsim.h"
 
 static pid_t check_pid(char *, char*);
 
