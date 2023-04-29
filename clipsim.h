@@ -95,13 +95,13 @@ typedef struct Command {
 } Command;
 
 static const Command commands[] = {
-    [PRINT]  = {"-p", "--print",  "print history" },
-    [INFO]   = {"-i", "--info",   "print entry number <n>" },
-    [COPY]   = {"-c", "--copy",   "copy entry number <n>" },
+    [PRINT]  = {"-p", "--print",  "print entire history, with trimmed whitespace" },
+    [INFO]   = {"-i", "--info",   "print entry number <n>, with original whitespace" },
+    [COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace" },
     [REMOVE] = {"-r", "--remove", "remove entry number <n>" },
     [SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history" },
-    [DAEMON] = {"-d", "--daemon", "spawn daemon" },
-    [HELP]   = {"-h", "--help",   "print help message" },
+    [DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command listener" },
+    [HELP]   = {"-h", "--help",   "print this help message" },
 };
 
 extern Entry entries[HISTORY_BUFFER_SIZE];
