@@ -269,8 +269,8 @@ void ipc_client_print_entries(void) {
     return;
 }
 
-void ipc_daemon_with_id(void (*what)(int32)) {
-    DEBUG_PRINT("ipc_daemon_with_id(void (*what)(int32)) %d\n", __LINE__)
+void ipc_daemon_with_id(void (*func)(int32)) {
+    DEBUG_PRINT("ipc_daemon_with_id(void (*func)(int32)) %d\n", __LINE__)
     int32 id;
 
     if (!(passid_fifo.file = fopen(passid_fifo.name, "r"))) {
@@ -287,7 +287,7 @@ void ipc_daemon_with_id(void (*what)(int32)) {
     }
     util_close(&passid_fifo);
 
-    what(id);
+    func(id);
     return;
 }
 
