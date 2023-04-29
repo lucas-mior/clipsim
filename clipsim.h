@@ -44,25 +44,26 @@ enum {
     PRINT = 0,
     INFO,
     COPY,
-    DELETE,
+    EXCLUDE,
     SAVE,
     DAEMON,
     HELP,
 };
 
 typedef struct Command {
-    const char *name;
+    const char *shortname;
+    const char *longname;
     const char *description;
 } Command;
 
 static const Command commands[] = {
-    [PRINT]  = {"print", "print history" },
-    [INFO]   = {"info", "print entry number <n>" },
-    [COPY]   = {"copy", "copy entry number <n>" },
-    [DELETE] = {"delete", "delete entry number <n>" },
-    [SAVE]   = {"save", "save history to $XDG_CACHE_HOME/clipsim/history" },
-    [DAEMON] = {"daemon", "spawn daemon" },
-    [HELP]   = {"help", "print help message" },
+    [PRINT]  =  {"-p", "--print", "print history" },
+    [INFO]   =  {"-i", "--info", "print entry number <n>" },
+    [COPY]   =  {"-c", "--copy", "copy entry number <n>" },
+    [EXCLUDE] = {"-x", "--exclude", "exclude entry number <n>" },
+    [SAVE]   =  {"-s", "--save", "save history to $XDG_CACHE_HOME/clipsim/history" },
+    [DAEMON] =  {"-d", "--daemon", "spawn daemon" },
+    [HELP]   =  {"-h", "--help", "print help message" },
 };
 
 typedef unsigned char uchar;
@@ -117,7 +118,7 @@ void history_read(void);
 void history_append(char *, ulong);
 bool history_save(void);
 void history_recover(int32);
-void history_delete(int32);
+void history_exclude(int32);
 void *ipc_daemon_listen_fifo(void *);
 void ipc_client_speak_fifo(int, int32);
 void send_signal(char *, int);

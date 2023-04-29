@@ -43,7 +43,8 @@ int main(int argc, char *argv[]) {
         usage(stderr);
 
     for (int c = PRINT; c <= HELP; c += 1) {
-        if (!strcmp(argv[1], commands[c].name)) {
+        if (!strcmp(argv[1], commands[c].shortname)
+            || !strcmp(argv[1], commands[c].longname)) {
             spell = true;
             switch (c) {
             case PRINT:
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]) {
                 break;
             case INFO:
             case COPY:
-            case DELETE:
+            case EXCLUDE:
                 if (argc != 3 || !util_strtol(&id, argv[2], 10))
                     usage(stderr);
                 ipc_client_speak_fifo(c, id);
@@ -81,8 +82,9 @@ void usage(FILE *stream) {
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
     for (int i = PRINT; i <= HELP; i += 1) {
-        fprintf(stream, " %-*s : %s\n", 7, 
-                commands[i].name, commands[i].description);
+        fprintf(stream, "%s | %-*s : %s\n",
+                commands[i].shortname, 7, commands[i].longname, 
+                commands[i].description);
     }
     exit(stream != stdout);
 }
