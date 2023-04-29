@@ -15,14 +15,14 @@ is updated so that each entry is unique in the history.
 
 First, you need to start the daemon by running
 ```
-$ clipsim daemon
+$ clipsim --daemon
 ```
 
 Start copying text into the X11 clipboard.
 
 Then, when you want to print the history, run:
 ```
-$ clipsim print
+$ clipsim --print
 ```
 
 Which will print the entire clipboard history,
@@ -33,10 +33,10 @@ In order to select one of them, you can use
 [fzf](https://github.com/junegunn/fzf)
 and [xsel](https://github.com/kfish/xsel)
 ```
-# Don't actually do this. The output from `clipsim print` has all white spaced
+# Don't actually do this. The output from `clipsim --print` has all white spaced
 # supressed in order to improve usage with fzf. See the next snippet on how to
 # overcome this.
-$ clipsim print | fzf --read0 | xsel -b
+$ clipsim --print | fzf --read0 | xsel -b
 ```
 
 In order to retrieve the entry with original white space and
@@ -45,8 +45,8 @@ remove the leading number:
 ```
 #!/bin/sh
 
-n=$(clipsim print | fzf --read0 | head -n 1 | cut -d ' ' -f 1)
-[ -n "$n" ] && clipsim copy "$n"
+n=$(clipsim --print | fzf --read0 | head -n 1 | cut -d ' ' -f 1)
+[ -n "$n" ] && clipsim --copy "$n"
 ```
 
 Tip: use with a terminal emulator that opens quickly.
@@ -61,21 +61,35 @@ please let me know.
 
 To explicity save the clipboard history in `$XDG_CACHE_HOME/clipsim/history`:
 ```
-$ clipsim save
+$ clipsim --save
 ```
 
-In order to delete an specific entry from history:
+In order to remove an specific entry from history:
 ```
-$ clipsim delete <N>
+$ clipsim --remove <N>
 ```
 
 In order to print an specific entry from history:
 ```
-$ clipsim info <N>
+$ clipsim --info <N>
+```
+
+## Usage
+```
+$ clipsim --help
+usage: clipsim COMMAND [n]
+Available commands:
+-p | --print : print history
+-i | --info  : print entry number <n>
+-c | --copy  : copy entry number <n>
+-r | --remove : remove entry number <n>
+-s | --save  : save history to $XDG_CACHE_HOME/clipsim/history
+-d | --daemon : spawn daemon
+-h | --help  : print help message
 ```
 
 ## Images
-Clipsim stores the images in `/tmp`, and `clipsim info`
+Clipsim stores the images in `/tmp`, and `clipsim --info`
 will show them using `stiv` or `chafa`.
 When retrieving images from the history, `xclip` is used.
 
