@@ -124,7 +124,7 @@ void ipc_client_speak_fifo(int, int32);
 void send_signal(char *, int);
 void *util_realloc(void *, size_t);
 void *util_calloc(size_t, size_t);
-bool util_strtol(int32 *, char *, int);
+bool util_string_int32(int32 *, char *, int);
 void util_segv_handler(int) __attribute__((noreturn));
 void util_int_handler(int) __attribute__((noreturn));
 void util_close(File *);

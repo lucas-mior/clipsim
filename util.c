@@ -51,17 +51,17 @@ void *util_calloc(size_t nmemb, size_t size) {
     return p;
 }
 
-bool util_strtol(int32 *num, char *string, int base) {
-    char *pend;
+bool util_string_int32(int32 *number, char *string, int base) {
+    char *endptr;
     long x;
     errno = 0;
-    x = strtol(string, &pend, base);
-    if ((errno != 0) || (string == pend) || (*pend != 0)) {
+    x = strtol(string, &endptr, base);
+    if ((errno != 0) || (string == endptr) || (*endptr != 0)) {
         return false;
     } else if ((x > INT32_MAX) || (x < INT32_MIN)) {
         return false;
     } else {
-        *num = (int32) x;
+        *number = (int32) x;
         return true;
     }
 }
