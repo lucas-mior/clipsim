@@ -83,7 +83,7 @@ void usage(FILE *stream) {
     fprintf(stream, "Available commands:\n");
     for (int i = PRINT; i <= HELP; i += 1) {
         fprintf(stream, "%s | %-*s : %s\n",
-                commands[i].shortname, 7, commands[i].longname, 
+                commands[i].shortname, 8, commands[i].longname, 
                 commands[i].description);
     }
     exit(stream != stdout);

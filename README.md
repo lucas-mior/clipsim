@@ -79,13 +79,13 @@ $ clipsim --info <N>
 $ clipsim --help
 usage: clipsim COMMAND [n]
 Available commands:
--p | --print : print history
--i | --info  : print entry number <n>
--c | --copy  : copy entry number <n>
+-p | --print  : print history
+-i | --info   : print entry number <n>
+-c | --copy   : copy entry number <n>
 -r | --remove : remove entry number <n>
--s | --save  : save history to $XDG_CACHE_HOME/clipsim/history
+-s | --save   : save history to $XDG_CACHE_HOME/clipsim/history
 -d | --daemon : spawn daemon
--h | --help  : print help message
+-h | --help   : print help message
 ```
 
 ## Images
