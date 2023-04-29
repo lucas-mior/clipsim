@@ -79,13 +79,13 @@ $ clipsim --info <N>
 $ clipsim --help
 usage: clipsim COMMAND [n]
 Available commands:
--p | --print  : print history
--i | --info   : print entry number <n>
--c | --copy   : copy entry number <n>
+-p | --print  : print entire history, with trimmed whitespace
+-i | --info   : print entry number <n>, with original whitespace
+-c | --copy   : copy entry number <n>, with original whitespace
 -r | --remove : remove entry number <n>
 -s | --save   : save history to $XDG_CACHE_HOME/clipsim/history
--d | --daemon : spawn daemon
--h | --help   : print help message
+-d | --daemon : spawn daemon (clipboard watcher and command listener
+-h | --help   : print this help message
 ```
 
 ## Images
