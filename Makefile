@@ -2,7 +2,7 @@ PREFIX ?= /usr/local
 
 objs = ipc.o util.o clipboard.o history.o content.o send_signal.o main.o
 
-ldlibs = $(LDLIBS) -lX11 -lXfixes -pthread
+ldlibs = $(LDLIBS) -lX11 -lXfixes
 
 all: release
 

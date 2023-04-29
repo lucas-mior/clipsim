@@ -66,7 +66,7 @@ void *clipboard_daemon_watch(void *unused) {
         ulong length;
         nanosleep(&pause, NULL);
         (void) XNextEvent(DISPLAY, &XEV);
-        pthread_mutex_lock(&lock);
+        mtx_lock(&lock);
 
         clipboard_signal_program();
 
@@ -90,7 +90,7 @@ void *clipboard_daemon_watch(void *unused) {
                 history_recover(-1);
                 break;
         }
-        pthread_mutex_unlock(&lock);
+        mtx_unlock(&lock);
     }
 }
 

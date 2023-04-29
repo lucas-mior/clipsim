@@ -54,7 +54,7 @@ void *ipc_daemon_listen_fifo(void *unused) {
         nanosleep(&pause, NULL);
         if (!util_open(&command_fifo, O_RDONLY))
             continue;
-        pthread_mutex_lock(&lock);
+        mtx_lock(&lock);
 
         if (read(command_fifo.fd, &command, sizeof(command)) < 0) {
             fprintf(stderr, "Failed to read command from %s: %s\n",
@@ -86,7 +86,7 @@ void *ipc_daemon_listen_fifo(void *unused) {
                 break;
         }
 
-        pthread_mutex_unlock(&lock);
+        mtx_unlock(&lock);
     }
 }
 

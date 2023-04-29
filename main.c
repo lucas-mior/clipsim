@@ -17,7 +17,7 @@
 #include "clipsim.h"
 
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
-pthread_mutex_t lock;
+mtx_t lock;
 
 static void main_usage(FILE *) __attribute__((noreturn));
 static void main_launch_daemon(void);
@@ -81,39 +81,36 @@ void main_usage(FILE *stream) {
 }
 
 void main_launch_daemon(void) {
-    DEBUG_PRINT("launch_daemon(void) %d\n", __LINE__)
-    pthread_t ipc_thread;
-    pthread_t clipboard_thread;
+    DEBUG_PRINT("launch_daemon(void) %d\n", __LINE__);
+    thrd_t ipc_thread;
+    thrd_t clipboard_thread;
     int ipc_error = 0;
     int clipboard_error = 0;
     int e;
 
-    if ((e = pthread_mutex_init(&lock, NULL)) != 0) {
-        fprintf(stderr, "pthread_mutex_init() failed: %s\n", strerror(e));
+    if ((e = mtx_init(&lock, mtx_plain)) != thrd_success) {
+        fprintf(stderr, "mtx_init() failed: %s\n", strerror(e));
         return;
     }
 
     history_read();
 
-    ipc_error = pthread_create(&ipc_thread, NULL,
-                               ipc_daemon_listen_fifo, NULL);
-    clipboard_error = pthread_create(&clipboard_thread, NULL,
-                                     clipboard_daemon_watch, NULL);
-    if (ipc_error) {
+    ipc_error = thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
+    clipboard_error = thrd_create(&clipboard_thread, clipboard_daemon_watch, NULL);
+
+    if (ipc_error != thrd_success) {
         fprintf(stderr, "Error on IPC thread: %s\n",
-                         strerror(clipboard_error));
-        pthread_cancel(ipc_thread);
-        pthread_cancel(clipboard_thread);
-        return;
-    } else if (clipboard_error) {
+                         strerror(ipc_error));
+        exit(EXIT_FAILURE);
+    } else if (clipboard_error != thrd_success) {
         fprintf(stderr, "Error on clipboard thread: %s\n",
                 strerror(clipboard_error));
-        pthread_cancel(ipc_thread);
-        pthread_cancel(clipboard_thread);
+        exit(EXIT_FAILURE);
         return;
     }
-    pthread_join(ipc_thread, NULL);
-    pthread_join(clipboard_thread, NULL);
-    pthread_mutex_destroy(&lock);
+
+    thrd_join(ipc_thread, NULL);
+    thrd_join(clipboard_thread, NULL);
+    mtx_destroy(&lock);
     return;
 }

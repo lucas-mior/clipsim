@@ -20,7 +20,7 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <limits.h>
-#include <pthread.h>
+#include <threads.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -119,7 +119,7 @@ static const Command commands[] = {
 };
 
 extern Entry entries[HISTORY_BUFFER_SIZE];
-extern pthread_mutex_t lock;
+extern mtx_t lock;
 static const char TEXT_END = 0x01;
 static const char IMAGE_END = 0x02;
 
