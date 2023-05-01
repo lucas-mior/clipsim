@@ -66,19 +66,19 @@ int ipc_daemon_listen_fifo(void *unused) {
 
         util_close(&command_fifo);
         switch (command) {
-            case PRINT:
+            case COMMAND_PRINT:
                 ipc_daemon_pipe_entries();
                 break;
-            case SAVE:
+            case COMMAND_SAVE:
                 ipc_daemon_history_save();
                 break;
-            case COPY:
+            case COMMAND_COPY:
                 ipc_daemon_with_id(history_recover);
                 break;
-            case REMOVE:
+            case COMMAND_REMOVE:
                 ipc_daemon_with_id(history_remove);
                 break;
-            case INFO:
+            case COMMAND_INFO:
                 ipc_daemon_with_id(ipc_daemon_pipe_id);
                 break;
             default:
@@ -107,17 +107,17 @@ void ipc_client_speak_fifo(uint command, int32 id) {
     }
 
     switch (command) {
-        case PRINT:
+        case COMMAND_PRINT:
             ipc_client_print_entries();
             break;
-        case SAVE:
+        case COMMAND_SAVE:
             ipc_client_check_save();
             break;
-        case COPY:
-        case REMOVE:
+        case COMMAND_COPY:
+        case COMMAND_REMOVE:
             ipc_client_ask_id(id);
             break;
-        case INFO:
+        case COMMAND_INFO:
             ipc_client_ask_id(id);
             ipc_client_print_entries();
             break;

@@ -77,7 +77,7 @@ int32 content_check_content(uchar *data, const ulong length) {
         if (*(aux-1) == '\0') {
             fprintf(stderr, "Only white space copied to clipboard. "
                             "This won't be added to history.\n");
-            return ERROR;
+            return CLIPBOARD_ERROR;
         }
     }
 
@@ -86,7 +86,7 @@ int32 content_check_content(uchar *data, const ulong length) {
         if ((' ' <= *data) && (*data <= '~')) {
             if (length == 1 || (*(data+1) == '\n')) {
                 fprintf(stderr, "Ignoring single character '%c'\n", *data);
-                return ERROR;
+                return CLIPBOARD_ERROR;
             }
         }
     }
@@ -94,14 +94,14 @@ int32 content_check_content(uchar *data, const ulong length) {
     if (length >= 4) { /* check if it is an image */
         if (!memcmp(data, PNG, 4)) {
             fprintf(stderr, "Image copied to clipboard.\n");
-            return IMAGE;
+            return CLIPBOARD_IMAGE;
         }
     }
 
     if (length > ENTRY_MAX_LENGTH) {
         printf("Too large entry. This wont' be added to history.\n");
-        return ERROR;
+        return CLIPBOARD_ERROR;
     }
 
-    return TEXT;
+    return CLIPBOARD_TEXT;
 }

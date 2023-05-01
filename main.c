@@ -38,23 +38,23 @@ int main(int argc, char *argv[]) {
             || !strcmp(argv[1], commands[i].longname)) {
             spell = true;
             switch (i) {
-            case PRINT:
-                ipc_client_speak_fifo(PRINT, 0);
+            case COMMAND_PRINT:
+                ipc_client_speak_fifo(COMMAND_PRINT, 0);
                 break;
-            case INFO:
-            case COPY:
-            case REMOVE:
+            case COMMAND_INFO:
+            case COMMAND_COPY:
+            case COMMAND_REMOVE:
                 if (argc != 3 || !util_string_int32(&id, argv[2], 10))
                     main_usage(stderr);
                 ipc_client_speak_fifo(i, id);
                 break;
-            case SAVE:
-                ipc_client_speak_fifo(SAVE, 0);
+            case COMMAND_SAVE:
+                ipc_client_speak_fifo(COMMAND_SAVE, 0);
                 break;
-            case DAEMON:
+            case COMMAND_DAEMON:
                 main_launch_daemon();
                 break;
-            case HELP:
+            case COMMAND_HELP:
                 main_usage(stdout);
             default:
                 main_usage(stderr);

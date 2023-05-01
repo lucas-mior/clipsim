@@ -78,11 +78,11 @@ typedef struct Entry {
 } Entry;
 
 typedef enum GetClipboardResult {
-    TEXT,
-    LARGE,
-    IMAGE,
-    OTHER,
-    ERROR,
+    CLIPBOARD_TEXT,
+    CLIPBOARD_LARGE,
+    CLIPBOARD_IMAGE,
+    CLIPBOARD_OTHER,
+    CLIPBOARD_ERROR,
 } GetClipboardResult;
 
 #pragma clang diagnostic ignored "-Wpadded"
@@ -93,13 +93,13 @@ typedef struct File {
 } File;
 
 enum {
-    PRINT = 0,
-    INFO,
-    COPY,
-    REMOVE,
-    SAVE,
-    DAEMON,
-    HELP,
+    COMMAND_PRINT = 0,
+    COMMAND_INFO,
+    COMMAND_COPY,
+    COMMAND_REMOVE,
+    COMMAND_SAVE,
+    COMMAND_DAEMON,
+    COMMAND_HELP,
 };
 
 typedef struct Command {
@@ -109,13 +109,13 @@ typedef struct Command {
 } Command;
 
 static const Command commands[] = {
-    [PRINT]  = {"-p", "--print",  "print entire history, with trimmed whitespace" },
-    [INFO]   = {"-i", "--info",   "print entry number <n>, with original whitespace" },
-    [COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace" },
-    [REMOVE] = {"-r", "--remove", "remove entry number <n>" },
-    [SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history" },
-    [DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command listener)" },
-    [HELP]   = {"-h", "--help",   "print this help message" },
+    [COMMAND_PRINT]  = {"-p", "--print",  "print entire history, with trimmed whitespace" },
+    [COMMAND_INFO]   = {"-i", "--info",   "print entry number <n>, with original whitespace" },
+    [COMMAND_COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace" },
+    [COMMAND_REMOVE] = {"-r", "--remove", "remove entry number <n>" },
+    [COMMAND_SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history" },
+    [COMMAND_DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command listener)" },
+    [COMMAND_HELP]   = {"-h", "--help",   "print this help message" },
 };
 
 extern Entry entries[HISTORY_BUFFER_SIZE];

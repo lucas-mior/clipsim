@@ -244,9 +244,9 @@ void history_append(char *content, ulong length) {
     }
 
     kind = content_check_content((uchar *) content, length);
-    if (kind == TEXT) {
+    if (kind == CLIPBOARD_TEXT) {
         content_remove_newline(content, &length);
-    } else if (kind == IMAGE) {
+    } else if (kind == CLIPBOARD_IMAGE) {
         history_save_image(&content, &length);
     } else {
         return;
@@ -266,11 +266,11 @@ void history_append(char *content, ulong length) {
     e->content_length = length;
     length_counts[length] += 1;
 
-    if (kind == TEXT) {
+    if (kind == CLIPBOARD_TEXT) {
        content_trim_spaces(&(e->trimmed), &(e->trimmed_length), 
                             e->content, e->content_length);
         e->image_path = NULL;
-    } else if (kind == IMAGE) {
+    } else if (kind == CLIPBOARD_IMAGE) {
         e->trimmed = e->content;
         e->trimmed_length = e->content_length;
         e->image_path = e->content;

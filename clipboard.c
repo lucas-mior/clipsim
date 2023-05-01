@@ -71,22 +71,22 @@ int clipboard_daemon_watch(void *unused) {
         clipboard_signal_program();
 
         switch (clipboard_get_clipboard(&save, &length)) {
-            case TEXT:
+            case CLIPBOARD_TEXT:
                 history_append(save, length);
                 break;
-            case IMAGE:
+            case CLIPBOARD_IMAGE:
                 history_append(save, length);
                 break;
-            case OTHER:
+            case CLIPBOARD_OTHER:
                 fprintf(stderr, "Unsupported format. Clipsim only"
                                 " works with UTF-8 and images.\n");
                 break;
-            case LARGE:
+            case CLIPBOARD_LARGE:
                 fprintf(stderr, "Buffer is too large and "
                                 "INCR reading is not implemented yet. "
                                 "This data won't be saved to history.\n");
                 break;
-            case ERROR:
+            case CLIPBOARD_ERROR:
                 history_recover(-1);
                 break;
         }
@@ -121,10 +121,10 @@ GetClipboardResult clipboard_get_clipboard(char **save, ulong *length) {
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
         if (return_atom == INCREMENT) {
-            return LARGE;
+            return CLIPBOARD_LARGE;
         } else {
             *length = nitems_return;
-            return TEXT;
+            return CLIPBOARD_TEXT;
         }
     } else if (clipboard_check_target(IMG)) {
         XGetWindowProperty(DISPLAY, WINDOW, PROPERTY, 0, LONG_MAX/4,
@@ -132,15 +132,15 @@ GetClipboardResult clipboard_get_clipboard(char **save, ulong *length) {
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
         if (return_atom == INCREMENT) {
-            return LARGE;
+            return CLIPBOARD_LARGE;
         } else {
             *length = nitems_return;
-            return IMAGE;
+            return CLIPBOARD_IMAGE;
         }
     } else if (clipboard_check_target(TARGET)) {
-        return OTHER;
+        return CLIPBOARD_OTHER;
     }
-    return ERROR;
+    return CLIPBOARD_ERROR;
 }
 
 void clipboard_signal_program(void) {
