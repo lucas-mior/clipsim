@@ -85,7 +85,7 @@ typedef struct File {
 } File;
 
 enum {
-    CLIPBOARD_TEXT,
+    CLIPBOARD_TEXT = 0,
     CLIPBOARD_LARGE,
     CLIPBOARD_IMAGE,
     CLIPBOARD_OTHER,
