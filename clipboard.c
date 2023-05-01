@@ -28,7 +28,7 @@ static XEvent XEV;
 static Window WINDOW;
 
 static Atom clipboard_check_target(Atom);
-static GetClipboardResult clipboard_get_clipboard(char **, ulong *);
+static int32 clipboard_get_clipboard(char **, ulong *);
 static void clipboard_signal_program(void);
 
 int clipboard_daemon_watch(void *unused) {
@@ -108,7 +108,7 @@ Atom clipboard_check_target(const Atom target) {
     return xevent.xselection.property;
 }
 
-GetClipboardResult clipboard_get_clipboard(char **save, ulong *length) {
+int32 clipboard_get_clipboard(char **save, ulong *length) {
     DEBUG_PRINT("clipboard_get_clipboard(%p, %lu)\n", (void *) save, *length)
     int actual_format_return;
     ulong nitems_return;

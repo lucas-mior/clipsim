@@ -77,20 +77,20 @@ typedef struct Entry {
     char *image_path;
 } Entry;
 
-typedef enum GetClipboardResult {
-    CLIPBOARD_TEXT,
-    CLIPBOARD_LARGE,
-    CLIPBOARD_IMAGE,
-    CLIPBOARD_OTHER,
-    CLIPBOARD_ERROR,
-} GetClipboardResult;
-
 #pragma clang diagnostic ignored "-Wpadded"
 typedef struct File {
     FILE *file;
     char *name;
     int fd;
 } File;
+
+enum {
+    CLIPBOARD_TEXT,
+    CLIPBOARD_LARGE,
+    CLIPBOARD_IMAGE,
+    CLIPBOARD_OTHER,
+    CLIPBOARD_ERROR,
+};
 
 enum {
     COMMAND_PRINT = 0,
