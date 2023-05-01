@@ -123,19 +123,24 @@ extern mtx_t lock;
 static const char TEXT_END = (char) 0x01;
 static const char IMAGE_END = (char) 0x02;
 
-int clipboard_daemon_watch(void *);
 void content_remove_newline(char *, ulong *);
 void content_trim_spaces(char **, ulong *, char *, ulong);
 int32 content_check_content(uchar *, ulong);
+
 int32 history_lastindex(void);
 void history_read(void);
 void history_append(char *, ulong);
 bool history_save(void);
 void history_recover(int32);
 void history_remove(int32);
+
+int clipboard_daemon_watch(void *);
+
 int ipc_daemon_listen_fifo(void *);
 void ipc_client_speak_fifo(uint, int32);
+
 void send_signal(const char *, const int);
+
 void *util_realloc(void *, const size_t);
 void *util_calloc(const size_t, const size_t);
 bool util_string_int32(int32 *, const char *, const int);
