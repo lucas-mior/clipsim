@@ -89,8 +89,8 @@ void main_launch_daemon(void) {
     int e;
 
     if ((e = mtx_init(&lock, mtx_plain)) != thrd_success) {
-        fprintf(stderr, "mtx_init() failed: %s\n", strerror(e));
-        return;
+        fprintf(stderr, "Error initializing lock: %s\n", strerror(e));
+        exit(EXIT_FAILURE);
     }
 
     history_read();
