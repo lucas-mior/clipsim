@@ -68,11 +68,6 @@ void history_read(void) {
 
     lastindex = -1;
     history_file_find();
-    if (!history.name) {
-        fprintf(stderr, "History file name unresolved. "
-                        "History will start empty.\n");
-        return;
-    }
     if (!(history.fd = open(history.name, O_RDWR))) {
         fprintf(stderr, "Error opening history file for reading: %s\n"
                         "History will start empty.\n", strerror(errno));
