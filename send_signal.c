@@ -14,6 +14,7 @@
 /* You should have received a copy of the GNU General Public License */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
+#include <sys/stat.h>
 #include "clipsim.h"
 
 static pid_t check_pid(const char *, const char*);
@@ -29,6 +30,8 @@ void send_signal(const char *executable, const int signal_number) {
     }
 
     while ((program = readdir(processes))) {
+        if (program->d_type != DT_DIR)
+            continue;
         if ((pid = check_pid(executable, program->d_name))) {
             kill(pid, SIGRTMIN+signal_number);
             break;
