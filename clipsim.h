@@ -102,6 +102,9 @@ enum {
     COMMAND_HELP,
 };
 
+static const char TEXT_END = (char) 0x01;
+static const char IMAGE_END = (char) 0x02;
+
 typedef struct Command {
     const char *shortname;
     const char *longname;
@@ -120,8 +123,6 @@ static const Command commands[] = {
 
 extern Entry entries[HISTORY_BUFFER_SIZE];
 extern mtx_t lock;
-static const char TEXT_END = (char) 0x01;
-static const char IMAGE_END = (char) 0x02;
 
 void content_remove_newline(char *, ulong *);
 void content_trim_spaces(char **, ulong *, char *, ulong);
