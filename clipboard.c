@@ -22,8 +22,8 @@
 #include "clipsim.h"
 
 static Display *DISPLAY;
-static Atom CLIPBOARD, PROPERTY, INCREMENT;
-static Atom UTF8, IMG, TARGET;
+static Atom CLIPBOARD, XSEL_DATA, INCR;
+static Atom UTF8_STRING, image_png, TARGETS;
 static XEvent XEV;
 static Window WINDOW;
 
@@ -45,12 +45,12 @@ int clipboard_daemon_watch(void *unused) {
         exit(EXIT_FAILURE);
     }
 
-    CLIPBOARD = XInternAtom(DISPLAY, "CLIPBOARD",   False);
-    PROPERTY  = XInternAtom(DISPLAY, "XSEL_DATA",   False);
-    INCREMENT = XInternAtom(DISPLAY, "INCR",        False);
-    UTF8      = XInternAtom(DISPLAY, "UTF8_STRING", False);
-    IMG       = XInternAtom(DISPLAY, "image/png",   False);
-    TARGET    = XInternAtom(DISPLAY, "TARGETS",     False);
+    CLIPBOARD   = XInternAtom(DISPLAY, "CLIPBOARD",   False);
+    XSEL_DATA   = XInternAtom(DISPLAY, "XSEL_DATA",   False);
+    INCR        = XInternAtom(DISPLAY, "INCR",        False);
+    UTF8_STRING = XInternAtom(DISPLAY, "UTF8_STRING", False);
+    image_png   = XInternAtom(DISPLAY, "image/png",   False);
+    TARGETS     = XInternAtom(DISPLAY, "TARGETS",     False);
 
     root = DefaultRootWindow(DISPLAY);
     color = BlackPixel(DISPLAY, DefaultScreen(DISPLAY));
@@ -98,7 +98,7 @@ Atom clipboard_check_target(const Atom target) {
     DEBUG_PRINT("clipboard_check_target(%lu)\n", target)
     XEvent xevent;
 
-    XConvertSelection(DISPLAY, CLIPBOARD, target, PROPERTY,
+    XConvertSelection(DISPLAY, CLIPBOARD, target, XSEL_DATA,
                       WINDOW, CurrentTime);
     do {
         (void) XNextEvent(DISPLAY, &xevent);
@@ -115,29 +115,29 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
     ulong bytes_after_return;
     Atom return_atom;
 
-    if (clipboard_check_target(UTF8)) {
-        XGetWindowProperty(DISPLAY, WINDOW, PROPERTY, 0, LONG_MAX/4,
+    if (clipboard_check_target(UTF8_STRING)) {
+        XGetWindowProperty(DISPLAY, WINDOW, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
-        if (return_atom == INCREMENT) {
+        if (return_atom == INCR) {
             return CLIPBOARD_LARGE;
         } else {
             *length = nitems_return;
             return CLIPBOARD_TEXT;
         }
-    } else if (clipboard_check_target(IMG)) {
-        XGetWindowProperty(DISPLAY, WINDOW, PROPERTY, 0, LONG_MAX/4,
+    } else if (clipboard_check_target(image_png)) {
+        XGetWindowProperty(DISPLAY, WINDOW, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
-        if (return_atom == INCREMENT) {
+        if (return_atom == INCR) {
             return CLIPBOARD_LARGE;
         } else {
             *length = nitems_return;
             return CLIPBOARD_IMAGE;
         }
-    } else if (clipboard_check_target(TARGET)) {
+    } else if (clipboard_check_target(TARGETS)) {
         return CLIPBOARD_OTHER;
     }
     return CLIPBOARD_ERROR;
