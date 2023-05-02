@@ -52,7 +52,7 @@ pid_t check_pid(const char *executable, const char *number) {
         return 0;
 
     snprintf(buffer, sizeof(buffer), "/proc/%s/stat", number);
-    buffer[255] = '\0';
+    buffer[sizeof(buffer)-1] = '\0';
     if (!(stat = fopen(buffer, "r"))) {
         fprintf(stderr, "Error opening %s: %s\n", buffer, strerror(errno));
         return 0;
