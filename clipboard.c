@@ -71,24 +71,24 @@ int clipboard_daemon_watch(void *unused) {
         clipboard_signal_program();
 
         switch (clipboard_get_clipboard(&save, &length)) {
-            case CLIPBOARD_TEXT:
-                history_append(save, length);
-                break;
-            case CLIPBOARD_IMAGE:
-                history_append(save, length);
-                break;
-            case CLIPBOARD_OTHER:
-                fprintf(stderr, "Unsupported format. Clipsim only"
-                                " works with UTF-8 and images.\n");
-                break;
-            case CLIPBOARD_LARGE:
-                fprintf(stderr, "Buffer is too large and "
-                                "INCR reading is not implemented yet. "
-                                "This data won't be saved to history.\n");
-                break;
-            case CLIPBOARD_ERROR:
-                history_recover(-1);
-                break;
+        case CLIPBOARD_TEXT:
+            history_append(save, length);
+            break;
+        case CLIPBOARD_IMAGE:
+            history_append(save, length);
+            break;
+        case CLIPBOARD_OTHER:
+            fprintf(stderr, "Unsupported format. Clipsim only"
+                            " works with UTF-8 and images.\n");
+            break;
+        case CLIPBOARD_LARGE:
+            fprintf(stderr, "Buffer is too large and "
+                            "INCR reading is not implemented yet. "
+                            "This data won't be saved to history.\n");
+            break;
+        case CLIPBOARD_ERROR:
+            history_recover(-1);
+            break;
         }
         mtx_unlock(&lock);
     }

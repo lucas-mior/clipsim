@@ -73,4 +73,3 @@ pid_t check_pid(const char *executable, const char *number) {
     fclose(stat);
     return 0;
 }
-
