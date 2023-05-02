@@ -21,7 +21,7 @@
 
 #include "clipsim.h"
 
-static Display *DISPLAY;
+static Display *display;
 static Atom CLIPBOARD, XSEL_DATA, INCR;
 static Atom UTF8_STRING, image_png, TARGETS;
 static XEvent XEV;
@@ -40,23 +40,23 @@ int clipboard_daemon_watch(void *unused) {
     pause.tv_nsec = PAUSE10MS;
     (void) unused;
 
-    if (!(DISPLAY = XOpenDisplay(NULL))) {
+    if (!(display = XOpenDisplay(NULL))) {
         fprintf(stderr, "Error opening X display.");
         exit(EXIT_FAILURE);
     }
 
-    CLIPBOARD   = XInternAtom(DISPLAY, "CLIPBOARD",   False);
-    XSEL_DATA   = XInternAtom(DISPLAY, "XSEL_DATA",   False);
-    INCR        = XInternAtom(DISPLAY, "INCR",        False);
-    UTF8_STRING = XInternAtom(DISPLAY, "UTF8_STRING", False);
-    image_png   = XInternAtom(DISPLAY, "image/png",   False);
-    TARGETS     = XInternAtom(DISPLAY, "TARGETS",     False);
+    CLIPBOARD   = XInternAtom(display, "CLIPBOARD",   False);
+    XSEL_DATA   = XInternAtom(display, "XSEL_DATA",   False);
+    INCR        = XInternAtom(display, "INCR",        False);
+    UTF8_STRING = XInternAtom(display, "UTF8_STRING", False);
+    image_png   = XInternAtom(display, "image/png",   False);
+    TARGETS     = XInternAtom(display, "TARGETS",     False);
 
-    root = DefaultRootWindow(DISPLAY);
-    color = BlackPixel(DISPLAY, DefaultScreen(DISPLAY));
-    WINDOW = XCreateSimpleWindow(DISPLAY, root, 0,0, 1,1, 0, color, color);
+    root = DefaultRootWindow(display);
+    color = BlackPixel(display, DefaultScreen(display));
+    WINDOW = XCreateSimpleWindow(display, root, 0,0, 1,1, 0, color, color);
 
-    XFixesSelectSelectionInput(DISPLAY, root, CLIPBOARD, (ulong)
+    XFixesSelectSelectionInput(display, root, CLIPBOARD, (ulong)
                                XFixesSetSelectionOwnerNotifyMask
                              | XFixesSelectionClientCloseNotifyMask
                              | XFixesSelectionWindowDestroyNotifyMask);
@@ -65,7 +65,7 @@ int clipboard_daemon_watch(void *unused) {
         char *save = NULL;
         ulong length;
         nanosleep(&pause, NULL);
-        (void) XNextEvent(DISPLAY, &XEV);
+        (void) XNextEvent(display, &XEV);
         mtx_lock(&lock);
 
         clipboard_signal_program();
@@ -98,10 +98,10 @@ Atom clipboard_check_target(const Atom target) {
     DEBUG_PRINT("clipboard_check_target(%lu)\n", target)
     XEvent xevent;
 
-    XConvertSelection(DISPLAY, CLIPBOARD, target, XSEL_DATA,
+    XConvertSelection(display, CLIPBOARD, target, XSEL_DATA,
                       WINDOW, CurrentTime);
     do {
-        (void) XNextEvent(DISPLAY, &xevent);
+        (void) XNextEvent(display, &xevent);
     } while (xevent.type != SelectionNotify
           || xevent.xselection.selection != CLIPBOARD);
 
@@ -116,7 +116,7 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
     Atom return_atom;
 
     if (clipboard_check_target(UTF8_STRING)) {
-        XGetWindowProperty(DISPLAY, WINDOW, XSEL_DATA, 0, LONG_MAX/4,
+        XGetWindowProperty(display, WINDOW, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
@@ -127,7 +127,7 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
             return CLIPBOARD_TEXT;
         }
     } else if (clipboard_check_target(image_png)) {
-        XGetWindowProperty(DISPLAY, WINDOW, XSEL_DATA, 0, LONG_MAX/4,
+        XGetWindowProperty(display, WINDOW, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
