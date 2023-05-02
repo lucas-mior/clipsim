@@ -61,6 +61,7 @@ pid_t check_pid(const char *executable, const char *number) {
         fprintf(stderr, "Error reading stat file: %s\n", strerror(errno));
         goto close;
     }
+
     command = buffer;
     while (*command != '(')
         command++;
@@ -69,7 +70,7 @@ pid_t check_pid(const char *executable, const char *number) {
         command++;
         executable++;
     }
-    if (*executable == '\0' && *command == ')') {
+    if ((*executable == '\0') && (*command == ')')) {
         fclose(stat);
         return pid;
     }
