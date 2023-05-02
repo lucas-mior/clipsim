@@ -24,8 +24,8 @@
 static Display *display;
 static Atom CLIPBOARD, XSEL_DATA, INCR;
 static Atom UTF8_STRING, image_png, TARGETS;
-static XEvent XEV;
-static Window WINDOW;
+static XEvent xevent;
+static Window window;
 
 static Atom clipboard_check_target(Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
@@ -54,7 +54,7 @@ int clipboard_daemon_watch(void *unused) {
 
     root = DefaultRootWindow(display);
     color = BlackPixel(display, DefaultScreen(display));
-    WINDOW = XCreateSimpleWindow(display, root, 0,0, 1,1, 0, color, color);
+    window = XCreateSimpleWindow(display, root, 0,0, 1,1, 0, color, color);
 
     XFixesSelectSelectionInput(display, root, CLIPBOARD, (ulong)
                                XFixesSetSelectionOwnerNotifyMask
@@ -65,7 +65,7 @@ int clipboard_daemon_watch(void *unused) {
         char *save = NULL;
         ulong length;
         nanosleep(&pause, NULL);
-        (void) XNextEvent(display, &XEV);
+        (void) XNextEvent(display, &xevent);
         mtx_lock(&lock);
 
         clipboard_signal_program();
@@ -96,16 +96,16 @@ int clipboard_daemon_watch(void *unused) {
 
 Atom clipboard_check_target(const Atom target) {
     DEBUG_PRINT("clipboard_check_target(%lu)\n", target)
-    XEvent xevent;
+    XEvent xev;
 
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA,
-                      WINDOW, CurrentTime);
+                      window, CurrentTime);
     do {
-        (void) XNextEvent(display, &xevent);
-    } while (xevent.type != SelectionNotify
-          || xevent.xselection.selection != CLIPBOARD);
+        (void) XNextEvent(display, &xev);
+    } while (xev.type != SelectionNotify
+          || xev.xselection.selection != CLIPBOARD);
 
-    return xevent.xselection.property;
+    return xev.xselection.property;
 }
 
 int32 clipboard_get_clipboard(char **save, ulong *length) {
@@ -116,7 +116,7 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
     Atom return_atom;
 
     if (clipboard_check_target(UTF8_STRING)) {
-        XGetWindowProperty(display, WINDOW, XSEL_DATA, 0, LONG_MAX/4,
+        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
@@ -127,7 +127,7 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
             return CLIPBOARD_TEXT;
         }
     } else if (clipboard_check_target(image_png)) {
-        XGetWindowProperty(display, WINDOW, XSEL_DATA, 0, LONG_MAX/4,
+        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &return_atom,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
