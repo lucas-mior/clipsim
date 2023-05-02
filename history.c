@@ -15,6 +15,7 @@
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #include "clipsim.h"
+#include <stdlib.h>
 #include <sys/mman.h>
 
 static volatile bool recovered = false;
@@ -42,19 +43,15 @@ void history_file_find(void) {
     size_t length;
 
     if (!(cache = getenv("XDG_CACHE_HOME"))) {
-        fprintf(stderr, "XDG_CACHE_HOME needs to be set. "
-                        "History will not be saved.\n");
-        history.name = NULL;
-        return;
+        fprintf(stderr, "XDG_CACHE_HOME needs to be set.\n");
+        exit(EXIT_FAILURE);
     }
 
     length = strlen(cache);
     length += 1 + strlen(clipsim);
     if (length > (PATH_MAX - 1)) {
-        fprintf(stderr, "XDG_CACHE_HOME is too long. "
-                        "History will not be saved.\n");
-        history.name = NULL;
-        return;
+        fprintf(stderr, "XDG_CACHE_HOME is too long.\n");
+        exit(EXIT_FAILURE);
     }
 
     (void) snprintf(buffer, sizeof(buffer), "%s/%s", cache, clipsim);
@@ -136,21 +133,17 @@ void history_read(void) {
 void history_save_entry(Entry *e) {
     char image_save[PATH_MAX];
     if (e->image_path) {
-        if (cache) {
-            int length;
-            length = snprintf(image_save, sizeof(image_save), 
-                              "%s/clipsim/%s", cache, basename(e->image_path));
-            if (strcmp(image_save, e->image_path)) {
-                if (!util_copy_file(image_save, e->image_path)) {
-                    fprintf(stderr, "Error copying %s to %s: %s.\n", 
-                                     e->image_path, image_save, strerror(errno));
-                    return;
-                }
+        int length;
+        length = snprintf(image_save, sizeof(image_save), 
+                          "%s/clipsim/%s", cache, basename(e->image_path));
+        if (strcmp(image_save, e->image_path)) {
+            if (!util_copy_file(image_save, e->image_path)) {
+                fprintf(stderr, "Error copying %s to %s: %s.\n", 
+                                 e->image_path, image_save, strerror(errno));
+                return;
             }
-            write(history.fd, image_save, (size_t) length);
-        } else {
-            write(history.fd, e->content, e->content_length);
         }
+        write(history.fd, image_save, (size_t) length);
         write(history.fd, &IMAGE_END, 1);
     } else {
         write(history.fd, e->content, e->content_length);
