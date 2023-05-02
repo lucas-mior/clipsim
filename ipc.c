@@ -252,10 +252,14 @@ void ipc_client_print_entries(void) {
         if (r == 1)
             read(content_fifo.fd, buffer+1, sizeof(buffer)-1);
         util_close(&content_fifo);
-        if ((test = open(buffer+1, O_RDONLY)) < 0) {
-            fprintf(stderr, "Error opening %s: %s\n", buffer+1, strerror(errno));
+        if ((test = open(buffer+1, O_RDONLY)) >= 0) {
             close(test);
+        } else {
+            fprintf(stderr, "Error opening %s: %s\n", 
+                            buffer+1, strerror(errno)); 
+            return;
         }
+
         CLIPSIM_IMAGE_PREVIEW = getenv("CLIPSIM_IMAGE_PREVIEW");
         if (CLIPSIM_IMAGE_PREVIEW == NULL)
             CLIPSIM_IMAGE_PREVIEW = "chafa";

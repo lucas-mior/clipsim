@@ -82,7 +82,8 @@ void history_read(void) {
     }
     history_length = (size_t) history_stat.st_size;
 
-    history_content = mmap(NULL, history_length, PROT_READ | PROT_WRITE, MAP_PRIVATE, history.fd, 0);
+    history_content = mmap(NULL, history_length, 
+                           PROT_READ | PROT_WRITE, MAP_PRIVATE, history.fd, 0);
     if (history_content == MAP_FAILED) {
         fprintf(stderr, "Error mapping history file to memory: %s"
                         "History will start empty.\n", strerror(errno));
