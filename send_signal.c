@@ -61,13 +61,15 @@ pid_t check_pid(const char *executable, const char *number) {
         fprintf(stderr, "Error reading stat file: %s\n", strerror(errno));
         goto close;
     }
-    if (!strtok(buffer, "(") || !(command = strtok(NULL, ")"))) {
-        fprintf(stderr, "Stat file for pid %s misses "
-                        "command name between parenthesis: %s\n",
-                        number, buffer);
-        goto close;
+    command = buffer;
+    while (*command != '(')
+        command++;
+    command++;
+    while (*command == *executable) {
+        command++;
+        executable++;
     }
-    if (!strcmp(command, executable)) {
+    if (*executable == '\0' && *command == ')') {
         fclose(stat);
         return pid;
     }
