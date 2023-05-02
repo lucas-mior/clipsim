@@ -13,6 +13,7 @@ all: release
 CC=clang
 
 release: cflags += -O2 -Weverything
+release: stripflag = -s
 release: clipsim
 
 debug: cflags += -DCLIPSIM_DEBUG -g -Wall -Wextra
@@ -22,7 +23,7 @@ debug: clipsim
 clipsim: $(objs)
 	ctags --kinds-C=+l *.h *.c
 	vtags.sed tags > .tags.vim
-	$(CC) $(cflags) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
+	$(CC) $(stripflag) $(cflags) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
 
 $(objs): Makefile clipsim.h
 
