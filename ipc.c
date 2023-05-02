@@ -66,24 +66,24 @@ int ipc_daemon_listen_fifo(void *unused) {
 
         util_close(&command_fifo);
         switch (command) {
-            case COMMAND_PRINT:
-                ipc_daemon_pipe_entries();
-                break;
-            case COMMAND_SAVE:
-                ipc_daemon_history_save();
-                break;
-            case COMMAND_COPY:
-                ipc_daemon_with_id(history_recover);
-                break;
-            case COMMAND_REMOVE:
-                ipc_daemon_with_id(history_remove);
-                break;
-            case COMMAND_INFO:
-                ipc_daemon_with_id(ipc_daemon_pipe_id);
-                break;
-            default:
-                fprintf(stderr, "Invalid command received: '%c'\n", command);
-                break;
+        case COMMAND_PRINT:
+            ipc_daemon_pipe_entries();
+            break;
+        case COMMAND_SAVE:
+            ipc_daemon_history_save();
+            break;
+        case COMMAND_COPY:
+            ipc_daemon_with_id(history_recover);
+            break;
+        case COMMAND_REMOVE:
+            ipc_daemon_with_id(history_remove);
+            break;
+        case COMMAND_INFO:
+            ipc_daemon_with_id(ipc_daemon_pipe_id);
+            break;
+        default:
+            fprintf(stderr, "Invalid command received: '%c'\n", command);
+            break;
         }
 
         mtx_unlock(&lock);
@@ -107,23 +107,23 @@ void ipc_client_speak_fifo(uint command, int32 id) {
     }
 
     switch (command) {
-        case COMMAND_PRINT:
-            ipc_client_print_entries();
-            break;
-        case COMMAND_SAVE:
-            ipc_client_check_save();
-            break;
-        case COMMAND_COPY:
-        case COMMAND_REMOVE:
-            ipc_client_ask_id(id);
-            break;
-        case COMMAND_INFO:
-            ipc_client_ask_id(id);
-            ipc_client_print_entries();
-            break;
-        default:
-            fprintf(stderr, "Invalid command: %u\n", command);
-            break;
+    case COMMAND_PRINT:
+        ipc_client_print_entries();
+        break;
+    case COMMAND_SAVE:
+        ipc_client_check_save();
+        break;
+    case COMMAND_COPY:
+    case COMMAND_REMOVE:
+        ipc_client_ask_id(id);
+        break;
+    case COMMAND_INFO:
+        ipc_client_ask_id(id);
+        ipc_client_print_entries();
+        break;
+    default:
+        fprintf(stderr, "Invalid command: %u\n", command);
+        break;
     }
 
     return;
