@@ -123,9 +123,9 @@ void history_read(void) {
 
             length_counts[e->content_length] += 1;
             begin = p+1;
+            if (lastindex > (int32) HISTORY_KEEP_SIZE)
+                break;
         }
-        if (lastindex > (int32) HISTORY_KEEP_SIZE)
-            break;
     }
 
     munmap(history_content, history_length);
