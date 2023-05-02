@@ -314,24 +314,24 @@ void history_recover(int32 id) {
     }
 
     switch ((child = fork())) {
-        case 0:
-            if (istext) {
-                close(fd[1]);
-                dup2(fd[0], STDIN_FILENO);
-                close(fd[0]);
-                execlp("/usr/bin/xsel", "xsel", "-b", NULL);
-            } else {
-                execlp("/usr/bin/xclip", "xclip", "-selection", "clipboard",
-                       "-target", "image/png", e->image_path, NULL);
-            }
-            fprintf(stderr, "Failed to exec(): %s", strerror(errno));
-            return;
-        case -1:
-            fprintf(stderr, "Failed to fork(): %s", strerror(errno));
-            return;
-        default:
-            if (istext)
-                close(fd[0]);
+    case 0:
+        if (istext) {
+            close(fd[1]);
+            dup2(fd[0], STDIN_FILENO);
+            close(fd[0]);
+            execlp("/usr/bin/xsel", "xsel", "-b", NULL);
+        } else {
+            execlp("/usr/bin/xclip", "xclip", "-selection", "clipboard",
+                   "-target", "image/png", e->image_path, NULL);
+        }
+        fprintf(stderr, "Failed to exec(): %s", strerror(errno));
+        return;
+    case -1:
+        fprintf(stderr, "Failed to fork(): %s", strerror(errno));
+        return;
+    default:
+        if (istext)
+            close(fd[0]);
     }
 
     if (istext) {
