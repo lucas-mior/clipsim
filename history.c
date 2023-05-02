@@ -110,7 +110,7 @@ void history_read(void) {
             e = &entries[lastindex];
             e->content_length = (size_t) (p - begin);
             e->content = util_realloc(NULL, e->content_length+1);
-            strcpy(e->content, begin);
+            memcpy(e->content, begin, e->content_length+1);
             if (c == IMAGE_END) {
                 e->trimmed = e->content;
                 e->image_path = e->content;
@@ -228,7 +228,7 @@ void history_save_image(char **content, ulong *length) {
     } while (*length > 0);
     *length = strlen(buffer);
     *content = util_realloc(*content, *length+1);
-    strcpy(*content, buffer);
+    memcpy(*content, buffer, *length+1);
     return;
 }
 
