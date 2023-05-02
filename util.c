@@ -106,7 +106,6 @@ bool util_copy_file(const char *destination, const char *source) {
     char buffer[BUFSIZ];
     ssize_t r = 0;
     ssize_t w = 0;
-
     
     if ((source_fd = open(source, O_RDONLY)) < 0) {
         fprintf(stderr, "Error opening %s for reading: %s\n", 
