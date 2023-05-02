@@ -104,8 +104,8 @@ bool util_open(File *f, const int flag) {
 bool util_copy_file(const char *destination, const char *source) {
     int source_fd, destination_fd;
     char buffer[BUFSIZ];
-    ssize_t bytes_read = 0;
-    ssize_t bytes_written = 0;
+    ssize_t r = 0;
+    ssize_t w = 0;
 
     
     if ((source_fd = open(source, O_RDONLY)) < 0) {
@@ -122,9 +122,9 @@ bool util_copy_file(const char *destination, const char *source) {
         return false;
     }
 
-    while ((bytes_read = read(source_fd, buffer, BUFSIZ)) > 0) {
-        bytes_written = write(destination_fd, buffer, (size_t) bytes_read);
-        if (bytes_written != bytes_read) {
+    while ((r = read(source_fd, buffer, BUFSIZ)) > 0) {
+        w = write(destination_fd, buffer, (size_t) r);
+        if (w != r) {
             fprintf(stderr, "Error writing data to %s: %s",
                             destination, strerror(errno));
             close(source_fd);
@@ -133,7 +133,7 @@ bool util_copy_file(const char *destination, const char *source) {
         }
     }
 
-    if (bytes_read < 0) {
+    if (r < 0) {
         fprintf(stderr, "Error reading data from %s: %s\n",
                         source, strerror(errno));
         close(source_fd);
