@@ -81,6 +81,10 @@ void history_read(void) {
         return;
     }
     history_length = (size_t) history_stat.st_size;
+    if (history_length <= 0) {
+        fprintf(stderr, "History file is empty.\n");
+        return;
+    }
 
     history_content = mmap(NULL, history_length, 
                            PROT_READ | PROT_WRITE, MAP_PRIVATE, history.fd, 0);
