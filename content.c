@@ -17,6 +17,7 @@
 #include "clipsim.h"
 
 void content_remove_newline(char *text, ulong *length) {
+    DEBUG_PRINT("content_remove_newline(%s, %lu)\n", text, length)
     text[*length] = '\0';
     while (text[*length-1] == '\n') {
         text[*length-1] = '\0';
