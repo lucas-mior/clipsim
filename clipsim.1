@@ -3,26 +3,29 @@
 clipsim \- Simple clipboard manager for X
 .SH SYNOPSIS
 .B clipsim
-.RB "[ daemon | print | save | copy <N> | delete <N> | info <N> ]"
+.RB "[ --daemon | --print | --save | --copy <N> | --delete <N> | --info <N> ]"
+.PP
+.B clipsim
+.RB "[ -d | -p | -s | -c <N> | -d <N> | -i <N> ]"
 .SH DESCRIPTION
 clipsim is a simple clipboard manager for X.
 .TP
-.B "daemon"
+.B "-d | --daemon"
 start clipsim daemon
 .TP
-.B "print"
+.B "-p | --print"
 print clipboard history to stdout
 .TP
-.B "save"
+.B "-s | --save"
 save clipboard history to $XDG_CACHE_HOME/clipsim/history
 .TP
-.B "copy <N>"
+.B "-c <N> | --copy <N>"
 copy entry number N to clipboard
 .TP
-.B "delete <N>"
+.B "-r <N> | --remove <N>"
 delete entry number N from history
 .TP
-.B "info <N>"
+.B "-i <N> | --info <N>"
 print entry number N to stdout
 .EX
 .SH SOURCE CODE
@@ -38,4 +41,4 @@ Please report other bugs on codeberg.
 XDG_CACHE_HOME
 .EX
 .SH SEE ALSO
-.BR xsel (1),
+.BR xsel (1), xclip(1)
