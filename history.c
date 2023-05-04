@@ -100,6 +100,7 @@ void history_read(void) {
     for (char *p = history_content; p < history_content + history_length; p++) {
         Entry *e;
         char c;
+
         if ((*p == TEXT_END) || (*p == IMAGE_END)) {
             c = *p;
             *p = '\0';
@@ -109,6 +110,7 @@ void history_read(void) {
             e->content_length = (size_t) (p - begin);
             e->content = util_realloc(NULL, e->content_length+1);
             memcpy(e->content, begin, e->content_length+1);
+
             if (c == IMAGE_END) {
                 e->trimmed = e->content;
                 e->image_path = e->content;
@@ -118,9 +120,9 @@ void history_read(void) {
                                      e->content, e->content_length);
                 e->image_path = NULL;
             }
+            begin = p+1;
 
             length_counts[e->content_length] += 1;
-            begin = p+1;
             if (lastindex > (int32) HISTORY_KEEP_SIZE)
                 break;
         }
