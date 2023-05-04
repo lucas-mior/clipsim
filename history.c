@@ -68,7 +68,7 @@ void history_read(void) {
 
     lastindex = -1;
     history_file_find();
-    if (!(history.fd = open(history.name, O_RDWR))) {
+    if ((history.fd = open(history.name, O_RDWR)) < 0) {
         fprintf(stderr, "Error opening history file for reading: %s\n"
                         "History will start empty.\n", strerror(errno));
         return;
