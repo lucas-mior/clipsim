@@ -99,7 +99,7 @@ void history_read(void) {
     begin = history_content;
     for (char *p = history_content; p < history_content + history_length; p++) {
         Entry *e;
-        int c;
+        char c;
         if ((*p == TEXT_END) || (*p == IMAGE_END)) {
             c = *p;
             *p = '\0';
