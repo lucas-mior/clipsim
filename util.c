@@ -17,7 +17,6 @@
 #include "clipsim.h"
 
 void *util_realloc(void *old, const size_t size) {
-    DEBUG_PRINT("*util_realloc(%p, %zu)\n", old, size)
     void *p;
     if ((p = realloc(old, size)) == NULL) {
         fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
@@ -29,7 +28,6 @@ void *util_realloc(void *old, const size_t size) {
 }
 
 void *util_calloc(const size_t nmemb, const size_t size) {
-    DEBUG_PRINT("*xcalloc(%zu, %zu)\n", nmemb, size)
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
         fprintf(stderr, "Failed to allocate %zu members of %zu bytes each.\n",
