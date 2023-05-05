@@ -123,6 +123,7 @@ void history_read(void) {
             begin = p+1;
 
             length_counts[e->content_length] += 1;
+
             if (lastindex > (int32) HISTORY_KEEP_SIZE)
                 break;
         }
@@ -260,7 +261,12 @@ void history_append(char *content, ulong length) {
     e = &entries[lastindex];
     e->content = content;
     e->content_length = length;
+<<<<<<< HEAD
     length_counts[length] += 1;
+=======
+    if (lastindex < min_index_by_length[e->content_length])
+        min_index_by_length[e->content_length] = (uint8) lastindex;
+>>>>>>> 13dee1f (cast to remove warning)
 
     if (kind == CLIPBOARD_TEXT) {
        content_trim_spaces(&(e->trimmed), &(e->trimmed_length), 
