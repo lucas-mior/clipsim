@@ -30,7 +30,6 @@ static Window window;
 static Atom clipboard_check_target(Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
 static void clipboard_signal_program(void);
-static int32 clipboard_increment(char **, ulong *);
 
 int clipboard_daemon_watch(void *unused) {
     DEBUG_PRINT("*clipboard_daemon_watch(void *unused) %d\n", __LINE__)
@@ -109,15 +108,6 @@ Atom clipboard_check_target(const Atom target) {
     return xev.xselection.property;
 }
 
-int32 clipboard_increment(char **save, ulong *length) {
-    DEBUG_PRINT("clipboard_increment(%p, %p)\n", save, length)
-    int actual_format_return;
-    ulong nitems_return;
-    ulong bytes_after_return;
-    Atom return_atom;
-    return CLIPBOARD_LARGE;
-}
-
 int32 clipboard_get_clipboard(char **save, ulong *length) {
     DEBUG_PRINT("clipboard_get_clipboard(%p, %lu)\n", (void *) save, *length)
     int actual_format_return;
@@ -131,7 +121,7 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
         if (return_atom == INCR) {
-            return clipboard_increment(save, length);
+            return CLIPBOARD_LARGE;
         } else {
             *length = nitems_return;
             return CLIPBOARD_TEXT;
