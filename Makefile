@@ -27,14 +27,6 @@ clipsim: $(objs)
 
 $(objs): Makefile clipsim.h
 
-ipc.o: clipsim.h
-clipboard.o: clipsim.h
-util.o: clipsim.h
-history.o: clipsim.h
-content.o: clipsim.h
-send_signal.o: clipsim.h
-main.o: clipsim.h
-
 .c.o:
 	$(CC) $(cflags) $(cppflags) -c -o $@ $<
 
