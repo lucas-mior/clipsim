@@ -324,7 +324,7 @@ void ipc_make_fifos(void) {
 }
 
 void ipc_create_fifo(const char *name) {
-    if (mkfifo(name, 0711) < 0) {
+    if (mkfifo(name, 0700) < 0) {
         if (errno != EEXIST) {
             fprintf(stderr, "Failed to create fifo %s: %s\n",
                              name, strerror(errno));
