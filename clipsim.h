@@ -42,9 +42,10 @@
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n'))
 
 #ifdef CLIPSIM_DEBUG
-#define DEBUG_PRINT(s, ...) printf(s, __VA_ARGS__);
+#define DEBUG_PRINT(...) \
+do { printf("%s:%d -> ", __FILE__, __LINE__); printf(__VA_ARGS__); } while (0);
 #else
-#define DEBUG_PRINT(s, ...)
+#define DEBUG_PRINT(...)
 #endif
 
 #define PAUSE10MS (1000 * 1000 * 10)
