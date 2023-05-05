@@ -187,9 +187,6 @@ bool history_save(void) {
 
 int32 history_repeated_index(const char *content, const size_t length) {
     DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, content, length)
-    if (length_counts[length] == 0)
-        return -1;
-
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->content_length == length) {
@@ -261,12 +258,7 @@ void history_append(char *content, ulong length) {
     e = &entries[lastindex];
     e->content = content;
     e->content_length = length;
-<<<<<<< HEAD
     length_counts[length] += 1;
-=======
-    if (lastindex < min_index_by_length[e->content_length])
-        min_index_by_length[e->content_length] = (uint8) lastindex;
->>>>>>> 13dee1f (cast to remove warning)
 
     if (kind == CLIPBOARD_TEXT) {
        content_trim_spaces(&(e->trimmed), &(e->trimmed_length), 
