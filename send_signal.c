@@ -44,38 +44,27 @@ void send_signal(const char *executable, const int signal_number) {
 
 pid_t check_pid(const char *executable, const char *number) {
     static char buffer[256];
+    static char command[256];
     int pid;
-    FILE *stat;
-    char *command;
+    FILE *cmdline;
 
     if ((pid = atoi(number)) <= 0)
         return 0;
 
-    snprintf(buffer, sizeof(buffer), "/proc/%s/stat", number);
+    snprintf(buffer, sizeof(buffer), "/proc/%s/cmdline", number);
     buffer[sizeof(buffer)-1] = '\0';
-    if (!(stat = fopen(buffer, "r"))) {
-        fprintf(stderr, "Error opening %s: %s\n", buffer, strerror(errno));
+    if (!(cmdline = fopen(buffer, "r")))
+        return 0;
+    if (!fgets(command, sizeof(command), cmdline)) {
+        fclose(cmdline);
         return 0;
     }
-    if (!fgets(buffer, sizeof(buffer), stat)) {
-        fprintf(stderr, "Error reading stat file: %s\n", strerror(errno));
-        goto close;
-    }
-
-    command = buffer;
-    while (*command != '(')
-        command++;
-    command++;
-    while (*command == *executable) {
-        command++;
-        executable++;
-    }
-    if ((*executable == '\0') && (*command == ')')) {
-        fclose(stat);
+    command[strcspn(buffer, "\n")] = '\0';
+    if (!strcmp(command, executable)) {
+        fclose(cmdline);
         return pid;
     }
 
-    close:
-    fclose(stat);
+    fclose(cmdline);
     return 0;
 }
