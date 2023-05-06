@@ -32,6 +32,7 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/mman.h>
 
 #ifndef CLIPSIM_H
 #define CLIPSIM_H
