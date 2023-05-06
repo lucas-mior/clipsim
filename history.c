@@ -187,6 +187,8 @@ bool history_save(void) {
 
 int32 history_repeated_index(const char *content, const size_t length) {
     DEBUG_PRINT("history_repeated_index(%.*s, %lu)\n", 20, content, length)
+    if (length_counts[length] == 0)
+        return -1;
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->content_length == length) {
