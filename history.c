@@ -21,7 +21,7 @@
 static volatile bool recovered = false;
 static int32 lastindex;
 static File history = { .file = NULL, .fd = -1, .name = NULL };
-static char *cache = NULL;
+static char *XDG_CACHE_HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH];
 
 static void history_file_find(void);
@@ -42,19 +42,19 @@ void history_file_find(void) {
     const char *clipsim = "clipsim/history";
     size_t length;
 
-    if (!(cache = getenv("XDG_CACHE_HOME"))) {
+    if (!(XDG_CACHE_HOME = getenv("XDG_CACHE_HOME"))) {
         fprintf(stderr, "XDG_CACHE_HOME needs to be set.\n");
         exit(EXIT_FAILURE);
     }
 
-    length = strlen(cache);
+    length = strlen(XDG_CACHE_HOME);
     length += 1 + strlen(clipsim);
     if (length > (PATH_MAX - 1)) {
         fprintf(stderr, "XDG_CACHE_HOME is too long.\n");
         exit(EXIT_FAILURE);
     }
 
-    (void) snprintf(buffer, sizeof(buffer), "%s/%s", cache, clipsim);
+    (void) snprintf(buffer, sizeof(buffer), "%s/%s", XDG_CACHE_HOME, clipsim);
     history.name = buffer;
     return;
 }
@@ -139,7 +139,7 @@ void history_save_entry(Entry *e) {
     if (e->image_path) {
         int length;
         length = snprintf(image_save, sizeof(image_save), 
-                          "%s/clipsim/%s", cache, basename(e->image_path));
+                          "%s/clipsim/%s", XDG_CACHE_HOME, basename(e->image_path));
         if (strcmp(image_save, e->image_path)) {
             if (!util_copy_file(image_save, e->image_path)) {
                 fprintf(stderr, "Error copying %s to %s: %s.\n", 
