@@ -122,6 +122,7 @@ static const Command commands[] = {
     [COMMAND_HELP]   = {"-h", "--help",   "print this help message" },
 };
 
+extern char **environ;
 extern Entry entries[HISTORY_BUFFER_SIZE];
 extern mtx_t lock;
 
@@ -151,5 +152,6 @@ void util_int_handler(int) __attribute__((noreturn));
 void util_close(File *);
 bool util_open(File *, const int);
 bool util_copy_file(const char *, const char *);
+size_t util_getenv(const char *, char **);
 
 #endif /* CLIPSIM_H */

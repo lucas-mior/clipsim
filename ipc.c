@@ -260,7 +260,7 @@ void ipc_client_print_entries(void) {
             return;
         }
 
-        CLIPSIM_IMAGE_PREVIEW = getenv("CLIPSIM_IMAGE_PREVIEW");
+        util_getenv("CLIPSIM_IMAGE_PREVIEW", &CLIPSIM_IMAGE_PREVIEW);
         if (CLIPSIM_IMAGE_PREVIEW == NULL)
             CLIPSIM_IMAGE_PREVIEW = "chafa";
         if (!strcmp(CLIPSIM_IMAGE_PREVIEW, "stiv"))

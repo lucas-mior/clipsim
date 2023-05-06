@@ -149,10 +149,10 @@ void clipboard_signal_program(void) {
     char *CLIPSIM_SIGNAL_CODE;
     char *CLIPSIM_SIGNAL_PROGRAM;
 
-    if (!(CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE")))
+    if (!util_getenv("CLIPSIM_SIGNAL_CODE", &CLIPSIM_SIGNAL_CODE))
         return;
 
-    if (!(CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")))
+    if (!util_getenv("CLIPSIM_SIGNAL_PROGRAM", &CLIPSIM_SIGNAL_PROGRAM))
         return;
 
     if ((signal_number = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {
