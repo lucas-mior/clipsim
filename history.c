@@ -22,7 +22,7 @@ static volatile bool recovered = false;
 static int32 lastindex;
 static File history = { .file = NULL, .fd = -1, .name = NULL };
 static char *XDG_CACHE_HOME = NULL;
-static uint8 length_counts[ENTRY_MAX_LENGTH];
+static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 
 static void history_file_find(void);
 static int32 history_repeated_index(const char *, const size_t);
@@ -67,6 +67,7 @@ void history_read(void) {
     char *begin;
 
     lastindex = -1;
+
     history_file_find();
     if ((history.fd = open(history.name, O_RDWR)) < 0) {
         fprintf(stderr, "Error opening history file for reading: %s\n"
