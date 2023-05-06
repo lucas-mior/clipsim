@@ -142,23 +142,3 @@ bool util_copy_file(const char *destination, const char *source) {
     close(destination_fd);
     return true;
 }
-
-size_t util_getenv(const char *which, char **value) {
-    char **environment = environ;
-
-    while (*environment != NULL) {
-        char *var = *environment;
-        char *name = which;
-        while (*name == *var) {
-            name++;
-            var++;
-        }
-        if (*name == '\0' && *var == '=') {
-            *value = var+1;
-            return strlen(*value);
-        }
-        environment++;
-    }
-    *value = NULL;
-    return 0;
-}

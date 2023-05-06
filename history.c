@@ -42,11 +42,12 @@ void history_file_find(void) {
     const char *clipsim = "clipsim/history";
     size_t length;
 
-    if ((length = util_getenv("XDG_CACHE_HOME", &cache)) == 0) {
+    if (!(cache = getenv("XDG_CACHE_HOME"))) {
         fprintf(stderr, "XDG_CACHE_HOME needs to be set.\n");
         exit(EXIT_FAILURE);
     }
 
+    length = strlen(cache);
     length += 1 + strlen(clipsim);
     if (length > (PATH_MAX - 1)) {
         fprintf(stderr, "XDG_CACHE_HOME is too long.\n");
