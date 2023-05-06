@@ -289,12 +289,12 @@ void history_recover(int32 id) {
     Entry *e;
     bool istext;
 
-    if (id < 0)
-        id = lastindex + id + 1;
     if (lastindex < 0) {
         fprintf(stderr, "Clipboard history empty. Start copying text.\n");
         return;
     }
+    if (id < 0)
+        id = lastindex + id + 1;
     if (id > lastindex) {
         fprintf(stderr, "Invalid index: %d\n", id);
         recovered = true;
