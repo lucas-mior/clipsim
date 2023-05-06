@@ -215,7 +215,7 @@ void ipc_daemon_pipe_id(int32 id) {
 
     e = &entries[id];
     if (e->image_path) {
-        write(content_fifo.fd, &IMAGE_END, 1);
+        write(content_fifo.fd, &IMAGE_END, sizeof(IMAGE_END));
     } else {
         dprintf(content_fifo.fd,
                 "Lenght: \033[31;1m%lu\n\033[0;m", e->content_length);
