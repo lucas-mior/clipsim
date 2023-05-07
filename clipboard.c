@@ -24,7 +24,6 @@
 static Display *display;
 static Atom CLIPBOARD, XSEL_DATA, INCR;
 static Atom UTF8_STRING, image_png, TARGETS;
-static XEvent xevent;
 static Window window;
 
 static Atom clipboard_check_target(Atom);
@@ -62,6 +61,7 @@ int clipboard_daemon_watch(void *unused) {
                              | XFixesSelectionWindowDestroyNotifyMask);
 
     while (true) {
+        XEvent xevent;
         char *save = NULL;
         ulong length;
         nanosleep(&pause, NULL);
@@ -96,16 +96,16 @@ int clipboard_daemon_watch(void *unused) {
 
 Atom clipboard_check_target(const Atom target) {
     DEBUG_PRINT("clipboard_check_target(%lu)\n", target)
-    XEvent xev;
+    XEvent xevent;
 
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA,
                       window, CurrentTime);
     do {
-        (void) XNextEvent(display, &xev);
-    } while (xev.type != SelectionNotify
-          || xev.xselection.selection != CLIPBOARD);
+        (void) XNextEvent(display, &xevent);
+    } while (xevent.type != SelectionNotify
+          || xevent.xselection.selection != CLIPBOARD);
 
-    return xev.xselection.property;
+    return xevent.xselection.property;
 }
 
 int32 clipboard_get_clipboard(char **save, ulong *length) {
