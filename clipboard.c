@@ -39,7 +39,7 @@ int clipboard_daemon_watch(void *unused) {
     pause.tv_nsec = PAUSE10MS;
     (void) unused;
 
-    if (!(display = XOpenDisplay(NULL))) {
+    if ((display = XOpenDisplay(NULL)) == NULL) {
         fprintf(stderr, "Error opening X display.");
         exit(EXIT_FAILURE);
     }
@@ -149,10 +149,10 @@ void clipboard_signal_program(void) {
     char *CLIPSIM_SIGNAL_CODE;
     char *CLIPSIM_SIGNAL_PROGRAM;
 
-    if (!(CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE")))
+    if ((CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE")) == NULL)
         return;
 
-    if (!(CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")))
+    if ((CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")) == NULL)
         return;
 
     if ((signal_number = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {

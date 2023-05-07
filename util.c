@@ -37,18 +37,18 @@ void *util_calloc(const size_t nmemb, const size_t size) {
     return p;
 }
 
-bool util_string_int32(int32 *number, const char *string, const int base) {
+int util_string_int32(int32 *number, const char *string, const int base) {
     char *endptr;
     long x;
     errno = 0;
     x = strtol(string, &endptr, base);
     if ((errno != 0) || (string == endptr) || (*endptr != 0)) {
-        return false;
+        return -1;
     } else if ((x > INT32_MAX) || (x < INT32_MIN)) {
-        return false;
+        return -1;
     } else {
         *number = (int32) x;
-        return true;
+        return 0;
     }
 }
 
@@ -89,17 +89,17 @@ void util_close(File *f) {
     return;
 }
 
-bool util_open(File *f, const int flag) {
+int util_open(File *f, const int flag) {
     if ((f->fd = open(f->name, flag)) < 0) {
         fprintf(stderr, "Error opening %s: %s\n",
                         f->name, strerror(errno));
-        return false;
+        return -1;
     } else {
-        return true;
+        return 0;
     }
 }
 
-bool util_copy_file(const char *destination, const char *source) {
+int util_copy_file(const char *destination, const char *source) {
     int source_fd, destination_fd;
     char buffer[BUFSIZ];
     ssize_t r = 0;
@@ -108,7 +108,7 @@ bool util_copy_file(const char *destination, const char *source) {
     if ((source_fd = open(source, O_RDONLY)) < 0) {
         fprintf(stderr, "Error opening %s for reading: %s\n", 
                         source, strerror(errno));
-        return false;
+        return -1;
     }
 
     if ((destination_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 
@@ -116,7 +116,7 @@ bool util_copy_file(const char *destination, const char *source) {
         fprintf(stderr, "Error opening %s for writing: %s\n",
                          destination, strerror(errno));
         close(source_fd);
-        return false;
+        return -1;
     }
 
     while ((r = read(source_fd, buffer, BUFSIZ)) > 0) {
@@ -126,7 +126,7 @@ bool util_copy_file(const char *destination, const char *source) {
                             destination, strerror(errno));
             close(source_fd);
             close(destination_fd);
-            return false;
+            return -1;
         }
     }
 
@@ -135,10 +135,10 @@ bool util_copy_file(const char *destination, const char *source) {
                         source, strerror(errno));
         close(source_fd);
         close(destination_fd);
-        return false;
+        return -1;
     }
 
     close(source_fd);
     close(destination_fd);
-    return true;
+    return 0;
 }

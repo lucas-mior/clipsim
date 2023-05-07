@@ -24,7 +24,7 @@ void send_signal(const char *executable, const int signal_number) {
     struct dirent *program;
     pid_t pid;
 
-    if (!(processes = opendir("/proc"))) {
+    if ((processes = opendir("/proc")) == NULL) {
         fprintf(stderr, "Error opening /proc: %s\n", strerror(errno));
         return;
     }
@@ -53,9 +53,9 @@ pid_t check_pid(const char *executable, const char *number) {
 
     snprintf(buffer, sizeof(buffer), "/proc/%s/cmdline", number);
     buffer[sizeof(buffer)-1] = '\0';
-    if (!(cmdline = fopen(buffer, "r")))
+    if ((cmdline = fopen(buffer, "r")) == NULL)
         return 0;
-    if (!fgets(command, sizeof(command), cmdline)) {
+    if (fgets(command, sizeof(command), cmdline) == NULL) {
         fclose(cmdline);
         return 0;
     }

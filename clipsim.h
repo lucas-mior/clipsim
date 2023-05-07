@@ -146,11 +146,11 @@ void send_signal(const char *, const int);
 
 void *util_realloc(void *, const size_t);
 void *util_calloc(const size_t, const size_t);
-bool util_string_int32(int32 *, const char *, const int);
+int util_string_int32(int32 *, const char *, const int);
 void util_segv_handler(int) __attribute__((noreturn));
 void util_int_handler(int) __attribute__((noreturn));
 void util_close(File *);
-bool util_open(File *, const int);
-bool util_copy_file(const char *, const char *);
+int util_open(File *, const int);
+int util_copy_file(const char *, const char *);
 
 #endif /* CLIPSIM_H */

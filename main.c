@@ -24,7 +24,7 @@ static void main_launch_daemon(void);
 
 int main(int argc, char *argv[]) {
     int32 id;
-    bool spell = false;
+    bool spell_error = true;
 
     signal(SIGSEGV, util_segv_handler);
     signal(SIGINT, util_int_handler);
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     for (uint i = 0; i < ARRAY_LENGTH(commands); i += 1) {
         if (!strcmp(argv[1], commands[i].shortname)
             || !strcmp(argv[1], commands[i].longname)) {
-            spell = true;
+            spell_error = false;
             switch (i) {
             case COMMAND_PRINT:
                 ipc_client_speak_fifo(COMMAND_PRINT, 0);
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
             case COMMAND_INFO:
             case COMMAND_COPY:
             case COMMAND_REMOVE:
-                if (argc != 3 || !util_string_int32(&id, argv[2], 10))
+                if ((argc != 3) || util_string_int32(&id, argv[2], 10) < 0)
                     main_usage(stderr);
                 ipc_client_speak_fifo(i, id);
                 break;
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (!spell)
+    if (spell_error)
         main_usage(stderr);
 
     return 0;

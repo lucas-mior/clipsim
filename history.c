@@ -40,7 +40,7 @@ void history_file_find(void) {
     const char *clipsim = "clipsim/history";
     size_t length;
 
-    if (!(XDG_CACHE_HOME = getenv("XDG_CACHE_HOME"))) {
+    if ((XDG_CACHE_HOME = getenv("XDG_CACHE_HOME")) == NULL) {
         fprintf(stderr, "XDG_CACHE_HOME needs to be set.\n");
         exit(EXIT_FAILURE);
     }
@@ -140,7 +140,7 @@ void history_save_entry(Entry *e) {
         length = snprintf(image_save, sizeof(image_save), 
                           "%s/clipsim/%s", XDG_CACHE_HOME, basename(e->image_path));
         if (strcmp(image_save, e->image_path)) {
-            if (!util_copy_file(image_save, e->image_path)) {
+            if (util_copy_file(image_save, e->image_path) < 0) {
                 fprintf(stderr, "Error copying %s to %s: %s.\n", 
                                  e->image_path, image_save, strerror(errno));
                 return;
@@ -162,7 +162,7 @@ bool history_save(void) {
         fprintf(stderr, "History is empty. Not saving.\n");
         return false;
     }
-    if (!history.name) {
+    if (history.name == NULL) {
         fprintf(stderr, "History file name unresolved, can't save history.");
         return false;
     }
