@@ -109,7 +109,7 @@ Atom clipboard_check_target(const Atom target) {
 }
 
 int32 clipboard_get_clipboard(char **save, ulong *length) {
-    DEBUG_PRINT("clipboard_get_clipboard(%p, %lu)\n", (void *) save, *length)
+    DEBUG_PRINT("clipboard_get_clipboard(%p, %p)\n", (void *) save, (void *) length)
     int actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
