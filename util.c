@@ -119,11 +119,14 @@ int util_copy_file(const char *destination, const char *source) {
         return -1;
     }
 
+    errno = 0;
     while ((r = read(source_fd, buffer, BUFSIZ)) > 0) {
         w = write(destination_fd, buffer, (size_t) r);
         if (w != r) {
-            fprintf(stderr, "Error writing data to %s: %s",
-                            destination, strerror(errno));
+            fprintf(stderr, "Error writing data to %s", destination);
+            if (errno)
+                fprintf(stderr, ": %s", strerror(errno));
+            fprintf(stderr, ".\n");
             close(source_fd);
             close(destination_fd);
             return -1;
