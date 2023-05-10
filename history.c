@@ -33,6 +33,57 @@ int32 history_lastindex(void) {
     return lastindex;
 }
 
+void history_save_entry(Entry *e) {
+    char image_save[PATH_MAX];
+    if (e->image_path) {
+        int length;
+        length = snprintf(image_save, sizeof(image_save), 
+                          "%s/clipsim/%s", XDG_CACHE_HOME, basename(e->image_path));
+        if (strcmp(image_save, e->image_path)) {
+            if (util_copy_file(image_save, e->image_path) < 0) {
+                fprintf(stderr, "Error copying %s to %s: %s.\n", 
+                                 e->image_path, image_save, strerror(errno));
+                return;
+            }
+        }
+        write(history.fd, image_save, (size_t) length);
+        write(history.fd, &IMAGE_END, 1);
+    } else {
+        write(history.fd, e->content, e->content_length);
+        write(history.fd, &TEXT_END, 1);
+    }
+}
+
+bool history_save(void) {
+    DEBUG_PRINT("history_save(void)\n")
+    int saved;
+
+    if (lastindex < 0) {
+        fprintf(stderr, "History is empty. Not saving.\n");
+        return false;
+    }
+    if (history.name == NULL) {
+        fprintf(stderr, "History file name unresolved, can't save history.");
+        return false;
+    }
+    if ((history.fd = open(history.name, O_WRONLY | O_CREAT | O_TRUNC,
+                                         S_IRUSR | S_IWUSR)) < 0) {
+        fprintf(stderr, "Failed to open history file for saving: "
+                        "%s\n", strerror(errno));
+        return false;
+    }
+
+    for (uint i = 0; i <= (uint) lastindex; i += 1)
+        history_save_entry(&entries[i]);
+
+    if ((saved = fsync(history.fd)) < 0)
+        fprintf(stderr, "Error saving history to disk: %s\n", strerror(errno));
+    else
+        fprintf(stderr, "History saved to disk.\n");
+    util_close(&history);
+    return saved >= 0;
+}
+
 void history_read(void) {
     DEBUG_PRINT("history_read(void)\n")
     struct stat history_stat;
@@ -124,57 +175,6 @@ void history_read(void) {
     munmap(history_content, history_length);
     util_close(&history);
     return;
-}
-
-void history_save_entry(Entry *e) {
-    char image_save[PATH_MAX];
-    if (e->image_path) {
-        int length;
-        length = snprintf(image_save, sizeof(image_save), 
-                          "%s/clipsim/%s", XDG_CACHE_HOME, basename(e->image_path));
-        if (strcmp(image_save, e->image_path)) {
-            if (util_copy_file(image_save, e->image_path) < 0) {
-                fprintf(stderr, "Error copying %s to %s: %s.\n", 
-                                 e->image_path, image_save, strerror(errno));
-                return;
-            }
-        }
-        write(history.fd, image_save, (size_t) length);
-        write(history.fd, &IMAGE_END, 1);
-    } else {
-        write(history.fd, e->content, e->content_length);
-        write(history.fd, &TEXT_END, 1);
-    }
-}
-
-bool history_save(void) {
-    DEBUG_PRINT("history_save(void)\n")
-    int saved;
-
-    if (lastindex < 0) {
-        fprintf(stderr, "History is empty. Not saving.\n");
-        return false;
-    }
-    if (history.name == NULL) {
-        fprintf(stderr, "History file name unresolved, can't save history.");
-        return false;
-    }
-    if ((history.fd = open(history.name, O_WRONLY | O_CREAT | O_TRUNC,
-                                         S_IRUSR | S_IWUSR)) < 0) {
-        fprintf(stderr, "Failed to open history file for saving: "
-                        "%s\n", strerror(errno));
-        return false;
-    }
-
-    for (uint i = 0; i <= (uint) lastindex; i += 1)
-        history_save_entry(&entries[i]);
-
-    if ((saved = fsync(history.fd)) < 0)
-        fprintf(stderr, "Error saving history to disk: %s\n", strerror(errno));
-    else
-        fprintf(stderr, "History saved to disk.\n");
-    util_close(&history);
-    return saved >= 0;
 }
 
 int32 history_repeated_index(const char *content, const size_t length) {
