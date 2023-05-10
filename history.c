@@ -22,7 +22,6 @@ static File history = { .file = NULL, .fd = -1, .name = NULL };
 static char *XDG_CACHE_HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 
-static void history_file_find(void);
 static int32 history_repeated_index(const char *, const size_t);
 static void history_reorder(const int32);
 static void history_clean(void);
@@ -34,9 +33,14 @@ int32 history_lastindex(void) {
     return lastindex;
 }
 
-void history_file_find(void) {
+void history_read(void) {
+    DEBUG_PRINT("history_read(void)\n")
+    struct stat history_stat;
     static char buffer[PATH_MAX];
-    DEBUG_PRINT("history_find(void)\n")
+    size_t history_length;
+    char *history_content;
+    char *begin;
+
     const char *clipsim = "clipsim/history";
     size_t length;
 
@@ -54,19 +58,8 @@ void history_file_find(void) {
 
     (void) snprintf(buffer, sizeof(buffer), "%s/%s", XDG_CACHE_HOME, clipsim);
     history.name = buffer;
-    return;
-}
-
-void history_read(void) {
-    DEBUG_PRINT("history_read(void)\n")
-    struct stat history_stat;
-    size_t history_length;
-    char *history_content;
-    char *begin;
 
     lastindex = -1;
-
-    history_file_find();
     if ((history.fd = open(history.name, O_RDWR)) < 0) {
         fprintf(stderr, "Error opening history file for reading: %s\n"
                         "History will start empty.\n", strerror(errno));
