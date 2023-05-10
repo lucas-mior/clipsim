@@ -36,7 +36,7 @@ int32 history_lastindex(void) {
 
 void history_file_find(void) {
     static char buffer[PATH_MAX];
-    DEBUG_PRINT("history_find(void) %d\n", __LINE__)
+    DEBUG_PRINT("history_find(void)\n")
     const char *clipsim = "clipsim/history";
     size_t length;
 
@@ -58,7 +58,7 @@ void history_file_find(void) {
 }
 
 void history_read(void) {
-    DEBUG_PRINT("history_read(void) %d\n", __LINE__)
+    DEBUG_PRINT("history_read(void)\n")
     struct stat history_stat;
     size_t history_length;
     char *history_content;
@@ -155,7 +155,7 @@ void history_save_entry(Entry *e) {
 }
 
 bool history_save(void) {
-    DEBUG_PRINT("history_save(void) %d\n", __LINE__)
+    DEBUG_PRINT("history_save(void)\n")
     int saved;
 
     if (lastindex < 0) {
@@ -393,7 +393,7 @@ void history_free_entry(const Entry *e) {
 }
 
 void history_clean(void) {
-    DEBUG_PRINT("history_clean(void) %d\n", __LINE__)
+    DEBUG_PRINT("history_clean(void)\n")
     for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1)
         history_free_entry(&entries[i]);
 

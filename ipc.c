@@ -35,7 +35,7 @@ static void ipc_make_fifos(void);
 static void ipc_create_fifo(const char *);
 
 int ipc_daemon_listen_fifo(void *unused) {
-    DEBUG_PRINT("*ipc_daemon_listen_fifo(void *unused) %d\n", __LINE__)
+    DEBUG_PRINT("*ipc_daemon_listen_fifo(void *)\n")
     char command;
     struct timespec pause;
     (void) unused;
@@ -130,7 +130,7 @@ void ipc_client_speak_fifo(uint command, int32 id) {
 }
 
 void ipc_daemon_history_save(void) {
-    DEBUG_PRINT("ipc_daemon_history_save(void) %d\n", __LINE__)
+    DEBUG_PRINT("ipc_daemon_history_save(void)\n")
     char saved;
     fprintf(stderr, "Trying to save history...\n");
     if (util_open(&content_fifo, O_WRONLY) < 0)
@@ -163,7 +163,7 @@ void ipc_client_check_save(void) {
 }
 
 void ipc_daemon_pipe_entries(void) {
-    DEBUG_PRINT("ipc_daemon_pipe_entries(void) %d\n", __LINE__)
+    DEBUG_PRINT("ipc_daemon_pipe_entries(void)\n")
     static char buffer[BUFSIZ];
     size_t w = 0;
     int32 lastindex;
@@ -274,7 +274,7 @@ void ipc_client_print_entries(void) {
 }
 
 void ipc_daemon_with_id(void (*func)(int32)) {
-    DEBUG_PRINT("ipc_daemon_with_id(void (*func)(int32)) %d\n", __LINE__)
+    DEBUG_PRINT("ipc_daemon_with_id(void (*)())\n")
     int32 id;
 
     if ((passid_fifo.file = fopen(passid_fifo.name, "r")) == NULL) {
@@ -313,7 +313,7 @@ void ipc_client_ask_id(int32 id) {
 }
 
 void ipc_make_fifos(void) {
-    DEBUG_PRINT("ipc_make_fifos(void) %d\n", __LINE__)
+    DEBUG_PRINT("ipc_make_fifos(void)\n")
     unlink(command_fifo.name);
     unlink(passid_fifo.name);
     unlink(content_fifo.name);

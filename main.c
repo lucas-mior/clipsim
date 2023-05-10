@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 }
 
 void main_usage(FILE *stream) {
-    DEBUG_PRINT("usage(%p)\n", (void *) stream)
+    DEBUG_PRINT("main_usage(%p)\n", (void *) stream)
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
     for (uint i = 0; i < ARRAY_LENGTH(commands); i += 1) {
@@ -81,7 +81,7 @@ void main_usage(FILE *stream) {
 }
 
 void main_launch_daemon(void) {
-    DEBUG_PRINT("launch_daemon(void) %d\n", __LINE__)
+    DEBUG_PRINT("main_launch_daemon(void)\n")
     thrd_t ipc_thread;
     thrd_t clipboard_thread;
     int ipc_error = 0;

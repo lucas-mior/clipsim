@@ -31,7 +31,7 @@ static int32 clipboard_get_clipboard(char **, ulong *);
 static void clipboard_signal_program(void);
 
 int clipboard_daemon_watch(void *unused) {
-    DEBUG_PRINT("*clipboard_daemon_watch(void *unused) %d\n", __LINE__)
+    DEBUG_PRINT("*clipboard_daemon_watch(void *)\n")
     ulong color;
     Window root;
     struct timespec pause;
@@ -144,7 +144,7 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
 }
 
 void clipboard_signal_program(void) {
-    DEBUG_PRINT("clipboard_signal_program(void) %d\n", __LINE__)
+    DEBUG_PRINT("clipboard_signal_program(void)\n")
     int signal_number;
     char *CLIPSIM_SIGNAL_CODE;
     char *CLIPSIM_SIGNAL_PROGRAM;
