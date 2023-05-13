@@ -15,6 +15,7 @@
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #include "clipsim.h"
+#include <stdlib.h>
 
 static volatile bool recovered = false;
 static int32 lastindex;
@@ -46,11 +47,27 @@ void history_save_entry(Entry *e) {
                 return;
             }
         }
-        write(history.fd, image_save, (size_t) length);
-        write(history.fd, &IMAGE_END, 1);
+        if (write(history.fd, image_save, (size_t) length) < 0) {
+            printf("Error writing %s: %s\n", image_save, strerror(errno));
+            system("dunstify \"clipsim\" \"Error writing image_save!\"");
+            exit(EXIT_FAILURE);
+        }
+        if (write(history.fd, &IMAGE_END, 1) < 0) {
+            printf("Error writing IMAGE_END: %s\n", strerror(errno));
+            system("dunstify \"clipsim\" \"Error writing IMAGE_END!\"");
+            exit(EXIT_FAILURE);
+        }
     } else {
-        write(history.fd, e->content, e->content_length);
-        write(history.fd, &TEXT_END, 1);
+        if (write(history.fd, e->content, e->content_length) < 0) {
+            printf("Error writing %s: %s\n", e->content, strerror(errno));
+            system("dunstify \"clipsim\" \"Error writing e->content!\"");
+            exit(EXIT_FAILURE);
+        }
+        if (write(history.fd, &TEXT_END, 1) < 0) {
+            printf("Error writing TEXT_END: %s\n", strerror(errno));
+            system("dunstify \"clipsim\" \"Error writing TEXT_END!\"");
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
@@ -73,8 +90,10 @@ bool history_save(void) {
         return false;
     }
 
-    for (uint i = 0; i <= (uint) lastindex; i += 1)
+    for (uint i = 0; i <= (uint) lastindex; i += 1) {
+        printf("saving entry %d...\n", i);
         history_save_entry(&entries[i]);
+    }
 
     if ((saved = fsync(history.fd)) < 0)
         fprintf(stderr, "Error saving history to disk: %s\n", strerror(errno));
@@ -166,6 +185,7 @@ void history_read(void) {
             begin = p+1;
 
             length_counts[e->content_length] += 1;
+            printf("read %d entries...\n", lastindex+1);
 
             if (lastindex > (int32) HISTORY_KEEP_SIZE)
                 break;

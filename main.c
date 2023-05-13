@@ -86,10 +86,10 @@ void main_launch_daemon(void) {
     thrd_t clipboard_thread;
     int ipc_error = 0;
     int clipboard_error = 0;
-    int e;
+    int error;
 
-    if ((e = mtx_init(&lock, mtx_plain)) != thrd_success) {
-        fprintf(stderr, "Error initializing lock: %s\n", strerror(e));
+    if ((error = mtx_init(&lock, mtx_plain)) != thrd_success) {
+        fprintf(stderr, "Error initializing lock: %s\n", strerror(error));
         exit(EXIT_FAILURE);
     }
 
