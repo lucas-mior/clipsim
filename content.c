@@ -15,6 +15,7 @@
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #include "clipsim.h"
+#include <magic.h>
 
 void content_remove_newline(char *text, ulong *length) {
     DEBUG_PRINT("content_remove_newline(%s, %lu)\n", text, length)
@@ -68,8 +69,6 @@ void content_trim_spaces(char **trimmed, ulong *trimmed_length,
 
 int32 content_check_content(uchar *data, const ulong length) {
     DEBUG_PRINT("content_check_content(%.*s, %lu)\n", 20, data, length)
-    static const uchar PNG[] = {0x89, 0x50, 0x4e, 0x47};
-
     { /* Check if it is made only of spaces and newlines */
         uchar *aux = data;
         do {
@@ -92,12 +91,26 @@ int32 content_check_content(uchar *data, const ulong length) {
         }
     }
 
-    if (length >= 4) { /* check if it is an image */
-        if (!memcmp(data, PNG, 4)) {
-            fprintf(stderr, "Image copied to clipboard.\n");
+    do {
+        magic_t magic;
+        const char *mime_type;
+        if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
+            break;
+        }
+        if (magic_load(magic, NULL) != 0) {
+            magic_close(magic);
+            break;
+        }
+        if ((mime_type = magic_buffer(magic, data, length)) == NULL) {
+            magic_close(magic);
+            break;
+        }
+        if (!strncmp(mime_type, "image/", 6)) {
+            magic_close(magic);
             return CLIPBOARD_IMAGE;
         }
-    }
+        magic_close(magic);
+    } while (0);
 
     if (length > ENTRY_MAX_LENGTH) {
         printf("Too large entry. This wont' be added to history.\n");
