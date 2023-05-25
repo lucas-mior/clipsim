@@ -144,6 +144,7 @@ void history_read(void) {
     }
     history_length = (size_t) history_stat.st_size;
     if (history_length <= 0) {
+        fprintf(stderr, "History_length: %zu\n", history_length);
         fprintf(stderr, "History file is empty.\n");
         close(history.fd);
         return;
