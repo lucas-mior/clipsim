@@ -90,10 +90,8 @@ bool history_save(void) {
         return false;
     }
 
-    for (uint i = 0; i <= (uint) lastindex; i += 1) {
-        printf("saving entry %d...\n", i);
+    for (uint i = 0; i <= (uint) lastindex; i += 1)
         history_save_entry(&entries[i]);
-    }
 
     if ((saved = fsync(history.fd)) < 0)
         fprintf(stderr, "Error saving history to disk: %s\n", strerror(errno));
@@ -130,7 +128,7 @@ void history_read(void) {
     history.name = buffer;
 
     lastindex = -1;
-    if ((history.fd = open(history.name, O_RDWR)) < 0) {
+    if ((history.fd = open(history.name, O_RDONLY)) < 0) {
         fprintf(stderr, "Error opening history file for reading: %s\n"
                         "History will start empty.\n", strerror(errno));
         return;
@@ -186,7 +184,6 @@ void history_read(void) {
             begin = p+1;
 
             length_counts[e->content_length] += 1;
-            printf("read %d entries...\n", lastindex+1);
 
             if (lastindex > (int32) HISTORY_KEEP_SIZE)
                 break;
