@@ -137,14 +137,14 @@ void history_read(void) {
     if (fstat(history.fd, &history_stat) < 0) {
         fprintf(stderr, "Error getting file information: %s\n"
                         "History will start empty.\n", strerror(errno));
-        close(history.fd);
+        util_close(&history);
         return;
     }
     history_length = (size_t) history_stat.st_size;
     if (history_length <= 0) {
         fprintf(stderr, "History_length: %zu\n", history_length);
         fprintf(stderr, "History file is empty.\n");
-        close(history.fd);
+        util_close(&history);
         return;
     }
 
@@ -153,7 +153,7 @@ void history_read(void) {
     if (history_content == MAP_FAILED) {
         fprintf(stderr, "Error mapping history file to memory: %s"
                         "History will start empty.\n", strerror(errno));
-        close(history.fd);
+        util_close(&history);
         return;
     }
 
