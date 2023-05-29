@@ -27,8 +27,6 @@ int main(int argc, char *argv[]) {
     bool spell_error = true;
 
     signal(SIGSEGV, util_segv_handler);
-    signal(SIGINT, util_int_handler);
-    signal(SIGTERM, util_int_handler);
 
     if (argc <= 1 || argc >= 4)
         main_usage(stderr);

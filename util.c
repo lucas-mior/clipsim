@@ -65,12 +65,6 @@ void util_segv_handler(int unused) {
     exit(EXIT_FAILURE);
 }
 
-void util_int_handler(int unused) {
-    (void) unused;
-    history_save();
-    exit(EXIT_FAILURE);
-}
-
 void util_close(File *f) {
     if (f->fd >= 0) {
         if (close(f->fd) < 0) {
