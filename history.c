@@ -25,8 +25,8 @@ static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 
 static int32 history_repeated_index(const char *, const size_t);
 static void history_reorder(const int32);
-static void history_clean(void);
 static void history_free_entry(const Entry *);
+static void history_clean(void);
 static void history_save_image(char **, ulong *);
 static void history_save_entry(Entry *);
 
@@ -181,7 +181,7 @@ void history_read(void) {
 
             length_counts[e->content_length] += 1;
 
-            if (lastindex > (int32) HISTORY_KEEP_SIZE)
+            if (lastindex > (int32) HISTORY_BUFFER_SIZE)
                 break;
         }
     }

@@ -50,7 +50,7 @@ do { printf("%s:%d -> ", __FILE__, __LINE__); printf(__VA_ARGS__); } while (0);
 #endif
 
 #define PAUSE10MS (1000 * 1000 * 10)
-#define HISTORY_BUFFER_SIZE 6U
+#define HISTORY_BUFFER_SIZE 512U
 #define HISTORY_KEEP_SIZE (HISTORY_BUFFER_SIZE/2)
 #define ENTRY_MAX_LENGTH BUFSIZ
 #define PRINT_DIGITS 3
