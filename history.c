@@ -48,21 +48,21 @@ void history_save_entry(Entry *e) {
             }
         }
         if (write(history.fd, image_save, (size_t) length) < 0) {
-            printf("Error writing %s: %s\n", image_save, strerror(errno));
-            exit(EXIT_FAILURE);
+            fprintf(stderr, "Error writing %s: %s\n", image_save, strerror(errno));
+            return;
         }
-        if (write(history.fd, &IMAGE_END, 1) < 0) {
-            printf("Error writing IMAGE_END: %s\n", strerror(errno));
-            exit(EXIT_FAILURE);
+        if (write(history.fd, &IMAGE_END, sizeof(IMAGE_END)) < 0) {
+            fprintf(stderr, "Error writing IMAGE_END: %s\n", strerror(errno));
+            return;
         }
     } else {
         if (write(history.fd, e->content, e->content_length) < 0) {
-            printf("Error writing %s: %s\n", e->content, strerror(errno));
-            exit(EXIT_FAILURE);
+            fprintf(stderr, "Error writing %s: %s\n", e->content, strerror(errno));
+            return;
         }
-        if (write(history.fd, &TEXT_END, 1) < 0) {
-            printf("Error writing TEXT_END: %s\n", strerror(errno));
-            exit(EXIT_FAILURE);
+        if (write(history.fd, &TEXT_END, sizeof(IMAGE_END)) < 0) {
+            fprintf(stderr, "Error writing TEXT_END: %s\n", strerror(errno));
+            return;
         }
     }
 }
