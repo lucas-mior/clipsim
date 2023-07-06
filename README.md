@@ -105,6 +105,14 @@ $ make
 ## Configuration
 Edit `clipsim.h` and recompile.
 
+### Environment variables
+```
+$CLIPSIM_SIGNAL_CODE    -> which signal should be send to $CLIPSIM_SIGNAL_PROGRAM when clipboard content changes
+$CLIPSIM_SIGNAL_PROGRAM -> which program should $CLIPSIM_SIGNAL_CODE be send to when clipboard content changes
+$CLIPSIM_IMAGE_PREVIEW  -> image preview program (defaults to chafa)
+$XDG_CACHE_HOME         -> used for cache
+```
+
 ## Bugs
 Clipsim *might* have an weird behavior if you use it with applications that do
 not use UTF-8.
