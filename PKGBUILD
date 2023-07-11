@@ -8,18 +8,8 @@ pkgdesc="clipsim is a simple X11 clipboard manager written in C."
 arch=(x86_64)
 url='https://github.com/lucas-mior/clipsim'
 license=(AGPL)
-depends=(bash sed)
-optdepends=(
-	# 'atool: for more archive formats'
-	# 'libarchive: for more archive formats'
-	# 'zip: for zip archive format'
-	# 'unzip: for zip archive format'
-	# 'trash-cli: to trash files'
-	# 'sshfs: mount remotes'
-	# 'rclone: mount remotes'
-	# 'fuse2: unmount remotes'
-	# 'xdg-utils: desktop opener'
-)
+depends=(xclip xsel)
+optdepends=()
 makedepends=(git)
 provides=(clipsim)
 conflicts=(clipsim)
@@ -29,10 +19,6 @@ md5sums=('SKIP')
 pkgver() {
     echo "$pkgver"
 }
-
-# prepare() {
-# 	sed -i 's/install: all/install:/' nnn/Makefile
-# }
 
 build() {
 	cd clipsim
