@@ -33,8 +33,10 @@ $(objs): Makefile clipsim.h
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp -f clipsim ${DESTDIR}${PREFIX}/bin
+	mkdir -p ${DESTDIR}${PREFIX}/man/man1/
 	cp -f clipsim.1 ${DESTDIR}${PREFIX}/man/man1/clipsim.1
 	chmod 755 ${DESTDIR}${PREFIX}/bin/clipsim
+	chmod 644 ${DESTDIR}${PREFIX}/man/man1/
 
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/clipsim
