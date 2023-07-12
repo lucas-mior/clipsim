@@ -35,7 +35,7 @@ static void ipc_make_fifos(void);
 static void ipc_create_fifo(const char *);
 
 int ipc_daemon_listen_fifo(void *unused) {
-    DEBUG_PRINT("*ipc_daemon_listen_fifo(void *)\n")
+    DEBUG_PRINT("ipc_daemon_listen_fifo(void *unused)\n")
     char command;
     struct timespec pause;
     (void) unused;

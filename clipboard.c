@@ -31,7 +31,7 @@ static int32 clipboard_get_clipboard(char **, ulong *);
 static void clipboard_signal_program(void);
 
 int clipboard_daemon_watch(void *unused) {
-    DEBUG_PRINT("*clipboard_daemon_watch(void *)\n")
+    DEBUG_PRINT("clipboard_daemon_watch(void *unused)\n")
     ulong color;
     Window root;
     struct timespec pause;
