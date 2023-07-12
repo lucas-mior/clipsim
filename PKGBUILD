@@ -1,5 +1,4 @@
-# Maintainer: eNV25 <env252525@gmail.com>
-# Contributor: Josip Ponjavic <josipponjavic at gmail dot com>
+# Maintainer: lucas <lucas.mior.2@gmail.com>
 
 pkgname=clipsim-git
 pkgver=0.0.1
@@ -8,7 +7,7 @@ pkgdesc="clipsim is a simple X11 clipboard manager written in C."
 arch=(x86_64)
 url='https://github.com/lucas-mior/clipsim'
 license=(AGPL)
-depends=(xclip xsel)
+depends=(xclip)
 optdepends=()
 makedepends=(git)
 provides=(clipsim)

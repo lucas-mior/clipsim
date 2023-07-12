@@ -328,7 +328,7 @@ void history_recover(int32 id) {
             close(fd[1]);
             dup2(fd[0], STDIN_FILENO);
             close(fd[0]);
-            execlp("/usr/bin/xsel", "xsel", "-b", NULL);
+            execlp("/usr/bin/xclip", "xclip", "-selection", "clipboard", NULL);
         } else {
             execlp("/usr/bin/xclip", "xclip", "-selection", "clipboard",
                    "-target", "image/png", e->image_path, NULL);

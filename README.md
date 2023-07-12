@@ -92,9 +92,8 @@ will show them using `stiv` or `chafa`.
 When retrieving images from the history, `xclip` is used.
 
 ## Instalation
-Make sure you have [libxfixes](https://gitlab.freedesktop.org/xorg/lib/libxfixes),
-[xsel](https://github.com/kfish/xsel) and 
-[xclip](https://github.com/astrand/xclip) installed.
+Make sure you have [libxfixes](https://gitlab.freedesktop.org/xorg/lib/libxfixes)
+and [xclip](https://github.com/astrand/xclip) installed.
 ```
 $ git clone https://codeberg.org/lucas.mior/clipsim.git clipsim
 $ cd clipsim
