@@ -121,7 +121,18 @@ void history_read(void) {
     }
 
     (void) snprintf(buffer, sizeof(buffer), "%s/%s", XDG_CACHE_HOME, clipsim);
-    history.name = buffer;
+    history.name = strdup(buffer);
+
+    {
+        char *clipsim_dir = dirname(buffer);
+        if (mkdir(clipsim_dir, 0770) < 0) {
+            if (errno != EEXIST) {
+                fprintf(stderr, "Error creating dir %s: %s\n",
+                                clipsim_dir, strerror(errno));
+                return;
+            }
+        }
+    }
 
     lastindex = -1;
     if ((history.fd = open(history.name, O_RDONLY)) < 0) {
