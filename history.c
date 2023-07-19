@@ -129,7 +129,7 @@ void history_read(void) {
             if (errno != EEXIST) {
                 fprintf(stderr, "Error creating dir %s: %s\n",
                                 clipsim_dir, strerror(errno));
-                return;
+                exit(EXIT_FAILURE);
             }
         }
     }
