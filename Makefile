@@ -10,7 +10,7 @@ all: release
 .SUFFIXES:
 .SUFFIXES: .c .o
 
-CC=clang
+CC=zig cc
 
 release: cflags += -O2 -Weverything
 release: stripflag = -s
