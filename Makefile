@@ -10,9 +10,10 @@ all: release
 .SUFFIXES:
 .SUFFIXES: .c .o
 
-CC=zig cc
+CC=clang
 
-release: cflags += -O2 -Weverything
+cflags += -std=c2x -D_DEFAULT_SOURCE
+release: cflags += -O2
 release: stripflag = -s
 release: clipsim
 

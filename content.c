@@ -18,7 +18,7 @@
 #include <magic.h>
 
 void content_remove_newline(char *text, ulong *length) {
-    DEBUG_PRINT("content_remove_newline(%s, %lu)\n", text, length)
+    DEBUG_PRINT("%s, %lu", text, *length)
     text[*length] = '\0';
     while (text[*length-1] == '\n') {
         text[*length-1] = '\0';
@@ -29,7 +29,7 @@ void content_remove_newline(char *text, ulong *length) {
 
 void content_trim_spaces(char **trimmed, ulong *trimmed_length,
                          char *content, const ulong length) {
-    DEBUG_PRINT("content_trim_spaces(%p, %p, %s, %lu)\n", 
+    DEBUG_PRINT("%p, %p, %s, %lu", 
                 trimmed, trimmed_length, content, length)
     char *p;
     char temp = '\0';
@@ -68,7 +68,7 @@ void content_trim_spaces(char **trimmed, ulong *trimmed_length,
 }
 
 int32 content_check_content(uchar *data, const ulong length) {
-    DEBUG_PRINT("content_check_content(%.*s, %lu)\n", 20, data, length)
+    DEBUG_PRINT("%.*s, %lu", 20, data, length)
     { /* Check if it is made only of spaces and newlines */
         uchar *aux = data;
         do {

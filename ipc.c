@@ -34,11 +34,10 @@ static void ipc_client_ask_id(int32);
 static void ipc_make_fifos(void);
 static void ipc_create_fifo(const char *);
 
-int ipc_daemon_listen_fifo(void *unused) {
-    DEBUG_PRINT("ipc_daemon_listen_fifo(void *unused)\n")
+int ipc_daemon_listen_fifo(void *) {
+    DEBUG_PRINT("")
     char command;
     struct timespec pause;
-    (void) unused;
     pause.tv_sec = 0;
     pause.tv_nsec = PAUSE10MS;
 
@@ -130,7 +129,7 @@ void ipc_client_speak_fifo(uint command, int32 id) {
 }
 
 void ipc_daemon_history_save(void) {
-    DEBUG_PRINT("ipc_daemon_history_save(void)\n")
+    DEBUG_PRINT("")
     char saved;
     fprintf(stderr, "Trying to save history...\n");
     if (util_open(&content_fifo, O_WRONLY) < 0)
@@ -163,7 +162,7 @@ void ipc_client_check_save(void) {
 }
 
 void ipc_daemon_pipe_entries(void) {
-    DEBUG_PRINT("ipc_daemon_pipe_entries(void)\n")
+    DEBUG_PRINT("")
     static char buffer[BUFSIZ];
     size_t w = 0;
     int32 lastindex;
@@ -197,7 +196,7 @@ void ipc_daemon_pipe_entries(void) {
 }
 
 void ipc_daemon_pipe_id(int32 id) {
-    DEBUG_PRINT("ipc_daemon_pipe_id(%d)\n", id)
+    DEBUG_PRINT("%d", id)
     Entry *e;
     int32 lastindex;
 
@@ -274,7 +273,7 @@ void ipc_client_print_entries(void) {
 }
 
 void ipc_daemon_with_id(void (*func)(int32)) {
-    DEBUG_PRINT("ipc_daemon_with_id(void (*)())\n")
+    DEBUG_PRINT("")
     int32 id;
 
     if ((passid_fifo.file = fopen(passid_fifo.name, "r")) == NULL) {
@@ -296,7 +295,7 @@ void ipc_daemon_with_id(void (*func)(int32)) {
 }
 
 void ipc_client_ask_id(int32 id) {
-    DEBUG_PRINT("ipc_client_ask_id(%d)\n", id)
+    DEBUG_PRINT("%d", id)
     if ((passid_fifo.file = fopen(passid_fifo.name, "w")) == NULL) {
         fprintf(stderr, "Error opening fifo for sending id to daemon: "
                         "%s\n", strerror(errno));
@@ -313,7 +312,7 @@ void ipc_client_ask_id(int32 id) {
 }
 
 void ipc_make_fifos(void) {
-    DEBUG_PRINT("ipc_make_fifos(void)\n")
+    DEBUG_PRINT("")
     unlink(command_fifo.name);
     unlink(passid_fifo.name);
     unlink(content_fifo.name);

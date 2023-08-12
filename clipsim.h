@@ -14,7 +14,6 @@
 /* You should have received a copy of the GNU General Public License */
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
-#define _POSIX_C_SOURCE 200809L
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -22,7 +21,6 @@
 #include <limits.h>
 #include <threads.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +42,8 @@
 
 #ifdef CLIPSIM_DEBUG
 #define DEBUG_PRINT(...) \
-do { printf("%s:%d -> ", __FILE__, __LINE__); printf(__VA_ARGS__); } while (0);
+do { printf("%s:%d -> %s(", __FILE__, __LINE__, __func__); \
+     printf(__VA_ARGS__); printf(")\n"); } while (0);
 #else
 #define DEBUG_PRINT(...)
 #endif
@@ -79,7 +78,6 @@ typedef struct Entry {
     char *image_path;
 } Entry;
 
-#pragma clang diagnostic ignored "-Wpadded"
 typedef struct File {
     FILE *file;
     char *name;
@@ -151,5 +149,7 @@ void util_segv_handler(int) __attribute__((noreturn));
 void util_close(File *);
 int util_open(File *, const int);
 int util_copy_file(const char *, const char *);
+
+int nanosleep(const struct timespec *, struct timespec *);
 
 #endif /* CLIPSIM_H */
