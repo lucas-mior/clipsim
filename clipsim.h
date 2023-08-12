@@ -124,9 +124,9 @@ static const Command commands[] = {
 extern Entry entries[HISTORY_BUFFER_SIZE];
 extern mtx_t lock;
 
-void content_remove_newline(char *, ulong *);
-void content_trim_spaces(char **, ulong *, char *, ulong);
-int32 content_check_content(uchar *, ulong);
+void content_remove_newline(char *, size_t *);
+void content_trim_spaces(char **, size_t *, char *, size_t);
+int32 content_check_content(uchar *, size_t);
 
 int32 history_lastindex(void);
 void history_read(void);

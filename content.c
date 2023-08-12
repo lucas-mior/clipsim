@@ -17,7 +17,7 @@
 #include "clipsim.h"
 #include <magic.h>
 
-void content_remove_newline(char *text, ulong *length) {
+void content_remove_newline(char *text, size_t *length) {
     DEBUG_PRINT("%s, %lu", text, *length)
     text[*length] = '\0';
     while (text[*length-1] == '\n') {
@@ -27,8 +27,8 @@ void content_remove_newline(char *text, ulong *length) {
     return;
 }
 
-void content_trim_spaces(char **trimmed, ulong *trimmed_length,
-                         char *content, const ulong length) {
+void content_trim_spaces(char **trimmed, size_t *trimmed_length,
+                         char *content, const size_t length) {
     DEBUG_PRINT("%p, %p, %s, %lu", 
                 trimmed, trimmed_length, content, length)
     char *p;
@@ -51,7 +51,7 @@ void content_trim_spaces(char **trimmed, ulong *trimmed_length,
         *p++ = *c++;
     }
     *p = '\0';
-    *trimmed_length = (size_t) (p - *trimmed);
+    *trimmed_length = p - *trimmed;
 
     if (temp) {
         content[TRIMMED_SIZE] = temp;
@@ -67,7 +67,7 @@ void content_trim_spaces(char **trimmed, ulong *trimmed_length,
     return;
 }
 
-int32 content_check_content(uchar *data, const ulong length) {
+int32 content_check_content(uchar *data, const size_t length) {
     DEBUG_PRINT("%.*s, %lu", 20, data, length)
     { /* Check if it is made only of spaces and newlines */
         uchar *aux = data;
