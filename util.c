@@ -64,28 +64,28 @@ void util_segv_handler(int) {
     exit(EXIT_FAILURE);
 }
 
-void util_close(File *f) {
-    if (f->fd >= 0) {
-        if (close(f->fd) < 0) {
+void util_close(File *file) {
+    if (file->fd >= 0) {
+        if (close(file->fd) < 0) {
             fprintf(stderr, "Error closing %s: %s\n",
-                            f->name, strerror(errno));
+                            file->name, strerror(errno));
         }
-        f->fd = -1;
+        file->fd = -1;
     }
-    if (f->file != NULL) {
-        if (fclose(f->file) != 0) {
+    if (file->file != NULL) {
+        if (fclose(file->file) != 0) {
             fprintf(stderr, "Error closing %s: %s\n",
-                            f->name, strerror(errno));
+                            file->name, strerror(errno));
         }
-        f->file = NULL;
+        file->file = NULL;
     }
     return;
 }
 
-int util_open(File *f, const int flag) {
-    if ((f->fd = open(f->name, flag)) < 0) {
+int util_open(File *file, const int flag) {
+    if ((file->fd = open(file->name, flag)) < 0) {
         fprintf(stderr, "Error opening %s: %s\n",
-                        f->name, strerror(errno));
+                        file->name, strerror(errno));
         return -1;
     } else {
         return 0;
