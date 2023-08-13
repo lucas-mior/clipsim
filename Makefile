@@ -12,7 +12,7 @@ all: release
 
 CC=clang
 
-cflags += -std=c2x -D_DEFAULT_SOURCE -fsanitize=undefined
+cflags += -std=c2x -D_DEFAULT_SOURCE
 release: cflags += -O2
 release: stripflag = -s
 release: clipsim
