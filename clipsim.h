@@ -40,14 +40,6 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n'))
 
-#ifdef CLIPSIM_DEBUG
-#define DEBUG_PRINT(...) \
-do { printf("%s:%d -> %s(", __FILE__, __LINE__, __func__); \
-     printf(__VA_ARGS__); printf(")\n"); } while (0);
-#else
-#define DEBUG_PRINT(...)
-#endif
-
 #define PAUSE10MS (1000 * 1000 * 10)
 #define HISTORY_BUFFER_SIZE 512U
 #define HISTORY_KEEP_SIZE (HISTORY_BUFFER_SIZE/2)
@@ -70,6 +62,7 @@ typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 
+#pragma clang diagnostic ignored "-Wpadded"
 typedef struct Entry {
     size_t content_length;
     size_t trimmed_length;

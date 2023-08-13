@@ -78,7 +78,6 @@ void main_usage(FILE *stream) {
 }
 
 void main_launch_daemon(void) {
-    DEBUG_PRINT("")
     thrd_t ipc_thread;
     thrd_t clipboard_thread;
     int ipc_error = 0;

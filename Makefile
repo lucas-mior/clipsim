@@ -13,11 +13,11 @@ all: release
 CC=clang
 
 cflags += -std=c2x -D_DEFAULT_SOURCE
-release: cflags += -O2
+release: cflags += -O2 -Weverything
 release: stripflag = -s
 release: clipsim
 
-debug: cflags += -DCLIPSIM_DEBUG -g -Wall -Wextra
+debug: cflags += -g -Wall -Wextra
 debug: clean
 debug: clipsim
 

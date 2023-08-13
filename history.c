@@ -68,7 +68,6 @@ void history_save_entry(Entry *e) {
 }
 
 bool history_save(void) {
-    DEBUG_PRINT("")
     int saved;
 
     if (lastindex < 0) {
@@ -98,7 +97,6 @@ bool history_save(void) {
 }
 
 void history_read(void) {
-    DEBUG_PRINT("")
     struct stat history_stat;
     static char buffer[PATH_MAX];
     size_t history_length;
@@ -203,7 +201,6 @@ void history_read(void) {
 }
 
 int32 history_repeated_index(const char *content, const size_t length) {
-    DEBUG_PRINT("%.*s, %lu", 20, content, length)
     if (length_counts[length] == 0)
         return -1;
     for (int32 i = lastindex; i >= 0; i -= 1) {
@@ -246,7 +243,6 @@ void history_save_image(char **content, ulong *length) {
 }
 
 void history_append(char *content, ulong length) {
-    DEBUG_PRINT("%.*s, %lu", 20, content, length)
     int32 oldindex;
     int32 kind;
     Entry *e;
@@ -306,7 +302,6 @@ void history_append(char *content, ulong length) {
 }
 
 void history_recover(int32 id) {
-    DEBUG_PRINT("%d", id)
     pid_t child = -1;
     int fd[2];
     Entry *e;
@@ -368,7 +363,6 @@ void history_recover(int32 id) {
 }
 
 void history_remove(int32 id) {
-    DEBUG_PRINT("%d", id)
     if (lastindex <= 0)
         return;
 
@@ -397,7 +391,6 @@ void history_remove(int32 id) {
 }
 
 void history_reorder(const int32 oldindex) {
-    DEBUG_PRINT("%d", oldindex)
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex+1],
             (size_t) (lastindex - oldindex)*sizeof(Entry));
@@ -418,7 +411,6 @@ void history_free_entry(const Entry *e) {
 }
 
 void history_clean(void) {
-    DEBUG_PRINT("")
     for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1)
         history_free_entry(&entries[i]);
 
