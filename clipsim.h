@@ -136,7 +136,7 @@ void send_signal(const char *, const int);
 
 void *util_realloc(void *, const size_t);
 void *util_calloc(const size_t, const size_t);
-int util_string_int32(int32 *, const char *, const int);
+int util_string_int32(int32 *, const char *);
 void util_segv_handler(int) __attribute__((noreturn));
 void util_close(File *);
 int util_open(File *, const int);

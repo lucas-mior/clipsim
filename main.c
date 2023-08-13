@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
             case COMMAND_INFO:
             case COMMAND_COPY:
             case COMMAND_REMOVE:
-                if ((argc != 3) || util_string_int32(&id, argv[2], 10) < 0)
+                if ((argc != 3) || util_string_int32(&id, argv[2]) < 0)
                     main_usage(stderr);
                 ipc_client_speak_fifo(i, id);
                 break;

@@ -37,11 +37,11 @@ void *util_calloc(const size_t nmemb, const size_t size) {
     return p;
 }
 
-int util_string_int32(int32 *number, const char *string, const int base) {
+int util_string_int32(int32 *number, const char *string) {
     char *endptr;
     long x;
     errno = 0;
-    x = strtol(string, &endptr, base);
+    x = strtol(string, &endptr, 10);
     if ((errno != 0) || (string == endptr) || (*endptr != 0)) {
         return -1;
     } else if ((x > INT32_MAX) || (x < INT32_MIN)) {
