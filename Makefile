@@ -12,7 +12,7 @@ all: release
 
 CC=clang
 
-cflags += -std=c2x -D_DEFAULT_SOURCE
+cflags += -std=c99 -D_DEFAULT_SOURCE
 release: cflags += -O2 -Weverything
 release: stripflag = -s
 release: clipsim

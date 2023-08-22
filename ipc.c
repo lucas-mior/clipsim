@@ -34,7 +34,7 @@ static void ipc_client_ask_id(int32);
 static void ipc_make_fifos(void);
 static void ipc_create_fifo(const char *);
 
-int ipc_daemon_listen_fifo(void *) {
+int ipc_daemon_listen_fifo(void *unused) {
     char command;
     struct timespec pause;
     pause.tv_sec = 0;

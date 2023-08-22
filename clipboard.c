@@ -30,7 +30,7 @@ static Atom clipboard_check_target(Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
 static void clipboard_signal_program(void);
 
-int clipboard_daemon_watch(void *) {
+int clipboard_daemon_watch(void *unused) {
     ulong color;
     Window root;
     struct timespec pause;

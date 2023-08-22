@@ -52,7 +52,7 @@ int util_string_int32(int32 *number, const char *string) {
     }
 }
 
-void util_segv_handler(int) {
+void util_segv_handler(int unused) {
     char *message = "Memory error. Please send a bug report.\n";
     char *notifiers[2] = { "dunstify", "notify-send" };
 
