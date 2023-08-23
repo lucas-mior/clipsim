@@ -110,6 +110,7 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
     ulong nitems_return;
     ulong bytes_after_return;
     Atom actual_type_return;
+    XEvent xevent;
 
     if (clipboard_check_target(UTF8_STRING)) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
@@ -117,6 +118,24 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
         if (actual_type_return == INCR) {
+            printf("fmt == incrid\n");
+            int done = 0;
+            do {
+                done++;
+                printf("done ========== %d\n", done);
+                do {
+                    XNextEvent(display, &xevent);
+                } while (xevent.type != PropertyNotify
+                      || xevent.xproperty.atom != XSEL_DATA
+                      || xevent.xproperty.state != PropertyNewValue);
+
+            XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
+                               True, AnyPropertyType, &actual_type_return,
+                               &actual_format_return, &nitems_return,
+                               &bytes_after_return, (uchar **) save);
+            printf("dofinal %.*s", (int)nitems_return, *save);
+            XFree(*save);
+            } while (nitems_return > 0);
             return CLIPBOARD_LARGE;
         } else {
             *length = nitems_return;
