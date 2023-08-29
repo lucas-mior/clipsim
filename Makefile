@@ -13,11 +13,11 @@ all: release
 CC=clang
 
 cflags += -std=c99 -D_DEFAULT_SOURCE
-release: cflags += -O2 -Weverything
+release: cflags += -O2 -Wall -Wextra -Weverything -Wno-unsafe-buffer-usage
 release: stripflag = -s
 release: clipsim
 
-debug: cflags += -g -Wall -Wextra
+debug: cflags += -g -Wall -Wextra -Weverything
 debug: clean
 debug: clipsim
 
