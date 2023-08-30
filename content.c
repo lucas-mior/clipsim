@@ -68,6 +68,7 @@ void content_trim_spaces(char **trimmed, size_t *trimmed_length,
 
 int32 content_check_content(uchar *data, const size_t length) {
     DEBUG_PRINT("%s, %zu", data, length);
+
     { /* Check if it is made only of spaces and newlines */
         uchar *aux = data;
         do {
