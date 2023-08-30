@@ -36,6 +36,14 @@
 #ifndef CLIPSIM_H
 #define CLIPSIM_H
 
+#ifdef CLIPSIM_DEBUG
+#define DEBUG_PRINT(...) \
+do { printf("%s:%d -> %s(", __FILE__, __LINE__, __func__); \
+     printf(__VA_ARGS__); printf(")\n"); } while (0)
+#else
+#define DEBUG_PRINT(...)
+#endif
+
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof(x[0]))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))

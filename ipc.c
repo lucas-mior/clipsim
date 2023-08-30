@@ -35,6 +35,8 @@ static void ipc_make_fifos(void);
 static void ipc_create_fifo(const char *);
 
 int ipc_daemon_listen_fifo(void *unused) {
+    DEBUG_PRINT("");
+    (void) unused;
     char command;
     struct timespec pause;
     pause.tv_sec = 0;
@@ -89,6 +91,7 @@ int ipc_daemon_listen_fifo(void *unused) {
 }
 
 void ipc_client_speak_fifo(uint command, int32 id) {
+    DEBUG_PRINT("%u, %d", command, id);
     if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
         fprintf(stderr, "Could not open Fifo for sending command to daemon. "
                         "Is `%s daemon` running?\n", "clipsim");
@@ -128,6 +131,7 @@ void ipc_client_speak_fifo(uint command, int32 id) {
 }
 
 void ipc_daemon_history_save(void) {
+    DEBUG_PRINT("");
     char saved;
     fprintf(stderr, "Trying to save history...\n");
     if (util_open(&content_fifo, O_WRONLY) < 0)
@@ -142,6 +146,7 @@ void ipc_daemon_history_save(void) {
 }
 
 void ipc_client_check_save(void) {
+    DEBUG_PRINT("");
     ssize_t r;
     char saved;
     fprintf(stderr, "Trying to save history...\n");
@@ -160,6 +165,7 @@ void ipc_client_check_save(void) {
 }
 
 void ipc_daemon_pipe_entries(void) {
+    DEBUG_PRINT("");
     static char buffer[BUFSIZ];
     size_t w = 0;
     int32 lastindex;
@@ -193,6 +199,7 @@ void ipc_daemon_pipe_entries(void) {
 }
 
 void ipc_daemon_pipe_id(int32 id) {
+    DEBUG_PRINT("%d", id);
     Entry *e;
     int32 lastindex;
 
@@ -224,6 +231,7 @@ void ipc_daemon_pipe_id(int32 id) {
 
 
 void ipc_client_print_entries(void) {
+    DEBUG_PRINT("");
     static char buffer[BUFSIZ];
     ssize_t r;
 
@@ -269,6 +277,7 @@ void ipc_client_print_entries(void) {
 }
 
 void ipc_daemon_with_id(void (*func)(int32)) {
+    DEBUG_PRINT("%p", (void *) func);
     int32 id;
 
     if ((passid_fifo.file = fopen(passid_fifo.name, "r")) == NULL) {
@@ -290,6 +299,7 @@ void ipc_daemon_with_id(void (*func)(int32)) {
 }
 
 void ipc_client_ask_id(int32 id) {
+    DEBUG_PRINT("%d", id);
     if ((passid_fifo.file = fopen(passid_fifo.name, "w")) == NULL) {
         fprintf(stderr, "Error opening fifo for sending id to daemon: "
                         "%s\n", strerror(errno));
@@ -306,6 +316,7 @@ void ipc_client_ask_id(int32 id) {
 }
 
 void ipc_make_fifos(void) {
+    DEBUG_PRINT("");
     unlink(command_fifo.name);
     unlink(passid_fifo.name);
     unlink(content_fifo.name);
@@ -316,6 +327,7 @@ void ipc_make_fifos(void) {
 }
 
 void ipc_create_fifo(const char *name) {
+    DEBUG_PRINT("%s", name);
     if (mkfifo(name, 0700) < 0) {
         if (errno != EEXIST) {
             fprintf(stderr, "Failed to create fifo %s: %s\n",

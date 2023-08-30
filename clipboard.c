@@ -31,6 +31,8 @@ static int32 clipboard_get_clipboard(char **, ulong *);
 static void clipboard_signal_program(void);
 
 int clipboard_daemon_watch(void *unused) {
+    DEBUG_PRINT("");
+    (void) unused;
     ulong color;
     Window root;
     struct timespec pause;
@@ -93,6 +95,7 @@ int clipboard_daemon_watch(void *unused) {
 }
 
 Atom clipboard_check_target(const Atom target) {
+    DEBUG_PRINT("%lu", target);
     XEvent xevent;
 
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA,
@@ -106,6 +109,7 @@ Atom clipboard_check_target(const Atom target) {
 }
 
 int32 clipboard_get_clipboard(char **save, ulong *length) {
+    DEBUG_PRINT("%p, %lu", (void *) save, *length);
     int actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
@@ -140,6 +144,7 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
 }
 
 void clipboard_signal_program(void) {
+    DEBUG_PRINT("");
     int signal_number;
     char *CLIPSIM_SIGNAL_CODE;
     char *CLIPSIM_SIGNAL_PROGRAM;

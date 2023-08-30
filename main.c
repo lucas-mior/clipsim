@@ -23,6 +23,7 @@ static void main_usage(FILE *) __attribute__((noreturn));
 static void main_launch_daemon(void);
 
 int main(int argc, char *argv[]) {
+    DEBUG_PRINT("%d, %s", argc, argv[0]);
     int32 id;
     bool spell_error = true;
 
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]) {
 }
 
 void main_usage(FILE *stream) {
+    DEBUG_PRINT("%p", (void *) stream);
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
     for (uint i = 0; i < ARRAY_LENGTH(commands); i += 1) {
@@ -78,6 +80,7 @@ void main_usage(FILE *stream) {
 }
 
 void main_launch_daemon(void) {
+    DEBUG_PRINT("");
     thrd_t ipc_thread;
     thrd_t clipboard_thread;
     int ipc_error = 0;
