@@ -142,6 +142,7 @@ void ipc_client_speak_fifo(uint, int32);
 
 void send_signal(const char *, const int);
 
+void *util_malloc(const size_t);
 void *util_realloc(void *, const size_t);
 void *util_calloc(const size_t, const size_t);
 int util_string_int32(int32 *, const char *);

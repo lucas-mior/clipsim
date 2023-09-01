@@ -182,7 +182,7 @@ void history_read(void) {
             lastindex += 1;
             e = &entries[lastindex];
             e->content_length = (size_t) (p - begin);
-            e->content = util_realloc(NULL, e->content_length+1);
+            e->content = util_malloc(e->content_length+1);
             memcpy(e->content, begin, e->content_length+1);
 
             if (c == IMAGE_END) {

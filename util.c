@@ -16,12 +16,20 @@
 
 #include "clipsim.h"
 
+void *util_malloc(const size_t size) {
+    void *p;
+    if ((p = malloc(size)) == NULL) {
+        fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
+        exit(EXIT_FAILURE);
+    }
+    return p;
+}
+
 void *util_realloc(void *old, const size_t size) {
     void *p;
     if ((p = realloc(old, size)) == NULL) {
         fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
-        if (old)
-            fprintf(stderr, "Reallocating from: %p\n", old);
+        fprintf(stderr, "Reallocating from: %p\n", old);
         exit(EXIT_FAILURE);
     }
     return p;

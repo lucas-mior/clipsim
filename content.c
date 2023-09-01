@@ -34,7 +34,7 @@ void content_trim_spaces(char **trimmed, size_t *trimmed_length,
     char temp = '\0';
     char *c = content;
 
-    *trimmed = p = util_realloc(NULL, MIN(length+1, TRIMMED_SIZE+1));
+    *trimmed = p = util_malloc(MIN(length+1, TRIMMED_SIZE+1));
 
     if (length >= TRIMMED_SIZE) {
         temp = content[TRIMMED_SIZE];
