@@ -201,7 +201,10 @@ void history_read(void) {
         }
     }
 
-    munmap(history_content, history_length);
+    if (munmap(history_content, history_length) < 0) {
+        fprintf(stderr, "munmap %p with %zu bytes failed: %s\n",
+                        (void *) history_content, history_length, strerror(errno));
+    }
     util_close(&history);
     return;
 }
