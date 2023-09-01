@@ -251,7 +251,7 @@ void history_save_image(char **content, ulong *length) {
 }
 
 void history_append(char *content, ulong length) {
-DEBUG_PRINT("void history_append(char *content, ulong length)\n");
+    DEBUG_PRINT("void history_append(char *content, ulong length)\n");
     int32 oldindex;
     int32 kind;
     Entry *e;
@@ -311,7 +311,7 @@ DEBUG_PRINT("void history_append(char *content, ulong length)\n");
 }
 
 void history_recover(int32 id) {
-DEBUG_PRINT("void history_recover(int32 id)\n");
+    DEBUG_PRINT("void history_recover(int32 id)\n");
     pid_t child = -1;
     int fd[2];
     Entry *e;
@@ -373,7 +373,7 @@ DEBUG_PRINT("void history_recover(int32 id)\n");
 }
 
 void history_remove(int32 id) {
-DEBUG_PRINT("void history_remove(int32 id)\n");
+    DEBUG_PRINT("void history_remove(int32 id)\n");
     if (lastindex <= 0)
         return;
 
@@ -402,7 +402,7 @@ DEBUG_PRINT("void history_remove(int32 id)\n");
 }
 
 void history_reorder(const int32 oldindex) {
-DEBUG_PRINT("void history_reorder(const int32 oldindex)\n");
+    DEBUG_PRINT("void history_reorder(const int32 oldindex)\n");
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex+1],
             (size_t) (lastindex - oldindex)*sizeof(Entry));
@@ -411,7 +411,7 @@ DEBUG_PRINT("void history_reorder(const int32 oldindex)\n");
 }
 
 void history_free_entry(const Entry *e) {
-DEBUG_PRINT("void history_free_entry(const Entry *e)\n");
+    DEBUG_PRINT("void history_free_entry(const Entry *e)\n");
     length_counts[e->content_length] -= 1;
     if (e->image_path)
         unlink(e->image_path);
@@ -424,7 +424,7 @@ DEBUG_PRINT("void history_free_entry(const Entry *e)\n");
 }
 
 void history_clean(void) {
-DEBUG_PRINT("void history_clean(void)\n");
+    DEBUG_PRINT("void history_clean(void)\n");
     for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1)
         history_free_entry(&entries[i]);
 
