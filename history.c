@@ -36,7 +36,8 @@ int32 history_lastindex(void) {
 }
 
 void history_save_entry(Entry *e) {
-    DEBUG_PRINT("%p", (void *) e);
+    DEBUG_PRINT("{ %s, %zu, %s, %zu }",
+                e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
     if (e->image_path) {
         int length;
@@ -416,7 +417,8 @@ void history_reorder(const int32 oldindex) {
 }
 
 void history_free_entry(const Entry *e) {
-    DEBUG_PRINT("%p", (void *) e);
+    DEBUG_PRINT("{ %s, %zu, %s, %zu }",
+                e->content, e->content_length, e->trimmed, e->trimmed_length);
     length_counts[e->content_length] -= 1;
     if (e->image_path)
         unlink(e->image_path);
