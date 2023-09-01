@@ -96,6 +96,10 @@ int clipboard_daemon_watch(void *unused) {
 
 Atom clipboard_check_target(const Atom target) {
     DEBUG_PRINT("%lu", target);
+#ifdef CLIPSIM_DEBUG
+    if (target <= XA_LAST_PREDEFINED)
+        DEBUG_PRINT("%s", XGetAtomName(display, target));
+#endif
     XEvent xevent;
 
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA,
