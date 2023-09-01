@@ -101,8 +101,6 @@ bool history_save(void) {
 
 void history_read(void) {
     DEBUG_PRINT("");
-    struct stat history_stat;
-    static char buffer[PATH_MAX];
     size_t history_length;
     char *history_content;
     char *begin;
@@ -122,10 +120,11 @@ void history_read(void) {
         exit(EXIT_FAILURE);
     }
 
-    (void) snprintf(buffer, sizeof(buffer), "%s/%s", XDG_CACHE_HOME, clipsim);
-    history.name = strdup(buffer);
-
     {
+        char buffer[PATH_MAX];
+        (void) snprintf(buffer, sizeof(buffer), "%s/%s", XDG_CACHE_HOME, clipsim);
+        history.name = strdup(buffer);
+
         char *clipsim_dir = dirname(buffer);
         if (mkdir(clipsim_dir, 0770) < 0) {
             if (errno != EEXIST) {
@@ -143,18 +142,21 @@ void history_read(void) {
         return;
     }
 
-    if (fstat(history.fd, &history_stat) < 0) {
-        fprintf(stderr, "Error getting file information: %s\n"
-                        "History will start empty.\n", strerror(errno));
-        util_close(&history);
-        return;
-    }
-    history_length = (size_t) history_stat.st_size;
-    if (history_length <= 0) {
-        fprintf(stderr, "History_length: %zu\n", history_length);
-        fprintf(stderr, "History file is empty.\n");
-        util_close(&history);
-        return;
+    {
+        struct stat history_stat;
+        if (fstat(history.fd, &history_stat) < 0) {
+            fprintf(stderr, "Error getting file information: %s\n"
+                            "History will start empty.\n", strerror(errno));
+            util_close(&history);
+            return;
+        }
+        history_length = (size_t) history_stat.st_size;
+        if (history_length <= 0) {
+            fprintf(stderr, "History_length: %zu\n", history_length);
+            fprintf(stderr, "History file is empty.\n");
+            util_close(&history);
+            return;
+        }
     }
 
     history_content = mmap(NULL, history_length, 
