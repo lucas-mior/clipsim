@@ -51,11 +51,11 @@ pid_t check_pid(const char *executable, const char *number) {
     if ((pid = atoi(number)) <= 0)
         return 0;
 
-    snprintf(buffer, sizeof(buffer), "/proc/%s/cmdline", number);
-    buffer[sizeof(buffer)-1] = '\0';
+    snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", number);
+    buffer[sizeof (buffer)-1] = '\0';
     if ((cmdline = fopen(buffer, "r")) == NULL)
         return 0;
-    if (fgets(command, sizeof(command), cmdline) == NULL) {
+    if (fgets(command, sizeof (command), cmdline) == NULL) {
         fclose(cmdline);
         return 0;
     }
