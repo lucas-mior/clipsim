@@ -33,12 +33,16 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
+#define RED "\x1b[31m"
+#define GREEN "\x1b[32m"
+#define RESET "\x1b[0m"
+
 #ifndef CLIPSIM_H
 #define CLIPSIM_H
 
 #ifdef CLIPSIM_DEBUG
 #define DEBUG_PRINT(...) \
-do { printf("%s:%d -> %s(", __FILE__, __LINE__, __func__); \
+do { printf("%s:%d -> "RED"%s"RESET"(", __FILE__, __LINE__, __func__); \
      printf(__VA_ARGS__); printf(")\n"); } while (0)
 #else
 #define DEBUG_PRINT(...)
