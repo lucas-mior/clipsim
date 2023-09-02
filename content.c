@@ -29,7 +29,8 @@ void content_remove_newline(char *text, size_t *length) {
 
 void content_trim_spaces(char **trimmed, size_t *trimmed_length,
                          char *content, const size_t length) {
-    DEBUG_PRINT("%p, %zu, %s, %zu", (void *) trimmed, *trimmed_length, content, length);
+    DEBUG_PRINT("%p, %p, %s, %zu",
+                (void *) trimmed, (void *) trimmed_length, content, length);
     char *p;
     char temp = '\0';
     char *c = content;
@@ -66,7 +67,7 @@ void content_trim_spaces(char **trimmed, size_t *trimmed_length,
     return;
 }
 
-int32 content_check_content(uchar *data, const size_t length) {
+int32 content_check_content(const uchar *data, const size_t length) {
     DEBUG_PRINT("%s, %zu", data, length);
 
     { /* Check if it is made only of spaces and newlines */
@@ -113,7 +114,7 @@ int32 content_check_content(uchar *data, const size_t length) {
     } while (0);
 
     if (length > ENTRY_MAX_LENGTH) {
-        printf("Too large entry. This wont' be added to history.\n");
+        fprintf(stderr, "Too large entry. This wont' be added to history.\n");
         return CLIPBOARD_ERROR;
     }
 

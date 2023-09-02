@@ -31,12 +31,12 @@ static void history_save_image(char **, ulong *);
 static void history_save_entry(Entry *);
 
 int32 history_lastindex(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     return lastindex;
 }
 
 void history_save_entry(Entry *e) {
-    DEBUG_PRINT("{ %s, %zu, %s, %zu }",
+    DEBUG_PRINT("{\n    %s,\n    %zu,\n    %s,\n    %zu\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
     if (e->image_path) {
@@ -62,7 +62,7 @@ void history_save_entry(Entry *e) {
 }
 
 bool history_save(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     int saved;
 
     if (lastindex < 0) {
@@ -92,7 +92,7 @@ bool history_save(void) {
 }
 
 void history_read(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     size_t history_length;
     char *history_content;
     char *begin;
@@ -411,7 +411,7 @@ void history_reorder(const int32 oldindex) {
 }
 
 void history_free_entry(const Entry *e) {
-    DEBUG_PRINT("{ %s, %zu, %s, %zu }",
+    DEBUG_PRINT("{\n    %s,\n    %zu,\n    %s,\n    %zu\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     length_counts[e->content_length] -= 1;
     if (e->image_path)
@@ -425,7 +425,7 @@ void history_free_entry(const Entry *e) {
 }
 
 void history_clean(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1)
         history_free_entry(&entries[i]);
 

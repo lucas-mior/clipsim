@@ -31,7 +31,7 @@ static int32 clipboard_get_clipboard(char **, ulong *);
 static void clipboard_signal_program(void);
 
 int clipboard_daemon_watch(void *unused) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     (void) unused;
     ulong color;
     Window root;
@@ -95,10 +95,11 @@ int clipboard_daemon_watch(void *unused) {
 }
 
 Atom clipboard_check_target(const Atom target) {
-    DEBUG_PRINT("%lu", target);
 #ifdef CLIPSIM_DEBUG
     if (target <= XA_LAST_PREDEFINED)
         DEBUG_PRINT("%s", XGetAtomName(display, target));
+    else
+        DEBUG_PRINT("%lu", target);
 #endif
     XEvent xevent;
 
@@ -113,7 +114,7 @@ Atom clipboard_check_target(const Atom target) {
 }
 
 int32 clipboard_get_clipboard(char **save, ulong *length) {
-    DEBUG_PRINT("%p, %lu", (void *) save, *length);
+    DEBUG_PRINT("%p, %p", (void *) save, (void *) length);
     int actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
@@ -148,7 +149,7 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
 }
 
 void clipboard_signal_program(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     int signal_number;
     char *CLIPSIM_SIGNAL_CODE;
     char *CLIPSIM_SIGNAL_PROGRAM;

@@ -42,8 +42,8 @@
 
 #ifdef CLIPSIM_DEBUG
 #define DEBUG_PRINT(...) \
-do { printf("%s:%d -> "RED"%s"RESET"(", __FILE__, __LINE__, __func__); \
-     printf(__VA_ARGS__); printf(")\n"); } while (0)
+do { printf("%s:%d -> "RED"%s("RESET"", __FILE__, __LINE__, __func__); \
+     printf(__VA_ARGS__); printf(RED")"RESET"\n"); } while (0)
 #else
 #define DEBUG_PRINT(...)
 #endif
@@ -130,7 +130,7 @@ static const char IMAGE_END = (char) 0x02;
 
 void content_remove_newline(char *, size_t *);
 void content_trim_spaces(char **, size_t *, char *, size_t);
-int32 content_check_content(uchar *, size_t);
+int32 content_check_content(const uchar *, size_t);
 
 int32 history_lastindex(void);
 void history_read(void);
