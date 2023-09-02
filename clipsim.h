@@ -150,6 +150,7 @@ void util_segv_handler(int) __attribute__((noreturn));
 void util_close(File *);
 int util_open(File *, const int);
 int util_copy_file(const char *, const char *);
+void util_die_notify(const char *, ...) __attribute__((noreturn));
 
 int nanosleep(const struct timespec *, struct timespec *);
 

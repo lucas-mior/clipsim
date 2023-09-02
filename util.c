@@ -15,6 +15,7 @@
 /* along with this program.  If not, see <http://www.gnu.org/licenses/>.*/
 
 #include "clipsim.h"
+#include <stdarg.h>
 
 void *util_malloc(const size_t size) {
     void *p;
@@ -58,6 +59,25 @@ int util_string_int32(int32 *number, const char *string) {
         *number = (int32) x;
         return 0;
     }
+}
+
+void util_die_notify(const char *format, ...) {
+    char *notifiers[2] = { "dunstify", "notify-send" };
+    int n;
+	va_list args;
+    char buffer[BUFSIZ];
+
+	va_start(args, format);
+	n = vsnprintf(buffer, sizeof (buffer), format, args);
+	va_end(args);
+    buffer[n] = '\0';
+
+    write(STDERR_FILENO, buffer, n+1);
+    for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
+        execlp(notifiers[i], notifiers[i], "-u", "critical", 
+               "clipsim", buffer, NULL);
+    }
+    exit(EXIT_FAILURE);
 }
 
 void util_segv_handler(int unused) {

@@ -45,28 +45,19 @@ void history_save_entry(Entry *e) {
                           "%s/clipsim/%s", XDG_CACHE_HOME, basename(e->image_path));
         if (strcmp(image_save, e->image_path)) {
             if (util_copy_file(image_save, e->image_path) < 0) {
-                fprintf(stderr, "Error copying %s to %s: %s.\n", 
+                util_die_notify("Error copying %s to %s: %s.\n", 
                                  e->image_path, image_save, strerror(errno));
-                return;
             }
         }
-        if (write(history.fd, image_save, (size_t) length) < 0) {
-            fprintf(stderr, "Error writing %s: %s\n", image_save, strerror(errno));
-            return;
-        }
-        if (write(history.fd, &IMAGE_END, sizeof (IMAGE_END)) < 0) {
-            fprintf(stderr, "Error writing IMAGE_END: %s\n", strerror(errno));
-            return;
-        }
+        if (write(history.fd, image_save, (size_t) length) < 0)
+            util_die_notify("Error writing %s: %s\n", image_save, strerror(errno));
+        if (write(history.fd, &IMAGE_END, sizeof (IMAGE_END)) < 0)
+            util_die_notify("Error writing IMAGE_END: %s\n", strerror(errno));
     } else {
-        if (write(history.fd, e->content, e->content_length) < 0) {
-            fprintf(stderr, "Error writing %s: %s\n", e->content, strerror(errno));
-            return;
-        }
-        if (write(history.fd, &TEXT_END, sizeof (IMAGE_END)) < 0) {
-            fprintf(stderr, "Error writing TEXT_END: %s\n", strerror(errno));
-            return;
-        }
+        if (write(history.fd, e->content, e->content_length) < 0)
+            util_die_notify("Error writing %s: %s\n", e->content, strerror(errno));
+        if (write(history.fd, &TEXT_END, sizeof (IMAGE_END)) < 0)
+            util_die_notify("Error writing TEXT_END: %s\n", strerror(errno));
     }
 }
 
