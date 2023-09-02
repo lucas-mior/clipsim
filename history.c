@@ -347,15 +347,23 @@ void history_recover(int32 id) {
     case -1:
         util_die_notify("Failed to fork(): %s", strerror(errno));
     default:
-        if (istext)
-            close(fd[0]);
+        if (istext) {
+            if (close(fd[0]) < 0) {
+                fprintf(stderr, "Failed to close pipe 0: %s\n",
+                                strerror(errno));
+            }
+        }
     }
 
     if (istext) {
         dprintf(fd[1], "%s", e->content);
-        close(fd[1]);
+        if (close(fd[1]) < 0) {
+            fprintf(stderr, "Failed to close pipe 1: %s\n", strerror(errno));
+        }
     }
-    wait(NULL);
+    if (wait(NULL) < 0) {
+        fprintf(stderr, "Failed to wait for fork: %s\n", strerror(errno));
+    }
 
     if (id != lastindex)
         history_reorder(id);
