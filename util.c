@@ -70,8 +70,11 @@ void util_die_notify(const char *format, ...) {
 	va_start(args, format);
 	n = vsnprintf(buffer, sizeof (buffer), format, args);
 	va_end(args);
-    buffer[n] = '\0';
 
+    if (n < 0)
+        exit(EXIT_FAILURE);
+
+    buffer[n] = '\0';
     write(STDERR_FILENO, buffer, n+1);
     for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
