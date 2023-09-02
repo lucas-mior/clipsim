@@ -229,9 +229,8 @@ void history_save_image(char **content, ulong *length) {
     buffer[sizeof (buffer)-1] = '\0';
     if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
                                       S_IRUSR | S_IWUSR)) < 0) {
-        fprintf(stderr, "Failed to open image file for saving: "
+        util_die_notify("Failed to open image file for saving: "
                         "%s\n", strerror(errno));
-        return;
     }
 
     do {
@@ -329,10 +328,8 @@ void history_recover(int32 id) {
     e = &entries[id];
     istext = (e->image_path == NULL);
     if (istext) {
-        if (pipe(fd)){
-            fprintf(stderr, "Error creating pipe: %s\n", strerror(errno));
-            return;
-        }
+        if (pipe(fd))
+            util_die_notify("Error creating pipe: %s\n", strerror(errno));
     }
 
     switch ((child = fork())) {
@@ -346,11 +343,9 @@ void history_recover(int32 id) {
             execlp("/usr/bin/xclip", "xclip", "-selection", "clipboard",
                    "-target", "image/png", e->image_path, NULL);
         }
-        fprintf(stderr, "Failed to exec(): %s", strerror(errno));
-        return;
+        util_die_notify("Failed to exec(): %s", strerror(errno));
     case -1:
-        fprintf(stderr, "Failed to fork(): %s", strerror(errno));
-        return;
+        util_die_notify("Failed to fork(): %s", strerror(errno));
     default:
         if (istext)
             close(fd[0]);
