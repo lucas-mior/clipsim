@@ -43,10 +43,8 @@ int ipc_daemon_listen_fifo(void *unused) {
     pause.tv_nsec = PAUSE10MS;
 
     if (mkdir(tmp, 0770) < 0) {
-        if (errno != EEXIST) {
-            fprintf(stderr, "Error creating %s: %s\n", tmp, strerror(errno));
-            exit(EXIT_FAILURE);
-        }
+        if (errno != EEXIST)
+            util_die_notify("Error creating %s: %s\n", tmp, strerror(errno));
     }
     ipc_make_fifos();
 
@@ -56,12 +54,9 @@ int ipc_daemon_listen_fifo(void *unused) {
             continue;
         mtx_lock(&lock);
 
-        if (read(command_fifo.fd, &command, sizeof (command)) < 0) {
-            fprintf(stderr, "Failed to read command from %s: %s\n",
+        if (read(command_fifo.fd, &command, sizeof (command)) < sizeof(command)) {
+            util_die_notify("Failed to read command from %s: %s\n",
                             command_fifo.name, strerror(errno));
-            util_close(&command_fifo);
-            mtx_unlock(&lock);
-            continue;
         }
 
         util_close(&command_fifo);
@@ -98,7 +93,7 @@ void ipc_client_speak_fifo(uint command, int32 id) {
         return;
     }
 
-    if (write(command_fifo.fd, &command, sizeof (command)) < 0) {
+    if (write(command_fifo.fd, &command, sizeof (command)) < sizeof(command)) {
             fprintf(stderr, "Failed to write command to %s: %s\n",
                             command_fifo.name, strerror(errno));
         util_close(&command_fifo);
