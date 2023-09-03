@@ -130,7 +130,7 @@ static const char IMAGE_END = (char) 0x02;
 
 void content_remove_newline(char *, size_t *);
 void content_trim_spaces(char **, size_t *, char *, size_t);
-int32 content_check_content(const uchar *, size_t);
+int32 content_check_content(uchar *, size_t);
 
 int32 history_lastindex(void);
 void history_read(void);
