@@ -29,7 +29,7 @@ static void ipc_client_check_save(void);
 static void ipc_daemon_pipe_entries(void);
 static void ipc_daemon_pipe_id(int32);
 static void ipc_client_print_entries(void);
-static void ipc_daemon_with_id(void (*)(int32));
+static int32 ipc_daemon_get_id(void);
 static void ipc_client_ask_id(int32);
 static void ipc_make_fifos(void);
 static void ipc_create_fifo(const char *);
@@ -73,13 +73,13 @@ int ipc_daemon_listen_fifo(void *unused) {
             ipc_daemon_history_save();
             break;
         case COMMAND_COPY:
-            ipc_daemon_with_id(history_recover);
+            history_recover(ipc_daemon_get_id());
             break;
         case COMMAND_REMOVE:
-            ipc_daemon_with_id(history_remove);
+            history_remove(ipc_daemon_get_id());
             break;
         case COMMAND_INFO:
-            ipc_daemon_with_id(ipc_daemon_pipe_id);
+            ipc_daemon_pipe_id(ipc_daemon_get_id());
             break;
         default:
             fprintf(stderr, "Invalid command received: '%c'\n", command);
@@ -276,26 +276,25 @@ void ipc_client_print_entries(void) {
     return;
 }
 
-void ipc_daemon_with_id(void (*func)(int32)) {
-    DEBUG_PRINT("%p", (void *) func);
+int32 ipc_daemon_get_id(void) {
+    DEBUG_PRINT("void");
     int32 id;
 
     if ((passid_fifo.file = fopen(passid_fifo.name, "r")) == NULL) {
         fprintf(stderr, "Error opening fifo for reading id: "
                         "%s\n", strerror(errno));
-        return;
+        return 0;
     }
 
     if (fread(&id, sizeof (id), 1, passid_fifo.file) != 1) {
         fprintf(stderr, "Failed to read id from pipe: "
                         "%s\n", strerror(errno));
         util_close(&passid_fifo);
-        return;
+        return 0;
     }
     util_close(&passid_fifo);
 
-    func(id);
-    return;
+    return id;
 }
 
 void ipc_client_ask_id(int32 id) {
