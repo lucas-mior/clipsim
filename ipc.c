@@ -54,7 +54,7 @@ int ipc_daemon_listen_fifo(void *unused) {
             continue;
         mtx_lock(&lock);
 
-        if (read(command_fifo.fd, &command, sizeof (command)) < sizeof(command)) {
+        if (read(command_fifo.fd, &command, sizeof (command)) < (ssize_t) sizeof(command)) {
             util_die_notify("Failed to read command from %s: %s\n",
                             command_fifo.name, strerror(errno));
         }
@@ -93,7 +93,7 @@ void ipc_client_speak_fifo(uint command, int32 id) {
         return;
     }
 
-    if (write(command_fifo.fd, &command, sizeof (command)) < sizeof(command)) {
+    if (write(command_fifo.fd, &command, sizeof (command)) < (ssize_t) sizeof(command)) {
             fprintf(stderr, "Failed to write command to %s: %s\n",
                             command_fifo.name, strerror(errno));
         util_close(&command_fifo);
