@@ -320,7 +320,7 @@ void history_append(char *content, ulong length) {
 
 void history_recover(int32 id) {
     DEBUG_PRINT("%d", id);
-    pid_t child = -1;
+    pid_t child;
     int fd[2];
     Entry *e;
     bool istext;
