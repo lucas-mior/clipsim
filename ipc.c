@@ -1,5 +1,5 @@
 /* This file is part of clipsim. */
-/* Copyright (C) 2022 Lucas Mior */
+/* Copyright (C) 2022-2023 Lucas Mior */
 
 /* This program is free software: you can redistribute it and/or modify */
 /* it under the terms of the GNU General Public License as published by */
