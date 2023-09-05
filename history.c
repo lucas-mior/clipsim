@@ -41,8 +41,9 @@ void history_save_entry(Entry *e) {
     char image_save[PATH_MAX];
     if (e->image_path) {
         int length;
+        char *base = basename(e->image_path);
         length = snprintf(image_save, sizeof (image_save), 
-                          "%s/clipsim/%s", XDG_CACHE_HOME, basename(e->image_path));
+                          "%s/clipsim/%s", XDG_CACHE_HOME, base);
         if (strcmp(image_save, e->image_path)) {
             if (util_copy_file(image_save, e->image_path) < 0) {
                 util_die_notify("Error copying %s to %s: %s.\n", 
@@ -50,12 +51,14 @@ void history_save_entry(Entry *e) {
             }
         }
         if (write(history.fd, image_save, (size_t) length) < 0)
-            util_die_notify("Error writing %s: %s\n", image_save, strerror(errno));
+            util_die_notify("Error writing %s: %s\n",
+                            image_save, strerror(errno));
         if (write(history.fd, &IMAGE_END, sizeof (IMAGE_END)) < 0)
             util_die_notify("Error writing IMAGE_END: %s\n", strerror(errno));
     } else {
         if (write(history.fd, e->content, e->content_length) < 0)
-            util_die_notify("Error writing %s: %s\n", e->content, strerror(errno));
+            util_die_notify("Error writing %s: %s\n",
+                            e->content, strerror(errno));
         if (write(history.fd, &TEXT_END, sizeof (IMAGE_END)) < 0)
             util_die_notify("Error writing TEXT_END: %s\n", strerror(errno));
     }
@@ -94,7 +97,7 @@ bool history_save(void) {
 void history_read(void) {
     DEBUG_PRINT("void");
     size_t history_length;
-    char *history_content;
+    char *history_map;
     char *begin;
 
     const char *clipsim = "clipsim/history";
@@ -114,8 +117,17 @@ void history_read(void) {
 
     {
         char buffer[PATH_MAX];
-        (void) snprintf(buffer, sizeof (buffer), "%s/%s", XDG_CACHE_HOME, clipsim);
-        history.name = strdup(buffer);
+        int n = snprintf(buffer, sizeof (buffer), "%s/%s",
+                                                  XDG_CACHE_HOME, clipsim);
+        if (n < 0) {
+            fprintf(stderr, "Error printing to buffer: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        buffer[n] = '\0';
+
+        size_t size = (size_t) n + 1;
+        history.name = util_malloc(size);
+        memcpy(history.name, buffer, size);
 
         char *clipsim_dir = dirname(buffer);
         if (mkdir(clipsim_dir, 0770) < 0) {
@@ -151,19 +163,19 @@ void history_read(void) {
         }
     }
 
-    history_content = mmap(NULL, history_length, 
+    history_map = mmap(NULL, history_length, 
                            PROT_READ | PROT_WRITE, MAP_PRIVATE,
                            history.fd, 0);
 
-    if (history_content == MAP_FAILED) {
+    if (history_map == MAP_FAILED) {
         fprintf(stderr, "Error mapping history file to memory: %s"
                         "History will start empty.\n", strerror(errno));
         util_close(&history);
         return;
     }
 
-    begin = history_content;
-    for (char *p = history_content; p < history_content + history_length; p++) {
+    begin = history_map;
+    for (char *p = history_map; p < history_map + history_length; p += 1) {
         Entry *e;
         char c;
 
@@ -195,9 +207,9 @@ void history_read(void) {
         }
     }
 
-    if (munmap(history_content, history_length) < 0) {
+    if (munmap(history_map, history_length) < 0) {
         fprintf(stderr, "Error unmapping %p with %zu bytes: %s\n",
-                        (void *) history_content, history_length, strerror(errno));
+                        (void *) history_map, history_length, strerror(errno));
     }
     util_close(&history);
     return;

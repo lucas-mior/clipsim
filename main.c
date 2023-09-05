@@ -95,7 +95,8 @@ void main_launch_daemon(void) {
     history_read();
 
     ipc_error = thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
-    clipboard_error = thrd_create(&clipboard_thread, clipboard_daemon_watch, NULL);
+    clipboard_error = thrd_create(&clipboard_thread,
+                                  clipboard_daemon_watch, NULL);
 
     if (ipc_error != thrd_success) {
         fprintf(stderr, "Error on IPC thread: %s\n",

@@ -49,12 +49,14 @@ int ipc_daemon_listen_fifo(void *unused) {
     ipc_make_fifos();
 
     while (true) {
+        ssize_t r;
         nanosleep(&pause, NULL);
         if (util_open(&command_fifo, O_RDONLY) < 0)
             continue;
         mtx_lock(&lock);
 
-        if (read(command_fifo.fd, &command, sizeof (command)) < (ssize_t) sizeof(command)) {
+        r = read(command_fifo.fd, &command, sizeof (command));
+        if (r < (ssize_t) sizeof(command)) {
             util_die_notify("Failed to read command from %s: %s\n",
                             command_fifo.name, strerror(errno));
         }
@@ -87,13 +89,15 @@ int ipc_daemon_listen_fifo(void *unused) {
 
 void ipc_client_speak_fifo(uint command, int32 id) {
     DEBUG_PRINT("%u, %d", command, id);
+    ssize_t w;
     if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
         fprintf(stderr, "Could not open Fifo for sending command to daemon. "
                         "Is `%s daemon` running?\n", "clipsim");
         return;
     }
 
-    if (write(command_fifo.fd, &command, sizeof (command)) < (ssize_t) sizeof(command)) {
+    w = write(command_fifo.fd, &command, sizeof (command));
+    if (w < (ssize_t) sizeof(command)) {
             fprintf(stderr, "Failed to write command to %s: %s\n",
                             command_fifo.name, strerror(errno));
         util_close(&command_fifo);

@@ -64,6 +64,7 @@ int clipboard_daemon_watch(void *unused) {
         XEvent xevent;
         char *save = NULL;
         ulong length;
+
         nanosleep(&pause, NULL);
         (void) XNextEvent(display, &xevent);
         mtx_lock(&lock);

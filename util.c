@@ -78,7 +78,7 @@ void util_die_notify(const char *format, ...) {
     write(STDERR_FILENO, buffer, (size_t) n+1);
     for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
-               "clipsim", buffer, NULL);
+                             "clipsim", buffer, NULL);
     }
     exit(EXIT_FAILURE);
 }
@@ -91,7 +91,7 @@ void util_segv_handler(int unused) {
     write(STDERR_FILENO, message, strlen(message));
     for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
-               "clipsim", message, NULL);
+                             "clipsim", message, NULL);
     }
     exit(EXIT_FAILURE);
 }
