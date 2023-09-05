@@ -64,12 +64,12 @@ int util_string_int32(int32 *number, const char *string) {
 void util_die_notify(const char *format, ...) {
     char *notifiers[2] = { "dunstify", "notify-send" };
     int n;
-	va_list args;
+    va_list args;
     char buffer[BUFSIZ];
 
-	va_start(args, format);
-	n = vsnprintf(buffer, sizeof (buffer)-1, format, args);
-	va_end(args);
+    va_start(args, format);
+    n = vsnprintf(buffer, sizeof (buffer)-1, format, args);
+    va_end(args);
 
     if (n < 0)
         exit(EXIT_FAILURE);
