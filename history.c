@@ -405,8 +405,8 @@ void history_remove(int32 id) {
 
     if (id < lastindex) {
         memmove(&entries[id], &entries[id+1],
-                (size_t) (lastindex - id)*sizeof (Entry));
-        memset(&entries[lastindex], 0, sizeof (Entry));
+                (size_t) (lastindex - id)*sizeof (entries[0]));
+        memset(&entries[lastindex], 0, sizeof (entries[0]));
     }
     lastindex -= 1;
 
@@ -417,8 +417,8 @@ void history_reorder(const int32 oldindex) {
     DEBUG_PRINT("%d", oldindex);
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex+1],
-            (size_t) (lastindex - oldindex)*sizeof (Entry));
-    memmove(&entries[lastindex], &aux, sizeof (Entry));
+            (size_t) (lastindex - oldindex)*sizeof (entries[0]));
+    memmove(&entries[lastindex], &aux, sizeof (entries[0]));
     return;
 }
 
@@ -442,8 +442,8 @@ void history_clean(void) {
         history_free_entry(&entries[i]);
 
     memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
-           HISTORY_KEEP_SIZE*sizeof (Entry));
-    memset(&entries[HISTORY_KEEP_SIZE], 0, HISTORY_KEEP_SIZE*sizeof (Entry));
+           HISTORY_KEEP_SIZE*sizeof (entries[0]));
+    memset(&entries[HISTORY_KEEP_SIZE], 0, HISTORY_KEEP_SIZE*sizeof (entries[0]));
     lastindex = HISTORY_KEEP_SIZE-1;
     return;
 }
