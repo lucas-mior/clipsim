@@ -40,27 +40,35 @@ void history_save_entry(Entry *e) {
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
     if (e->image_path) {
-        int length;
+        int n;
         char *base = basename(e->image_path);
-        length = snprintf(image_save, sizeof (image_save), 
+        n = snprintf(image_save, sizeof (image_save), 
                           "%s/clipsim/%s", XDG_CACHE_HOME, base);
+		if (n < 0) {
+			util_die_notify("Error printing image path.\n");
+		}
+
         if (strcmp(image_save, e->image_path)) {
             if (util_copy_file(image_save, e->image_path) < 0) {
                 util_die_notify("Error copying %s to %s: %s.\n", 
                                  e->image_path, image_save, strerror(errno));
             }
         }
-        if (write(history.fd, image_save, (size_t) length) < 0)
+        if (write(history.fd, image_save, (size_t) n) < 0) {
             util_die_notify("Error writing %s: %s\n",
                             image_save, strerror(errno));
-        if (write(history.fd, &IMAGE_END, sizeof (*(&IMAGE_END))) < 0)
+		}
+        if (write(history.fd, &IMAGE_END, sizeof (*(&IMAGE_END))) < 0) {
             util_die_notify("Error writing IMAGE_END: %s\n", strerror(errno));
+		}
     } else {
-        if (write(history.fd, e->content, e->content_length) < 0)
+        if (write(history.fd, e->content, e->content_length) < 0) {
             util_die_notify("Error writing %s: %s\n",
                             e->content, strerror(errno));
-        if (write(history.fd, &TEXT_END, sizeof (*(&IMAGE_END))) < 0)
+		}
+        if (write(history.fd, &TEXT_END, sizeof (*(&IMAGE_END))) < 0) {
             util_die_notify("Error writing TEXT_END: %s\n", strerror(errno));
+		}
     }
 }
 
@@ -123,7 +131,7 @@ void history_read(void) {
             fprintf(stderr, "Error printing to buffer: %s\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
-        buffer[n] = '\0';
+        buffer[sizeof (buffer) - 1] = '\0';
 
         size_t size = (size_t) n + 1;
         history.name = util_malloc(size);
@@ -235,9 +243,13 @@ void history_save_image(char **content, ulong *length) {
     int fp;
     ssize_t w = 0;
     size_t copied = 0;
+	int n;
     char buffer[256];
 
-    snprintf(buffer, sizeof (buffer), "/tmp/clipsim/%lu.png", t);
+	n = snprintf(buffer, sizeof (buffer), "/tmp/clipsim/%lu.png", t);
+	if (n < 0)
+		util_die_notify("Error printing image path.\n");
+
     buffer[sizeof (buffer)-1] = '\0';
     if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
                                       S_IRUSR | S_IWUSR)) < 0) {
