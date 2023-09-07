@@ -48,7 +48,7 @@ do { printf("%s:%d -> "RED"%s("RESET"", __FILE__, __LINE__, __func__); \
 #define DEBUG_PRINT(...)
 #endif
 
-#define ARRAY_LENGTH(x) (sizeof(x) / sizeof(x[0]))
+#define ARRAY_LENGTH(x) (sizeof (x) / sizeof (*x))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n'))
