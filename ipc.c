@@ -55,8 +55,8 @@ int ipc_daemon_listen_fifo(void *unused) {
             continue;
         mtx_lock(&lock);
 
-        r = read(command_fifo.fd, &command, sizeof (command));
-        if (r < (ssize_t) sizeof (command)) {
+        r = read(command_fifo.fd, &command, sizeof (*(&command)));
+        if (r < (ssize_t) sizeof (*(&command))) {
             util_die_notify("Failed to read command from %s: %s\n",
                             command_fifo.name, strerror(errno));
         }
@@ -96,8 +96,8 @@ void ipc_client_speak_fifo(uint command, int32 id) {
         return;
     }
 
-    w = write(command_fifo.fd, &command, sizeof (command));
-    if (w < (ssize_t) sizeof (command)) {
+    w = write(command_fifo.fd, &command, sizeof (*(&command)));
+    if (w < (ssize_t) sizeof (*(&command))) {
             fprintf(stderr, "Failed to write command to %s: %s\n",
                             command_fifo.name, strerror(errno));
         util_close(&command_fifo);
@@ -138,7 +138,7 @@ void ipc_daemon_history_save(void) {
 
     saved = history_save();
 
-    write(content_fifo.fd, &saved, sizeof (saved));
+    write(content_fifo.fd, &saved, sizeof (*(&saved)));
 
     util_close(&content_fifo);
     return;
@@ -152,7 +152,7 @@ void ipc_client_check_save(void) {
     if (util_open(&content_fifo, O_RDONLY) < 0)
         return;
 
-    if ((r = read(content_fifo.fd, &saved, sizeof (saved))) > 0) {
+    if ((r = read(content_fifo.fd, &saved, sizeof (*(&saved)))) > 0) {
         if (saved)
             fprintf(stderr, "History saved to disk.\n");
         else
@@ -216,7 +216,7 @@ void ipc_daemon_pipe_id(int32 id) {
 
     e = &entries[id];
     if (e->image_path) {
-        write(content_fifo.fd, &IMAGE_END, sizeof (IMAGE_END));
+        write(content_fifo.fd, &IMAGE_END, sizeof (*(&IMAGE_END)));
     } else {
         dprintf(content_fifo.fd,
                 "Lenght: \033[31;1m%lu\n\033[0;m", e->content_length);
@@ -285,7 +285,7 @@ int32 ipc_daemon_get_id(void) {
         return 0;
     }
 
-    if (fread(&id, sizeof (id), 1, passid_fifo.file) != 1) {
+    if (fread(&id, sizeof (*(&id)), 1, passid_fifo.file) != 1) {
         fprintf(stderr, "Failed to read id from pipe: "
                         "%s\n", strerror(errno));
         util_close(&passid_fifo);
@@ -304,7 +304,7 @@ void ipc_client_ask_id(int32 id) {
         return;
     }
 
-    if (fwrite(&id, sizeof (id), 1, passid_fifo.file) != 1) {
+    if (fwrite(&id, sizeof (*(&id)), 1, passid_fifo.file) != 1) {
         fprintf(stderr, "Failed to send id to daemon: "
                         "%s\n", strerror(errno));
     }

@@ -53,13 +53,13 @@ void history_save_entry(Entry *e) {
         if (write(history.fd, image_save, (size_t) length) < 0)
             util_die_notify("Error writing %s: %s\n",
                             image_save, strerror(errno));
-        if (write(history.fd, &IMAGE_END, sizeof (IMAGE_END)) < 0)
+        if (write(history.fd, &IMAGE_END, sizeof (*(&IMAGE_END))) < 0)
             util_die_notify("Error writing IMAGE_END: %s\n", strerror(errno));
     } else {
         if (write(history.fd, e->content, e->content_length) < 0)
             util_die_notify("Error writing %s: %s\n",
                             e->content, strerror(errno));
-        if (write(history.fd, &TEXT_END, sizeof (IMAGE_END)) < 0)
+        if (write(history.fd, &TEXT_END, sizeof (*(&IMAGE_END))) < 0)
             util_die_notify("Error writing TEXT_END: %s\n", strerror(errno));
     }
 }
