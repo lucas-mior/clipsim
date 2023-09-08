@@ -87,6 +87,7 @@ typedef struct File {
     FILE *file;
     char *name;
     int fd;
+    int unused;
 } File;
 
 enum {

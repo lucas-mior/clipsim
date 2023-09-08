@@ -12,27 +12,30 @@ all: release
 
 CC=clang
 
-cflags += -std=c99 -D_DEFAULT_SOURCE
-release: cflags += -O2 -Wall -Wextra -Weverything
-release: cflags += -Wno-declaration-after-statement -Wno-unsafe-buffer-usage -Wno-padded -Wno-format-nonliteral
+CFLAGS += -std=c99 -D_DEFAULT_SOURCE
+
+release: CFLAGS += -O2
+release: CFLAGS += -Weverything
+release: CFLAGS += -Wno-declaration-after-statement -Wno-unsafe-buffer-usage -Wno-format-nonliteral
 release: stripflag = -s
 release: clipsim
 
-debug: cflags += -g -Wall -Wextra -Weverything
-debug: cflags += -Wno-declaration-after-statement -Wno-unsafe-buffer-usage -Wno-padded -Wno-format-nonliteral
-debug: cflags += -DCLIPSIM_DEBUG
+debug: CFLAGS += -g
+debug: CFLAGS += -Weverything
+debug: CFLAGS += -Wno-declaration-after-statement -Wno-unsafe-buffer-usage -Wno-format-nonliteral
+debug: CFLAGS += -DCLIPSIM_DEBUG
 debug: clean
 debug: clipsim
 
 clipsim: $(objs)
 	ctags --kinds-C=+l *.h *.c
 	vtags.sed tags > .tags.vim
-	$(CC) $(stripflag) $(cflags) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
+	$(CC) $(stripflag) $(CFLAGS) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
 
 $(objs): Makefile clipsim.h
 
 .c.o:
-	$(CC) $(cflags) $(cppflags) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
