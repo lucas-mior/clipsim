@@ -70,6 +70,7 @@ void history_save_entry(Entry *e) {
             util_die_notify("Error writing TEXT_END: %s\n", strerror(errno));
 		}
     }
+    return;
 }
 
 bool history_save(void) {
