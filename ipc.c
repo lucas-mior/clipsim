@@ -185,8 +185,8 @@ void ipc_daemon_pipe_entries(void) {
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
-        w = fwrite(e->trimmed, 1, (e->trimmed_length+1), content_fifo.file);
-        if (w < (e->trimmed_length+1)) {
+        w = fwrite(e->trimmed, 1, (e->trimmed_length + 1), content_fifo.file);
+        if (w < (e->trimmed_length + 1)) {
             fprintf(stderr, "Error writing to client fifo.\n");
             goto close;
         }
@@ -253,13 +253,13 @@ void ipc_client_print_entries(void) {
         int test;
         char *CLIPSIM_IMAGE_PREVIEW;
         if (r == 1)
-            read(content_fifo.fd, buffer+1, sizeof (buffer)-1);
+            read(content_fifo.fd, buffer + 1, sizeof (buffer) - 1);
         util_close(&content_fifo);
-        if ((test = open(buffer+1, O_RDONLY)) >= 0) {
+        if ((test = open(buffer + 1, O_RDONLY)) >= 0) {
             close(test);
         } else {
             fprintf(stderr, "Error opening %s: %s\n", 
-                            buffer+1, strerror(errno)); 
+                            buffer + 1, strerror(errno)); 
             return;
         }
 
@@ -267,9 +267,9 @@ void ipc_client_print_entries(void) {
         if (CLIPSIM_IMAGE_PREVIEW == NULL)
             CLIPSIM_IMAGE_PREVIEW = "chafa";
         if (!strcmp(CLIPSIM_IMAGE_PREVIEW, "stiv"))
-            execlp("stiv", "stiv", buffer+1, "30", "15", NULL);   
+            execlp("stiv", "stiv", buffer + 1, "30", "15", NULL);   
         else
-            execlp("chafa", "chafa", buffer+1, "-s", "40x", NULL);
+            execlp("chafa", "chafa", buffer + 1, "-s", "40x", NULL);
     }
 
     util_close(&content_fifo);

@@ -20,8 +20,8 @@
 void content_remove_newline(char *text, size_t *length) {
     DEBUG_PRINT("%s, %zu", text, *length);
     text[*length] = '\0';
-    while (text[*length-1] == '\n') {
-        text[*length-1] = '\0';
+    while (text[*length - 1] == '\n') {
+        text[*length - 1] = '\0';
         *length -= 1;
     }
     return;
@@ -35,7 +35,7 @@ void content_trim_spaces(char **trimmed, size_t *trimmed_length,
     char temp = '\0';
     char *c = content;
 
-    *trimmed = p = util_malloc(MIN(length+1, TRIMMED_SIZE+1));
+    *trimmed = p = util_malloc(MIN(length + 1, TRIMMED_SIZE + 1));
 
     if (length >= TRIMMED_SIZE) {
         temp = content[TRIMMED_SIZE];
@@ -45,7 +45,7 @@ void content_trim_spaces(char **trimmed, size_t *trimmed_length,
     while (IS_SPACE(*c))
         c++;
     while (*c != '\0') {
-        while (IS_SPACE(*c) && IS_SPACE(*(c+1)))
+        while (IS_SPACE(*c) && IS_SPACE(*(c + 1)))
             c++;
 
         *p++ = *c++;
@@ -62,7 +62,7 @@ void content_trim_spaces(char **trimmed, size_t *trimmed_length,
         free(*trimmed);
         *trimmed = content;
     } else {
-        *trimmed = util_realloc(*trimmed, *trimmed_length+1);
+        *trimmed = util_realloc(*trimmed, *trimmed_length + 1);
     }
     return;
 }
@@ -74,8 +74,8 @@ int32 content_check_content(uchar *data, const size_t length) {
         uchar *aux = data;
         do {
             aux++;
-        } while (IS_SPACE(*(aux-1)));
-        if (*(aux-1) == '\0') {
+        } while (IS_SPACE(*(aux - 1)));
+        if (*(aux - 1) == '\0') {
             fprintf(stderr, "Only white space copied to clipboard. "
                             "This won't be added to history.\n");
             return CLIPBOARD_ERROR;
@@ -85,7 +85,7 @@ int32 content_check_content(uchar *data, const size_t length) {
     if (length <= 2) { /* Check if it is a single ascii character
                        possibly followed by new line */
         if ((' ' <= *data) && (*data <= '~')) {
-            if (length == 1 || (*(data+1) == '\n')) {
+            if (length == 1 || (*(data + 1) == '\n')) {
                 fprintf(stderr, "Ignoring single character '%c'\n", *data);
                 return CLIPBOARD_ERROR;
             }

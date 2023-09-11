@@ -197,8 +197,8 @@ void history_read(void) {
             lastindex += 1;
             e = &entries[lastindex];
             e->content_length = (size_t) (p - begin);
-            e->content = util_malloc(e->content_length+1);
-            memcpy(e->content, begin, e->content_length+1);
+            e->content = util_malloc(e->content_length + 1);
+            memcpy(e->content, begin, e->content_length + 1);
 
             if (c == IMAGE_TAG) {
                 e->trimmed = e->content;
@@ -209,7 +209,7 @@ void history_read(void) {
                                      e->content, e->content_length);
                 e->image_path = NULL;
             }
-            begin = p+1;
+            begin = p + 1;
 
             length_counts[e->content_length] += 1;
 
@@ -253,7 +253,7 @@ void history_save_image(char **content, ulong *length) {
 	if (n < 0)
 		util_die_notify("Error printing image path.\n");
 
-    buffer[sizeof (buffer)-1] = '\0';
+    buffer[sizeof (buffer) - 1] = '\0';
     if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
                                       S_IRUSR | S_IWUSR)) < 0) {
         util_die_notify("Failed to open image file for saving: "
@@ -268,8 +268,8 @@ void history_save_image(char **content, ulong *length) {
         *length -= (size_t) w;
     } while (*length > 0);
     *length = strlen(buffer);
-    *content = util_realloc(*content, *length+1);
-    memcpy(*content, buffer, *length+1);
+    *content = util_realloc(*content, *length + 1);
+    memcpy(*content, buffer, *length + 1);
     return;
 }
 
@@ -325,7 +325,7 @@ void history_append(char *content, ulong length) {
         break;
     }
 
-    if (lastindex+1 >= (int32) HISTORY_BUFFER_SIZE) {
+    if (lastindex + 1 >= (int32) HISTORY_BUFFER_SIZE) {
         history_clean();
         history_save();
     }
@@ -419,7 +419,7 @@ void history_remove(int32 id) {
     history_free_entry(&entries[id]);
 
     if (id < lastindex) {
-        memmove(&entries[id], &entries[id+1],
+        memmove(&entries[id], &(entries[id + 1]),
                 (size_t) (lastindex - id)*sizeof (*entries));
         memset(&entries[lastindex], 0, sizeof (*entries));
     }
@@ -431,7 +431,7 @@ void history_remove(int32 id) {
 void history_reorder(const int32 oldindex) {
     DEBUG_PRINT("%d", oldindex);
     Entry aux = entries[oldindex];
-    memmove(&entries[oldindex], &entries[oldindex+1],
+    memmove(&entries[oldindex], &entries[oldindex + 1],
             (size_t) (lastindex - oldindex)*sizeof (*entries));
     memmove(&entries[lastindex], &aux, sizeof (*entries));
     return;
@@ -453,12 +453,12 @@ void history_free_entry(const Entry *e) {
 
 void history_clean(void) {
     DEBUG_PRINT("void");
-    for (uint i = 0; i <= HISTORY_KEEP_SIZE-1; i += 1)
+    for (uint i = 0; i <= HISTORY_KEEP_SIZE - 1; i += 1)
         history_free_entry(&entries[i]);
 
     memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
            HISTORY_KEEP_SIZE*sizeof (*entries));
     memset(&entries[HISTORY_KEEP_SIZE], 0, HISTORY_KEEP_SIZE*sizeof (*entries));
-    lastindex = HISTORY_KEEP_SIZE-1;
+    lastindex = HISTORY_KEEP_SIZE - 1;
     return;
 }

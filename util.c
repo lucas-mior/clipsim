@@ -68,14 +68,14 @@ void util_die_notify(const char *format, ...) {
     char buffer[BUFSIZ];
 
     va_start(args, format);
-    n = vsnprintf(buffer, sizeof (buffer)-1, format, args);
+    n = vsnprintf(buffer, sizeof (buffer) - 1, format, args);
     va_end(args);
 
     if (n < 0)
         exit(EXIT_FAILURE);
 
     buffer[n] = '\0';
-    write(STDERR_FILENO, buffer, (size_t) n+1);
+    write(STDERR_FILENO, buffer, (size_t) n + 1);
     for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
                              "clipsim", buffer, NULL);
