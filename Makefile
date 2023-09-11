@@ -12,17 +12,20 @@ all: release
 
 CC=clang
 
+ifeq ($(CC),clang)
+	CFLAGS += -Weverything -Wno-unsafe-buffer-usage -Wno-format-nonliteral
+else
+	CFLAGS += -Wextra -Wall
+endif
+
+
 CFLAGS += -std=c99 -D_DEFAULT_SOURCE
+CFLAGS += -Wno-declaration-after-statement
 
 release: CFLAGS += -O2
-release: CFLAGS += -Weverything
-release: CFLAGS += -Wno-declaration-after-statement -Wno-unsafe-buffer-usage -Wno-format-nonliteral
-release: stripflag = -s
 release: clipsim
 
 debug: CFLAGS += -g
-debug: CFLAGS += -Weverything
-debug: CFLAGS += -Wno-declaration-after-statement -Wno-unsafe-buffer-usage -Wno-format-nonliteral
 debug: CFLAGS += -DCLIPSIM_DEBUG
 debug: clean
 debug: clipsim
@@ -30,7 +33,7 @@ debug: clipsim
 clipsim: $(objs)
 	ctags --kinds-C=+l *.h *.c
 	vtags.sed tags > .tags.vim
-	$(CC) $(stripflag) $(CFLAGS) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
 
 $(objs): Makefile clipsim.h
 
