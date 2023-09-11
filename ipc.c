@@ -27,12 +27,12 @@ static File content_fifo = { .file = NULL, .fd = -1,
 static void ipc_daemon_history_save(void);
 static void ipc_client_check_save(void);
 static void ipc_daemon_pipe_entries(void);
-static void ipc_daemon_pipe_id(int32);
+static void ipc_daemon_pipe_id(const int32);
 static void ipc_client_print_entries(void);
 static int32 ipc_daemon_get_id(void);
-static void ipc_client_ask_id(int32);
+static void ipc_client_ask_id(const int32);
 static void ipc_make_fifos(void);
-static void ipc_clean_fifo(char *);
+static void ipc_clean_fifo(const char *);
 static void ipc_create_fifo(const char *);
 
 int ipc_daemon_listen_fifo(void *unused) {
@@ -198,7 +198,7 @@ void ipc_daemon_pipe_entries(void) {
     return;
 }
 
-void ipc_daemon_pipe_id(int32 id) {
+void ipc_daemon_pipe_id(const int32 id) {
     DEBUG_PRINT("%d", id);
     Entry *e;
     int32 lastindex;
@@ -297,7 +297,7 @@ int32 ipc_daemon_get_id(void) {
     return id;
 }
 
-void ipc_client_ask_id(int32 id) {
+void ipc_client_ask_id(const int32 id) {
     DEBUG_PRINT("%d", id);
     if ((passid_fifo.file = fopen(passid_fifo.name, "w")) == NULL) {
         fprintf(stderr, "Error opening fifo for sending id to daemon: "
@@ -326,7 +326,7 @@ void ipc_make_fifos(void) {
     return;
 }
 
-void ipc_clean_fifo(char *fifoname) {
+void ipc_clean_fifo(const char *fifoname) {
     if (unlink(fifoname) < 0) {
         if (errno != ENOENT) {
             util_die_notify("Error deleting %s: %s\n", fifoname, strerror(errno));
