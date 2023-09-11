@@ -32,6 +32,7 @@ static void ipc_client_print_entries(void);
 static int32 ipc_daemon_get_id(void);
 static void ipc_client_ask_id(int32);
 static void ipc_make_fifos(void);
+static void ipc_clean_fifo(char *);
 static void ipc_create_fifo(const char *);
 
 int ipc_daemon_listen_fifo(void *unused) {
@@ -315,12 +316,22 @@ void ipc_client_ask_id(int32 id) {
 
 void ipc_make_fifos(void) {
     DEBUG_PRINT("");
-    unlink(command_fifo.name);
-    unlink(passid_fifo.name);
-    unlink(content_fifo.name);
+    ipc_clean_fifo(command_fifo.name);
+    ipc_clean_fifo(passid_fifo.name);
+    ipc_clean_fifo(content_fifo.name);
+
     ipc_create_fifo(command_fifo.name);
     ipc_create_fifo(passid_fifo.name);
     ipc_create_fifo(content_fifo.name);
+    return;
+}
+
+void ipc_clean_fifo(char *fifoname) {
+    if (unlink(fifoname) < 0) {
+        if (errno != ENOENT) {
+            util_die_notify("Error deleting %s: %s\n", fifoname, strerror(errno));
+        }
+    }
     return;
 }
 
