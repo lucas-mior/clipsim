@@ -231,7 +231,7 @@ int32 history_repeated_index(const char *content, const size_t length) {
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->content_length == length) {
-            if (!strcmp(e->content, content))
+            if (!memcmp(e->content, content, length))
                 return i;
         }
     }
