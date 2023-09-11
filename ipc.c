@@ -326,10 +326,11 @@ void ipc_make_fifos(void) {
     return;
 }
 
-void ipc_clean_fifo(const char *fifoname) {
-    if (unlink(fifoname) < 0) {
+void ipc_clean_fifo(const char *name) {
+    DEBUG_PRINT("%s", name);
+    if (unlink(name) < 0) {
         if (errno != ENOENT) {
-            util_die_notify("Error deleting %s: %s\n", fifoname, strerror(errno));
+            util_die_notify("Error deleting %s: %s\n", name, strerror(errno));
         }
     }
     return;
