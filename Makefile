@@ -10,8 +10,7 @@ all: release
 .SUFFIXES:
 .SUFFIXES: .c .o
 
-CC=tcc
-
+CC=clang
 ifeq ($(CC),clang)
 	CFLAGS += -Weverything -Wno-unsafe-buffer-usage -Wno-format-nonliteral
 else
