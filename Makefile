@@ -25,7 +25,7 @@ release: CFLAGS += -O2
 release: clipsim
 
 debug: CFLAGS += -g
-debug: CFLAGS += -DCLIPSIM_DEBUG
+debug: CFLAGS += -DCLIPSIM_DEBUG -fsanitize=undefined
 debug: clean
 debug: clipsim
 
