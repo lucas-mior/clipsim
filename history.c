@@ -39,7 +39,7 @@ void history_save_entry(Entry *e) {
     DEBUG_PRINT("{\n    %s,\n    %zu,\n    %s,\n    %zu\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
-    size_t tag_size = sizeof (*(&IMAGE_END));
+    size_t tag_size = sizeof (*(&IMAGE_TAG));
 
     if (e->image_path) {
         int n;
@@ -60,16 +60,16 @@ void history_save_entry(Entry *e) {
             util_die_notify("Error writing %s: %s\n",
                             image_save, strerror(errno));
 		}
-        if (write(history.fd, &IMAGE_END, tag_size) < (ssize_t) tag_size) {
-            util_die_notify("Error writing IMAGE_END: %s\n", strerror(errno));
+        if (write(history.fd, &IMAGE_TAG, tag_size) < (ssize_t) tag_size) {
+            util_die_notify("Error writing IMAGE_TAG: %s\n", strerror(errno));
 		}
     } else {
         if (write(history.fd, e->content, e->content_length) < (ssize_t) e->content_length) {
             util_die_notify("Error writing %s: %s\n",
                             e->content, strerror(errno));
 		}
-        if (write(history.fd, &TEXT_END, tag_size) < (ssize_t) tag_size) {
-            util_die_notify("Error writing TEXT_END: %s\n", strerror(errno));
+        if (write(history.fd, &TEXT_TAG, tag_size) < (ssize_t) tag_size) {
+            util_die_notify("Error writing TEXT_TAG: %s\n", strerror(errno));
 		}
     }
     return;
@@ -190,7 +190,7 @@ void history_read(void) {
         Entry *e;
         char c;
 
-        if ((*p == TEXT_END) || (*p == IMAGE_END)) {
+        if ((*p == TEXT_TAG) || (*p == IMAGE_TAG)) {
             c = *p;
             *p = '\0';
 
@@ -200,7 +200,7 @@ void history_read(void) {
             e->content = util_malloc(e->content_length+1);
             memcpy(e->content, begin, e->content_length+1);
 
-            if (c == IMAGE_END) {
+            if (c == IMAGE_TAG) {
                 e->trimmed = e->content;
                 e->image_path = e->content;
                 e->trimmed_length = e->content_length;
