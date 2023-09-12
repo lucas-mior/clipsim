@@ -36,14 +36,6 @@ int32 history_lastindex(void) {
     return lastindex;
 }
 
-static void print_length_counts(void) {
-    printf("length counts:\n");
-    for (size_t i = 0; i < ENTRY_MAX_LENGTH; i += 1) {
-        printf("%04zu: %d\n", i, length_counts[i]);
-    }
-    printf("====================================\n");
-}
-
 void history_save_entry(Entry *e) {
     DEBUG_PRINT("{\n    %s,\n    %zu,\n    %s,\n    %zu\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
@@ -87,7 +79,6 @@ void history_save_entry(Entry *e) {
 bool history_save(void) {
     DEBUG_PRINT("void");
     int saved;
-    print_length_counts();
 
     if (lastindex < 0) {
         fprintf(stderr, "History is empty. Not saving.\n");
