@@ -43,12 +43,14 @@ void content_trim_spaces(char **trimmed, size_t *trimmed_length,
     }
 
     while (IS_SPACE(*c))
-        c++;
+        c += 1;
     while (*c != '\0') {
         while (IS_SPACE(*c) && IS_SPACE(*(c + 1)))
-            c++;
+            c += 1;
 
-        *p++ = *c++;
+        *p = *c;
+        p += 1;
+        c += 1;
     }
     *p = '\0';
     *trimmed_length = (size_t) (p - *trimmed);
@@ -73,7 +75,7 @@ int32 content_check_content(uchar *data, const size_t length) {
     { /* Check if it is made only of spaces and newlines */
         uchar *aux = data;
         do {
-            aux++;
+            aux += 1;
         } while (IS_SPACE(*(aux - 1)));
         if (*(aux - 1) == '\0') {
             fprintf(stderr, "Only white space copied to clipboard. "
