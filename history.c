@@ -41,6 +41,7 @@ void history_save_entry(Entry *e) {
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
     size_t tag_size = sizeof (*(&IMAGE_TAG));
+    ssize_t w;
 
     if (e->image_path) {
         int n;
@@ -65,7 +66,8 @@ void history_save_entry(Entry *e) {
             util_die_notify("Error writing IMAGE_TAG: %s\n", strerror(errno));
 		}
     } else {
-        if (write(history.fd, e->content, e->content_length) < (ssize_t) e->content_length) {
+        w = write(history.fd, e->content, e->content_length);
+        if (w < (ssize_t) e->content_length) {
             util_die_notify("Error writing %s: %s\n",
                             e->content, strerror(errno));
 		}
