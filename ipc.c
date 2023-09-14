@@ -100,8 +100,8 @@ void ipc_client_speak_fifo(uint command, int32 id) {
 
     w = write(command_fifo.fd, &command, sizeof (*(&command)));
     if (w < (ssize_t) sizeof (*(&command))) {
-            fprintf(stderr, "Failed to write command to %s: %s\n",
-                            command_fifo.name, strerror(errno));
+        fprintf(stderr, "Failed to write command to %s: %s\n",
+                        command_fifo.name, strerror(errno));
         util_close(&command_fifo);
         return;
     } else {
