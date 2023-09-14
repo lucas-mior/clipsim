@@ -1,6 +1,6 @@
 # Clipsim
 
-clipsim is a simple X11 clipboard manager written in C.
+clipsim is a simple and fast X clipboard manager written in C.
 It retrives clipboard text when the window owning it is closed,
 and keeps a clipboard history.
 If an image is detected, it is saved in `/tmp`, and the respective
@@ -16,7 +16,7 @@ First, you need to start the daemon by running
 $ clipsim --daemon
 ```
 
-Start copying text into the X11 clipboard.
+Start copying text into the X clipboard.
 
 Then, when you want to print the history, run:
 ```
@@ -122,7 +122,7 @@ If you launch `clipsim --daemon` when it is already running,
 the first instance will stop working.
 
 ## Rationale
-There are many other clipboard managers for X11,
+There are many other clipboard managers for X,
 however all of them are either too slow,
 not modular (enforce an usage method upon users)
 or don't recover clipboard when a window is closed.
