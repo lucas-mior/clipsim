@@ -43,8 +43,13 @@ remove the leading number:
 ```
 #!/bin/sh
 
-n=$(clipsim --print | fzf --read0 | head -n 1 | cut -d ' ' -f 1)
-[ -n "$n" ] && clipsim --copy "$n"
+# usage: $0 [-c |-d]
+# usage: $0 [--copy|--delete]
+
+id="$(clipsim --print 2> /dev/null \
+    | fzf --prompt="clipsim $1 " --reverse --read0 \
+    | awk 'NR==1{print $1; exit}')"
+[ -n "$id" ] && clipsim "$1" "$id"
 ```
 
 Tip: use with a terminal emulator that opens quickly.
@@ -52,7 +57,7 @@ My suggestion is [urxvtc](https://linux.die.net/man/1/urxvtc)
 (be sure to have [urxvtd](https://linux.die.net/man/1/urxvtd) running):
 
 ```
-$ urxvtc -e clip.sh # clip.sh is the script above
+$ urxvtc -e clip.sh # clip.sh is the script above (see scripts/ for more)
 ```
 If you know of some terminal emulator that opens faster than urxvtc,
 please let me know.
