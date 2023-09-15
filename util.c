@@ -76,7 +76,7 @@ void util_die_notify(const char *format, ...) {
         exit(EXIT_FAILURE);
 
     buffer[n] = '\0';
-    write(STDERR_FILENO, buffer, (size_t) n + 1);
+    (void) write(STDERR_FILENO, buffer, (size_t) n + 1);
     for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
                              "clipsim", buffer, NULL);
@@ -89,7 +89,7 @@ void util_segv_handler(int unused) {
     char *message = "Memory error. Please send a bug report.\n";
     char *notifiers[2] = { "dunstify", "notify-send" };
 
-    write(STDERR_FILENO, message, strlen(message));
+    (void) write(STDERR_FILENO, message, strlen(message));
     for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
                              "clipsim", message, NULL);

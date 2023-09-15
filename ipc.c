@@ -140,7 +140,9 @@ void ipc_daemon_history_save(void) {
 
     saved = history_save();
 
-    write(content_fifo.fd, &saved, sizeof (*(&saved)));
+    if (write(content_fifo.fd, &saved, sizeof (*(&saved)) < sizeof (*(&saved)))) {
+        fprintf(stderr, "Error sending save result to client\n");
+    }
 
     util_close(&content_fifo);
     return;
@@ -203,6 +205,7 @@ void ipc_daemon_pipe_id(const int32 id) {
     DEBUG_PRINT("%d", id);
     Entry *e;
     int32 lastindex;
+    size_t tag_size = sizeof (*(&IMAGE_TAG));
 
     if (util_open(&content_fifo, O_WRONLY) < 0)
         return;
@@ -218,7 +221,10 @@ void ipc_daemon_pipe_id(const int32 id) {
 
     e = &entries[id];
     if (e->image_path) {
-        write(content_fifo.fd, &IMAGE_TAG, sizeof (*(&IMAGE_TAG)));
+        if (write(content_fifo.fd, &IMAGE_TAG, tag_size) < (ssize_t) tag_size) {
+            dprintf(content_fifo.fd, "Error printing image tag.\n");
+            goto close;
+        }
     } else {
         dprintf(content_fifo.fd,
                 "Lenght: \033[31;1m%lu\n\033[0;m", e->content_length);
