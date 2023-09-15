@@ -45,12 +45,14 @@ install: all
 	install -Dm644 completions/fish/clipsim.fish "${pkgdir}/usr/share/fish/vendor_completions.d/clipsim.fish"
 	install -Dm644 completions/bash/clipsim-completion.bash "${pkgdir}/usr/share/bash-completion/completions/clipsim"
 	install -Dm644 completions/zsh/_clipsim "${pkgdir}/usr/share/zsh/site-functions/_clipsim"
+	install -Dm644 LICENSE ${pkgdir}/usr/share/licenses/${pkgname}/LICENSE
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/clipsim
 	rm -f ${DESTDIR}${PREFIX}/share/man/man1/clipsim.1
 	rm -f "${pkgdir}/usr/share/fish/vendor_completions.d/clipsim.fish"
 	rm -f "${pkgdir}/usr/share/bash-completion/completions/clipsim"
 	rm -f "${pkgdir}/usr/share/zsh/site-functions/_clipsim"
+	rm -f ${pkgdir}/usr/share/licenses/${pkgname}/LICENSE
 
 clean:
 	rm -f *.o *~ clipsim
