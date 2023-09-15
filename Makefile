@@ -40,16 +40,17 @@ $(objs): Makefile clipsim.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 install: all
-	mkdir -p ${DESTDIR}${PREFIX}/bin
-	cp -f clipsim ${DESTDIR}${PREFIX}/bin
-	mkdir -p ${DESTDIR}${PREFIX}/man/man1/
-	cp -f clipsim.1 ${DESTDIR}${PREFIX}/man/man1/clipsim.1
-	chmod 755 ${DESTDIR}${PREFIX}/bin/clipsim
-	chmod 644 ${DESTDIR}${PREFIX}/man/man1/clipsim.1
-
+	install -Dm755 clipsim ${DESTDIR}${PREFIX}/bin/clipsim
+	install -Dm644 clipsim.1 ${DESTDIR}${PREFIX}/man/man1/clipsim.1
+	install -Dm644 completions/fish/clipsim.fish "${pkgdir}/usr/share/fish/vendor_completions.d/clipsim.fish"
+	install -Dm644 completions/bash/clipsim-completion.bash "${pkgdir}/usr/share/bash-completion/completions/clipsim"
+	install -Dm644 completions/zsh/_clipsim "${pkgdir}/usr/share/zsh/site-functions/_clipsim"
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/clipsim
-	rm -f ${DESTDIR}${PREFIX}/man/man1/clipsim.1
+	rm -f ${DESTDIR}${PREFIX}/share/man/man1/clipsim.1
+	rm -f "${pkgdir}/usr/share/fish/vendor_completions.d/clipsim.fish"
+	rm -f "${pkgdir}/usr/share/bash-completion/completions/clipsim"
+	rm -f "${pkgdir}/usr/share/zsh/site-functions/_clipsim"
 
 clean:
 	rm -f *.o *~ clipsim
