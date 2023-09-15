@@ -42,17 +42,17 @@ $(objs): Makefile clipsim.h
 install: all
 	install -Dm755 clipsim ${DESTDIR}${PREFIX}/bin/clipsim
 	install -Dm644 clipsim.1 ${DESTDIR}${PREFIX}/man/man1/clipsim.1
-	install -Dm644 completions/fish/clipsim.fish "${pkgdir}/usr/share/fish/vendor_completions.d/clipsim.fish"
-	install -Dm644 completions/bash/clipsim-completion.bash "${pkgdir}/usr/share/bash-completion/completions/clipsim"
-	install -Dm644 completions/zsh/_clipsim "${pkgdir}/usr/share/zsh/site-functions/_clipsim"
-	install -Dm644 LICENSE ${pkgdir}/usr/share/licenses/${pkgname}/LICENSE
+	install -Dm644 completions/fish/clipsim.fish ${DESTDIR}${PREFIX}/share/fish/vendor_completions.d/clipsim.fish
+	install -Dm644 completions/bash/clipsim-completion.bash ${DESTDIR}${PREFIX}/share/bash-completion/completions/clipsim
+	install -Dm644 completions/zsh/_clipsim ${DESTDIR}${PREFIX}/share/zsh/site-functions/_clipsim
+	install -Dm644 LICENSE ${DESTDIR}${PREFIX}/share/licenses/${pkgname}/LICENSE
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/clipsim
 	rm -f ${DESTDIR}${PREFIX}/share/man/man1/clipsim.1
-	rm -f "${pkgdir}/usr/share/fish/vendor_completions.d/clipsim.fish"
-	rm -f "${pkgdir}/usr/share/bash-completion/completions/clipsim"
-	rm -f "${pkgdir}/usr/share/zsh/site-functions/_clipsim"
-	rm -f ${pkgdir}/usr/share/licenses/${pkgname}/LICENSE
+	rm -f ${DESTDIR}${PREFIX}/share/fish/vendor_completions.d/clipsim.fish
+	rm -f ${DESTDIR}${PREFIX}/share/bash-completion/completions/clipsim
+	rm -f ${DESTDIR}${PREFIX}/share/zsh/site-functions/_clipsim
+	rm -f ${DESTDIR}${PREFIX}/share/licenses/${pkgname}/LICENSE
 
 clean:
 	rm -f *.o *~ clipsim
