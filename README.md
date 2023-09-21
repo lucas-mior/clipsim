@@ -110,7 +110,7 @@ and [xclip](https://github.com/astrand/xclip) installed.
 $ git clone https://codeberg.org/lucas.mior/clipsim.git clipsim
 $ cd clipsim
 $ make
-# make install
+$ sudo make install
 ```
 
 ## Configuration
