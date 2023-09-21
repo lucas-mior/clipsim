@@ -29,12 +29,12 @@ And with multiple white space supressed.
 
 In order to select one of them, you can use
 [fzf](https://github.com/junegunn/fzf)
-and [xsel](https://github.com/kfish/xsel)
+and [xclip](https://github.com/astrand/xclip).
 ```
 # Don't actually do this. The output from `clipsim --print` has all white spaced
 # supressed in order to improve usage with fzf. See the next snippet on how to
 # overcome this.
-$ clipsim --print | fzf --read0 | xsel -b
+$ clipsim --print | fzf --read0 | xclip -selection clipboard
 ```
 
 In order to retrieve the entry with original white space and
@@ -94,9 +94,16 @@ Available commands:
 ## Images
 Clipsim stores the images in `/tmp`, and `clipsim --info`
 will show them using `stiv` or `chafa`.
-When retrieving images from the history, `xclip` is used.
+When retrieving images from the history,
+[xclip](https://github.com/astrand/xclip) is used.
 
 ## Instalation
+### AUR
+```
+$ yay -S clipsim
+```
+
+### Manual
 Make sure you have [libxfixes](https://gitlab.freedesktop.org/xorg/lib/libxfixes)
 and [xclip](https://github.com/astrand/xclip) installed.
 ```
