@@ -153,6 +153,7 @@ int util_copy_file(const char *destination, const char *source) {
             if (errno)
                 fprintf(stderr, ": %s", strerror(errno));
             fprintf(stderr, ".\n");
+
             close(source_fd);
             close(destination_fd);
             return -1;
