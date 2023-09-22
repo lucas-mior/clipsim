@@ -1,13 +1,14 @@
 # Clipsim
 
-clipsim is a simple and fast X clipboard manager written in C.
-It retrives clipboard text when the window owning it is closed,
-and keeps a clipboard history.
-If an image is detected, it is saved in `/tmp`, and the respective
-filename is saved on history.
-The primary and secondary selection buffers are ignored.
-When copying text equal to some previous text, the history order
-is updated so that each entry is unique in the history.
+clipsim is a simple and fast X clipboard manager written in C.  It retrives
+clipboard text when the window owning it is closed, and keeps a clipboard
+history.  If an image is detected, it is saved in `/tmp`, and the respective
+filename is saved on history.  The primary and secondary selection buffers are
+ignored.  When copying text equal to some previous text, the history order is
+updated so that each entry is unique in the history.  Additionally, clipsim can
+send a signal to a specific program when clipboard content changes, which is useful for
+updating a status bar, for example. See [environment
+variables](#Environment-variables).
 
 ## Usage
 
