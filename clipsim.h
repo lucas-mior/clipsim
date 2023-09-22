@@ -61,6 +61,8 @@ do { printf("%s:%d -> "RED"%s("RESET"", __FILE__, __LINE__, __func__); \
 #define PRINT_DIGITS 3
 #define TRIMMED_SIZE 255
 
+#ifndef INTEGERS
+#define INTEGERS
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
@@ -75,6 +77,7 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
+#endif
 
 typedef struct Entry {
     size_t content_length;
