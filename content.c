@@ -86,7 +86,7 @@ int32 content_check_content(uchar *data, const size_t length) {
     }
 
     if (length <= 2) { /* Check if it is a single ascii character
-                       possibly followed by new line */
+                          possibly followed by new line */
         if ((' ' <= *data) && (*data <= '~')) {
             if (length == 1 || (*(data + 1) == '\n')) {
                 fprintf(stderr, "Ignoring single character '%c'\n", *data);

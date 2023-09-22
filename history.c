@@ -444,11 +444,13 @@ void history_free_entry(const Entry *e) {
     DEBUG_PRINT("{\n    %s,\n    %zu,\n    %s,\n    %zu\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     length_counts[e->content_length] -= 1;
+
+    /* image_path does not have to be freed
+       because e->content is the same pointer */ 
     if (e->image_path)
         unlink(e->image_path);
     free(e->content);
-    // image_path does not have to be freed
-    // because e->content is the same pointer
+
     if (e->trimmed != e->content)
         free(e->trimmed);
     return;

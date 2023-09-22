@@ -88,7 +88,7 @@ void main_launch_daemon(void) {
     int clipboard_error = 0;
     int error;
 
-    // TODO: Check is clipsim -d | --daemon is already running. If so, quit
+    // TODO: Check if clipsim -d | --daemon is already running. If so, quit
     if ((error = mtx_init(&lock, mtx_plain)) != thrd_success) {
         fprintf(stderr, "Error initializing lock: %s\n", strerror(error));
         exit(EXIT_FAILURE);
