@@ -12,14 +12,14 @@ all: release
 
 CC=cc
 ifeq ($(CC),clang)
-	CFLAGS += -Weverything -Wno-unsafe-buffer-usage -Wno-format-nonliteral
+	CFLAGS += -Weverything -Wno-unsafe-buffer-usage
+	CFLAGS += -Wno-format-nonliteral -Wno-declaration-after-statement
 else
 	CFLAGS += -Wextra -Wall
 endif
 
 
 CFLAGS += -std=c99 -D_DEFAULT_SOURCE
-CFLAGS += -Wno-declaration-after-statement
 
 release: CFLAGS += -O2
 release: clipsim
