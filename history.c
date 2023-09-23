@@ -133,7 +133,7 @@ void history_read(void) {
         char buffer[PATH_MAX];
         int n = snprintf(buffer, sizeof (buffer), "%s/%s",
                                                   XDG_CACHE_HOME, clipsim);
-        if (n < 0) {
+        if (n < (int) length) {
             fprintf(stderr, "Error printing to buffer: %s\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
