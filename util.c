@@ -27,6 +27,12 @@ void *util_malloc(const size_t size) {
     return p;
 }
 
+char *util_strdup(const char *string, const size_t size) {
+    void *p = util_malloc(size);
+    memcpy(p, string, size);
+    return p;
+}
+
 void *util_realloc(void *old, const size_t size) {
     void *p;
     if ((p = realloc(old, size)) == NULL) {
