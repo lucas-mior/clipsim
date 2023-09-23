@@ -127,23 +127,21 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
                            False, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
-        if (actual_type_return == INCR) {
+        if (actual_type_return == INCR)
             return CLIPBOARD_LARGE;
-        } else {
-            *length = nitems_return;
-            return CLIPBOARD_TEXT;
-        }
+
+        *length = nitems_return;
+        return CLIPBOARD_TEXT;
     } else if (clipboard_check_target(image_png)) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
-        if (actual_type_return == INCR) {
+        if (actual_type_return == INCR)
             return CLIPBOARD_LARGE;
-        } else {
-            *length = nitems_return;
-            return CLIPBOARD_IMAGE;
-        }
+
+        *length = nitems_return;
+        return CLIPBOARD_IMAGE;
     } else if (clipboard_check_target(TARGETS)) {
         return CLIPBOARD_OTHER;
     }
