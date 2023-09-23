@@ -251,9 +251,10 @@ void history_save_image(char **content, ulong *length) {
     size_t copied = 0;
 	int n;
     char buffer[256];
+    char *directory = "/tmp/clipsim";
 
-	n = snprintf(buffer, sizeof (buffer), "/tmp/clipsim/%lu.png", t);
-	if (n < 0)
+	n = snprintf(buffer, sizeof (buffer), "%s/%lu.png", directory, t);
+	if (n < (int) strlen(directory))
 		util_die_notify("Error printing image path.\n");
 
     buffer[sizeof (buffer) - 1] = '\0';
@@ -270,7 +271,8 @@ void history_save_image(char **content, ulong *length) {
         copied += (size_t) w;
         *length -= (size_t) w;
     } while (*length > 0);
-    *length = strlen(buffer);
+
+    *length = (size_t) n;
     *content = util_realloc(*content, *length + 1);
     memcpy(*content, buffer, *length + 1);
     return;
