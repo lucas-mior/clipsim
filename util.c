@@ -27,9 +27,18 @@ void *util_malloc(const size_t size) {
     return p;
 }
 
-char *util_strdup(const char *string, const size_t size) {
-    void *p = util_malloc(size);
+char *util_memdup(const char *string, const size_t size) {
+    char *p = util_malloc(size);
     memcpy(p, string, size);
+    return p;
+}
+
+char *util_strdup(const char *string) {
+    char *p = strdup(string);
+    if (p == NULL) {
+        fprintf(stderr, "Failed to duplicate string \"%s\".\n", string);
+        exit(EXIT_FAILURE);
+    }
     return p;
 }
 

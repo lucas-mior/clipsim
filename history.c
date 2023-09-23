@@ -140,7 +140,7 @@ void history_read(void) {
         buffer[sizeof (buffer) - 1] = '\0';
 
         size_t size = (size_t) n + 1;
-        history.name = util_strdup(buffer, size);
+        history.name = util_memdup(buffer, size);
 
         char *clipsim_dir = dirname(buffer);
         if (mkdir(clipsim_dir, 0770) < 0) {
@@ -199,7 +199,7 @@ void history_read(void) {
             lastindex += 1;
             e = &entries[lastindex];
             e->content_length = (size_t) (p - begin);
-            e->content = util_strdup(begin, e->content_length + 1);
+            e->content = util_memdup(begin, e->content_length + 1);
 
             if (c == IMAGE_TAG) {
                 e->trimmed = e->content;
