@@ -27,9 +27,13 @@ void *util_malloc(const size_t size) {
     return p;
 }
 
-char *util_memdup(const char *string, const size_t size) {
-    char *p = util_malloc(size);
-    memcpy(p, string, size);
+void *util_memdup(const void *source, const size_t size) {
+    void *p;
+    if ((p = malloc(size)) == NULL) {
+        fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
+        exit(EXIT_FAILURE);
+    }
+    memcpy(p, source, size);
     return p;
 }
 
