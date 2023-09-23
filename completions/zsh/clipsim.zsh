@@ -19,7 +19,9 @@ commands=(
 )
 
 _clipsim_entries() {
-    _arguments ':entry number:(( $(clipsim -p | sed -nE "s/^\s*([0-9]+)\s*:.*$/\1/p") ))'
+    local -a entries
+    entries=($(clipsim -p | sed -zEn '/^[0-9]+ /{s/^([0-9]+).*/\1\n/g;p}'))
+    _describe 'entries' entries
 }
 
 _arguments -s -S $commands
