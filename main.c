@@ -16,6 +16,7 @@
  */
 
 #include "clipsim.h"
+#include <stdlib.h>
 
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
 mtx_t lock;
@@ -80,6 +81,10 @@ void main_usage(FILE *stream) {
     exit(stream != stdout);
 }
 
+bool main_check_running(void) {
+    return false;
+}
+
 void main_launch_daemon(void) {
     DEBUG_PRINT("");
     thrd_t ipc_thread;
@@ -89,6 +94,11 @@ void main_launch_daemon(void) {
     int error;
 
     // TODO: Check if clipsim -d | --daemon is already running. If so, quit
+    if (main_check_running()) {
+        fprintf(stderr, "clipsim --daemon is already running.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if ((error = mtx_init(&lock, mtx_plain)) != thrd_success) {
         fprintf(stderr, "Error initializing lock: %s\n", strerror(error));
         exit(EXIT_FAILURE);
