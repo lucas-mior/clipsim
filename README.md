@@ -131,8 +131,6 @@ not use UTF-8.
 Additionally, incremental buffer reading is not implemented,
 which means that if an application is to use that so called "feature",
 clipsim won't save that text to history.
-If you launch `clipsim --daemon` when it is already running,
-the first instance will stop working.
 
 ## Rationale
 There are many other clipboard managers for X,
