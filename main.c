@@ -89,10 +89,10 @@ bool check_cmdline(char *name) {
     int n;
     size_t r;
     FILE *cmdline;
-    char cmd1[] = {0x63, 0x6c, 0x69, 0x70, 0x73, 0x69, 0x6d, 0x00,  // clipsim\0
-                                                 0x2d, 0x64, 0x00}; // -d\0
-    char cmd2[] = {0x63, 0x6c, 0x69, 0x70, 0x73, 0x69, 0x6d, 0x00,  // clipsim\0
-                   0x2d, 0x2d, 0x64, 0x61, 0x65, 0x6d, 0x6f, 0x6e, 0x00}; // --daemon\0
+    char cmd1[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
+                   '-', 'd', '\0'};
+    char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
+                   '-', '-', 'd', 'a', 'e', 'm', 'o', 'n', '\0'};
 
 
     n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", name);
