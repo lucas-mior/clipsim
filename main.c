@@ -21,6 +21,8 @@
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
 mtx_t lock;
 
+static bool check_cmdline(char *);
+static bool main_check_running(void);
 static void main_usage(FILE *) __attribute__((noreturn));
 static void main_launch_daemon(void);
 
@@ -81,7 +83,68 @@ void main_usage(FILE *stream) {
     exit(stream != stdout);
 }
 
+bool check_cmdline(char *name) {
+    char buffer[256];
+    char command[256];
+    int n;
+    size_t r;
+    FILE *cmdline;
+    char cmd1[] = {0x63, 0x6c, 0x69, 0x70, 0x73, 0x69, 0x6d, 0x00,
+                   0x2d, 0x64, 0x00};
+    char cmd2[] = {0x63, 0x6c, 0x69, 0x70, 0x73, 0x69, 0x6d, 0x00,
+                   0x2d, 0x2d, 0x64, 0x61, 0x65, 0x6d, 0x6f, 0x6e, 0x00};
+
+
+    n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", name);
+    if (n < 0) {
+        fprintf(stderr, "Error printing buffer name.\n");
+        return false;
+    }
+    buffer[sizeof (buffer) - 1] = '\0';
+
+    if ((cmdline = fopen(buffer, "r")) == NULL)
+        return false;
+    if ((r = fread(command, 1, sizeof (command), cmdline)) == 0) {
+        fclose(cmdline);
+        return false;
+    }
+
+    if (r == sizeof (cmd1)) {
+        if (!memcmp(command, cmd1, r))
+            return true;
+    }
+    if (r == sizeof (cmd2)) {
+        if (!memcmp(command, cmd2, r))
+            return true;
+    }
+    return false;
+}
+
 bool main_check_running(void) {
+    DEBUG_PRINT("void");
+    DIR *processes;
+    struct dirent *program;
+    pid_t pid_this = getpid();
+
+    if ((processes = opendir("/proc")) == NULL) {
+        fprintf(stderr, "Error opening /proc: %s\n", strerror(errno));
+        return false;
+    }
+
+    while ((program = readdir(processes))) {
+        pid_t pid;
+        if ((pid = atoi(program->d_name)) <= 0)
+            continue;
+
+        if (pid == pid_this)
+            continue;
+
+        if (check_cmdline(program->d_name)) {
+            closedir(processes);
+            return true;
+        }
+    }
+    closedir(processes);
     return false;
 }
 
@@ -93,7 +156,6 @@ void main_launch_daemon(void) {
     int clipboard_error = 0;
     int error;
 
-    // TODO: Check if clipsim -d | --daemon is already running. If so, quit
     if (main_check_running()) {
         fprintf(stderr, "clipsim --daemon is already running.\n");
         exit(EXIT_FAILURE);
