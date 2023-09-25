@@ -94,7 +94,6 @@ bool check_cmdline(char *name) {
     char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
                    '-', '-', 'd', 'a', 'e', 'm', 'o', 'n', '\0'};
 
-
     n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", name);
     if (n < 0) {
         fprintf(stderr, "Error printing buffer name.\n");
