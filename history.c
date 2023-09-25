@@ -47,10 +47,9 @@ void history_save_entry(Entry *e) {
         int n;
         char *base = basename(e->image_path);
         n = snprintf(image_save, sizeof (image_save), 
-                          "%s/clipsim/%s", XDG_CACHE_HOME, base);
-        if (n < 0) {
+                     "%s/clipsim/%s", XDG_CACHE_HOME, base);
+        if (n < 0)
             util_die_notify("Error printing image path.\n");
-        }
 
         if (strcmp(image_save, e->image_path)) {
             if (util_copy_file(image_save, e->image_path) < 0) {
