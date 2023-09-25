@@ -21,7 +21,7 @@
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
 mtx_t lock;
 
-static bool check_cmdline(char *);
+static bool main_check_cmdline(char *);
 static bool main_check_running(void);
 static void main_usage(FILE *) __attribute__((noreturn));
 static void main_launch_daemon(void);
@@ -83,7 +83,7 @@ void main_usage(FILE *stream) {
     exit(stream != stdout);
 }
 
-bool check_cmdline(char *name) {
+bool main_check_cmdline(char *pid) {
     char buffer[256];
     char command[256];
     int n;
@@ -94,7 +94,7 @@ bool check_cmdline(char *name) {
     char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
                    '-', '-', 'd', 'a', 'e', 'm', 'o', 'n', '\0'};
 
-    n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", name);
+    n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", pid);
     if (n < 0) {
         fprintf(stderr, "Error printing buffer name.\n");
         return false;
@@ -111,8 +111,7 @@ bool check_cmdline(char *name) {
     if (r == sizeof (cmd1)) {
         if (!memcmp(command, cmd1, r))
             return true;
-    }
-    if (r == sizeof (cmd2)) {
+    } else if (r == sizeof (cmd2)) {
         if (!memcmp(command, cmd2, r))
             return true;
     }
@@ -138,7 +137,7 @@ bool main_check_running(void) {
         if (pid == pid_this)
             continue;
 
-        if (check_cmdline(program->d_name)) {
+        if (main_check_cmdline(program->d_name)) {
             closedir(processes);
             return true;
         }
