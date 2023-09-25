@@ -48,9 +48,9 @@ void history_save_entry(Entry *e) {
         char *base = basename(e->image_path);
         n = snprintf(image_save, sizeof (image_save), 
                           "%s/clipsim/%s", XDG_CACHE_HOME, base);
-		if (n < 0) {
-			util_die_notify("Error printing image path.\n");
-		}
+        if (n < 0) {
+            util_die_notify("Error printing image path.\n");
+        }
 
         if (strcmp(image_save, e->image_path)) {
             if (util_copy_file(image_save, e->image_path) < 0) {
@@ -61,19 +61,19 @@ void history_save_entry(Entry *e) {
         if (write(history.fd, image_save, (size_t) n) < n) {
             util_die_notify("Error writing %s: %s\n",
                             image_save, strerror(errno));
-		}
+        }
         if (write(history.fd, &IMAGE_TAG, tag_size) < (ssize_t) tag_size) {
             util_die_notify("Error writing IMAGE_TAG: %s\n", strerror(errno));
-		}
+        }
     } else {
         w = write(history.fd, e->content, e->content_length);
         if (w < (ssize_t) e->content_length) {
             util_die_notify("Error writing %s: %s\n",
                             e->content, strerror(errno));
-		}
+        }
         if (write(history.fd, &TEXT_TAG, tag_size) < (ssize_t) tag_size) {
             util_die_notify("Error writing TEXT_TAG: %s\n", strerror(errno));
-		}
+        }
     }
     return;
 }
@@ -247,13 +247,13 @@ void history_save_image(char **content, ulong *length) {
     int fp;
     ssize_t w = 0;
     size_t copied = 0;
-	int n;
+    int n;
     char buffer[256];
     char *directory = "/tmp/clipsim";
 
-	n = snprintf(buffer, sizeof (buffer), "%s/%lu.png", directory, t);
-	if (n < (int) strlen(directory))
-		util_die_notify("Error printing image path.\n");
+    n = snprintf(buffer, sizeof (buffer), "%s/%lu.png", directory, t);
+    if (n < (int) strlen(directory))
+        util_die_notify("Error printing image path.\n");
 
     buffer[sizeof (buffer) - 1] = '\0';
     if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
@@ -391,9 +391,8 @@ void history_recover(int32 id) {
             fprintf(stderr, "Failed to close pipe 1: %s\n", strerror(errno));
         }
     }
-    if (wait(NULL) < 0) {
+    if (wait(NULL) < 0)
         fprintf(stderr, "Failed to wait for fork: %s\n", strerror(errno));
-    }
 
     if (id != lastindex)
         history_reorder(id);
