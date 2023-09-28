@@ -167,4 +167,5 @@ void clipboard_signal_program(void) {
     }
 
     send_signal(CLIPSIM_SIGNAL_PROGRAM, signal_number);
+    return;
 }
