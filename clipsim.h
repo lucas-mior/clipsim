@@ -42,9 +42,13 @@
 #define RESET "\x1b[0m"
 
 #ifdef CLIPSIM_DEBUG
+#define DEPRINTF(...) dprintf(STDERR_FILENO, __VA_ARGS__);
 #define DEBUG_PRINT(...) \
-do { printf("%s:%d -> "RED"%s("RESET"", __FILE__, __LINE__, __func__); \
-     printf(__VA_ARGS__); printf(RED")"RESET"\n"); } while (0)
+do { \
+    DEPRINTF("%s:%d -> "RED"%s("RESET"", __FILE__, __LINE__, __func__); \
+    DEPRINTF(__VA_ARGS__); \
+    DEPRINTF(RED")"RESET"\n"); \
+} while (0)
 #else
 #define DEBUG_PRINT(...)
 #endif
