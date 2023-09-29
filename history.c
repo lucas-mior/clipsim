@@ -132,10 +132,8 @@ void history_read(void) {
         char buffer[PATH_MAX];
         int n = snprintf(buffer, sizeof (buffer), "%s/%s",
                                                   XDG_CACHE_HOME, clipsim);
-        if (n < (int) length) {
-            fprintf(stderr, "Error printing to buffer: %s\n", strerror(errno));
-            exit(EXIT_FAILURE);
-        }
+        if (n < (int) length)
+            util_die_notify("Error printing to buffer: %s\n", strerror(errno));
         buffer[sizeof (buffer) - 1] = '\0';
 
         size_t size = (size_t) n + 1;
@@ -144,9 +142,8 @@ void history_read(void) {
         char *clipsim_dir = dirname(buffer);
         if (mkdir(clipsim_dir, 0770) < 0) {
             if (errno != EEXIST) {
-                fprintf(stderr, "Error creating dir %s: %s\n",
+                util_die_notify("Error creating dir %s: %s\n",
                                 clipsim_dir, strerror(errno));
-                exit(EXIT_FAILURE);
             }
         }
     }
@@ -176,8 +173,8 @@ void history_read(void) {
     }
 
     history_map = mmap(NULL, history_length, 
-                           PROT_READ | PROT_WRITE, MAP_PRIVATE,
-                           history.fd, 0);
+                       PROT_READ | PROT_WRITE, MAP_PRIVATE,
+                       history.fd, 0);
 
     if (history_map == MAP_FAILED) {
         fprintf(stderr, "Error mapping history file to memory: %s"
@@ -349,7 +346,7 @@ void history_recover(int32 id) {
     if (id < 0)
         id = lastindex + id + 1;
     if (id > lastindex) {
-        fprintf(stderr, "Invalid index: %d\n", id);
+        fprintf(stderr, "Invalid index for recovery: %d\n", id);
         recovered = true;
         return;
     }
@@ -376,22 +373,18 @@ void history_recover(int32 id) {
     case -1:
         util_die_notify("Failed to fork(): %s", strerror(errno));
     default:
-        if (istext) {
-            if (close(fd[0]) < 0) {
-                fprintf(stderr, "Failed to close pipe 0: %s\n",
-                                strerror(errno));
-            }
-        }
+        if (istext && (close(fd[0]) < 0))
+            util_die_notify("Failed to close pipe 0: %s\n", strerror(errno));
     }
 
     if (istext) {
         dprintf(fd[1], "%s", e->content);
         if (close(fd[1]) < 0) {
-            fprintf(stderr, "Failed to close pipe 1: %s\n", strerror(errno));
+            util_die_notify("Failed to close pipe 1: %s\n", strerror(errno));
         }
     }
     if (wait(NULL) < 0)
-        fprintf(stderr, "Failed to wait for fork: %s\n", strerror(errno));
+        util_die_notify("Failed to wait for fork: %s\n", strerror(errno));
 
     if (id != lastindex)
         history_reorder(id);
