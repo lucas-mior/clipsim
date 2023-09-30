@@ -96,6 +96,7 @@ int clipboard_daemon_watch(void *unused) {
     }
 }
 
+#define CHECK_TARGET_MAX_EVENTS 500
 Atom clipboard_check_target(const Atom target) {
 #ifdef CLIPSIM_DEBUG
     if (target <= XA_LAST_PREDEFINED)
@@ -104,11 +105,15 @@ Atom clipboard_check_target(const Atom target) {
         DEBUG_PRINT("%lu", target);
 #endif
     XEvent xevent;
+    uint nevents = 0;
 
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA,
                       window, CurrentTime);
     do {
+        if (nevents >= CHECK_TARGET_MAX_EVENTS)
+            util_die_notify("Error cheking target.\n");
         (void) XNextEvent(display, &xevent);
+        nevents += 1;
     } while (xevent.type != SelectionNotify
           || xevent.xselection.selection != CLIPBOARD);
 
