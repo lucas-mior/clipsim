@@ -10,16 +10,14 @@ all: release
 .SUFFIXES:
 .SUFFIXES: .c .o
 
-CC=clang
-ifeq ($(CC),clang)
-	CFLAGS += -Weverything -Wno-unsafe-buffer-usage
-	CFLAGS += -Wno-format-nonliteral -Wno-declaration-after-statement
-else
-	CFLAGS += -Wextra -Wall
-endif
-
+clang: CC=clang
+clang: CFLAGS += -Weverything -Wno-unsafe-buffer-usage
+clang: CFLAGS += -Wno-format-nonliteral -Wno-declaration-after-statement
+clang: clean
+clang: clipsim
 
 CFLAGS += -std=c99 -D_DEFAULT_SOURCE
+CFLAGS += -Wall -Wextra
 
 release: CFLAGS += -O2
 release: clipsim
