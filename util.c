@@ -21,7 +21,7 @@
 void *util_malloc(const size_t size) {
     void *p;
     if ((p = malloc(size)) == NULL) {
-        fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
+        fprintf(stderr, "Error allocating %zu bytes.\n", size);
         exit(EXIT_FAILURE);
     }
     return p;
@@ -30,7 +30,7 @@ void *util_malloc(const size_t size) {
 void *util_memdup(const void *source, const size_t size) {
     void *p;
     if ((p = malloc(size)) == NULL) {
-        fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
+        fprintf(stderr, "Error allocating %zu bytes.\n", size);
         exit(EXIT_FAILURE);
     }
     memcpy(p, source, size);
@@ -40,7 +40,7 @@ void *util_memdup(const void *source, const size_t size) {
 char *util_strdup(const char *string) {
     char *p = strdup(string);
     if (p == NULL) {
-        fprintf(stderr, "Failed to duplicate string \"%s\".\n", string);
+        fprintf(stderr, "Error duplicating string \"%s\".\n", string);
         exit(EXIT_FAILURE);
     }
     return p;
@@ -49,7 +49,7 @@ char *util_strdup(const char *string) {
 void *util_realloc(void *old, const size_t size) {
     void *p;
     if ((p = realloc(old, size)) == NULL) {
-        fprintf(stderr, "Failed to allocate %zu bytes.\n", size);
+        fprintf(stderr, "Error reallocating %zu bytes.\n", size);
         fprintf(stderr, "Reallocating from: %p\n", old);
         exit(EXIT_FAILURE);
     }
@@ -59,7 +59,7 @@ void *util_realloc(void *old, const size_t size) {
 void *util_calloc(const size_t nmemb, const size_t size) {
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
-        fprintf(stderr, "Failed to allocate %zu members of %zu bytes each.\n",
+        fprintf(stderr, "Error allocating %zu members of %zu bytes each.\n",
                         nmemb, size);
         exit(EXIT_FAILURE);
     }

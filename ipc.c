@@ -59,7 +59,7 @@ int ipc_daemon_listen_fifo(void *unused) {
 
         r = read(command_fifo.fd, &command, sizeof (*(&command)));
         if (r < (ssize_t) sizeof (*(&command))) {
-            util_die_notify("Failed to read command from %s: %s\n",
+            util_die_notify("Error reading command from %s: %s\n",
                             command_fifo.name, strerror(errno));
         }
 
@@ -100,7 +100,7 @@ void ipc_client_speak_fifo(uint command, int32 id) {
     w = write(command_fifo.fd, &command, sizeof (*(&command)));
     util_close(&command_fifo);
     if (w < (ssize_t) sizeof (*(&command))) {
-        util_die_notify("Failed to write command to %s: %s\n",
+        util_die_notify("Error writing command to %s: %s\n",
                         command_fifo.name, strerror(errno));
     }
 
@@ -291,7 +291,7 @@ int32 ipc_daemon_get_id(void) {
 
     if (fread(&id, sizeof (*(&id)), 1, passid_fifo.file) != 1) {
         util_close(&passid_fifo);
-        util_die_notify("Failed to read id from pipe: "
+        util_die_notify("Error reading id from pipe: "
                         "%s\n", strerror(errno));
     }
     util_close(&passid_fifo);
@@ -307,7 +307,7 @@ void ipc_client_ask_id(const int32 id) {
     }
 
     if (fwrite(&id, sizeof (*(&id)), 1, passid_fifo.file) != 1) {
-        util_die_notify("Failed to send id to daemon: "
+        util_die_notify("Error sending id to daemon: "
                         "%s\n", strerror(errno));
     }
 
@@ -341,7 +341,7 @@ void ipc_create_fifo(const char *name) {
     DEBUG_PRINT("%s", name);
     if (mkfifo(name, 0600) < 0) {
         if (errno != EEXIST) {
-            util_die_notify("Failed to create fifo %s: %s\n",
+            util_die_notify("Error creating fifo %s: %s\n",
                             name, strerror(errno));
         }
     }

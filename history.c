@@ -91,7 +91,7 @@ bool history_save(void) {
     }
     if ((history.fd = open(history.name, O_WRONLY | O_CREAT | O_TRUNC,
                                          S_IRUSR | S_IWUSR)) < 0) {
-        fprintf(stderr, "Failed to open history file for saving: "
+        fprintf(stderr, "Error opening history file for saving: "
                         "%s\n", strerror(errno));
         return false;
     }
@@ -254,7 +254,7 @@ void history_save_image(char **content, ulong *length) {
     buffer[sizeof (buffer) - 1] = '\0';
     if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
                                       S_IRUSR | S_IWUSR)) < 0) {
-        util_die_notify("Failed to open image file for saving: "
+        util_die_notify("Error opening image file for saving: "
                         "%s\n", strerror(errno));
     }
 
@@ -369,22 +369,22 @@ void history_recover(int32 id) {
             execlp("/usr/bin/xclip", "xclip", "-selection", "clipboard",
                    "-target", "image/png", e->image_path, NULL);
         }
-        util_die_notify("Failed to exec(): %s", strerror(errno));
+        util_die_notify("Error in exec(): %s", strerror(errno));
     case -1:
-        util_die_notify("Failed to fork(): %s", strerror(errno));
+        util_die_notify("Error in fork(): %s", strerror(errno));
     default:
         if (istext && (close(fd[0]) < 0))
-            util_die_notify("Failed to close pipe 0: %s\n", strerror(errno));
+            util_die_notify("Error closing pipe 0: %s\n", strerror(errno));
     }
 
     if (istext) {
         dprintf(fd[1], "%s", e->content);
         if (close(fd[1]) < 0) {
-            util_die_notify("Failed to close pipe 1: %s\n", strerror(errno));
+            util_die_notify("Error closing pipe 1: %s\n", strerror(errno));
         }
     }
     if (wait(NULL) < 0)
-        util_die_notify("Failed to wait for fork: %s\n", strerror(errno));
+        util_die_notify("Error waiting for fork: %s\n", strerror(errno));
 
     if (id != lastindex)
         history_reorder(id);
