@@ -96,7 +96,7 @@ int clipboard_daemon_watch(void *unused) {
     }
 }
 
-#define CHECK_TARGET_MAX_EVENTS 500
+#define CHECK_TARGET_MAX_EVENTS 100
 Atom clipboard_check_target(const Atom target) {
 #ifdef CLIPSIM_DEBUG
     if (target <= XA_LAST_PREDEFINED)
