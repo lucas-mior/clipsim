@@ -453,8 +453,9 @@ void history_clean(void) {
         history_free_entry(&entries[i]);
 
     memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
-           HISTORY_KEEP_SIZE*sizeof (*entries));
-    memset(&entries[HISTORY_KEEP_SIZE], 0, HISTORY_KEEP_SIZE*sizeof (*entries));
+           HISTORY_KEEP_SIZE * sizeof (*entries));
+    memset(&entries[HISTORY_KEEP_SIZE], 0,
+           HISTORY_KEEP_SIZE * sizeof (*entries));
     lastindex = HISTORY_KEEP_SIZE - 1;
     return;
 }
