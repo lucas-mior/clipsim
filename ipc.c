@@ -26,7 +26,7 @@ static File content_fifo = { .file = NULL, .fd = -1,
                              .name = "/tmp/clipsim/content.fifo" };
 
 static void ipc_daemon_history_save(void);
-static void ipc_client_check_save(void);
+static int ipc_client_check_save(void);
 static void ipc_daemon_pipe_entries(void);
 static void ipc_daemon_pipe_id(const int32);
 static void ipc_client_print_entries(void);
@@ -91,10 +91,11 @@ int ipc_daemon_listen_fifo(void *unused) {
 void ipc_client_speak_fifo(uint command, int32 id) {
     DEBUG_PRINT("%u, %d", command, id);
     ssize_t w;
+    int result = 1;
     if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
         fprintf(stderr, "Could not open Fifo for sending command to daemon. "
                         "Is `%s daemon` running?\n", "clipsim");
-        return;
+        exit(EXIT_FAILURE);
     }
 
     w = write(command_fifo.fd, &command, sizeof (*(&command)));
@@ -109,7 +110,7 @@ void ipc_client_speak_fifo(uint command, int32 id) {
         ipc_client_print_entries();
         break;
     case COMMAND_SAVE:
-        ipc_client_check_save();
+        result = ipc_client_check_save();
         break;
     case COMMAND_COPY:
     case COMMAND_REMOVE:
@@ -123,7 +124,11 @@ void ipc_client_speak_fifo(uint command, int32 id) {
         util_die_notify("Invalid command: %u\n", command);
     }
 
-    return;
+    if (result) {
+        exit(EXIT_SUCCESS);
+    } else {
+        exit(EXIT_FAILURE);
+    }
 }
 
 void ipc_daemon_history_save(void) {
@@ -144,13 +149,13 @@ void ipc_daemon_history_save(void) {
     return;
 }
 
-void ipc_client_check_save(void) {
+int ipc_client_check_save(void) {
     DEBUG_PRINT("");
     ssize_t r;
     char saved;
     fprintf(stderr, "Trying to save history...\n");
     if (util_open(&content_fifo, O_RDONLY) < 0)
-        return;
+        return 0;
 
     if ((r = read(content_fifo.fd, &saved, sizeof (*(&saved)))) > 0) {
         if (saved)
@@ -160,7 +165,7 @@ void ipc_client_check_save(void) {
     }
 
     util_close(&content_fifo);
-    return;
+    return saved;
 }
 
 void ipc_daemon_pipe_entries(void) {

@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     if (spell_error)
         main_usage(stderr);
 
-    return 0;
+    exit(EXIT_SUCCESS);
 }
 
 void main_usage(FILE *stream) {
