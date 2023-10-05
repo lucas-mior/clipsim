@@ -16,7 +16,6 @@
  */
 
 #include "clipsim.h"
-#include <stdlib.h>
 
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
 mtx_t lock;
