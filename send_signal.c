@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/stat.h>
 #include "clipsim.h"
 
 static pid_t check_pid(const char *, const char*);

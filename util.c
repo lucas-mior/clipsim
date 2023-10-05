@@ -16,7 +16,6 @@
  */
 
 #include "clipsim.h"
-#include <stdarg.h>
 
 void *util_malloc(const size_t size) {
     void *p;

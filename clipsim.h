@@ -33,6 +33,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <stdarg.h>
 
 #ifndef CLIPSIM_H
 #define CLIPSIM_H
