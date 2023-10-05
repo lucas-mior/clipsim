@@ -16,7 +16,6 @@
  */
 
 #include "clipsim.h"
-#include <stdlib.h>
 
 static volatile bool recovered = false;
 static int32 lastindex;
