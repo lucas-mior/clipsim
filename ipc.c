@@ -243,7 +243,7 @@ void ipc_client_print_entries(void) {
     if (util_open(&content_fifo, O_RDONLY) < 0)
         return;
 
-    r = read(content_fifo.fd, &buffer, sizeof (buffer));
+    r = read(content_fifo.fd, buffer, sizeof (buffer));
     if (r <= 0) {
         fprintf(stderr, "Error reading data from %s: %s\n",
                         content_fifo.name, strerror(errno));
@@ -253,7 +253,7 @@ void ipc_client_print_entries(void) {
     if (buffer[0] != IMAGE_TAG) {
         do {
             fwrite(buffer, 1, (size_t) r, stdout);
-        } while ((r = read(content_fifo.fd, &buffer, sizeof (buffer))) > 0);
+        } while ((r = read(content_fifo.fd, buffer, sizeof (buffer))) > 0);
     } else {
         int test;
         char *CLIPSIM_IMAGE_PREVIEW;
