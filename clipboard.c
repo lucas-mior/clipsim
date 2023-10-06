@@ -29,7 +29,6 @@ static Window window;
 
 static Atom clipboard_check_target(Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
-static void clipboard_signal_program(void);
 
 int clipboard_daemon_watch(void *unused) {
     DEBUG_PRINT("void");
@@ -43,6 +42,19 @@ int clipboard_daemon_watch(void *unused) {
     if ((display = XOpenDisplay(NULL)) == NULL) {
         fprintf(stderr, "Error opening X display.");
         exit(EXIT_FAILURE);
+    }
+
+    int signal_number;
+    char *CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE");
+    char *CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM");
+
+    if ((signal_number = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {
+        fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment "
+                        "variable: %s.\n", CLIPSIM_SIGNAL_CODE);
+        if (CLIPSIM_SIGNAL_PROGRAM)
+            fprintf(stderr, "%s will not be signaled.\n", CLIPSIM_SIGNAL_PROGRAM);
+        CLIPSIM_SIGNAL_CODE = NULL;
+        CLIPSIM_SIGNAL_PROGRAM = NULL;
     }
 
     CLIPBOARD   = XInternAtom(display, "CLIPBOARD",   False);
@@ -70,7 +82,8 @@ int clipboard_daemon_watch(void *unused) {
         (void) XNextEvent(display, &xevent);
         mtx_lock(&lock);
 
-        clipboard_signal_program();
+        if (CLIPSIM_SIGNAL_PROGRAM)
+            send_signal(CLIPSIM_SIGNAL_PROGRAM, signal_number);
 
         switch (clipboard_get_clipboard(&save, &length)) {
         case CLIPBOARD_TEXT:
@@ -151,26 +164,4 @@ int32 clipboard_get_clipboard(char **save, ulong *length) {
         return CLIPBOARD_OTHER;
     }
     return CLIPBOARD_ERROR;
-}
-
-void clipboard_signal_program(void) {
-    DEBUG_PRINT("void");
-    int signal_number;
-    char *CLIPSIM_SIGNAL_CODE;
-    char *CLIPSIM_SIGNAL_PROGRAM;
-
-    if ((CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE")) == NULL)
-        return;
-
-    if ((CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")) == NULL)
-        return;
-
-    if ((signal_number = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {
-        fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment "
-                        "variable: %s\n", CLIPSIM_SIGNAL_CODE);
-        return;
-    }
-
-    send_signal(CLIPSIM_SIGNAL_PROGRAM, signal_number);
-    return;
 }
