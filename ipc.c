@@ -185,9 +185,10 @@ void ipc_daemon_pipe_entries(void) {
 
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
+        size_t size = e->trimmed_length + 1;
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
-        w = fwrite(e->trimmed, 1, (e->trimmed_length + 1), content_fifo.file);
-        if (w < (e->trimmed_length + 1))
+        w = fwrite(e->trimmed, 1, size, content_fifo.file);
+        if (w < size)
             util_die_notify("Error writing to client fifo.\n");
     }
     fflush(content_fifo.file);
