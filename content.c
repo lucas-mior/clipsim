@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "clipsim.h"
 #include <magic.h>
+#include "clipsim.h"
 
 void content_remove_newline(char *text, size_t *length) {
     DEBUG_PRINT("%s, %zu", text, *length);
