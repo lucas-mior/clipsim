@@ -51,14 +51,14 @@ int ipc_daemon_listen_fifo(void *unused) {
     ipc_make_fifos();
 
     while (true) {
-        ssize_t r;
+        isize r;
         nanosleep(&pause, NULL);
         if (util_open(&command_fifo, O_RDONLY) < 0)
             continue;
         mtx_lock(&lock);
 
         r = read(command_fifo.fd, &command, sizeof (*(&command)));
-        if (r < (ssize_t) sizeof (*(&command))) {
+        if (r < (isize) sizeof (*(&command))) {
             util_die_notify("Error reading command from %s: %s\n",
                             command_fifo.name, strerror(errno));
         }
@@ -90,7 +90,7 @@ int ipc_daemon_listen_fifo(void *unused) {
 
 void ipc_client_speak_fifo(uint command, int32 id) {
     DEBUG_PRINT("%u, %d", command, id);
-    ssize_t w;
+    isize w;
     if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
         fprintf(stderr, "Could not open Fifo for sending command to daemon. "
                         "Is `%s daemon` running?\n", "clipsim");
@@ -99,7 +99,7 @@ void ipc_client_speak_fifo(uint command, int32 id) {
 
     w = write(command_fifo.fd, &command, sizeof (*(&command)));
     util_close(&command_fifo);
-    if (w < (ssize_t) sizeof (*(&command))) {
+    if (w < (isize) sizeof (*(&command))) {
         util_die_notify("Error writing command to %s: %s\n",
                         command_fifo.name, strerror(errno));
     }
@@ -129,14 +129,14 @@ void ipc_client_speak_fifo(uint command, int32 id) {
 void ipc_daemon_history_save(void) {
     DEBUG_PRINT("");
     char saved;
-    ssize_t saved_size = sizeof (*(&saved));
+    isize saved_size = sizeof (*(&saved));
     fprintf(stderr, "Trying to save history...\n");
     if (util_open(&content_fifo, O_WRONLY) < 0)
         return;
 
     saved = history_save();
 
-    if (write(content_fifo.fd, &saved, (size_t) saved_size) < saved_size) {
+    if (write(content_fifo.fd, &saved, (usize) saved_size) < saved_size) {
         fprintf(stderr, "Error sending save result to client.\n");
     }
 
@@ -146,7 +146,7 @@ void ipc_daemon_history_save(void) {
 
 void ipc_client_check_save(void) {
     DEBUG_PRINT("");
-    ssize_t r;
+    isize r;
     char saved = 0;
     fprintf(stderr, "Trying to save history...\n");
     if (util_open(&content_fifo, O_RDONLY) < 0)
@@ -168,7 +168,7 @@ void ipc_client_check_save(void) {
 void ipc_daemon_pipe_entries(void) {
     DEBUG_PRINT("");
     static char buffer[BUFSIZ];
-    size_t w = 0;
+    usize w = 0;
     int32 lastindex;
 
     content_fifo.file = fopen(content_fifo.name, "w");
@@ -185,7 +185,7 @@ void ipc_daemon_pipe_entries(void) {
 
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
-        size_t size = e->trimmed_length + 1;
+        usize size = e->trimmed_length + 1;
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
         w = fwrite(e->trimmed, 1, size, content_fifo.file);
         if (w < size)
@@ -202,7 +202,7 @@ void ipc_daemon_pipe_id(const int32 id) {
     DEBUG_PRINT("%d", id);
     Entry *e;
     int32 lastindex;
-    size_t tag_size = sizeof (*(&IMAGE_TAG));
+    usize tag_size = sizeof (*(&IMAGE_TAG));
 
     if (util_open(&content_fifo, O_WRONLY) < 0)
         return;
@@ -218,8 +218,8 @@ void ipc_daemon_pipe_id(const int32 id) {
 
     e = &entries[id];
     if (e->image_path) {
-        ssize_t w = write(content_fifo.fd, &IMAGE_TAG, tag_size);
-        if (w < (ssize_t) tag_size) {
+        isize w = write(content_fifo.fd, &IMAGE_TAG, tag_size);
+        if (w < (isize) tag_size) {
             dprintf(content_fifo.fd, "Error printing image tag.\n");
             goto close;
         }
@@ -238,7 +238,7 @@ void ipc_daemon_pipe_id(const int32 id) {
 void ipc_client_print_entries(void) {
     DEBUG_PRINT("");
     static char buffer[BUFSIZ];
-    ssize_t r;
+    isize r;
 
     if (util_open(&content_fifo, O_RDONLY) < 0)
         return;
@@ -252,7 +252,7 @@ void ipc_client_print_entries(void) {
     }
     if (buffer[0] != IMAGE_TAG) {
         do {
-            fwrite(buffer, 1, (size_t) r, stdout);
+            fwrite(buffer, 1, (usize) r, stdout);
         } while ((r = read(content_fifo.fd, buffer, sizeof (buffer))) > 0);
     } else {
         int test;

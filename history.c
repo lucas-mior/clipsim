@@ -23,7 +23,7 @@ static File history = { .file = NULL, .fd = -1, .name = NULL };
 static char *XDG_CACHE_HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 
-static int32 history_repeated_index(const char *, const size_t);
+static int32 history_repeated_index(const char *, const usize);
 static void history_reorder(const int32);
 static void history_free_entry(const Entry *);
 static void history_clean(void);
@@ -39,8 +39,8 @@ void history_save_entry(Entry *e) {
     DEBUG_PRINT("{\n    %s,\n    %zu,\n    %s,\n    %zu\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
-    size_t tag_size = sizeof (*(&IMAGE_TAG));
-    ssize_t w;
+    usize tag_size = sizeof (*(&IMAGE_TAG));
+    isize w;
 
     if (e->image_path) {
         int n;
@@ -56,20 +56,20 @@ void history_save_entry(Entry *e) {
                                  e->image_path, image_save, strerror(errno));
             }
         }
-        if (write(history.fd, image_save, (size_t) n) < n) {
+        if (write(history.fd, image_save, (usize) n) < n) {
             util_die_notify("Error writing %s: %s\n",
                             image_save, strerror(errno));
         }
-        if (write(history.fd, &IMAGE_TAG, tag_size) < (ssize_t) tag_size) {
+        if (write(history.fd, &IMAGE_TAG, tag_size) < (isize) tag_size) {
             util_die_notify("Error writing IMAGE_TAG: %s\n", strerror(errno));
         }
     } else {
         w = write(history.fd, e->content, e->content_length);
-        if (w < (ssize_t) e->content_length) {
+        if (w < (isize) e->content_length) {
             util_die_notify("Error writing %s: %s\n",
                             e->content, strerror(errno));
         }
-        if (write(history.fd, &TEXT_TAG, tag_size) < (ssize_t) tag_size) {
+        if (write(history.fd, &TEXT_TAG, tag_size) < (isize) tag_size) {
             util_die_notify("Error writing TEXT_TAG: %s\n", strerror(errno));
         }
     }
@@ -108,12 +108,12 @@ bool history_save(void) {
 
 void history_read(void) {
     DEBUG_PRINT("void");
-    size_t history_length;
+    usize history_length;
     char *history_map;
     char *begin;
 
     const char *clipsim = "clipsim/history";
-    size_t length;
+    usize length;
 
     if ((XDG_CACHE_HOME = getenv("XDG_CACHE_HOME")) == NULL) {
         fprintf(stderr, "XDG_CACHE_HOME needs to be set.\n");
@@ -135,7 +135,7 @@ void history_read(void) {
             util_die_notify("Error printing to buffer: %s\n", strerror(errno));
         buffer[sizeof (buffer) - 1] = '\0';
 
-        size_t size = (size_t) n + 1;
+        usize size = (usize) n + 1;
         history.name = util_memdup(buffer, size);
 
         char *clipsim_dir = dirname(buffer);
@@ -162,7 +162,7 @@ void history_read(void) {
             util_close(&history);
             return;
         }
-        history_length = (size_t) history_stat.st_size;
+        history_length = (usize) history_stat.st_size;
         if (history_length <= 0) {
             fprintf(stderr, "History_length: %zu\n", history_length);
             fprintf(stderr, "History file is empty.\n");
@@ -193,7 +193,7 @@ void history_read(void) {
 
             lastindex += 1;
             e = &entries[lastindex];
-            e->content_length = (size_t) (p - begin);
+            e->content_length = (usize) (p - begin);
             e->content = util_memdup(begin, e->content_length + 1);
 
             if (c == IMAGE_TAG) {
@@ -222,7 +222,7 @@ void history_read(void) {
     return;
 }
 
-int32 history_repeated_index(const char *content, const size_t length) {
+int32 history_repeated_index(const char *content, const usize length) {
     DEBUG_PRINT("%s, %zu", content, length);
     if (length_counts[length] == 0)
         return -1;
@@ -240,8 +240,8 @@ void history_save_image(char **content, ulong *length) {
     DEBUG_PRINT("%p, %lu", (void *) content, *length);
     time_t t = time(NULL);
     int fp;
-    ssize_t w = 0;
-    size_t copied = 0;
+    isize w = 0;
+    usize copied = 0;
     int n;
     char buffer[256];
     char *directory = "/tmp/clipsim";
@@ -261,11 +261,11 @@ void history_save_image(char **content, ulong *length) {
         w = write(fp, *(content + copied), *length);
         if (w <= 0)
             break;
-        copied += (size_t) w;
-        *length -= (size_t) w;
+        copied += (usize) w;
+        *length -= (usize) w;
     } while (*length > 0);
 
-    *length = (size_t) n;
+    *length = (usize) n;
     *content = util_realloc(*content, *length + 1);
     memcpy(*content, buffer, *length + 1);
     return;
@@ -413,7 +413,7 @@ void history_remove(int32 id) {
 
     if (id < lastindex) {
         memmove(&entries[id], &(entries[id + 1]),
-                (size_t) (lastindex - id)*sizeof (*entries));
+                (usize) (lastindex - id)*sizeof (*entries));
         memset(&entries[lastindex], 0, sizeof (*entries));
     }
     lastindex -= 1;
@@ -425,7 +425,7 @@ void history_reorder(const int32 oldindex) {
     DEBUG_PRINT("%d", oldindex);
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex + 1],
-            (size_t) (lastindex - oldindex)*sizeof (*entries));
+            (usize) (lastindex - oldindex)*sizeof (*entries));
     memmove(&entries[lastindex], &aux, sizeof (*entries));
     return;
 }

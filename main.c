@@ -86,7 +86,7 @@ bool main_check_cmdline(char *pid) {
     char buffer[256];
     char command[256];
     int n;
-    size_t r;
+    usize r;
     FILE *cmdline;
     char cmd1[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
                    '-', 'd', '\0'};

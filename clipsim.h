@@ -82,11 +82,14 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
+
+typedef size_t usize;
+typedef ssize_t isize;
 #endif
 
 typedef struct Entry {
-    size_t content_length;
-    size_t trimmed_length;
+    usize content_length;
+    usize trimmed_length;
     char *content;
     char *trimmed;
     char *image_path;
@@ -138,9 +141,9 @@ extern mtx_t lock;
 static const char TEXT_TAG = (char) 0x01;
 static const char IMAGE_TAG = (char) 0x02;
 
-void content_remove_newline(char *, size_t *);
-void content_trim_spaces(char **, size_t *, char *, size_t);
-int32 content_check_content(uchar *, size_t);
+void content_remove_newline(char *, usize *);
+void content_trim_spaces(char **, usize *, char *, usize);
+int32 content_check_content(uchar *, usize);
 
 int32 history_lastindex(void);
 void history_read(void);
@@ -156,11 +159,11 @@ void ipc_client_speak_fifo(uint, int32);
 
 void send_signal(const char *, const int);
 
-void *util_malloc(const size_t);
-void *util_memdup(const void *, const size_t);
+void *util_malloc(const usize);
+void *util_memdup(const void *, const usize);
 char *util_strdup(const char *);
-void *util_realloc(void *, const size_t);
-void *util_calloc(const size_t, const size_t);
+void *util_realloc(void *, const usize);
+void *util_calloc(const usize, const usize);
 int util_string_int32(int32 *, const char *);
 void util_segv_handler(int) __attribute__((noreturn));
 void util_close(File *);

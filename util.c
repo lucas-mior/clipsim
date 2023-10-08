@@ -17,7 +17,7 @@
 
 #include "clipsim.h"
 
-void *util_malloc(const size_t size) {
+void *util_malloc(const usize size) {
     void *p;
     if ((p = malloc(size)) == NULL) {
         fprintf(stderr, "Error allocating %zu bytes.\n", size);
@@ -26,7 +26,7 @@ void *util_malloc(const size_t size) {
     return p;
 }
 
-void *util_memdup(const void *source, const size_t size) {
+void *util_memdup(const void *source, const usize size) {
     void *p;
     if ((p = malloc(size)) == NULL) {
         fprintf(stderr, "Error allocating %zu bytes.\n", size);
@@ -45,7 +45,7 @@ char *util_strdup(const char *string) {
     return p;
 }
 
-void *util_realloc(void *old, const size_t size) {
+void *util_realloc(void *old, const usize size) {
     void *p;
     if ((p = realloc(old, size)) == NULL) {
         fprintf(stderr, "Error reallocating %zu bytes.\n", size);
@@ -55,7 +55,7 @@ void *util_realloc(void *old, const size_t size) {
     return p;
 }
 
-void *util_calloc(const size_t nmemb, const size_t size) {
+void *util_calloc(const usize nmemb, const usize size) {
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
         fprintf(stderr, "Error allocating %zu members of %zu bytes each.\n",
@@ -94,7 +94,7 @@ void util_die_notify(const char *format, ...) {
         exit(EXIT_FAILURE);
 
     buffer[n] = '\0';
-    (void) write(STDERR_FILENO, buffer, (size_t) n + 1);
+    (void) write(STDERR_FILENO, buffer, (usize) n + 1);
     for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
                              "clipsim", buffer, NULL);
@@ -146,8 +146,8 @@ int util_open(File *file, const int flag) {
 int util_copy_file(const char *destination, const char *source) {
     int source_fd, destination_fd;
     char buffer[BUFSIZ];
-    ssize_t r = 0;
-    ssize_t w = 0;
+    isize r = 0;
+    isize w = 0;
     
     if ((source_fd = open(source, O_RDONLY)) < 0) {
         fprintf(stderr, "Error opening %s for reading: %s\n", 
@@ -165,7 +165,7 @@ int util_copy_file(const char *destination, const char *source) {
 
     errno = 0;
     while ((r = read(source_fd, buffer, BUFSIZ)) > 0) {
-        w = write(destination_fd, buffer, (size_t) r);
+        w = write(destination_fd, buffer, (usize) r);
         if (w != r) {
             fprintf(stderr, "Error writing data to %s", destination);
             if (errno)
