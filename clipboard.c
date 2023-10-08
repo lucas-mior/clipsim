@@ -48,7 +48,7 @@ int clipboard_daemon_watch(void *unused) {
     char *CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE");
     char *CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM");
 
-    if ((signal_number = atoi(CLIPSIM_SIGNAL_CODE)) < 10) {
+    if ((signal_number = atoi(CLIPSIM_SIGNAL_CODE)) <= 0) {
         fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment "
                         "variable: %s.\n", CLIPSIM_SIGNAL_CODE);
         if (CLIPSIM_SIGNAL_PROGRAM)
