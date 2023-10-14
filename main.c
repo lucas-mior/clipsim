@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     if (argc <= 1 || argc >= 4)
         main_usage(stderr);
 
-    for (uint i = 0; i < ARRAY_LENGTH(commands); i += 1) {
+    for (uint i = 0; i < LENGTH(commands); i += 1) {
         if (!strcmp(argv[1], commands[i].shortname)
             || !strcmp(argv[1], commands[i].longname)) {
             spell_error = false;
@@ -74,7 +74,7 @@ void main_usage(FILE *stream) {
     DEBUG_PRINT("%p", (void *) stream);
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
-    for (uint i = 0; i < ARRAY_LENGTH(commands); i += 1) {
+    for (uint i = 0; i < LENGTH(commands); i += 1) {
         fprintf(stream, "%s | %-*s : %s\n",
                 commands[i].shortname, 8, commands[i].longname, 
                 commands[i].description);

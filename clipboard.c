@@ -87,10 +87,10 @@ int clipboard_daemon_watch(void *unused) {
 
         switch (clipboard_get_clipboard(&save, &length)) {
         case CLIPBOARD_TEXT:
-            history_append(save, length);
+            history_append(save, (int) length);
             break;
         case CLIPBOARD_IMAGE:
-            history_append(save, length);
+            history_append(save, (int) length);
             break;
         case CLIPBOARD_OTHER:
             fprintf(stderr, "Unsupported format. Clipsim only"
@@ -118,7 +118,7 @@ Atom clipboard_check_target(const Atom target) {
         DEBUG_PRINT("%lu", target);
 #endif
     XEvent xevent;
-    uint nevents = 0;
+    int nevents = 0;
 
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA,
                       window, CurrentTime);

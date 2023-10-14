@@ -185,7 +185,7 @@ void ipc_daemon_pipe_entries(void) {
 
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
-        usize size = e->trimmed_length + 1;
+        usize size = (usize) e->trimmed_length + 1;
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
         w = fwrite(e->trimmed, 1, size, content_fifo.file);
         if (w < size)
@@ -225,7 +225,7 @@ void ipc_daemon_pipe_id(const int32 id) {
         }
     } else {
         dprintf(content_fifo.fd,
-                "Lenght: \033[31;1m%lu\n\033[0;m", e->content_length);
+                "Lenght: \033[31;1m%d\n\033[0;m", e->content_length);
     }
     dprintf(content_fifo.fd, "%s", e->content);
 

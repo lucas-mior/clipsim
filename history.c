@@ -23,11 +23,11 @@ static File history = { .file = NULL, .fd = -1, .name = NULL };
 static char *XDG_CACHE_HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 
-static int32 history_repeated_index(const char *, const usize);
+static int32 history_repeated_index(const char *, const int);
 static void history_reorder(const int32);
 static void history_free_entry(const Entry *);
 static void history_clean(void);
-static void history_save_image(char **, ulong *);
+static void history_save_image(char **, int *);
 static void history_save_entry(Entry *);
 
 int32 history_lastindex(void) {
@@ -64,8 +64,8 @@ void history_save_entry(Entry *e) {
             util_die_notify("Error writing IMAGE_TAG: %s\n", strerror(errno));
         }
     } else {
-        w = write(history.fd, e->content, e->content_length);
-        if (w < (isize) e->content_length) {
+        w = write(history.fd, e->content, (usize) e->content_length);
+        if (w < e->content_length) {
             util_die_notify("Error writing %s: %s\n",
                             e->content, strerror(errno));
         }
@@ -95,7 +95,7 @@ bool history_save(void) {
         return false;
     }
 
-    for (uint i = 0; i <= (uint) lastindex; i += 1)
+    for (int i = 0; i <= lastindex; i += 1)
         history_save_entry(&entries[i]);
 
     if ((saved = fsync(history.fd)) < 0)
@@ -193,8 +193,8 @@ void history_read(void) {
 
             lastindex += 1;
             e = &entries[lastindex];
-            e->content_length = (usize) (p - begin);
-            e->content = util_memdup(begin, e->content_length + 1);
+            e->content_length = (int) (p - begin);
+            e->content = util_memdup(begin, (usize) e->content_length + 1);
 
             if (c == IMAGE_TAG) {
                 e->trimmed = e->content;
@@ -209,7 +209,7 @@ void history_read(void) {
 
             length_counts[e->content_length] += 1;
 
-            if (lastindex > (int32) HISTORY_BUFFER_SIZE)
+            if (lastindex > HISTORY_BUFFER_SIZE)
                 break;
         }
     }
@@ -222,26 +222,26 @@ void history_read(void) {
     return;
 }
 
-int32 history_repeated_index(const char *content, const usize length) {
+int32 history_repeated_index(const char *content, const int length) {
     DEBUG_PRINT("%s, %zu", content, length);
     if (length_counts[length] == 0)
         return -1;
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->content_length == length) {
-            if (!memcmp(e->content, content, length))
+            if (!memcmp(e->content, content, (usize) length))
                 return i;
         }
     }
     return -1;
 }
 
-void history_save_image(char **content, ulong *length) {
+void history_save_image(char **content, int *length) {
     DEBUG_PRINT("%p, %lu", (void *) content, *length);
     time_t t = time(NULL);
     int fp;
     isize w = 0;
-    usize copied = 0;
+    isize copied = 0;
     int n;
     char buffer[256];
     char *directory = "/tmp/clipsim";
@@ -258,20 +258,20 @@ void history_save_image(char **content, ulong *length) {
     }
 
     do {
-        w = write(fp, *(content + copied), *length);
+        w = write(fp, *(content + copied), (usize) *length);
         if (w <= 0)
             break;
         copied += (usize) w;
         *length -= (usize) w;
     } while (*length > 0);
 
-    *length = (usize) n;
-    *content = util_realloc(*content, *length + 1);
-    memcpy(*content, buffer, *length + 1);
+    *length = n;
+    *content = util_realloc(*content, (usize) *length + 1);
+    memcpy(*content, buffer, (usize) *length + 1);
     return;
 }
 
-void history_append(char *content, ulong length) {
+void history_append(char *content, int length) {
     DEBUG_PRINT("%s, %lu", content, length);
     int32 oldindex;
     int32 kind;
@@ -323,7 +323,7 @@ void history_append(char *content, ulong length) {
         break;
     }
 
-    if (lastindex + 1 >= (int32) HISTORY_BUFFER_SIZE) {
+    if (lastindex + 1 >= HISTORY_BUFFER_SIZE) {
         history_clean();
         history_save();
     }
@@ -448,7 +448,7 @@ void history_free_entry(const Entry *e) {
 
 void history_clean(void) {
     DEBUG_PRINT("void");
-    for (uint i = 0; i <= HISTORY_KEEP_SIZE - 1; i += 1)
+    for (int i = 0; i <= HISTORY_KEEP_SIZE - 1; i += 1)
         history_free_entry(&entries[i]);
 
     memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],

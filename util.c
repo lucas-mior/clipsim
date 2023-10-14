@@ -95,7 +95,7 @@ void util_die_notify(const char *format, ...) {
 
     buffer[n] = '\0';
     (void) write(STDERR_FILENO, buffer, (usize) n + 1);
-    for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
+    for (uint i = 0; i < LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
                              "clipsim", buffer, NULL);
     }
@@ -108,7 +108,7 @@ void util_segv_handler(int unused) {
     char *notifiers[2] = { "dunstify", "notify-send" };
 
     (void) write(STDERR_FILENO, message, strlen(message));
-    for (uint i = 0; i < ARRAY_LENGTH(notifiers); i += 1) {
+    for (uint i = 0; i < LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
                              "clipsim", message, NULL);
     }

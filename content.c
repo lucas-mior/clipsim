@@ -18,7 +18,7 @@
 #include <magic.h>
 #include "clipsim.h"
 
-void content_remove_newline(char *text, usize *length) {
+void content_remove_newline(char *text, int *length) {
     DEBUG_PRINT("%s, %zu", text, *length);
     text[*length] = '\0';
     while (text[*length - 1] == '\n') {
@@ -28,15 +28,15 @@ void content_remove_newline(char *text, usize *length) {
     return;
 }
 
-void content_trim_spaces(char **trimmed, usize *trimmed_length,
-                         char *content, const usize length) {
+void content_trim_spaces(char **trimmed, int *trimmed_length,
+                         char *content, const int length) {
     DEBUG_PRINT("%p, %p, %s, %zu",
                 (void *) trimmed, (void *) trimmed_length, content, length);
     char *p;
     char temp = '\0';
     char *c = content;
 
-    *trimmed = p = util_malloc(MIN(length + 1, TRIMMED_SIZE + 1));
+    *trimmed = p = util_malloc(MIN((usize) length + 1, TRIMMED_SIZE + 1));
 
     if (length >= TRIMMED_SIZE) {
         temp = content[TRIMMED_SIZE];
@@ -54,7 +54,7 @@ void content_trim_spaces(char **trimmed, usize *trimmed_length,
         c += 1;
     }
     *p = '\0';
-    *trimmed_length = (usize) (p - *trimmed);
+    *trimmed_length = (int) (p - *trimmed);
 
     if (temp) {
         content[TRIMMED_SIZE] = temp;
@@ -65,12 +65,12 @@ void content_trim_spaces(char **trimmed, usize *trimmed_length,
         free(*trimmed);
         *trimmed = content;
     } else {
-        *trimmed = util_realloc(*trimmed, *trimmed_length + 1);
+        *trimmed = util_realloc(*trimmed, (usize) *trimmed_length + 1);
     }
     return;
 }
 
-int32 content_check_content(uchar *data, const usize length) {
+int32 content_check_content(uchar *data, const int length) {
     DEBUG_PRINT("%s, %zu", data, length);
 
     { /* Check if it is made only of spaces and newlines */
@@ -105,7 +105,7 @@ int32 content_check_content(uchar *data, const usize length) {
             magic_close(magic);
             break;
         }
-        if ((mime_type = magic_buffer(magic, data, length)) == NULL) {
+        if ((mime_type = magic_buffer(magic, data, (usize) length)) == NULL) {
             magic_close(magic);
             break;
         }

@@ -54,13 +54,13 @@ do { \
 #define DEBUG_PRINT(...)
 #endif
 
-#define ARRAY_LENGTH(x) (sizeof (x) / sizeof (*x))
+#define LENGTH(x) (isize) ((sizeof (x) / sizeof (*x)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n'))
 
 #define PAUSE10MS (1000 * 1000 * 10)
-#define HISTORY_BUFFER_SIZE 128U
+#define HISTORY_BUFFER_SIZE 128
 #define HISTORY_KEEP_SIZE (HISTORY_BUFFER_SIZE/2)
 #define ENTRY_MAX_LENGTH BUFSIZ
 #define PRINT_DIGITS 3
@@ -88,8 +88,8 @@ typedef ssize_t isize;
 #endif
 
 typedef struct Entry {
-    usize content_length;
-    usize trimmed_length;
+    int content_length;
+    int trimmed_length;
     char *content;
     char *trimmed;
     char *image_path;
@@ -141,13 +141,13 @@ extern mtx_t lock;
 static const char TEXT_TAG = (char) 0x01;
 static const char IMAGE_TAG = (char) 0x02;
 
-void content_remove_newline(char *, usize *);
-void content_trim_spaces(char **, usize *, char *, usize);
-int32 content_check_content(uchar *, usize);
+void content_remove_newline(char *, int *);
+void content_trim_spaces(char **, int *, char *, int);
+int32 content_check_content(uchar *, int);
 
 int32 history_lastindex(void);
 void history_read(void);
-void history_append(char *, ulong);
+void history_append(char *, int);
 bool history_save(void);
 void history_recover(int32);
 void history_remove(int32);
