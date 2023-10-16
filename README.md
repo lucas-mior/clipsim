@@ -31,7 +31,7 @@ And with multiple white space supressed.
 In order to select one of them, you can use
 [fzf](https://github.com/junegunn/fzf)
 and [xclip](https://github.com/astrand/xclip).
-```
+```sh
 # Don't actually do this. The output from `clipsim --print` has all white spaced
 # supressed in order to improve usage with fzf. See the next snippet on how to
 # overcome this.
@@ -41,7 +41,7 @@ $ clipsim --print | fzf --read0 | xclip -selection clipboard
 In order to retrieve the entry with original white space and
 remove the leading number:
 
-```
+```sh
 #!/bin/sh
 
 # usage: $0 [-c |-d]
