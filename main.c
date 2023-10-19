@@ -163,7 +163,7 @@ void main_launch_daemon(void) {
     history_read();
 
     thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
-    clipboard_daemon_watch(NULL);
+    clipboard_daemon_watch();
 
     return;
 }
