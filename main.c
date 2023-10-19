@@ -86,8 +86,8 @@ bool main_check_cmdline(char *pid) {
     char buffer[256];
     char command[256];
     int n;
-    usize r;
-    FILE *cmdline;
+    isize r;
+    int cmdline;
     char cmd1[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
                    '-', 'd', '\0'};
     char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
@@ -100,18 +100,18 @@ bool main_check_cmdline(char *pid) {
     }
     buffer[sizeof (buffer) - 1] = '\0';
 
-    if ((cmdline = fopen(buffer, "r")) == NULL)
+    if ((cmdline = open(buffer, O_RDONLY)) < 0)
         return false;
-    if ((r = fread(command, 1, sizeof (command), cmdline)) == 0) {
-        fclose(cmdline);
+    if ((r = read(cmdline, command, sizeof (command))) <= 0) {
+        close(cmdline);
         return false;
     }
 
     if (r == sizeof (cmd1)) {
-        if (!memcmp(command, cmd1, r))
+        if (!memcmp(command, cmd1, (usize) r))
             return true;
     } else if (r == sizeof (cmd2)) {
-        if (!memcmp(command, cmd2, r))
+        if (!memcmp(command, cmd2, (usize) r))
             return true;
     }
     return false;
