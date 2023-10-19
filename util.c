@@ -112,7 +112,7 @@ void util_segv_handler(int unused) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", 
                              "clipsim", message, NULL);
     }
-    exit(EXIT_FAILURE);
+    _exit(EXIT_FAILURE);
 }
 
 void util_close(File *file) {
