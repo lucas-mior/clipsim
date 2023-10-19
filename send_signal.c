@@ -46,7 +46,7 @@ pid_t check_pid(const char *executable, const char *number) {
     static char buffer[256];
     static char command[256];
     int pid;
-    FILE *cmdline;
+    int cmdline;
 	int n;
 
     if ((pid = atoi(number)) <= 0)
@@ -59,18 +59,18 @@ pid_t check_pid(const char *executable, const char *number) {
 	}
     buffer[sizeof (buffer) - 1] = '\0';
 
-    if ((cmdline = fopen(buffer, "r")) == NULL)
+    if ((cmdline = open(buffer, O_RDONLY)) < 0)
         return 0;
-    if (fgets(command, sizeof (command), cmdline) == NULL) {
-        fclose(cmdline);
-        return 0;
-    }
-    command[strcspn(buffer, "\n")] = '\0';
-    if (!strcmp(command, executable)) {
-        fclose(cmdline);
-        return pid;
-    }
 
-    fclose(cmdline);
+    if (read(cmdline, command, sizeof (command)) <= 0) {
+        close(cmdline);
+        return 0;
+    }
+    close(cmdline);
+
+    command[strcspn(buffer, "\n")] = '\0';
+    if (!strcmp(command, executable))
+        return pid;
+
     return 0;
 }
