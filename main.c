@@ -17,7 +17,25 @@
 
 #include "clipsim.h"
 
+typedef struct Command {
+    const char *shortname;
+    const char *longname;
+    const char *description;
+} Command;
+
+static const Command commands[] = {
+    [COMMAND_PRINT]  = {"-p", "--print",  "print entire history, with trimmed whitespace" },
+    [COMMAND_INFO]   = {"-i", "--info",   "print entry number <n>, with original whitespace" },
+    [COMMAND_COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace" },
+    [COMMAND_REMOVE] = {"-r", "--remove", "remove entry number <n>" },
+    [COMMAND_SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history" },
+    [COMMAND_DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command listener)" },
+    [COMMAND_HELP]   = {"-h", "--help",   "print this help message" },
+};
+
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
+const char TEXT_TAG = (char) 0x01;
+const char IMAGE_TAG = (char) 0x02;
 mtx_t lock;
 
 static bool main_check_cmdline(char *);
