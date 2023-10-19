@@ -23,7 +23,7 @@ mtx_t lock;
 static bool main_check_cmdline(char *);
 static bool main_check_running(void);
 static void main_usage(FILE *) __attribute__((noreturn));
-static void main_launch_daemon(void);
+static void main_launch_daemon(void) __attribute__((noreturn));
 
 int main(int argc, char *argv[]) {
     DEBUG_PRINT("%d, %s", argc, argv[0]);
@@ -55,7 +55,6 @@ int main(int argc, char *argv[]) {
                 break;
             case COMMAND_DAEMON:
                 main_launch_daemon();
-                break;
             case COMMAND_HELP:
                 main_usage(stdout);
             default:
@@ -165,6 +164,4 @@ void main_launch_daemon(void) {
 
     thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
     clipboard_daemon_watch();
-
-    return;
 }

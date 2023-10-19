@@ -152,9 +152,9 @@ bool history_save(void);
 void history_recover(int32);
 void history_remove(int32);
 
-int clipboard_daemon_watch(void);
+int clipboard_daemon_watch(void) __attribute__((noreturn));
 
-int ipc_daemon_listen_fifo(void *);
+int ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
 void ipc_client_speak_fifo(uint, int32);
 
 void send_signal(const char *, const int);
