@@ -38,7 +38,18 @@ which means that if an application is to use that so called "feature",
 clipsim won't save that text to history.
 Please report other bugs on codeberg.
 .SH ENVIRONMENT VARIABLES
-XDG_CACHE_HOME
+.TP
+.B "$CLIPSIM_SIGNAL_NUMBER"
+which signal should be send to $CLIPSIM_SIGNAL_PROGRAM when clipboard content changes
+.TP
+.B "$CLIPSIM_SIGNAL_PROGRAM"
+which program should $CLIPSIM_SIGNAL_NUMBER be sent to when clipboard content changes
+.TP
+.B "$CLIPSIM_IMAGE_PREVIEW"
+image preview program (defaults to chafa)
+.TP
+.B "$XDG_CACHE_HOME"
+used for cache
 .EX
 .SH SEE ALSO
 .BR xsel (1), xclip(1)
