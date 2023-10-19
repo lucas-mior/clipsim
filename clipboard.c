@@ -46,9 +46,11 @@ int clipboard_daemon_watch(void) {
     }
 
     int signal_number = 0;
-    CLIPSIM_SIGNAL_NUMBER = getenv("CLIPSIM_SIGNAL_NUMBER");
-    CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM");
-    if (CLIPSIM_SIGNAL_NUMBER && CLIPSIM_SIGNAL_PROGRAM) {
+    if ((CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")) == NULL)
+        fprintf(stderr, "CLIPSIM_SIGNAL_PROGRAM is not defined. ");
+    if ((CLIPSIM_SIGNAL_NUMBER = getenv("CLIPSIM_SIGNAL_NUMBER")) == NULL)
+        fprintf(stderr, "CLIPSIM_SIGNAL_NUMBER is not defined. ");
+    if (CLIPSIM_SIGNAL_PROGRAM && CLIPSIM_SIGNAL_NUMBER) {
         if ((signal_number = atoi(CLIPSIM_SIGNAL_NUMBER)) <= 0) {
             fprintf(stderr, "Invalid CLIPSIM_SIGNAL_NUMBER environment "
                             "variable: %s.\n", CLIPSIM_SIGNAL_NUMBER);
