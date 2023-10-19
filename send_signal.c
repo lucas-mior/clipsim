@@ -51,6 +51,7 @@ pid_t check_pid(const char *executable, const char *number) {
 
     return 0;
 }
+
 void send_signal(const char *executable, const int signal_number) {
     DIR *processes;
     struct dirent *program;
