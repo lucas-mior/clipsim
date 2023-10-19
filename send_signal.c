@@ -85,6 +85,7 @@ void send_signal(const char *executable, const int signal_number) {
             return;
         case 0:
             execlp("pkill", signal_string, executable, NULL);
+            fprintf(stderr, "Error executing pkill: %s\n", strerror(errno));
             exit(EXIT_FAILURE);
         default:
             wait(NULL);
