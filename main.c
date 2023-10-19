@@ -106,6 +106,7 @@ bool main_check_cmdline(char *pid) {
         close(cmdline);
         return false;
     }
+    close(cmdline);
 
     if (r == sizeof (cmd1)) {
         if (!memcmp(command, cmd1, (usize) r))
