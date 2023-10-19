@@ -37,23 +37,27 @@ int clipboard_daemon_watch(void) {
     struct timespec pause;
     pause.tv_sec = 0;
     pause.tv_nsec = PAUSE10MS;
+    char *CLIPSIM_SIGNAL_CODE;
+    char *CLIPSIM_SIGNAL_PROGRAM;
 
     if ((display = XOpenDisplay(NULL)) == NULL) {
         fprintf(stderr, "Error opening X display.");
         exit(EXIT_FAILURE);
     }
 
-    int signal_number;
-    char *CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE");
-    char *CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM");
-
-    if ((signal_number = atoi(CLIPSIM_SIGNAL_CODE)) <= 0) {
-        fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment "
-                        "variable: %s.\n", CLIPSIM_SIGNAL_CODE);
-        if (CLIPSIM_SIGNAL_PROGRAM)
-            fprintf(stderr, "%s will not be signaled.\n", CLIPSIM_SIGNAL_PROGRAM);
-        CLIPSIM_SIGNAL_CODE = NULL;
-        CLIPSIM_SIGNAL_PROGRAM = NULL;
+    int signal_number = 0;
+    CLIPSIM_SIGNAL_CODE = getenv("CLIPSIM_SIGNAL_CODE");
+    CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM");
+    if (CLIPSIM_SIGNAL_CODE && CLIPSIM_SIGNAL_PROGRAM) {
+        if ((signal_number = atoi(CLIPSIM_SIGNAL_CODE)) <= 0) {
+            fprintf(stderr, "Invalid CLIPSIM_SIGNAL_CODE environment "
+                            "variable: %s.\n", CLIPSIM_SIGNAL_CODE);
+            if (CLIPSIM_SIGNAL_PROGRAM)
+                fprintf(stderr, "%s will not be signaled.\n", CLIPSIM_SIGNAL_PROGRAM);
+            CLIPSIM_SIGNAL_CODE = NULL;
+            CLIPSIM_SIGNAL_PROGRAM = NULL;
+        }
+        signal_number += SIGRTMIN;
     }
 
     CLIPBOARD   = XInternAtom(display, "CLIPBOARD",   False);

@@ -19,6 +19,7 @@
 
 static pid_t check_pid(const char *, const char*);
 
+#ifdef __linux__
 void send_signal(const char *executable, const int signal_number) {
     DIR *processes;
     struct dirent *program;
@@ -33,7 +34,7 @@ void send_signal(const char *executable, const int signal_number) {
         if (program->d_type != DT_DIR)
             continue;
         if ((pid = check_pid(executable, program->d_name))) {
-            kill(pid, SIGRTMIN+signal_number);
+            kill(pid, signal_number);
             break;
         }
     }
@@ -41,6 +42,24 @@ void send_signal(const char *executable, const int signal_number) {
     closedir(processes);
     return;
 }
+#else
+void send_signal(const char *executable, const int signal_number) {
+    char signal_string[14];
+    snprintf(signal_string, sizeof (signal_string), "%d", signal_number);
+
+    switch (fork()) {
+        case -1:
+            fprintf(stderr, "Error forking: %s\n", strerror(errno));
+            return;
+        case 0:
+            execlp("pkill", signal_string, executable, NULL);
+            exit(EXIT_FAILURE);
+        default:
+            wait(NULL);
+    }
+    return;
+}
+#endif
 
 pid_t check_pid(const char *executable, const char *number) {
     static char buffer[256];
