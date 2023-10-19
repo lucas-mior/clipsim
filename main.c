@@ -43,48 +43,12 @@ static bool main_check_running(void);
 static void main_usage(FILE *) __attribute__((noreturn));
 static void main_launch_daemon(void) __attribute__((noreturn));
 
-void noop(int a) {
-    (void) a;
-    return;
-}
-
 int main(int argc, char *argv[]) {
     DEBUG_PRINT("%d, %s", argc, argv[0]);
     int32 id;
     bool spell_error = true;
 
     signal(SIGSEGV, util_segv_handler);
-    signal(SIGHUP, noop);
-    signal(SIGINT, noop);
-    signal(SIGQUIT, noop);
-    signal(SIGILL, noop);
-    signal(SIGTRAP, noop);
-    signal(SIGIOT, noop);
-    signal(SIGBUS, noop);
-    signal(SIGFPE, noop);
-    signal(SIGKILL, noop);
-    signal(SIGUSR1, noop);
-    signal(SIGSEGV, noop);
-    signal(SIGUSR2, noop);
-    signal(SIGPIPE, noop);
-    signal(SIGALRM, noop);
-    signal(SIGTERM, noop);
-    signal(SIGSTKFLT, noop);
-    signal(SIGCHLD, noop);
-    signal(SIGCONT, noop);
-    signal(SIGSTOP, noop);
-    signal(SIGTSTP, noop);
-    signal(SIGTTIN, noop);
-    signal(SIGTTOU, noop);
-    signal(SIGURG, noop);
-    signal(SIGXCPU, noop);
-    signal(SIGXFSZ, noop);
-    signal(SIGVTALRM , noop);
-    signal(SIGPROF, noop);
-    signal(SIGWINCH, noop);
-    signal(SIGPOLL, noop);
-    signal(SIGPWR, noop);
-    signal(SIGSYS, noop);
 
     if (argc <= 1 || argc >= 4)
         main_usage(stderr);
