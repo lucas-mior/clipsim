@@ -17,9 +17,40 @@
 
 #include "clipsim.h"
 
-static pid_t check_pid(const char *, const char*);
-
 #ifdef __linux__
+static pid_t check_pid(const char *, const char*);
+pid_t check_pid(const char *executable, const char *number) {
+    static char buffer[256];
+    static char command[256];
+    int pid;
+    int cmdline;
+	int n;
+
+    if ((pid = atoi(number)) <= 0)
+        return 0;
+
+    n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", number);
+	if (n < 0) {
+		fprintf(stderr, "Error printing buffer name.\n");
+		return 0;
+	}
+    buffer[sizeof (buffer) - 1] = '\0';
+
+    if ((cmdline = open(buffer, O_RDONLY)) < 0)
+        return 0;
+
+    if (read(cmdline, command, sizeof (command)) <= 0) {
+        close(cmdline);
+        return 0;
+    }
+    close(cmdline);
+
+    command[strcspn(buffer, "\n")] = '\0';
+    if (!strcmp(command, executable))
+        return pid;
+
+    return 0;
+}
 void send_signal(const char *executable, const int signal_number) {
     DIR *processes;
     struct dirent *program;
@@ -60,36 +91,3 @@ void send_signal(const char *executable, const int signal_number) {
     return;
 }
 #endif
-
-pid_t check_pid(const char *executable, const char *number) {
-    static char buffer[256];
-    static char command[256];
-    int pid;
-    int cmdline;
-	int n;
-
-    if ((pid = atoi(number)) <= 0)
-        return 0;
-
-    n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", number);
-	if (n < 0) {
-		fprintf(stderr, "Error printing buffer name.\n");
-		return 0;
-	}
-    buffer[sizeof (buffer) - 1] = '\0';
-
-    if ((cmdline = open(buffer, O_RDONLY)) < 0)
-        return 0;
-
-    if (read(cmdline, command, sizeof (command)) <= 0) {
-        close(cmdline);
-        return 0;
-    }
-    close(cmdline);
-
-    command[strcspn(buffer, "\n")] = '\0';
-    if (!strcmp(command, executable))
-        return pid;
-
-    return 0;
-}
