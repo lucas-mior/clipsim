@@ -148,9 +148,6 @@ bool main_check_running(void) {
 void main_launch_daemon(void) {
     DEBUG_PRINT("");
     thrd_t ipc_thread;
-    thrd_t clipboard_thread;
-    int ipc_error = 0;
-    int clipboard_error = 0;
     int error;
 
     if (main_check_running()) {
@@ -165,23 +162,8 @@ void main_launch_daemon(void) {
 
     history_read();
 
-    ipc_error = thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
-    clipboard_error = thrd_create(&clipboard_thread,
-                                  clipboard_daemon_watch, NULL);
+    thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
+    clipboard_daemon_watch(NULL);
 
-    if (ipc_error != thrd_success) {
-        fprintf(stderr, "Error on IPC thread: %s\n",
-                         strerror(ipc_error));
-        exit(EXIT_FAILURE);
-    }
-    if (clipboard_error != thrd_success) {
-        fprintf(stderr, "Error on clipboard thread: %s\n",
-                strerror(clipboard_error));
-        exit(EXIT_FAILURE);
-    }
-
-    thrd_join(ipc_thread, NULL);
-    thrd_join(clipboard_thread, NULL);
-    mtx_destroy(&lock);
     return;
 }
