@@ -36,7 +36,7 @@ int32 history_lastindex(void) {
 }
 
 void history_save_entry(Entry *e) {
-    DEBUG_PRINT("{\n    %s,\n    %zu,\n    %s,\n    %zu\n}",
+    DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
     usize tag_size = sizeof (*(&IMAGE_TAG));
@@ -223,7 +223,7 @@ void history_read(void) {
 }
 
 int32 history_repeated_index(const char *content, const int length) {
-    DEBUG_PRINT("%s, %zu", content, length);
+    DEBUG_PRINT("%s, %d", content, length);
     if (length_counts[length] == 0)
         return -1;
     for (int32 i = lastindex; i >= 0; i -= 1) {
@@ -237,7 +237,7 @@ int32 history_repeated_index(const char *content, const int length) {
 }
 
 void history_save_image(char **content, int *length) {
-    DEBUG_PRINT("%p, %lu", (void *) content, *length);
+    DEBUG_PRINT("%p, %d", (void *) content, *length);
     time_t t = time(NULL);
     int fp;
     isize w = 0;
@@ -272,7 +272,7 @@ void history_save_image(char **content, int *length) {
 }
 
 void history_append(char *content, int length) {
-    DEBUG_PRINT("%s, %lu", content, length);
+    DEBUG_PRINT("%s, %d", content, length);
     int32 oldindex;
     int32 kind;
     Entry *e;
@@ -431,7 +431,7 @@ void history_reorder(const int32 oldindex) {
 }
 
 void history_free_entry(const Entry *e) {
-    DEBUG_PRINT("{\n    %s,\n    %zu,\n    %s,\n    %zu\n}",
+    DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     length_counts[e->content_length] -= 1;
 

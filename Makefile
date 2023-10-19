@@ -13,6 +13,7 @@ all: release
 clang: CC=clang
 clang: CFLAGS += -Weverything -Wno-unsafe-buffer-usage
 clang: CFLAGS += -Wno-format-nonliteral -Wno-declaration-after-statement
+clang: CFLAGS += -Wno-format-zero-length
 clang: clean
 clang: clipsim
 
@@ -24,6 +25,7 @@ release: clipsim
 
 debug: CFLAGS += -g
 debug: CFLAGS += -DCLIPSIM_DEBUG -fsanitize=undefined
+debug: CFLAGS += -Wno-format-zero-length
 debug: clean
 debug: clipsim
 

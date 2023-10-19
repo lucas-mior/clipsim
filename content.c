@@ -19,7 +19,7 @@
 #include "clipsim.h"
 
 void content_remove_newline(char *text, int *length) {
-    DEBUG_PRINT("%s, %zu", text, *length);
+    DEBUG_PRINT("%s, %d", text, *length);
     text[*length] = '\0';
     while (text[*length - 1] == '\n') {
         text[*length - 1] = '\0';
@@ -30,7 +30,7 @@ void content_remove_newline(char *text, int *length) {
 
 void content_trim_spaces(char **trimmed, int *trimmed_length,
                          char *content, const int length) {
-    DEBUG_PRINT("%p, %p, %s, %zu",
+    DEBUG_PRINT("%p, %p, %s, %d",
                 (void *) trimmed, (void *) trimmed_length, content, length);
     char *p;
     char temp = '\0';
@@ -71,7 +71,7 @@ void content_trim_spaces(char **trimmed, int *trimmed_length,
 }
 
 int32 content_check_content(uchar *data, const int length) {
-    DEBUG_PRINT("%s, %zu", data, length);
+    DEBUG_PRINT("%s, %d", data, length);
 
     { /* Check if it is made only of spaces and newlines */
         uchar *aux = data;
