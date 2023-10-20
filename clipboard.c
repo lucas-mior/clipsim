@@ -21,11 +21,14 @@
 #include <X11/extensions/Xfixes.h>
 
 #include "clipsim.h"
+#include <wayland-client.h>
 
 static Display *display;
 static Atom CLIPBOARD, XSEL_DATA, INCR;
 static Atom UTF8_STRING, image_png, TARGETS;
 static Window window;
+
+static struct wl_display *wdisplay;
 
 static Atom clipboard_check_target(Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
@@ -42,6 +45,9 @@ int clipboard_daemon_watch(void) {
 
     if ((display = XOpenDisplay(NULL)) == NULL) {
         fprintf(stderr, "Error opening X display.");
+        if ((wdisplay = wl_display_connect(NULL))) {
+            fprintf(stderr, "This program does not work on wayland yet.\n");
+        }
         exit(EXIT_FAILURE);
     }
 
