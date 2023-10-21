@@ -20,7 +20,7 @@ clang: clipsim
 CFLAGS += -std=c99 -D_DEFAULT_SOURCE
 CFLAGS += -Wall -Wextra
 
-release: CFLAGS += -O2
+release: CFLAGS += -O2 -flto
 release: clipsim
 
 debug: CFLAGS += -g
