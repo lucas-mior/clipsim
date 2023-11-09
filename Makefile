@@ -1,6 +1,7 @@
 PREFIX ?= /usr/local
 
-objs = ipc.o util.o clipboard.o history.o content.o send_signal.o main.o
+src = ipc.c util.c clipboard.c history.c content.c send_signal.c main.c
+headers = clipsim.h
 
 ldlibs = $(LDLIBS) -lX11 -lXfixes -lmagic
 
@@ -29,15 +30,10 @@ debug: CFLAGS += -Wno-format-zero-length
 debug: clean
 debug: clipsim
 
-clipsim: $(objs)
+clipsim: $(src) $(headers) Makefile
 	ctags --kinds-C=+l *.h *.c
 	vtags.sed tags > .tags.vim
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(objs) $(ldlibs)
-
-$(objs): Makefile clipsim.h
-
-.c.o:
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(src) $(ldlibs)
 
 install: all
 	install -Dm755 clipsim                  ${DESTDIR}${PREFIX}/bin/clipsim
