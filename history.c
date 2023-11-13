@@ -277,6 +277,11 @@ void history_append(char *content, int length) {
     int32 kind;
     Entry *e;
 
+    if (!content) {
+        fprintf(stderr, "Error getting data from clipboard. Skipping entry...\n");
+        recovered = false;
+        return;
+    }
     if (recovered) {
         recovered = false;
         return;
