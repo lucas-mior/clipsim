@@ -18,7 +18,7 @@
 #include "clipsim.h"
 
 #ifdef __linux__
-static pid_t check_pid(const char *, const char*);
+static pid_t check_pid(const char *, const char *);
 pid_t check_pid(const char *executable, const char *number) {
     static char buffer[256];
     static char command[256];
