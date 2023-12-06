@@ -15,8 +15,7 @@ clang: CC=clang
 clang: CFLAGS += -Weverything -Wno-unsafe-buffer-usage
 clang: CFLAGS += -Wno-format-nonliteral -Wno-declaration-after-statement
 clang: CFLAGS += -Wno-format-zero-length
-clang: clean
-clang: clipsim
+clang: clean release
 
 CFLAGS += -std=c99 -D_DEFAULT_SOURCE
 CFLAGS += -Wall -Wextra
@@ -27,8 +26,7 @@ release: clipsim
 debug: CFLAGS += -g
 debug: CFLAGS += -DCLIPSIM_DEBUG -fsanitize=undefined
 debug: CFLAGS += -Wno-format-zero-length
-debug: clean
-debug: clipsim
+debug: clean clipsim
 
 clipsim: $(src) $(headers) Makefile
 	-ctags --kinds-C=+l *.h *.c
