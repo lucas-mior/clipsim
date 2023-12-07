@@ -24,13 +24,20 @@ typedef struct Command {
 } Command;
 
 static const Command commands[] = {
-    [COMMAND_PRINT]  = {"-p", "--print",  "print entire history, with trimmed whitespace" },
-    [COMMAND_INFO]   = {"-i", "--info",   "print entry number <n>, with original whitespace" },
-    [COMMAND_COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace" },
-    [COMMAND_REMOVE] = {"-r", "--remove", "remove entry number <n>" },
-    [COMMAND_SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history" },
-    [COMMAND_DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command listener)" },
-    [COMMAND_HELP]   = {"-h", "--help",   "print this help message" },
+    [COMMAND_PRINT]  = {"-p", "--print",
+                        "print entire history, with trimmed whitespace" },
+    [COMMAND_INFO]   = {"-i", "--info",
+                        "print entry number <n>, with original whitespace" },
+    [COMMAND_COPY]   = {"-c", "--copy",
+                        "copy entry number <n>, with original whitespace" },
+    [COMMAND_REMOVE] = {"-r", "--remove",
+                        "remove entry number <n>" },
+    [COMMAND_SAVE]   = {"-s", "--save",
+                        "save history to $XDG_CACHE_HOME/clipsim/history" },
+    [COMMAND_DAEMON] = {"-d", "--daemon",
+                        "spawn daemon (clipboard watcher and command fifo)" },
+    [COMMAND_HELP]   = {"-h", "--help",
+                        "print this help message" },
 };
 
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
@@ -87,7 +94,8 @@ int main(int argc, char *argv[]) {
     exit(EXIT_SUCCESS);
 }
 
-void main_usage(FILE *stream) {
+void
+main_usage(FILE *stream) {
     DEBUG_PRINT("%p", (void *) stream);
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
@@ -99,7 +107,8 @@ void main_usage(FILE *stream) {
     exit(stream != stdout);
 }
 
-bool main_check_cmdline(char *pid) {
+bool
+main_check_cmdline(char *pid) {
     char buffer[256];
     char command[256];
     int n;
@@ -135,7 +144,8 @@ bool main_check_cmdline(char *pid) {
     return false;
 }
 
-bool main_check_running(void) {
+bool
+main_check_running(void) {
     DEBUG_PRINT("void");
     DIR *processes;
     struct dirent *program;
@@ -163,7 +173,8 @@ bool main_check_running(void) {
     return false;
 }
 
-void main_launch_daemon(void) {
+void
+main_launch_daemon(void) {
     DEBUG_PRINT("");
     thrd_t ipc_thread;
     int error;

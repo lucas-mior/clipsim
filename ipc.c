@@ -36,7 +36,8 @@ static void ipc_make_fifos(void);
 static void ipc_clean_fifo(const char *);
 static void ipc_create_fifo(const char *);
 
-int ipc_daemon_listen_fifo(void *unused) {
+int
+ipc_daemon_listen_fifo(void *unused) {
     DEBUG_PRINT("");
     (void) unused;
     char command;
@@ -88,7 +89,8 @@ int ipc_daemon_listen_fifo(void *unused) {
     }
 }
 
-void ipc_client_speak_fifo(uint command, int32 id) {
+void
+ipc_client_speak_fifo(uint command, int32 id) {
     DEBUG_PRINT("%u, %d", command, id);
     isize w;
     if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
@@ -126,7 +128,8 @@ void ipc_client_speak_fifo(uint command, int32 id) {
     return;
 }
 
-void ipc_daemon_history_save(void) {
+void
+ipc_daemon_history_save(void) {
     DEBUG_PRINT("");
     char saved;
     isize saved_size = sizeof (*(&saved));
@@ -144,7 +147,8 @@ void ipc_daemon_history_save(void) {
     return;
 }
 
-void ipc_client_check_save(void) {
+void
+ipc_client_check_save(void) {
     DEBUG_PRINT("");
     isize r;
     char saved = 0;
@@ -165,7 +169,8 @@ void ipc_client_check_save(void) {
     return;
 }
 
-void ipc_daemon_pipe_entries(void) {
+void
+ipc_daemon_pipe_entries(void) {
     DEBUG_PRINT("");
     static char buffer[BUFSIZ];
     usize w = 0;
@@ -198,7 +203,8 @@ void ipc_daemon_pipe_entries(void) {
     return;
 }
 
-void ipc_daemon_pipe_id(const int32 id) {
+void
+ipc_daemon_pipe_id(const int32 id) {
     DEBUG_PRINT("%d", id);
     Entry *e;
     int32 lastindex;
@@ -235,7 +241,8 @@ void ipc_daemon_pipe_id(const int32 id) {
 }
 
 
-void ipc_client_print_entries(void) {
+void
+ipc_client_print_entries(void) {
     DEBUG_PRINT("");
     static char buffer[BUFSIZ];
     isize r;
@@ -284,7 +291,8 @@ void ipc_client_print_entries(void) {
     return;
 }
 
-int32 ipc_daemon_get_id(void) {
+int32
+ipc_daemon_get_id(void) {
     DEBUG_PRINT("void");
     int32 id;
 
@@ -303,7 +311,8 @@ int32 ipc_daemon_get_id(void) {
     return id;
 }
 
-void ipc_client_ask_id(const int32 id) {
+void
+ipc_client_ask_id(const int32 id) {
     DEBUG_PRINT("%d", id);
     if ((passid_fifo.file = fopen(passid_fifo.name, "w")) == NULL) {
         util_die_notify("Error opening fifo for sending id to daemon: "
@@ -319,7 +328,8 @@ void ipc_client_ask_id(const int32 id) {
     return;
 }
 
-void ipc_make_fifos(void) {
+void
+ipc_make_fifos(void) {
     DEBUG_PRINT("");
     ipc_clean_fifo(command_fifo.name);
     ipc_clean_fifo(passid_fifo.name);
@@ -331,7 +341,8 @@ void ipc_make_fifos(void) {
     return;
 }
 
-void ipc_clean_fifo(const char *name) {
+void
+ipc_clean_fifo(const char *name) {
     DEBUG_PRINT("%s", name);
     if (unlink(name) < 0) {
         if (errno != ENOENT) {
@@ -341,7 +352,8 @@ void ipc_clean_fifo(const char *name) {
     return;
 }
 
-void ipc_create_fifo(const char *name) {
+void
+ipc_create_fifo(const char *name) {
     DEBUG_PRINT("%s", name);
     if (mkfifo(name, 0600) < 0) {
         if (errno != EEXIST) {

@@ -19,7 +19,9 @@
 
 #ifdef __linux__
 static pid_t check_pid(const char *, const char *);
-pid_t check_pid(const char *executable, const char *number) {
+
+pid_t
+check_pid(const char *executable, const char *number) {
     static char buffer[256];
     static char command[256];
     int pid;
@@ -52,7 +54,8 @@ pid_t check_pid(const char *executable, const char *number) {
     return 0;
 }
 
-void send_signal(const char *executable, const int signal_number) {
+void
+send_signal(const char *executable, const int signal_number) {
     DIR *processes;
     struct dirent *program;
     pid_t pid;
@@ -75,7 +78,8 @@ void send_signal(const char *executable, const int signal_number) {
     return;
 }
 #else
-void send_signal(const char *executable, const int signal_number) {
+void
+send_signal(const char *executable, const int signal_number) {
     char signal_string[14];
     snprintf(signal_string, sizeof (signal_string), "%d", signal_number);
 

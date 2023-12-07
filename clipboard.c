@@ -30,7 +30,8 @@ static Window window;
 static Atom clipboard_check_target(Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
 
-int clipboard_daemon_watch(void) {
+int
+clipboard_daemon_watch(void) {
     DEBUG_PRINT("void");
     ulong color;
     Window root;
@@ -54,8 +55,10 @@ int clipboard_daemon_watch(void) {
         if ((signal_number = atoi(CLIPSIM_SIGNAL_NUMBER)) <= 0) {
             fprintf(stderr, "Invalid CLIPSIM_SIGNAL_NUMBER environment "
                             "variable: %s.\n", CLIPSIM_SIGNAL_NUMBER);
-            if (CLIPSIM_SIGNAL_PROGRAM)
-                fprintf(stderr, "%s will not be signaled.\n", CLIPSIM_SIGNAL_PROGRAM);
+            if (CLIPSIM_SIGNAL_PROGRAM) {
+                fprintf(stderr, "%s will not be signaled.\n",
+						        CLIPSIM_SIGNAL_PROGRAM);
+			}
             CLIPSIM_SIGNAL_NUMBER = NULL;
             CLIPSIM_SIGNAL_PROGRAM = NULL;
         }
@@ -115,7 +118,8 @@ int clipboard_daemon_watch(void) {
 }
 
 #define CHECK_TARGET_MAX_EVENTS 100
-Atom clipboard_check_target(const Atom target) {
+Atom
+clipboard_check_target(const Atom target) {
 #ifdef CLIPSIM_DEBUG
     if (target <= XA_LAST_PREDEFINED)
         DEBUG_PRINT("%s", XGetAtomName(display, target));
@@ -138,7 +142,8 @@ Atom clipboard_check_target(const Atom target) {
     return xevent.xselection.property;
 }
 
-int32 clipboard_get_clipboard(char **save, ulong *length) {
+int32
+clipboard_get_clipboard(char **save, ulong *length) {
     DEBUG_PRINT("%p, %p", (void *) save, (void *) length);
     int actual_format_return;
     ulong nitems_return;

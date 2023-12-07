@@ -17,7 +17,8 @@
 
 #include "clipsim.h"
 
-void *util_malloc(const usize size) {
+void *
+util_malloc(const usize size) {
     void *p;
     if ((p = malloc(size)) == NULL) {
         fprintf(stderr, "Error allocating %zu bytes.\n", size);
@@ -26,7 +27,8 @@ void *util_malloc(const usize size) {
     return p;
 }
 
-void *util_memdup(const void *source, const usize size) {
+void *
+util_memdup(const void *source, const usize size) {
     void *p;
     if ((p = malloc(size)) == NULL) {
         fprintf(stderr, "Error allocating %zu bytes.\n", size);
@@ -36,7 +38,8 @@ void *util_memdup(const void *source, const usize size) {
     return p;
 }
 
-char *util_strdup(const char *string) {
+char *
+util_strdup(const char *string) {
     char *p = strdup(string);
     if (p == NULL) {
         fprintf(stderr, "Error duplicating string \"%s\".\n", string);
@@ -45,7 +48,8 @@ char *util_strdup(const char *string) {
     return p;
 }
 
-void *util_realloc(void *old, const usize size) {
+void *
+util_realloc(void *old, const usize size) {
     void *p;
     if ((p = realloc(old, size)) == NULL) {
         fprintf(stderr, "Error reallocating %zu bytes.\n", size);
@@ -55,7 +59,8 @@ void *util_realloc(void *old, const usize size) {
     return p;
 }
 
-void *util_calloc(const usize nmemb, const usize size) {
+void *
+util_calloc(const usize nmemb, const usize size) {
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
         fprintf(stderr, "Error allocating %zu members of %zu bytes each.\n",
@@ -65,7 +70,8 @@ void *util_calloc(const usize nmemb, const usize size) {
     return p;
 }
 
-int util_string_int32(int32 *number, const char *string) {
+int
+util_string_int32(int32 *number, const char *string) {
     char *endptr;
     long x;
     errno = 0;
@@ -80,7 +86,8 @@ int util_string_int32(int32 *number, const char *string) {
     }
 }
 
-void util_die_notify(const char *format, ...) {
+void
+util_die_notify(const char *format, ...) {
     char *notifiers[2] = { "dunstify", "notify-send" };
     int n;
     va_list args;
@@ -102,7 +109,8 @@ void util_die_notify(const char *format, ...) {
     exit(EXIT_FAILURE);
 }
 
-void util_segv_handler(int unused) {
+void
+util_segv_handler(int unused) {
     (void) unused;
     char *message = "Memory error. Please send a bug report.\n";
     char *notifiers[2] = { "dunstify", "notify-send" };
@@ -115,7 +123,8 @@ void util_segv_handler(int unused) {
     _exit(EXIT_FAILURE);
 }
 
-void util_close(File *file) {
+void
+util_close(File *file) {
     if (file->fd >= 0) {
         if (close(file->fd) < 0) {
             fprintf(stderr, "Error closing %s: %s\n",
@@ -133,7 +142,8 @@ void util_close(File *file) {
     return;
 }
 
-int util_open(File *file, const int flag) {
+int
+util_open(File *file, const int flag) {
     if ((file->fd = open(file->name, flag)) < 0) {
         fprintf(stderr, "Error opening %s: %s\n",
                         file->name, strerror(errno));
@@ -143,7 +153,8 @@ int util_open(File *file, const int flag) {
     }
 }
 
-int util_copy_file(const char *destination, const char *source) {
+int
+util_copy_file(const char *destination, const char *source) {
     int source_fd, destination_fd;
     char buffer[BUFSIZ];
     isize r = 0;

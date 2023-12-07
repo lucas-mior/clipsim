@@ -30,12 +30,14 @@ static void history_clean(void);
 static void history_save_image(char **, int *);
 static void history_save_entry(Entry *);
 
-int32 history_lastindex(void) {
+int32
+history_lastindex(void) {
     DEBUG_PRINT("void");
     return lastindex;
 }
 
-void history_save_entry(Entry *e) {
+void
+history_save_entry(Entry *e) {
     DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
@@ -76,7 +78,8 @@ void history_save_entry(Entry *e) {
     return;
 }
 
-bool history_save(void) {
+bool
+history_save(void) {
     DEBUG_PRINT("void");
     int saved;
 
@@ -106,7 +109,8 @@ bool history_save(void) {
     return saved >= 0;
 }
 
-void history_read(void) {
+void
+history_read(void) {
     DEBUG_PRINT("void");
     usize history_length;
     char *history_map;
@@ -222,7 +226,8 @@ void history_read(void) {
     return;
 }
 
-int32 history_repeated_index(const char *content, const int length) {
+int32
+history_repeated_index(const char *content, const int length) {
     DEBUG_PRINT("%s, %d", content, length);
     if (length_counts[length] == 0)
         return -1;
@@ -236,7 +241,8 @@ int32 history_repeated_index(const char *content, const int length) {
     return -1;
 }
 
-void history_save_image(char **content, int *length) {
+void
+history_save_image(char **content, int *length) {
     DEBUG_PRINT("%p, %d", (void *) content, *length);
     time_t t = time(NULL);
     int fp;
@@ -271,14 +277,16 @@ void history_save_image(char **content, int *length) {
     return;
 }
 
-void history_append(char *content, int length) {
+void
+history_append(char *content, int length) {
     DEBUG_PRINT("%s, %d", content, length);
     int32 oldindex;
     int32 kind;
     Entry *e;
 
     if (!content) {
-        fprintf(stderr, "Error getting data from clipboard. Skipping entry...\n");
+        fprintf(stderr, "Error getting data from clipboard."
+				        " Skipping entry...\n");
         recovered = false;
         return;
     }
@@ -336,7 +344,8 @@ void history_append(char *content, int length) {
     return;
 }
 
-void history_recover(int32 id) {
+void
+history_recover(int32 id) {
     DEBUG_PRINT("%d", id);
     pid_t child;
     int fd[2];
@@ -397,7 +406,8 @@ void history_recover(int32 id) {
     return;
 }
 
-void history_remove(int32 id) {
+void
+history_remove(int32 id) {
     DEBUG_PRINT("%d", id);
     if (lastindex <= 0)
         return;
@@ -426,7 +436,8 @@ void history_remove(int32 id) {
     return;
 }
 
-void history_reorder(const int32 oldindex) {
+void
+history_reorder(const int32 oldindex) {
     DEBUG_PRINT("%d", oldindex);
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex + 1],
@@ -435,7 +446,8 @@ void history_reorder(const int32 oldindex) {
     return;
 }
 
-void history_free_entry(const Entry *e) {
+void
+history_free_entry(const Entry *e) {
     DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     length_counts[e->content_length] -= 1;
@@ -451,7 +463,8 @@ void history_free_entry(const Entry *e) {
     return;
 }
 
-void history_clean(void) {
+void
+history_clean(void) {
     DEBUG_PRINT("void");
     for (int i = 0; i <= HISTORY_KEEP_SIZE - 1; i += 1)
         history_free_entry(&entries[i]);
