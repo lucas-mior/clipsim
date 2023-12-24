@@ -84,17 +84,16 @@ history_save(void) {
     int saved;
 
     if (lastindex < 0) {
-        fprintf(stderr, "History is empty. Not saving.\n");
+        error("History is empty. Not saving.\n");
         return false;
     }
     if (history.name == NULL) {
-        fprintf(stderr, "History file name unresolved, can't save history.");
+        error("History file name unresolved, can't save history.");
         return false;
     }
     if ((history.fd = open(history.name, O_WRONLY | O_CREAT | O_TRUNC,
                                          S_IRUSR | S_IWUSR)) < 0) {
-        fprintf(stderr, "Error opening history file for saving: "
-                        "%s\n", strerror(errno));
+        error("Error opening history file for saving: %s\n", strerror(errno));
         return false;
     }
 
@@ -102,9 +101,9 @@ history_save(void) {
         history_save_entry(&entries[i]);
 
     if ((saved = fsync(history.fd)) < 0)
-        fprintf(stderr, "Error saving history to disk: %s\n", strerror(errno));
+        error("Error saving history to disk: %s\n", strerror(errno));
     else
-        fprintf(stderr, "History saved to disk.\n");
+        error("History saved to disk.\n");
     util_close(&history);
     return saved >= 0;
 }
@@ -120,14 +119,14 @@ history_read(void) {
     usize length;
 
     if ((XDG_CACHE_HOME = getenv("XDG_CACHE_HOME")) == NULL) {
-        fprintf(stderr, "XDG_CACHE_HOME needs to be set.\n");
+        error("XDG_CACHE_HOME needs to be set.\n");
         exit(EXIT_FAILURE);
     }
 
     length = strlen(XDG_CACHE_HOME);
     length += 1 + strlen(clipsim);
     if (length > (PATH_MAX - 1)) {
-        fprintf(stderr, "XDG_CACHE_HOME is too long.\n");
+        error("XDG_CACHE_HOME is too long.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -153,23 +152,23 @@ history_read(void) {
 
     lastindex = -1;
     if ((history.fd = open(history.name, O_RDONLY)) < 0) {
-        fprintf(stderr, "Error opening history file for reading: %s\n"
-                        "History will start empty.\n", strerror(errno));
+        error("Error opening history file for reading: %s\n"
+              "History will start empty.\n", strerror(errno));
         return;
     }
 
     {
         struct stat history_stat;
         if (fstat(history.fd, &history_stat) < 0) {
-            fprintf(stderr, "Error getting file information: %s\n"
-                            "History will start empty.\n", strerror(errno));
+            error("Error getting file information: %s\n"
+                  "History will start empty.\n", strerror(errno));
             util_close(&history);
             return;
         }
         history_length = (usize) history_stat.st_size;
         if (history_length <= 0) {
-            fprintf(stderr, "History_length: %zu\n", history_length);
-            fprintf(stderr, "History file is empty.\n");
+            error("History_length: %zu\n", history_length);
+            error("History file is empty.\n");
             util_close(&history);
             return;
         }
@@ -180,8 +179,8 @@ history_read(void) {
                        history.fd, 0);
 
     if (history_map == MAP_FAILED) {
-        fprintf(stderr, "Error mapping history file to memory: %s"
-                        "History will start empty.\n", strerror(errno));
+        error("Error mapping history file to memory: %s"
+              "History will start empty.\n", strerror(errno));
         util_close(&history);
         return;
     }
@@ -219,8 +218,8 @@ history_read(void) {
     }
 
     if (munmap(history_map, history_length) < 0) {
-        fprintf(stderr, "Error unmapping %p with %zu bytes: %s\n",
-                        (void *) history_map, history_length, strerror(errno));
+        error("Error unmapping %p with %zu bytes: %s\n",
+              (void *) history_map, history_length, strerror(errno));
     }
     util_close(&history);
     return;
@@ -285,8 +284,7 @@ history_append(char *content, int length) {
     Entry *e;
 
     if (!content) {
-        fprintf(stderr, "Error getting data from clipboard."
-				        " Skipping entry...\n");
+        error("Error getting data from clipboard. Skipping entry...\n");
         recovered = false;
         return;
     }
@@ -308,7 +306,7 @@ history_append(char *content, int length) {
     }
 
     if ((oldindex = history_repeated_index(content, length)) >= 0) {
-        fprintf(stderr, "Entry is equal to previous entry. Reordering...\n");
+        error("Entry is equal to previous entry. Reordering...\n");
         if (oldindex != lastindex)
             history_reorder(oldindex);
         free(content);
@@ -353,13 +351,13 @@ history_recover(int32 id) {
     bool istext;
 
     if (lastindex < 0) {
-        fprintf(stderr, "Clipboard history empty. Start copying text.\n");
+        error("Clipboard history empty. Start copying text.\n");
         return;
     }
     if (id < 0)
         id = lastindex + id + 1;
     if (id > lastindex) {
-        fprintf(stderr, "Invalid index for recovery: %d\n", id);
+        error("Invalid index for recovery: %d\n", id);
         recovered = true;
         return;
     }
@@ -420,7 +418,7 @@ history_remove(int32 id) {
         return;
     }
     if (id > lastindex) {
-        fprintf(stderr, "Invalid index %d for deletion.\n", id);
+        error("Invalid index %d for deletion.\n", id);
         return;
     }
 

@@ -42,23 +42,22 @@ clipboard_daemon_watch(void) {
     char *CLIPSIM_SIGNAL_PROGRAM;
 
     if ((display = XOpenDisplay(NULL)) == NULL) {
-        fprintf(stderr, "Error opening X display.");
+        error("Error opening X display.");
         exit(EXIT_FAILURE);
     }
 
     int signal_number = 0;
     if ((CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")) == NULL)
-        fprintf(stderr, "CLIPSIM_SIGNAL_PROGRAM is not defined. ");
+        error("CLIPSIM_SIGNAL_PROGRAM is not defined. ");
     if ((CLIPSIM_SIGNAL_NUMBER = getenv("CLIPSIM_SIGNAL_NUMBER")) == NULL)
-        fprintf(stderr, "CLIPSIM_SIGNAL_NUMBER is not defined. ");
+        error("CLIPSIM_SIGNAL_NUMBER is not defined. ");
     if (CLIPSIM_SIGNAL_PROGRAM && CLIPSIM_SIGNAL_NUMBER) {
         if ((signal_number = atoi(CLIPSIM_SIGNAL_NUMBER)) <= 0) {
-            fprintf(stderr, "Invalid CLIPSIM_SIGNAL_NUMBER environment "
-                            "variable: %s.\n", CLIPSIM_SIGNAL_NUMBER);
-            if (CLIPSIM_SIGNAL_PROGRAM) {
-                fprintf(stderr, "%s will not be signaled.\n",
-						        CLIPSIM_SIGNAL_PROGRAM);
-			}
+            error("Invalid CLIPSIM_SIGNAL_NUMBER environment variable: %s.\n",
+                  CLIPSIM_SIGNAL_NUMBER);
+            if (CLIPSIM_SIGNAL_PROGRAM)
+                error("%s will not be signaled.\n", CLIPSIM_SIGNAL_PROGRAM);
+
             CLIPSIM_SIGNAL_NUMBER = NULL;
             CLIPSIM_SIGNAL_PROGRAM = NULL;
         }
@@ -101,13 +100,12 @@ clipboard_daemon_watch(void) {
             history_append(save, (int) length);
             break;
         case CLIPBOARD_OTHER:
-            fprintf(stderr, "Unsupported format. Clipsim only"
-                            " works with UTF-8 and images.\n");
+            error("Unsupported format."
+                  " Clipsim only works with UTF-8 and images.\n");
             break;
         case CLIPBOARD_LARGE:
-            fprintf(stderr, "Buffer is too large and "
-                            "INCR reading is not implemented yet. "
-                            "This data won't be saved to history.\n");
+            error("Buffer is too large and INCR reading is not implemented yet."
+                  " This data won't be saved to history.\n");
             break;
         case CLIPBOARD_ERROR:
             history_recover(-1);

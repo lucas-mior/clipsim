@@ -94,8 +94,8 @@ ipc_client_speak_fifo(uint command, int32 id) {
     DEBUG_PRINT("%u, %d", command, id);
     isize w;
     if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
-        fprintf(stderr, "Could not open Fifo for sending command to daemon. "
-                        "Is `%s daemon` running?\n", "clipsim");
+        error("Could not open Fifo for sending command to daemon. "
+              "Is `%s daemon` running?\n", "clipsim");
         exit(EXIT_FAILURE);
     }
 
@@ -133,14 +133,14 @@ ipc_daemon_history_save(void) {
     DEBUG_PRINT("");
     char saved;
     isize saved_size = sizeof (*(&saved));
-    fprintf(stderr, "Trying to save history...\n");
+    error("Trying to save history...\n");
     if (util_open(&content_fifo, O_WRONLY) < 0)
         return;
 
     saved = history_save();
 
     if (write(content_fifo.fd, &saved, (usize) saved_size) < saved_size) {
-        fprintf(stderr, "Error sending save result to client.\n");
+        error("Error sending save result to client.\n");
     }
 
     util_close(&content_fifo);
@@ -152,15 +152,15 @@ ipc_client_check_save(void) {
     DEBUG_PRINT("");
     isize r;
     char saved = 0;
-    fprintf(stderr, "Trying to save history...\n");
+    error("Trying to save history...\n");
     if (util_open(&content_fifo, O_RDONLY) < 0)
         exit(EXIT_FAILURE);
 
     if ((r = read(content_fifo.fd, &saved, sizeof (*(&saved)))) > 0) {
         if (saved)
-            fprintf(stderr, "History saved to disk.\n");
+            error("History saved to disk.\n");
         else
-            fprintf(stderr, "Error saving history to disk.\n");
+            error("Error saving history to disk.\n");
     }
 
     util_close(&content_fifo);
@@ -182,7 +182,7 @@ ipc_daemon_pipe_entries(void) {
     lastindex = history_lastindex();
 
     if (lastindex == -1) {
-        fprintf(stderr, "Clipboard history empty. Start copying text.\n");
+        error("Clipboard history empty. Start copying text.\n");
         dprintf(content_fifo.fd,
                 "000 Clipboard history empty. Start copying text.\n");
         goto close;
@@ -216,7 +216,7 @@ ipc_daemon_pipe_id(const int32 id) {
     lastindex = history_lastindex();
 
     if (lastindex == -1) {
-        fprintf(stderr, "Clipboard history empty. Start copying text.\n");
+        error("Clipboard history empty. Start copying text.\n");
         dprintf(content_fifo.fd,
                 "000 Clipboard history empty. Start copying text.\n");
         goto close;
@@ -252,8 +252,8 @@ ipc_client_print_entries(void) {
 
     r = read(content_fifo.fd, buffer, sizeof (buffer));
     if (r <= 0) {
-        fprintf(stderr, "Error reading data from %s: %s\n",
-                        content_fifo.name, strerror(errno));
+        error("Error reading data from %s: %s\n",
+              content_fifo.name, strerror(errno));
         util_close(&content_fifo);
         exit(EXIT_FAILURE);
     }
@@ -273,8 +273,7 @@ ipc_client_print_entries(void) {
         if ((test = open(buffer + 1, O_RDONLY)) >= 0) {
             close(test);
         } else {
-            fprintf(stderr, "Error opening %s: %s\n", 
-                            buffer + 1, strerror(errno)); 
+            error("Error opening %s: %s\n", buffer + 1, strerror(errno)); 
             return;
         }
 

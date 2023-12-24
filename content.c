@@ -82,8 +82,8 @@ content_check_content(uchar *data, const int length) {
             aux += 1;
         } while (IS_SPACE(*(aux - 1)));
         if (*(aux - 1) == '\0') {
-            fprintf(stderr, "Only white space copied to clipboard. "
-                            "This won't be added to history.\n");
+            error("Only white space copied to clipboard. "
+                  "This won't be added to history.\n");
             return CLIPBOARD_ERROR;
         }
     }
@@ -92,7 +92,7 @@ content_check_content(uchar *data, const int length) {
                           possibly followed by new line */
         if ((' ' <= *data) && (*data <= '~')) {
             if (length == 1 || (*(data + 1) == '\n')) {
-                fprintf(stderr, "Ignoring single character '%c'\n", *data);
+                error("Ignoring single character '%c'\n", *data);
                 return CLIPBOARD_ERROR;
             }
         }
@@ -120,7 +120,7 @@ content_check_content(uchar *data, const int length) {
     } while (0);
 
     if (length > (ENTRY_MAX_LENGTH - 1)) {
-        fprintf(stderr, "Too large entry. This wont' be added to history.\n");
+        error("Too large entry. This wont' be added to history.\n");
         return CLIPBOARD_ERROR;
     }
 

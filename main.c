@@ -44,6 +44,7 @@ Entry entries[HISTORY_BUFFER_SIZE] = {0};
 const char TEXT_TAG = (char) 0x01;
 const char IMAGE_TAG = (char) 0x02;
 mtx_t lock;
+char *program;
 
 static bool main_check_cmdline(char *);
 static bool main_check_running(void);
@@ -54,6 +55,8 @@ int main(int argc, char *argv[]) {
     DEBUG_PRINT("%d, %s", argc, argv[0]);
     int32 id;
     bool spell_error = true;
+
+    program = basename(argv[0]);
 
     signal(SIGSEGV, util_segv_handler);
 
@@ -121,7 +124,7 @@ main_check_cmdline(char *pid) {
 
     n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", pid);
     if (n < 0) {
-        fprintf(stderr, "Error printing buffer name.\n");
+        error("Error printing buffer name.\n");
         return false;
     }
     buffer[sizeof (buffer) - 1] = '\0';
@@ -152,7 +155,7 @@ main_check_running(void) {
     pid_t pid_this = getpid();
 
     if ((processes = opendir("/proc")) == NULL) {
-        fprintf(stderr, "Error opening /proc: %s\n", strerror(errno));
+        error("Error opening /proc: %s\n", strerror(errno));
         return false;
     }
 
@@ -177,15 +180,15 @@ void
 main_launch_daemon(void) {
     DEBUG_PRINT("");
     thrd_t ipc_thread;
-    int error;
+    int mtx_error;
 
     if (main_check_running()) {
-        fprintf(stderr, "clipsim --daemon is already running.\n");
+        error("clipsim --daemon is already running.\n");
         exit(EXIT_FAILURE);
     }
 
-    if ((error = mtx_init(&lock, mtx_plain)) != thrd_success) {
-        fprintf(stderr, "Error initializing lock: %s\n", strerror(error));
+    if ((mtx_error = mtx_init(&lock, mtx_plain)) != thrd_success) {
+        error("Error initializing lock: %s\n", strerror(mtx_error));
         exit(EXIT_FAILURE);
     }
 

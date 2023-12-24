@@ -22,7 +22,7 @@ void *
 util_malloc(const usize size) {
     void *p;
     if ((p = malloc(size)) == NULL) {
-        fprintf(stderr, "Error allocating %zu bytes.\n", size);
+        error("Error allocating %zu bytes.\n", size);
         exit(EXIT_FAILURE);
     }
     return p;
@@ -32,7 +32,7 @@ void *
 util_memdup(const void *source, const usize size) {
     void *p;
     if ((p = malloc(size)) == NULL) {
-        fprintf(stderr, "Error allocating %zu bytes.\n", size);
+        error("Error allocating %zu bytes.\n", size);
         exit(EXIT_FAILURE);
     }
     memcpy(p, source, size);
@@ -43,7 +43,7 @@ char *
 util_strdup(const char *string) {
     char *p = strdup(string);
     if (p == NULL) {
-        fprintf(stderr, "Error duplicating string \"%s\".\n", string);
+        error("Error duplicating string \"%s\".\n", string);
         exit(EXIT_FAILURE);
     }
     return p;
@@ -53,8 +53,8 @@ void *
 util_realloc(void *old, const usize size) {
     void *p;
     if ((p = realloc(old, size)) == NULL) {
-        fprintf(stderr, "Error reallocating %zu bytes.\n", size);
-        fprintf(stderr, "Reallocating from: %p\n", old);
+        error("Error reallocating %zu bytes.\n", size);
+        error("Reallocating from: %p\n", old);
         exit(EXIT_FAILURE);
     }
     return p;
@@ -64,7 +64,7 @@ void *
 util_calloc(const usize nmemb, const usize size) {
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
-        fprintf(stderr, "Error allocating %zu members of %zu bytes each.\n",
+        error("Error allocating %zu members of %zu bytes each.\n",
                         nmemb, size);
         exit(EXIT_FAILURE);
     }
@@ -128,14 +128,14 @@ void
 util_close(File *file) {
     if (file->fd >= 0) {
         if (close(file->fd) < 0) {
-            fprintf(stderr, "Error closing %s: %s\n",
+            error("Error closing %s: %s\n",
                             file->name, strerror(errno));
         }
         file->fd = -1;
     }
     if (file->file != NULL) {
         if (fclose(file->file) != 0) {
-            fprintf(stderr, "Error closing %s: %s\n",
+            error("Error closing %s: %s\n",
                             file->name, strerror(errno));
         }
         file->file = NULL;
@@ -146,7 +146,7 @@ util_close(File *file) {
 int
 util_open(File *file, const int flag) {
     if ((file->fd = open(file->name, flag)) < 0) {
-        fprintf(stderr, "Error opening %s: %s\n",
+        error("Error opening %s: %s\n",
                         file->name, strerror(errno));
         return -1;
     } else {
@@ -162,14 +162,14 @@ util_copy_file(const char *destination, const char *source) {
     isize w = 0;
     
     if ((source_fd = open(source, O_RDONLY)) < 0) {
-        fprintf(stderr, "Error opening %s for reading: %s\n", 
+        error("Error opening %s for reading: %s\n", 
                         source, strerror(errno));
         return -1;
     }
 
     if ((destination_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 
                                             S_IRUSR | S_IWUSR)) < 0) {
-        fprintf(stderr, "Error opening %s for writing: %s\n",
+        error("Error opening %s for writing: %s\n",
                          destination, strerror(errno));
         close(source_fd);
         return -1;
@@ -191,7 +191,7 @@ util_copy_file(const char *destination, const char *source) {
     }
 
     if (r < 0) {
-        fprintf(stderr, "Error reading data from %s: %s\n",
+        error("Error reading data from %s: %s\n",
                         source, strerror(errno));
         close(source_fd);
         close(destination_fd);
@@ -213,7 +213,7 @@ void error(char *format, ...) {
     va_end(args);
 
     if (n < 0) {
-        error("Error in vsnprintf()\n");
+        fprintf(stderr, "Error in vsnprintf()\n");
         exit(EXIT_FAILURE);
     }
 

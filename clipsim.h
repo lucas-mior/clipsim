@@ -124,6 +124,7 @@ extern Entry entries[];
 extern mtx_t lock;
 extern const char TEXT_TAG;
 extern const char IMAGE_TAG;
+extern char *program;
 
 void content_remove_newline(char *, int *);
 void content_trim_spaces(char **, int *, char *, int);

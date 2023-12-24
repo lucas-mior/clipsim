@@ -33,7 +33,7 @@ check_pid(const char *executable, const char *number) {
 
     n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", number);
 	if (n < 0) {
-		fprintf(stderr, "Error printing buffer name.\n");
+		error("Error printing buffer name.\n");
 		return 0;
 	}
     buffer[sizeof (buffer) - 1] = '\0';
@@ -61,7 +61,7 @@ send_signal(const char *executable, const int signal_number) {
     pid_t pid;
 
     if ((processes = opendir("/proc")) == NULL) {
-        fprintf(stderr, "Error opening /proc: %s\n", strerror(errno));
+        error("Error opening /proc: %s\n", strerror(errno));
         return;
     }
 
@@ -85,11 +85,11 @@ send_signal(const char *executable, const int signal_number) {
 
     switch (fork()) {
         case -1:
-            fprintf(stderr, "Error forking: %s\n", strerror(errno));
+            error("Error forking: %s\n", strerror(errno));
             return;
         case 0:
             execlp("pkill", "pkill", signal_string, executable, NULL);
-            fprintf(stderr, "Error executing pkill: %s\n", strerror(errno));
+            error("Error executing pkill: %s\n", strerror(errno));
             exit(EXIT_FAILURE);
         default:
             wait(NULL);
