@@ -28,7 +28,7 @@ static void history_reorder(const int32);
 static void history_free_entry(const Entry *);
 static void history_clean(void);
 static void history_save_image(char **, int *);
-static void history_save_entry(Entry *);
+static void history_save_entry(Entry *, int);
 
 int32
 history_lastindex(void) {
@@ -37,7 +37,7 @@ history_lastindex(void) {
 }
 
 void
-history_save_entry(Entry *e) {
+history_save_entry(Entry *e, int index) {
     DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
@@ -49,30 +49,48 @@ history_save_entry(Entry *e) {
         char *base = basename(e->image_path);
         n = snprintf(image_save, sizeof (image_save), 
                      "%s/clipsim/%s", XDG_CACHE_HOME, base);
-        if (n < 0)
-            util_die_notify("Error printing image path.\n");
+        if (n < 0) {
+            error("Error printing image path.\n");
+            return;
+        }
 
         if (strcmp(image_save, e->image_path)) {
             if (util_copy_file(image_save, e->image_path) < 0) {
-                util_die_notify("Error copying %s to %s: %s.\n", 
-                                 e->image_path, image_save, strerror(errno));
+                error("Error copying %s to %s: %s.\n", 
+                      e->image_path, image_save, strerror(errno));
+                history_remove(index);
+                return;
             }
         }
         if (write(history.fd, image_save, (usize) n) < n) {
-            util_die_notify("Error writing %s: %s\n",
-                            image_save, strerror(errno));
+            error("Error writing %s: %s\n", image_save, strerror(errno));
+            history_remove(index);
+            return;
         }
         if (write(history.fd, &IMAGE_TAG, tag_size) < (isize) tag_size) {
-            util_die_notify("Error writing IMAGE_TAG: %s\n", strerror(errno));
+            error("Error writing IMAGE_TAG: %s\n", strerror(errno));
+            history_remove(index);
+            return;
         }
     } else {
-        w = write(history.fd, e->content, (usize) e->content_length);
-        if (w < e->content_length) {
-            util_die_notify("Error writing %s: %s\n",
-                            e->content, strerror(errno));
+        usize left = e->content_length;
+        usize offset = 0;
+        do {
+            w = write(history.fd, e->content + offset, left);
+            left -= w;
+            offset += w;
+            if (left == 0)
+                break;
+        } while (w > 0);
+        if (w < 0) {
+            error("Error writing %s: %s\n", e->content, strerror(errno));
+            history_remove(index);
+            return;
         }
         if (write(history.fd, &TEXT_TAG, tag_size) < (isize) tag_size) {
-            util_die_notify("Error writing TEXT_TAG: %s\n", strerror(errno));
+            error("Error writing TEXT_TAG: %s\n", strerror(errno));
+            history_remove(index);
+            return;
         }
     }
     return;
@@ -98,7 +116,7 @@ history_save(void) {
     }
 
     for (int i = 0; i <= lastindex; i += 1)
-        history_save_entry(&entries[i]);
+        history_save_entry(&entries[i], i);
 
     if ((saved = fsync(history.fd)) < 0)
         error("Error saving history to disk: %s\n", strerror(errno));

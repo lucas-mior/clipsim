@@ -21,6 +21,7 @@
 #include <X11/extensions/Xfixes.h>
 
 #include "clipsim.h"
+#define CHECK_TARGET_MAX_EVENTS 100
 
 static Display *display;
 static Atom CLIPBOARD, XSEL_DATA, INCR;
@@ -115,7 +116,6 @@ clipboard_daemon_watch(void) {
     }
 }
 
-#define CHECK_TARGET_MAX_EVENTS 100
 Atom
 clipboard_check_target(const Atom target) {
 #ifdef CLIPSIM_DEBUG
@@ -131,7 +131,7 @@ clipboard_check_target(const Atom target) {
                       window, CurrentTime);
     do {
         if (nevents >= CHECK_TARGET_MAX_EVENTS)
-            util_die_notify("Error cheking target.\n");
+            return 0;
         (void) XNextEvent(display, &xevent);
         nevents += 1;
     } while (xevent.type != SelectionNotify
