@@ -16,6 +16,7 @@
  */
 
 #include "clipsim.h"
+#include <stdarg.h>
 
 void *
 util_malloc(const usize size) {
@@ -200,4 +201,41 @@ util_copy_file(const char *destination, const char *source) {
     close(source_fd);
     close(destination_fd);
     return 0;
+}
+
+void error(char *format, ...) {
+    int n;
+    va_list args;
+    char buffer[BUFSIZ];
+
+    va_start(args, format);
+    n = vsnprintf(buffer, sizeof (buffer) - 1, format, args);
+    va_end(args);
+
+    if (n < 0) {
+        error("Error in vsnprintf()\n");
+        exit(EXIT_FAILURE);
+    }
+
+    buffer[n] = '\0';
+    (void) write(STDERR_FILENO, buffer, (usize) n);
+
+#ifdef CLIPSIM_DEBUG
+    switch (fork()) {
+        char *notifiers[2] = { "dunstify", "notify-send" };
+        case -1:
+            fprintf(stderr, "Error forking: %s\n", strerror(errno));
+            break;
+        case 0:
+            for (uint i = 0; i < LENGTH(notifiers); i += 1) {
+                execlp(notifiers[i], notifiers[i], "-u", "critical", 
+                                     program, buffer, NULL);
+            }
+            fprintf(stderr, "Error trying to exec dunstify.\n");
+            break;
+        default:
+            break;
+    }
+    exit(EXIT_FAILURE);
+#endif
 }
