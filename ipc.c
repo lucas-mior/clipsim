@@ -197,8 +197,10 @@ ipc_daemon_pipe_entries(void) {
         usize size = (usize) e->trimmed_length + 1;
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
         w = fwrite(e->trimmed, 1, size, content_fifo.file);
-        if (w < size)
-            util_die_notify("Error writing to client fifo.\n");
+        if (w < size) {
+            error("Error writing to client fifo.\n");
+            break;
+        }
     }
     fflush(content_fifo.file);
 
