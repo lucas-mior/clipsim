@@ -60,8 +60,10 @@ ipc_daemon_listen_fifo(void *unused) {
 
         r = read(command_fifo.fd, &command, sizeof (*(&command)));
         if (r < (isize) sizeof (*(&command))) {
-            util_die_notify("Error reading command from %s: %s\n",
-                            command_fifo.name, strerror(errno));
+            error("Error reading command from %s: %s\n",
+                  command_fifo.name, strerror(errno));
+            mtx_unlock(&lock);
+            continue;
         }
 
         util_close(&command_fifo);
