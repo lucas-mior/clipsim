@@ -297,12 +297,14 @@ ipc_daemon_get_id(void) {
     int32 id;
 
     if ((passid_fifo.file = fopen(passid_fifo.name, "r")) == NULL) {
-        util_die_notify("Error opening fifo for reading id: "
-                        "%s\n", strerror(errno));
+        error("Error opening fifo for reading id: %s\n", strerror(errno));
+        return -1;
     }
 
-    if (fread(&id, sizeof (*(&id)), 1, passid_fifo.file) != 1)
+    if (fread(&id, sizeof (*(&id)), 1, passid_fifo.file) != 1) {
         error("Error reading id from pipe: %s\n", strerror(errno));
+        return -1;
+    }
 
     util_close(&passid_fifo);
 
