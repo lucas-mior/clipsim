@@ -125,7 +125,8 @@ ipc_client_speak_fifo(uint command, int32 id) {
         ipc_client_print_entries();
         break;
     default:
-        util_die_notify("Invalid command: %u\n", command);
+        error("Invalid command: %u\n", command);
+        exit(EXIT_FAILURE);
     }
 
     return;
