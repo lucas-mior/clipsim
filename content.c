@@ -31,7 +31,7 @@ content_remove_newline(char *text, int *length) {
 
 void
 content_trim_spaces(char **trimmed, int *trimmed_length,
-                         char *content, const int length) {
+                    char *content, const int length) {
     DEBUG_PRINT("%p, %p, %s, %d",
                 (void *) trimmed, (void *) trimmed_length, content, length);
     char *p;

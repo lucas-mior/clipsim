@@ -82,7 +82,7 @@ ipc_daemon_listen_fifo(void *unused) {
             ipc_daemon_pipe_id(ipc_daemon_get_id());
             break;
         default:
-            util_die_notify("Invalid command received: '%c'\n", command);
+            error("Invalid command received: '%c'\n", command);
         }
 
         mtx_unlock(&lock);
@@ -102,8 +102,9 @@ ipc_client_speak_fifo(uint command, int32 id) {
     w = write(command_fifo.fd, &command, sizeof (*(&command)));
     util_close(&command_fifo);
     if (w < (isize) sizeof (*(&command))) {
-        util_die_notify("Error writing command to %s: %s\n",
-                        command_fifo.name, strerror(errno));
+        error("Error writing command to %s: %s\n",
+              command_fifo.name, strerror(errno));
+        exit(EXIT_FAILURE);
     }
 
     switch (command) {
@@ -300,11 +301,9 @@ ipc_daemon_get_id(void) {
                         "%s\n", strerror(errno));
     }
 
-    if (fread(&id, sizeof (*(&id)), 1, passid_fifo.file) != 1) {
-        util_close(&passid_fifo);
-        util_die_notify("Error reading id from pipe: "
-                        "%s\n", strerror(errno));
-    }
+    if (fread(&id, sizeof (*(&id)), 1, passid_fifo.file) != 1)
+        error("Error reading id from pipe: %s\n", strerror(errno));
+
     util_close(&passid_fifo);
 
     return id;
@@ -318,10 +317,8 @@ ipc_client_ask_id(const int32 id) {
                         "%s\n", strerror(errno));
     }
 
-    if (fwrite(&id, sizeof (*(&id)), 1, passid_fifo.file) != 1) {
-        util_die_notify("Error sending id to daemon: "
-                        "%s\n", strerror(errno));
-    }
+    if (fwrite(&id, sizeof (*(&id)), 1, passid_fifo.file) != 1)
+        error("Error sending id to daemon: %s\n", strerror(errno));
 
     util_close(&passid_fifo);
     return;
