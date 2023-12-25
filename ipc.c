@@ -177,7 +177,6 @@ void
 ipc_daemon_pipe_entries(void) {
     DEBUG_PRINT("");
     static char buffer[BUFSIZ];
-    usize w = 0;
     int32 lastindex;
 
     content_fifo.file = fopen(content_fifo.name, "w");
