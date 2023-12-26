@@ -284,8 +284,8 @@ ipc_client_print_entries(void) {
         CLIPSIM_IMAGE_PREVIEW = getenv("CLIPSIM_IMAGE_PREVIEW");
         if (CLIPSIM_IMAGE_PREVIEW == NULL)
             CLIPSIM_IMAGE_PREVIEW = "chafa";
-        if (!strcmp(CLIPSIM_IMAGE_PREVIEW, "stiv"))
-            execlp("stiv", "stiv", buffer + 1, "30", "15", NULL);   
+        if (!strcmp(CLIPSIM_IMAGE_PREVIEW, "stiv_draw"))
+            execlp("stiv_draw", "stiv_draw", buffer + 1, "30", "15", NULL);   
         else
             execlp("chafa", "chafa", buffer + 1, "-s", "40x", NULL);
     }
