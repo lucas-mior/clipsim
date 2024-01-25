@@ -57,7 +57,7 @@ check_pid(const char *executable, const char *number) {
 void
 send_signal(const char *executable, const int signal_number) {
     DIR *processes;
-    struct dirent *program;
+    struct dirent *process;
     pid_t pid;
 
     if ((processes = opendir("/proc")) == NULL) {
@@ -65,10 +65,10 @@ send_signal(const char *executable, const int signal_number) {
         return;
     }
 
-    while ((program = readdir(processes))) {
-        if (program->d_type != DT_DIR)
+    while ((process = readdir(processes))) {
+        if (process->d_type != DT_DIR)
             continue;
-        if ((pid = check_pid(executable, program->d_name))) {
+        if ((pid = check_pid(executable, process->d_name))) {
             kill(pid, signal_number);
             break;
         }

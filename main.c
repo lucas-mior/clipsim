@@ -151,7 +151,7 @@ bool
 main_check_running(void) {
     DEBUG_PRINT("void");
     DIR *processes;
-    struct dirent *program;
+    struct dirent *process;
     pid_t pid_this = getpid();
 
     if ((processes = opendir("/proc")) == NULL) {
@@ -159,15 +159,15 @@ main_check_running(void) {
         return false;
     }
 
-    while ((program = readdir(processes))) {
+    while ((process = readdir(processes))) {
         pid_t pid;
-        if ((pid = atoi(program->d_name)) <= 0)
+        if ((pid = atoi(process->d_name)) <= 0)
             continue;
 
         if (pid == pid_this)
             continue;
 
-        if (main_check_cmdline(program->d_name)) {
+        if (main_check_cmdline(process->d_name)) {
             closedir(processes);
             return true;
         }

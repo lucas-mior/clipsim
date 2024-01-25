@@ -73,10 +73,10 @@ history_save_entry(Entry *e, int index) {
             return;
         }
     } else {
-        usize left = e->content_length;
-        usize offset = 0;
+        int left = e->content_length;
+        int offset = 0;
         do {
-            w = write(history.fd, e->content + offset, left);
+            w = write(history.fd, e->content + offset, (usize) left);
             left -= w;
             offset += w;
             if (left == 0)
