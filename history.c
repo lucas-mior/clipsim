@@ -367,6 +367,8 @@ history_recover(int32 id) {
     int fd[2];
     Entry *e;
     bool istext;
+    char *xclip = "xclip";
+    char *xclip_path = "/usr/bin/xclip";
 
     if (lastindex < 0) {
         error("Clipboard history empty. Start copying text.\n");
@@ -393,14 +395,14 @@ history_recover(int32 id) {
             close(fd[1]);
             dup2(fd[0], STDIN_FILENO);
             close(fd[0]);
-            execlp("/usr/bin/xclip", "xclip", "-selection", "clipboard", NULL);
+            execl(xclip_path, xclip, "-selection", "clipboard", NULL);
         } else {
-            execlp("/usr/bin/xclip", "xclip", "-selection", "clipboard",
-                   "-target", "image/png", e->image_path, NULL);
+            execl(xclip_path, xclip, "-selection", "clipboard",
+                  "-target", "image/png", e->image_path, NULL);
         }
-        util_die_notify("Error in exec(): %s", strerror(errno));
+        util_die_notify("Error in exec(%s): %s", xclip_path, strerror(errno));
     case -1:
-        util_die_notify("Error in fork(): %s", strerror(errno));
+        util_die_notify("Error in fork(%s): %s", xclip_path, strerror(errno));
     default:
         if (istext && (close(fd[0]) < 0))
             util_die_notify("Error closing pipe 0: %s\n", strerror(errno));
