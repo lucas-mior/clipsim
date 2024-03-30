@@ -36,10 +36,14 @@ clipsim: $(src) $(headers) Makefile
 install: all
 	install -Dm755 clipsim                  ${DESTDIR}${PREFIX}/bin/clipsim
 	install -Dm644 clipsim.1                ${DESTDIR}${PREFIX}/man/man1/clipsim.1
-	install -Dm644 completions/clipsim.fish ${DESTDIR}${PREFIX}/share/fish/vendor_completions.d/clipsim.fish
-	install -Dm644 completions/clipsim.bash ${DESTDIR}${PREFIX}/share/bash-completion/completions/clipsim
-	install -Dm644 completions/clipsim.zsh  ${DESTDIR}${PREFIX}/share/zsh/site-functions/_clipsim
-	install -Dm644 LICENSE                  ${DESTDIR}${PREFIX}/share/licenses/${pkgname}/LICENSE
+	install -Dm644 completions/clipsim.fish \
+		${DESTDIR}${PREFIX}/share/fish/vendor_completions.d/clipsim.fish
+	install -Dm644 completions/clipsim.bash \
+		${DESTDIR}${PREFIX}/share/bash-completion/completions/clipsim
+	install -Dm644 completions/clipsim.zsh  \
+		${DESTDIR}${PREFIX}/share/zsh/site-functions/_clipsim
+	install -Dm644 LICENSE                  \
+		${DESTDIR}${PREFIX}/share/licenses/${pkgname}/LICENSE
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/clipsim
 	rm -f ${DESTDIR}${PREFIX}/share/man/man1/clipsim.1
