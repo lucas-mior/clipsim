@@ -6,8 +6,8 @@ history.  If an image is detected, it is saved in `/tmp`, and the respective
 filename is saved on history.  The primary and secondary selection buffers are
 ignored.  When copying text equal to some previous text, the history order is
 updated so that each entry is unique in the history.  Additionally, clipsim can
-send a signal to a specific program when clipboard content changes, which is useful for
-updating a status bar, for example. See [environment
+send a signal to a specific program when clipboard content changes, which is
+useful for updating a status bar, for example. See [environment
 variables](#Environment-variables).
 
 ## Usage
@@ -105,7 +105,10 @@ $ yay -S clipsim
 ```
 
 ### Manual
-Make sure you have [libxfixes](https://gitlab.freedesktop.org/xorg/lib/libxfixes), [xclip](https://github.com/astrand/xclip) and libmagic installed.
+Make sure you have
+[libxfixes](https://gitlab.freedesktop.org/xorg/lib/libxfixes),
+[xclip](https://github.com/astrand/xclip)
+and libmagic installed.
 ```
 $ git clone https://codeberg.org/lucas.mior/clipsim.git clipsim
 $ cd clipsim
