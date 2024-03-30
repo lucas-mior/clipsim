@@ -3,7 +3,7 @@ PREFIX ?= /usr/local
 src = ipc.c util.c clipboard.c history.c content.c send_signal.c main.c
 headers = clipsim.h
 
-ldlibs = $(LDLIBS) -lX11 -lXfixes -lmagic
+ldlibs = $(LDLIBS) -lX11 -lXfixes -lmagic -lpthread
 
 all: release
 
