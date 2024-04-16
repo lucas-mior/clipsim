@@ -484,7 +484,7 @@ history_free_entry(const Entry *e) {
 void
 history_clean(void) {
     DEBUG_PRINT("void");
-    for (int i = 0; i <= HISTORY_KEEP_SIZE - 1; i += 1)
+    for (int i = 0; i < HISTORY_KEEP_SIZE; i += 1)
         history_free_entry(&entries[i]);
 
     memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
