@@ -36,6 +36,20 @@ history_lastindex(void) {
     return lastindex;
 }
 
+void history_backup(void) {
+    char buffer[PATH_MAX];
+    int n = snprintf(buffer, sizeof (buffer), "%s.bak", history.name);
+    if (n <= 0) {
+        error("Error in snprintf.\n");
+        exit(0);
+    }
+    if (rename(history.name, buffer) < 0) {
+        error("Error creating backup history file: %s\n", strerror(errno));
+        exit(0);
+    }
+    return;
+}
+
 void
 history_save_entry(Entry *e, int index) {
     DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
