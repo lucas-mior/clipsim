@@ -136,6 +136,7 @@ void history_append(char *, int);
 bool history_save(void);
 void history_recover(int32);
 void history_remove(int32);
+void history_backup(void);
 
 int clipboard_daemon_watch(void) __attribute__((noreturn));
 
