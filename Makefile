@@ -3,7 +3,10 @@ PREFIX ?= /usr/local
 src = ipc.c util.c clipboard.c history.c content.c send_signal.c main.c
 headers = clipsim.h
 
-ldlibs = $(LDLIBS) -lX11 -lXfixes -lmagic -lpthread
+LDLIBS += $(shell pkg-config x11 --libs)
+LDLIBS += $(shell pkg-config xfixes --libs)
+LDLIBS += $(shell pkg-config libmagic --libs)
+LDLIBS += -lpthread
 
 all: release
 
@@ -31,7 +34,7 @@ debug: clean clipsim
 clipsim: $(src) $(headers) Makefile
 	-ctags --kinds-C=+l *.h *.c
 	-vtags.sed tags > .tags.vim
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(src) $(ldlibs)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(src) $(LDLIBS)
 
 install: all
 	install -Dm755 clipsim                  ${DESTDIR}${PREFIX}/bin/clipsim
