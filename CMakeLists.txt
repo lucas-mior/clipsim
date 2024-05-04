@@ -7,6 +7,7 @@ add_executable(clipsim ${SOURCES})
 
 find_library(MAGIC_LIBRARY magic)
 find_package(X11 REQUIRED)
+# find_library(XFIXES_LIBRARY libxfixes)
 find_library(XFIXES_LIBRARY NAMES Xfixes)
 
 target_link_libraries(clipsim ${MAGIC_LIBRARY} ${X11_LIBRARIES} ${XFIXES_LIBRARY})
