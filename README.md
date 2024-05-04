@@ -112,8 +112,8 @@ and libmagic installed.
 ```
 $ git clone https://codeberg.org/lucas.mior/clipsim.git clipsim
 $ cd clipsim
-$ make
-$ sudo make install
+$ cmake -B build .
+$ cmake --build build
 ```
 
 ## Configuration
