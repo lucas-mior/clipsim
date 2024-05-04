@@ -51,7 +51,8 @@ static bool main_check_running(void);
 static void main_usage(FILE *) __attribute__((noreturn));
 static void main_launch_daemon(void) __attribute__((noreturn));
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char *argv[]) {
     DEBUG_PRINT("%d, %s", argc, argv[0]);
     int32 id;
     bool spell_error = true;
