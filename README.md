@@ -101,7 +101,7 @@ When retrieving images from the history,
 ## Instalation
 ### AUR
 ```
-$ yay -S clipsim
+$ yay -S clipsim-git
 ```
 
 ### Manual
