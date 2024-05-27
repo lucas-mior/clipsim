@@ -41,11 +41,11 @@ void history_backup(void) {
     int n = snprintf(buffer, sizeof (buffer), "%s.bak", history.name);
     if (n <= 0) {
         error("Error in snprintf.\n");
-        exit(0);
+        exit(EXIT_FAILURE);
     }
     if (rename(history.name, buffer) < 0) {
         error("Error creating backup history file: %s\n", strerror(errno));
-        exit(0);
+        exit(EXIT_FAILURE);
     }
     return;
 }
