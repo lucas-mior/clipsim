@@ -57,7 +57,7 @@ do { \
 #define LENGTH(x) (isize) ((sizeof (x) / sizeof (*x)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n'))
+#define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n') || (x == '\r'))
 
 #define PAUSE10MS (1000 * 1000 * 10)
 #define HISTORY_BUFFER_SIZE 128
