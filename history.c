@@ -264,10 +264,10 @@ history_repeated_index(const char *content, const int length) {
         return -1;
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
-        if (e->content_length == length) {
-            if (!memcmp(e->content, content, (usize) length))
-                return i;
-        }
+        if (e->content_length != length)
+            continue;
+        if (!memcmp(e->content, content, (usize) length))
+            return i;
     }
     return -1;
 }
