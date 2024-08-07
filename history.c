@@ -38,7 +38,7 @@ history_lastindex(void) {
 
 void history_backup(void) {
     char buffer[PATH_MAX];
-    int n = snprintf(buffer, sizeof (buffer), "%s.bak", history.name);
+    int n = snprintf(buffer, sizeof(buffer), "%s.bak", history.name);
     if (n <= 0) {
         error("Error in snprintf.\n");
         exit(EXIT_FAILURE);
@@ -55,13 +55,13 @@ history_save_entry(Entry *e, int index) {
     DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
-    usize tag_size = sizeof (*(&IMAGE_TAG));
+    usize tag_size = sizeof(*(&IMAGE_TAG));
     isize w;
 
     if (e->image_path) {
         int n;
         char *base = basename(e->image_path);
-        n = snprintf(image_save, sizeof (image_save), 
+        n = snprintf(image_save, sizeof(image_save), 
                      "%s/clipsim/%s", XDG_CACHE_HOME, base);
         if (n < 0) {
             error("Error printing image path.\n");
@@ -164,11 +164,11 @@ history_read(void) {
 
     {
         char buffer[PATH_MAX];
-        int n = snprintf(buffer, sizeof (buffer), "%s/%s",
+        int n = snprintf(buffer, sizeof(buffer), "%s/%s",
                                                   XDG_CACHE_HOME, clipsim);
         if (n < (int) length)
             util_die_notify("Error printing to buffer: %s\n", strerror(errno));
-        buffer[sizeof (buffer) - 1] = '\0';
+        buffer[sizeof(buffer) - 1] = '\0';
 
         usize size = (usize) n + 1;
         history.name = util_memdup(buffer, size);
@@ -283,11 +283,11 @@ history_save_image(char **content, int *length) {
     char buffer[256];
     char *directory = "/tmp/clipsim";
 
-    n = snprintf(buffer, sizeof (buffer), "%s/%lu.png", directory, t);
+    n = snprintf(buffer, sizeof(buffer), "%s/%lu.png", directory, t);
     if (n < (int) strlen(directory))
         util_die_notify("Error printing image path.\n");
 
-    buffer[sizeof (buffer) - 1] = '\0';
+    buffer[sizeof(buffer) - 1] = '\0';
     if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
                                       S_IRUSR | S_IWUSR)) < 0) {
         util_die_notify("Error opening image file for saving: "
@@ -460,8 +460,8 @@ history_remove(int32 id) {
 
     if (id < lastindex) {
         memmove(&entries[id], &(entries[id + 1]),
-                (usize) (lastindex - id)*sizeof (*entries));
-        memset(&entries[lastindex], 0, sizeof (*entries));
+                (usize) (lastindex - id)*sizeof(*entries));
+        memset(&entries[lastindex], 0, sizeof(*entries));
     }
     lastindex -= 1;
 
@@ -473,8 +473,8 @@ history_reorder(const int32 oldindex) {
     DEBUG_PRINT("%d", oldindex);
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex + 1],
-            (usize) (lastindex - oldindex)*sizeof (*entries));
-    memmove(&entries[lastindex], &aux, sizeof (*entries));
+            (usize) (lastindex - oldindex)*sizeof(*entries));
+    memmove(&entries[lastindex], &aux, sizeof(*entries));
     return;
 }
 
@@ -502,9 +502,9 @@ history_clean(void) {
         history_free_entry(&entries[i]);
 
     memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
-           HISTORY_KEEP_SIZE * sizeof (*entries));
+           HISTORY_KEEP_SIZE * sizeof(*entries));
     memset(&entries[HISTORY_KEEP_SIZE], 0,
-           HISTORY_KEEP_SIZE * sizeof (*entries));
+           HISTORY_KEEP_SIZE * sizeof(*entries));
     lastindex = HISTORY_KEEP_SIZE - 1;
     return;
 }

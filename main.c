@@ -123,25 +123,25 @@ main_check_cmdline(char *pid) {
     char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
                    '-', '-', 'd', 'a', 'e', 'm', 'o', 'n', '\0'};
 
-    n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", pid);
+    n = snprintf(buffer, sizeof(buffer), "/proc/%s/cmdline", pid);
     if (n < 0) {
         error("Error printing buffer name.\n");
         return false;
     }
-    buffer[sizeof (buffer) - 1] = '\0';
+    buffer[sizeof(buffer) - 1] = '\0';
 
     if ((cmdline = open(buffer, O_RDONLY)) < 0)
         return false;
-    if ((r = read(cmdline, command, sizeof (command))) <= 0) {
+    if ((r = read(cmdline, command, sizeof(command))) <= 0) {
         close(cmdline);
         return false;
     }
     close(cmdline);
 
-    if (r == sizeof (cmd1)) {
+    if (r == sizeof(cmd1)) {
         if (!memcmp(command, cmd1, (usize) r))
             return true;
-    } else if (r == sizeof (cmd2)) {
+    } else if (r == sizeof(cmd2)) {
         if (!memcmp(command, cmd2, (usize) r))
             return true;
     }

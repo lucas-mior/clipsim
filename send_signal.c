@@ -31,17 +31,17 @@ check_pid(const char *executable, const char *number) {
     if ((pid = atoi(number)) <= 0)
         return 0;
 
-    n = snprintf(buffer, sizeof (buffer), "/proc/%s/cmdline", number);
+    n = snprintf(buffer, sizeof(buffer), "/proc/%s/cmdline", number);
 	if (n < 0) {
 		error("Error printing buffer name.\n");
 		return 0;
 	}
-    buffer[sizeof (buffer) - 1] = '\0';
+    buffer[sizeof(buffer) - 1] = '\0';
 
     if ((cmdline = open(buffer, O_RDONLY)) < 0)
         return 0;
 
-    if (read(cmdline, command, sizeof (command)) <= 0) {
+    if (read(cmdline, command, sizeof(command)) <= 0) {
         close(cmdline);
         return 0;
     }
@@ -81,7 +81,7 @@ send_signal(const char *executable, const int signal_number) {
 void
 send_signal(const char *executable, const int signal_number) {
     char signal_string[14];
-    snprintf(signal_string, sizeof (signal_string), "%d", signal_number);
+    snprintf(signal_string, sizeof(signal_string), "%d", signal_number);
 
     switch (fork()) {
         case -1:
