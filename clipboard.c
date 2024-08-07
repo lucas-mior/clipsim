@@ -47,6 +47,8 @@ clipboard_daemon_watch(void) {
         exit(EXIT_FAILURE);
     }
 
+    content_initialize_magic();
+
     int signal_number = 0;
     if ((CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")) == NULL)
         error("CLIPSIM_SIGNAL_PROGRAM is not defined.\n");
