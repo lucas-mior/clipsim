@@ -260,7 +260,8 @@ history_read(void) {
 int32
 history_repeated_index(const char *content, const int length) {
     DEBUG_PRINT("%s, %d", content, length);
-    if (length_counts[length] == 0)
+    int candidates = length_counts[length];
+    if (candidates == 0)
         return -1;
     for (int32 i = lastindex; i >= 0; i -= 1) {
         Entry *e = &entries[i];
@@ -268,6 +269,10 @@ history_repeated_index(const char *content, const int length) {
             continue;
         if (!memcmp(e->content, content, (usize) length))
             return i;
+
+        candidates -= 1;
+        if (candidates <= 0)
+            return -1;
     }
     return -1;
 }
