@@ -306,6 +306,10 @@ history_save_image(char **content, int *length) {
         copied += (usize) w;
         *length -= (usize) w;
     } while (*length > 0);
+    if (w < 0) {
+        error("Error writing to %s: %s\n", buffer, strerror(errno));
+        exit(EXIT_FAILURE);
+    }
 
     *length = n;
     *content = util_realloc(*content, (usize) *length + 1);
