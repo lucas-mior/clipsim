@@ -494,7 +494,7 @@ history_free_entry(const Entry *e) {
     length_counts[e->content_length] -= 1;
 
     /* image_path does not have to be freed
-       because e->content is the same pointer */ 
+     * because e->content is the same pointer */ 
     if (e->image_path)
         unlink(e->image_path);
     free(e->content);
