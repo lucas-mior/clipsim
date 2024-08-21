@@ -65,6 +65,7 @@ do { \
 #define ENTRY_MAX_LENGTH BUFSIZ
 #define PRINT_DIGITS 3
 #define TRIMMED_SIZE 255
+#define MAGIC_CLOSE_INTERVAL 20
 
 #ifndef INTEGERS
 #define INTEGERS
@@ -128,7 +129,7 @@ extern char *program;
 
 void content_remove_newline(char *, int *);
 void content_trim_spaces(char **, int *, char *, int);
-void content_initialize_magic(void);
+void content_reinitialize_magic(void);
 int32 content_check_content(uchar *, int);
 
 int32 history_lastindex(void);

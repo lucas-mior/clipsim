@@ -18,7 +18,7 @@
 #include <magic.h>
 #include "clipsim.h"
 
-static magic_t magic;
+static magic_t magic = NULL;
 
 void
 content_remove_newline(char *text, int *length) {
@@ -75,7 +75,9 @@ content_trim_spaces(char **trimmed, int *trimmed_length,
 }
 
 void
-content_initialize_magic(void) {
+content_reinitialize_magic(void) {
+    if (magic)
+        magic_close(magic);
     if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
         error("Error in magic_open(MAGIC_MIME_TYPE): %s\n", strerror(errno));
         exit(EXIT_FAILURE);
