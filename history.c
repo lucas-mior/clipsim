@@ -334,9 +334,6 @@ history_append(char *content, int length) {
         return;
     }
 
-    if ((lastindex % MAGIC_CLOSE_INTERVAL) == 0)
-        content_reinitialize_magic();
-
     kind = content_check_content((uchar *) content, length);
     switch (kind) {
     case CLIPBOARD_TEXT:
