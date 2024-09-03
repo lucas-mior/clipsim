@@ -74,20 +74,6 @@ content_trim_spaces(char **trimmed, int *trimmed_length,
     return;
 }
 
-void
-content_initialize_magic(void) {
-    if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
-        error("Error in magic_open(MAGIC_MIME_TYPE): %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-    if (magic_load(magic, NULL) != 0) {
-        error("Error in magic_load(): %s\n", strerror(errno));
-        magic_close(magic);
-        exit(EXIT_FAILURE);
-    }
-    return;
-}
-
 int32
 content_check_content(uchar *data, const int length) {
     DEBUG_PRINT("%s, %d", data, length);
@@ -116,6 +102,15 @@ content_check_content(uchar *data, const int length) {
 
     do {
         const char *mime_type;
+        if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
+            error("Error in magic_open(MAGIC_MIME_TYPE): %s\n", strerror(errno));
+            break;
+        }
+        if (magic_load(magic, NULL) != 0) {
+            error("Error in magic_load(): %s\n", strerror(errno));
+            magic_close(magic);
+            break;
+        }
         if ((mime_type = magic_buffer(magic, data, (usize) length)) == NULL) {
             error("Error in magic_buffer(%s)\n", data);
             break;
