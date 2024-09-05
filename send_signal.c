@@ -42,7 +42,7 @@ send_signal(const char *executable, const int signal_number) {
 
         n = snprintf(buffer, sizeof(buffer),
                      "/proc/%s/cmdline", process->d_name);
-        if (n < 0)
+        if (n <= 0)
             continue;
 
         if ((cmdline = open(buffer, O_RDONLY)) < 0)
