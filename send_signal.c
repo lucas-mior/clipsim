@@ -18,47 +18,10 @@
 #include "clipsim.h"
 
 #ifdef __linux__
-static pid_t check_pid(const char *, const char *);
-
-pid_t
-check_pid(const char *executable, const char *number) {
-    static char buffer[256];
-    static char command[256];
-    int pid;
-    int cmdline;
-	int n;
-
-    if ((pid = atoi(number)) <= 0)
-        return 0;
-
-    n = snprintf(buffer, sizeof(buffer), "/proc/%s/cmdline", number);
-	if (n < 0) {
-		error("Error printing buffer name.\n");
-		return 0;
-	}
-    buffer[sizeof(buffer) - 1] = '\0';
-
-    if ((cmdline = open(buffer, O_RDONLY)) < 0)
-        return 0;
-
-    if (read(cmdline, command, sizeof(command)) <= 0) {
-        close(cmdline);
-        return 0;
-    }
-    close(cmdline);
-
-    command[strcspn(buffer, "\n")] = '\0';
-    if (!strcmp(command, executable))
-        return pid;
-
-    return 0;
-}
-
 void
 send_signal(const char *executable, const int signal_number) {
     DIR *processes;
     struct dirent *process;
-    pid_t pid;
 
     if ((processes = opendir("/proc")) == NULL) {
         error("Error opening /proc: %s\n", strerror(errno));
@@ -66,12 +29,34 @@ send_signal(const char *executable, const int signal_number) {
     }
 
     while ((process = readdir(processes))) {
+        static char buffer[256];
+        static char command[256];
+        int pid;
+        int cmdline;
+        int n;
+
         if (process->d_type != DT_DIR)
             continue;
-        if ((pid = check_pid(executable, process->d_name))) {
-            kill(pid, signal_number);
-            break;
+        if ((pid = atoi(process->d_name)) <= 0)
+            continue;
+
+        n = snprintf(buffer, sizeof(buffer),
+                     "/proc/%s/cmdline", process->d_name);
+        if (n < 0)
+            continue;
+        buffer[sizeof(buffer) - 1] = '\0';
+
+        if ((cmdline = open(buffer, O_RDONLY)) < 0)
+            continue;
+
+        if (read(cmdline, command, sizeof(command)) <= 0) {
+            close(cmdline);
+            continue;
         }
+        if (!strcmp(command, executable))
+            kill(pid, signal_number);
+
+        close(cmdline);
     }
 
     closedir(processes);
