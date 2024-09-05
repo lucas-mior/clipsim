@@ -44,7 +44,6 @@ send_signal(const char *executable, const int signal_number) {
                      "/proc/%s/cmdline", process->d_name);
         if (n < 0)
             continue;
-        buffer[sizeof(buffer) - 1] = '\0';
 
         if ((cmdline = open(buffer, O_RDONLY)) < 0)
             continue;
