@@ -421,7 +421,7 @@ history_recover(int32 id) {
             execl(xclip_path, xclip, "-selection", "clipboard", NULL);
         } else {
             execl(xclip_path, xclip, "-selection", "clipboard",
-                  "-target", "image/png", e->image_path, NULL);
+                              "-target", "image/png", e->image_path, NULL);
         }
         util_die_notify("Error in exec(%s): %s", xclip_path, strerror(errno));
     case -1:
