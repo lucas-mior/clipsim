@@ -204,15 +204,16 @@ util_copy_file(const char *destination, const char *source) {
 }
 
 void error(char *format, ...) {
-    int n;
-    va_list args;
+    char *notifiers[2] = { "dunstify", "notify-send" };
     char buffer[BUFSIZ];
+    va_list args;
+    int n;
 
     va_start(args, format);
     n = vsnprintf(buffer, sizeof(buffer) - 1, format, args);
     va_end(args);
 
-    if (n < 0) {
+    if (n < 0 || n > (int)sizeof(buffer)) {
         fprintf(stderr, "Error in vsnprintf()\n");
         exit(EXIT_FAILURE);
     }
@@ -222,7 +223,6 @@ void error(char *format, ...) {
 
 #ifdef CLIPSIM_DEBUG
     switch (fork()) {
-        char *notifiers[2] = { "dunstify", "notify-send" };
         case -1:
             fprintf(stderr, "Error forking: %s\n", strerror(errno));
             break;
@@ -230,12 +230,10 @@ void error(char *format, ...) {
             for (uint i = 0; i < LENGTH(notifiers); i += 1) {
                 execlp(notifiers[i], notifiers[i], "-u", "critical", 
                                      program, buffer, NULL);
+                fprintf(stderr, "Error trying to exec %s.\n", notifiers[i]);
             }
-            fprintf(stderr, "Error trying to exec dunstify.\n");
-            break;
         default:
             break;
     }
-    exit(EXIT_FAILURE);
 #endif
 }
