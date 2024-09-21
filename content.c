@@ -113,9 +113,11 @@ content_check_content(uchar *data, const int length) {
         }
         if ((mime_type = magic_buffer(magic, data, (usize) length)) == NULL) {
             error("Error in magic_buffer(%s)\n", data);
+            magic_close(magic);
             break;
         }
         if (!strncmp(mime_type, "image/", 6)) {
+            magic_close(magic);
             return CLIPBOARD_IMAGE;
         }
     } while (0);
