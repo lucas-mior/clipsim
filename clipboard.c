@@ -106,7 +106,7 @@ clipboard_daemon_watch(void) {
             break;
         case CLIPBOARD_LARGE:
             error("Buffer is too large and INCR reading is not implemented yet."
-                  " This data won't be saved to history%d.\n", errno);
+                  " This data won't be saved to history.\n");
             break;
         case CLIPBOARD_ERROR:
             history_recover(-1);
