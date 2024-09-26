@@ -108,12 +108,10 @@ content_check_content(uchar *data, const int length) {
         }
         if (magic_load(magic, NULL) != 0) {
             error("Error in magic_load(): %s\n", strerror(errno));
-            magic_close(magic);
             break;
         }
         if ((mime_type = magic_buffer(magic, data, (usize) length)) == NULL) {
             error("Error in magic_buffer(%s)\n", data);
-            magic_close(magic);
             break;
         }
         if (!strncmp(mime_type, "image/", 6)) {
@@ -121,6 +119,9 @@ content_check_content(uchar *data, const int length) {
             return CLIPBOARD_IMAGE;
         }
     } while (0);
+    if (magic)
+        magic_close(magic);
+    magic = NULL;
 
     if (length > (ENTRY_MAX_LENGTH - 1)) {
         error("Too large entry. This wont' be added to history.\n");
