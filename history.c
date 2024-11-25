@@ -36,9 +36,9 @@ static void history_save_image(char **, int *);
 static void history_save_entry(Entry *, int);
 
 int32
-history_lastindex(void) {
+history_length_get(void) {
     DEBUG_PRINT("void");
-    return history_length - 1;
+    return history_length;
 }
 
 int

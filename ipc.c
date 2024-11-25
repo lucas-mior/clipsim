@@ -195,21 +195,21 @@ void
 ipc_daemon_pipe_entries(void) {
     DEBUG_PRINT("");
     static char buffer[BUFSIZ];
-    int32 lastindex;
+    int32 history_length;
 
     content_fifo.file = fopen(content_fifo.name, "w");
     setvbuf(content_fifo.file, buffer, _IOFBF, BUFSIZ);
 
-    lastindex = history_lastindex();
+    history_length = history_length_get();
 
-    if (lastindex == -1) {
+    if (history_length <= 0) {
         error("Clipboard history empty. Start copying text.\n");
         dprintf(content_fifo.fd,
                 "000 Clipboard history empty. Start copying text.\n");
         goto close;
     }
 
-    for (int32 i = lastindex; i >= 0; i -= 1) {
+    for (int32 i = history_length - 1; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         usize size = (usize) e->trimmed_length + 1;
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
@@ -229,15 +229,15 @@ void
 ipc_daemon_pipe_id(const int32 id) {
     DEBUG_PRINT("%d", id);
     Entry *e;
-    int32 lastindex;
+    int32 history_length;
     usize tag_size = sizeof(*(&IMAGE_TAG));
 
     if (util_open(&content_fifo, O_WRONLY) < 0)
         return;
 
-    lastindex = history_lastindex();
+    history_length = history_length_get();
 
-    if (lastindex == -1) {
+    if (history_length <= -1) {
         error("Clipboard history empty. Start copying text.\n");
         dprintf(content_fifo.fd,
                 "000 Clipboard history empty. Start copying text.\n");
