@@ -22,7 +22,7 @@
 #define MAX_OPEN_FD 64
 
 static volatile bool recovered = false;
-static int32 lastindex;
+static int32 history_length;
 static File history = { .file = NULL, .fd = -1, .name = NULL };
 static char *XDG_CACHE_HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
@@ -38,7 +38,7 @@ static void history_save_entry(Entry *, int);
 int32
 history_lastindex(void) {
     DEBUG_PRINT("void");
-    return lastindex;
+    return history_length;
 }
 
 int
@@ -62,6 +62,9 @@ history_delete_tmp(int unused) {
     (void) unused;
     error("Deleting images...");
 
+    for (int i = 0; i <= history_length; i += 1)
+        history_free_entry(&entries[i]);
+    history_save();
     nftw(directory, history_callback_delete, MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
 
     _exit(EXIT_SUCCESS);
@@ -146,7 +149,7 @@ history_save(void) {
     DEBUG_PRINT("void");
     int saved;
 
-    if (lastindex < 0) {
+    if (history_length < 0) {
         error("History is empty. Not saving.\n");
         return false;
     }
@@ -160,7 +163,7 @@ history_save(void) {
         return false;
     }
 
-    for (int i = 0; i <= lastindex; i += 1)
+    for (int i = 0; i <= history_length; i += 1)
         history_save_entry(&entries[i], i);
 
     if ((saved = fsync(history.fd)) < 0)
@@ -174,7 +177,7 @@ history_save(void) {
 void
 history_read(void) {
     DEBUG_PRINT("void");
-    usize history_length;
+    usize history_size;
     char *history_map;
     char *begin;
 
@@ -213,7 +216,7 @@ history_read(void) {
         }
     }
 
-    lastindex = -1;
+    history_length = -1;
     if ((history.fd = open(history.name, O_RDONLY)) < 0) {
         error("Error opening history file for reading: %s\n"
               "History will start empty.\n", strerror(errno));
@@ -228,16 +231,16 @@ history_read(void) {
             util_close(&history);
             return;
         }
-        history_length = (usize) history_stat.st_size;
-        if (history_length <= 0) {
-            error("History_length: %zu\n", history_length);
+        history_size = (usize) history_stat.st_size;
+        if (history_size <= 0) {
+            error("history_size: %zu\n", history_size);
             error("History file is empty.\n");
             util_close(&history);
             return;
         }
     }
 
-    history_map = mmap(NULL, history_length, 
+    history_map = mmap(NULL, history_size, 
                        PROT_READ | PROT_WRITE, MAP_PRIVATE,
                        history.fd, 0);
 
@@ -249,7 +252,7 @@ history_read(void) {
     }
 
     begin = history_map;
-    for (char *p = history_map; p < history_map + history_length; p += 1) {
+    for (char *p = history_map; p < history_map + history_size; p += 1) {
         Entry *e;
         char c;
 
@@ -257,8 +260,8 @@ history_read(void) {
             c = *p;
             *p = '\0';
 
-            lastindex += 1;
-            e = &entries[lastindex];
+            history_length += 1;
+            e = &entries[history_length];
             e->content_length = (int) (p - begin);
             e->content = util_memdup(begin, (usize) e->content_length + 1);
 
@@ -275,14 +278,14 @@ history_read(void) {
 
             length_counts[e->content_length] += 1;
 
-            if (lastindex > HISTORY_BUFFER_SIZE)
+            if (history_length > HISTORY_BUFFER_SIZE)
                 break;
         }
     }
 
-    if (munmap(history_map, history_length) < 0) {
+    if (munmap(history_map, history_size) < 0) {
         error("Error unmapping %p with %zu bytes: %s\n",
-              (void *) history_map, history_length, strerror(errno));
+              (void *) history_map, history_size, strerror(errno));
     }
     util_close(&history);
     return;
@@ -294,7 +297,7 @@ history_repeated_index(const char *content, const int length) {
     int candidates = length_counts[length];
     if (candidates == 0)
         return -1;
-    for (int32 i = lastindex; i >= 0; i -= 1) {
+    for (int32 i = history_length; i >= 0; i -= 1) {
         Entry *e = &entries[i];
         if (e->content_length != length)
             continue;
@@ -378,14 +381,14 @@ history_append(char *content, int length) {
 
     if ((oldindex = history_repeated_index(content, length)) >= 0) {
         error("Entry is equal to previous entry. Reordering...\n");
-        if (oldindex != lastindex)
+        if (oldindex != history_length)
             history_reorder(oldindex);
         free(content);
         return;
     }
 
-    lastindex += 1;
-    e = &entries[lastindex];
+    history_length += 1;
+    e = &entries[history_length];
     e->content = content;
     e->content_length = length;
     length_counts[length] += 1;
@@ -405,7 +408,7 @@ history_append(char *content, int length) {
         break;
     }
 
-    if (lastindex + 1 >= HISTORY_BUFFER_SIZE) {
+    if (history_length + 1 >= HISTORY_BUFFER_SIZE) {
         history_clean();
         history_save();
     }
@@ -423,13 +426,13 @@ history_recover(int32 id) {
     char *xclip = "xclip";
     char *xclip_path = "/usr/bin/xclip";
 
-    if (lastindex < 0) {
+    if (history_length < 0) {
         error("Clipboard history empty. Start copying text.\n");
         return;
     }
     if (id < 0)
-        id = lastindex + id + 1;
-    if (id > lastindex) {
+        id = history_length + id + 1;
+    if (id > history_length) {
         error("Invalid index for recovery: %d\n", id);
         recovered = true;
         return;
@@ -470,7 +473,7 @@ history_recover(int32 id) {
     if (wait(NULL) < 0)
         util_die_notify("Error waiting for fork: %s\n", strerror(errno));
 
-    if (id != lastindex)
+    if (id != history_length)
         history_reorder(id);
 
     recovered = true;
@@ -480,29 +483,29 @@ history_recover(int32 id) {
 void
 history_remove(int32 id) {
     DEBUG_PRINT("%d", id);
-    if (lastindex <= 0)
+    if (history_length <= 0)
         return;
 
     if (id < 0) {
-        id = lastindex + id + 1;
-    } else if (id == lastindex) {
+        id = history_length + id + 1;
+    } else if (id == history_length) {
         history_recover(-2);
         history_remove(-2);
         return;
     }
-    if (id > lastindex) {
+    if (id > history_length) {
         error("Invalid index %d for deletion.\n", id);
         return;
     }
 
     history_free_entry(&entries[id]);
 
-    if (id < lastindex) {
+    if (id < history_length) {
         memmove(&entries[id], &(entries[id + 1]),
-                (usize) (lastindex - id)*sizeof(*entries));
-        memset(&entries[lastindex], 0, sizeof(*entries));
+                (usize) (history_length - id)*sizeof(*entries));
+        memset(&entries[history_length], 0, sizeof(*entries));
     }
-    lastindex -= 1;
+    history_length -= 1;
 
     return;
 }
@@ -512,8 +515,8 @@ history_reorder(const int32 oldindex) {
     DEBUG_PRINT("%d", oldindex);
     Entry aux = entries[oldindex];
     memmove(&entries[oldindex], &entries[oldindex + 1],
-            (usize) (lastindex - oldindex)*sizeof(*entries));
-    memmove(&entries[lastindex], &aux, sizeof(*entries));
+            (usize) (history_length - oldindex)*sizeof(*entries));
+    memmove(&entries[history_length], &aux, sizeof(*entries));
     return;
 }
 
@@ -544,6 +547,6 @@ history_clean(void) {
            HISTORY_KEEP_SIZE * sizeof(*entries));
     memset(&entries[HISTORY_KEEP_SIZE], 0,
            HISTORY_KEEP_SIZE * sizeof(*entries));
-    lastindex = HISTORY_KEEP_SIZE - 1;
+    history_length = HISTORY_KEEP_SIZE - 1;
     return;
 }
