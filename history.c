@@ -62,9 +62,6 @@ history_delete_tmp(int unused) {
     (void) unused;
     error("Deleting images...");
 
-    for (int i = 0; i < history_length; i += 1)
-        history_free_entry(&entries[i]);
-    history_save();
     nftw(directory, history_callback_delete, MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
 
     _exit(EXIT_SUCCESS);
