@@ -47,9 +47,12 @@ history_callback_delete(const char *path,
                         int typeflag,
                         struct FTW *ftwbuf) {
     int result;
+    (void) sb;
+    (void) typeflag;
+    (void) ftwbuf;
 
     if ((result = remove(path)))
-        error(path);
+        error((char *)path);
 
     return 0;
 }
