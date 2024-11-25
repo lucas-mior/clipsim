@@ -20,7 +20,7 @@ clang: CFLAGS += -Wno-format-nonliteral -Wno-declaration-after-statement
 clang: CFLAGS += -Wno-format-zero-length
 clang: clean release
 
-CFLAGS += -std=c99 -D_DEFAULT_SOURCE
+CFLAGS += -std=c99 -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600
 CFLAGS += -Wall -Wextra
 
 release: CFLAGS += -O2 -flto

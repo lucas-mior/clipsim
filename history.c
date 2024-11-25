@@ -17,11 +17,16 @@
 
 #include "clipsim.h"
 
+#include <ftw.h>
+
+#define MAX_OPEN_FD 64
+
 static volatile bool recovered = false;
 static int32 lastindex;
 static File history = { .file = NULL, .fd = -1, .name = NULL };
 static char *XDG_CACHE_HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
+static char *directory = "/tmp/clipsim";
 
 static int32 history_repeated_index(const char *, const int);
 static void history_reorder(const int32);
@@ -34,6 +39,29 @@ int32
 history_lastindex(void) {
     DEBUG_PRINT("void");
     return lastindex;
+}
+
+int
+history_callback_delete(const char *path,
+                        const struct stat *sb,
+                        int typeflag,
+                        struct FTW *ftwbuf) {
+    int result;
+
+    if ((result = remove(path)))
+        error(path);
+
+    return 0;
+}
+
+void
+history_delete_tmp(int unused) {
+    (void) unused;
+    error("Deleting images...");
+
+    nftw(directory, history_callback_delete, MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
+
+    _exit(EXIT_SUCCESS);
 }
 
 void history_backup(void) {
@@ -286,7 +314,6 @@ history_save_image(char **content, int *length) {
     isize copied = 0;
     int n;
     char buffer[256];
-    char *directory = "/tmp/clipsim";
 
     n = snprintf(buffer, sizeof(buffer), "%s/%lu.png", directory, t);
     if (n < (int) strlen(directory))
