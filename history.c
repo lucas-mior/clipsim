@@ -429,7 +429,7 @@ history_recover(int32 id) {
     }
     if (id < 0)
         id = history_length + id;
-    if (id >= history_length) {
+    if ((id >= history_length) || (id < 0)) {
         error("Invalid index for recovery: %d\n", id);
         recovered = true;
         return;
