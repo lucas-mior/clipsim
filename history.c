@@ -46,13 +46,13 @@ history_callback_delete(const char *path,
                         const struct stat *stat,
                         int typeflag,
                         struct FTW *ftwbuf) {
-    (void) typeflag;
+    (void) stat;
     (void) ftwbuf;
 
-    if (!S_ISDIR(stat->st_mode)) {
+    if (typeflag == FTW_F) {
         if (unlink(path) < 0)
             error("Error deleting %s: %s.\n", (char *)path, strerror(errno));
-    } else {
+    } else if (typeflag == FTW_DP) {
         if (rmdir(path) < 0)
             error("Error deleting %s: %s.\n", (char *)path, strerror(errno));
     }
