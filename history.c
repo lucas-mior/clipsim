@@ -32,7 +32,6 @@ static int32 history_callback_delete(const char *,
                                      const struct stat *, int32, struct FTW *);
 static int32 history_repeated_index(const char *, const int32);
 static void history_clean(void);
-static void history_delete_tmp(int32) __attribute__((noreturn));
 static void history_free_entry(const Entry *);
 static void history_reorder(const int32);
 static void history_save_entry(Entry *, int32);
