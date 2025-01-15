@@ -51,7 +51,7 @@ history_callback_delete(const char *path,
     (void) typeflag;
     (void) ftwbuf;
 
-    if ((result = remove(path)))
+    if ((result = remove(path)) < 0)
         error("Error deleting %s: %s.\n", (char *)path, strerror(errno));
 
     return 0;
