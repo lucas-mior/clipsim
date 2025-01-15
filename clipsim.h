@@ -138,7 +138,7 @@ bool history_save(void);
 void history_recover(int32);
 void history_remove(int32);
 void history_backup(void);
-void history_delete_tmp(int);
+void history_delete_tmp(int) __attribute__((noreturn));
 
 int clipboard_daemon_watch(void) __attribute__((noreturn));
 
