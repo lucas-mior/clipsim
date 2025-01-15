@@ -52,7 +52,7 @@ history_callback_delete(const char *path,
     (void) ftwbuf;
 
     if ((result = remove(path)))
-        error((char *)path);
+        error("Error deleting %s: %s.\n", (char *)path, strerror(errno));
 
     return 0;
 }
