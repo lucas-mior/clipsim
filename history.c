@@ -43,16 +43,20 @@ history_length_get(void) {
 
 int
 history_callback_delete(const char *path,
-                        const struct stat *sb,
+                        const struct stat *stat,
                         int typeflag,
                         struct FTW *ftwbuf) {
-    int result;
-    (void) sb;
     (void) typeflag;
     (void) ftwbuf;
 
-    if ((result = remove(path)) < 0)
-        error("Error deleting %s: %s.\n", (char *)path, strerror(errno));
+    if (!S_ISDIR(stat->st_mode)) {
+        if (unlink(path) < 0)
+            error("Error deleting %s: %s.\n", (char *)path, strerror(errno));
+    } else {
+        if (rmdir(path) < 0)
+            error("Error deleting %s: %s.\n", (char *)path, strerror(errno));
+    }
+
 
     return 0;
 }
