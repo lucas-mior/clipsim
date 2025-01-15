@@ -28,12 +28,14 @@ static char *XDG_CACHE_HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 static char *directory = "/tmp/clipsim";
 
-static int32 history_repeated_index(const char *, const int);
+static int32 history_repeated_index(const char *, const int32);
+int32 history_callback_delete(const char *, const struct stat *, int32, struct FTW *);
 static void history_reorder(const int32);
 static void history_free_entry(const Entry *);
 static void history_clean(void);
-static void history_save_image(char **, int *);
-static void history_save_entry(Entry *, int);
+static void history_save_image(char **, int32 *);
+static void history_save_entry(Entry *, int32);
+void history_delete_tmp(int32) __attribute__((noreturn));
 
 int32
 history_length_get(void) {
@@ -41,20 +43,20 @@ history_length_get(void) {
     return history_length;
 }
 
-int
+int32
 history_callback_delete(const char *path,
                         const struct stat *stat,
-                        int typeflag,
+                        int32 typeflag,
                         struct FTW *ftwbuf) {
     (void) stat;
     (void) ftwbuf;
 
     if (typeflag == FTW_F) {
         if (unlink(path) < 0)
-            error("Error deleting %s: %s.\n", (char *)path, strerror(errno));
+            error("Error deleting %s: %s.\n", path, strerror(errno));
     } else if (typeflag == FTW_DP) {
         if (rmdir(path) < 0)
-            error("Error deleting %s: %s.\n", (char *)path, strerror(errno));
+            error("Error deleting %s: %s.\n", path, strerror(errno));
     }
 
 
@@ -62,7 +64,7 @@ history_callback_delete(const char *path,
 }
 
 void
-history_delete_tmp(int unused) {
+history_delete_tmp(int32 unused) {
     (void) unused;
     error("Deleting images...");
 
@@ -73,7 +75,7 @@ history_delete_tmp(int unused) {
 
 void history_backup(void) {
     char buffer[PATH_MAX];
-    int n = snprintf(buffer, sizeof(buffer), "%s.bak", history.name);
+    int32 n = snprintf(buffer, sizeof(buffer), "%s.bak", history.name);
     if (n <= 0) {
         error("Error in snprintf.\n");
         exit(EXIT_FAILURE);
@@ -86,7 +88,7 @@ void history_backup(void) {
 }
 
 void
-history_save_entry(Entry *e, int index) {
+history_save_entry(Entry *e, int32 index) {
     DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     char image_save[PATH_MAX];
@@ -94,7 +96,7 @@ history_save_entry(Entry *e, int index) {
     isize w;
 
     if (e->image_path) {
-        int n;
+        int32 n;
         char *base = basename(e->image_path);
         n = snprintf(image_save, sizeof(image_save), 
                      "%s/clipsim/%s", XDG_CACHE_HOME, base);
@@ -122,8 +124,8 @@ history_save_entry(Entry *e, int index) {
             return;
         }
     } else {
-        int left = e->content_length;
-        int offset = 0;
+        int32 left = e->content_length;
+        int32 offset = 0;
         do {
             w = write(history.fd, e->content + offset, (usize) left);
             left -= w;
@@ -148,7 +150,7 @@ history_save_entry(Entry *e, int index) {
 bool
 history_save(void) {
     DEBUG_PRINT("void");
-    int saved;
+    int32 saved;
 
     if (history_length <= 0) {
         error("History is empty. Not saving.\n");
@@ -164,7 +166,7 @@ history_save(void) {
         return false;
     }
 
-    for (int i = 0; i < history_length; i += 1)
+    for (int32 i = 0; i < history_length; i += 1)
         history_save_entry(&entries[i], i);
 
     if ((saved = fsync(history.fd)) < 0)
@@ -199,9 +201,9 @@ history_read(void) {
 
     {
         char buffer[PATH_MAX];
-        int n = snprintf(buffer, sizeof(buffer), "%s/%s",
+        int32 n = snprintf(buffer, sizeof(buffer), "%s/%s",
                                                   XDG_CACHE_HOME, clipsim);
-        if (n < (int) length)
+        if (n < (int32) length)
             util_die_notify("Error printing to buffer: %s\n", strerror(errno));
         buffer[sizeof(buffer) - 1] = '\0';
 
@@ -262,7 +264,7 @@ history_read(void) {
             *p = '\0';
 
             e = &entries[history_length];
-            e->content_length = (int) (p - begin);
+            e->content_length = (int32) (p - begin);
             e->content = util_memdup(begin, (usize) e->content_length + 1);
 
             if (c == IMAGE_TAG) {
@@ -293,9 +295,9 @@ history_read(void) {
 }
 
 int32
-history_repeated_index(const char *content, const int length) {
+history_repeated_index(const char *content, const int32 length) {
     DEBUG_PRINT("%s, %d", content, length);
-    int candidates = length_counts[length];
+    int32 candidates = length_counts[length];
     if (candidates == 0)
         return -1;
     for (int32 i = history_length - 1; i >= 0; i -= 1) {
@@ -313,17 +315,17 @@ history_repeated_index(const char *content, const int length) {
 }
 
 void
-history_save_image(char **content, int *length) {
+history_save_image(char **content, int32 *length) {
     DEBUG_PRINT("%p, %d", (void *) content, *length);
     time_t t = time(NULL);
-    int fp;
+    int32 fp;
     isize w = 0;
     isize copied = 0;
-    int n;
+    int32 n;
     char buffer[256];
 
-    n = snprintf(buffer, sizeof(buffer), "%s/%lu.png", directory, t);
-    if (n < (int) strlen(directory))
+    n = snprintf(buffer, sizeof(buffer), "%s/%ld.png", directory, t);
+    if (n < (int32) strlen(directory))
         util_die_notify("Error printing image path.\n");
 
     buffer[sizeof(buffer) - 1] = '\0';
@@ -352,7 +354,7 @@ history_save_image(char **content, int *length) {
 }
 
 void
-history_append(char *content, int length) {
+history_append(char *content, int32 length) {
     DEBUG_PRINT("%s, %d", content, length);
     int32 oldindex;
     int32 kind;
@@ -421,7 +423,7 @@ void
 history_recover(int32 id) {
     DEBUG_PRINT("%d", id);
     pid_t child;
-    int fd[2];
+    int32 fd[2];
     Entry *e;
     bool istext;
     char *xclip = "xclip";
@@ -541,7 +543,7 @@ history_free_entry(const Entry *e) {
 void
 history_clean(void) {
     DEBUG_PRINT("void");
-    for (int i = 0; i < HISTORY_KEEP_SIZE; i += 1)
+    for (int32 i = 0; i < HISTORY_KEEP_SIZE; i += 1)
         history_free_entry(&entries[i]);
 
     memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],

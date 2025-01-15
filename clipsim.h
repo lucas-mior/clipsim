@@ -143,7 +143,7 @@ void history_delete_tmp(int);
 int clipboard_daemon_watch(void) __attribute__((noreturn));
 
 int ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
-void ipc_client_speak_fifo(uint, int32);
+void ipc_client_speak_fifo(int32, int32);
 
 void send_signal(const char *, const int);
 

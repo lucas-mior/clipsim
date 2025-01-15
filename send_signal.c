@@ -19,7 +19,7 @@
 
 #ifdef __linux__
 void
-send_signal(const char *executable, const int signal_number) {
+send_signal(const char *executable, const int32 signal_number) {
     DIR *processes;
     struct dirent *process;
 
@@ -31,9 +31,9 @@ send_signal(const char *executable, const int signal_number) {
     while ((process = readdir(processes))) {
         static char buffer[256];
         static char command[256];
-        int pid;
-        int cmdline;
-        int n;
+        int32 pid;
+        int32 cmdline;
+        int32 n;
 
         if (process->d_type != DT_DIR)
             continue;
@@ -63,9 +63,9 @@ send_signal(const char *executable, const int signal_number) {
 }
 #else
 void
-send_signal(const char *executable, const int signal_number) {
+send_signal(const char *executable, const int32 signal_number) {
     char signal_string[14];
-    int n;
+    int32 n;
     n = snprintf(signal_string, sizeof(signal_string), "%d", signal_number);
     if (n <= 0)
         return;

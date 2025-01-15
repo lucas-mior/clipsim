@@ -35,10 +35,10 @@ static void ipc_client_ask_id(const int32);
 static void ipc_make_fifos(void);
 static void ipc_clean_fifo(const char *);
 static void ipc_create_fifo(const char *);
-static void sig_abrt_handler(int);
+static void sig_abrt_handler(int32) __attribute__((noreturn));
 
 void
-sig_abrt_handler(int unused) {
+sig_abrt_handler(int32 unused) {
     (void) unused;
     error("Received SIGABRT signal, something is wrong with history file.\n");
     error("Creating backup for history file...\n");
@@ -49,10 +49,9 @@ sig_abrt_handler(int unused) {
 
     error("Error while trying to exec clipsim --daemon: %s\n", strerror(errno));
     exit(EXIT_FAILURE);
-    return;
 }
 
-int
+int32
 ipc_daemon_listen_fifo(void *unused) {
     DEBUG_PRINT("");
     (void) unused;
@@ -110,7 +109,7 @@ ipc_daemon_listen_fifo(void *unused) {
 }
 
 void
-ipc_client_speak_fifo(uint command, int32 id) {
+ipc_client_speak_fifo(int32 command, int32 id) {
     DEBUG_PRINT("%u, %d", command, id);
     isize w;
     if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
@@ -284,7 +283,7 @@ ipc_client_print_entries(void) {
             fwrite(buffer, 1, (usize) r, stdout);
         } while ((r = read(content_fifo.fd, buffer, sizeof(buffer))) > 0);
     } else {
-        int test;
+        int32 test;
         char *CLIPSIM_IMAGE_PREVIEW;
         if (r == 1) {
             r = read(content_fifo.fd, buffer + 1, sizeof(buffer) - 1);
