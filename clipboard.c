@@ -31,7 +31,7 @@ static Window window;
 static Atom clipboard_check_target(Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
 
-int
+int32
 clipboard_daemon_watch(void) {
     DEBUG_PRINT("void");
     ulong color;
@@ -47,7 +47,7 @@ clipboard_daemon_watch(void) {
         exit(EXIT_FAILURE);
     }
 
-    int signal_number = 0;
+    int32 signal_number = 0;
     if ((CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")) == NULL)
         error("CLIPSIM_SIGNAL_PROGRAM is not defined.\n");
     if ((CLIPSIM_SIGNAL_NUMBER = getenv("CLIPSIM_SIGNAL_NUMBER")) == NULL)
@@ -95,10 +95,10 @@ clipboard_daemon_watch(void) {
 
         switch (clipboard_get_clipboard(&save, &length)) {
         case CLIPBOARD_TEXT:
-            history_append(save, (int) length);
+            history_append(save, (int32) length);
             break;
         case CLIPBOARD_IMAGE:
-            history_append(save, (int) length);
+            history_append(save, (int32) length);
             break;
         case CLIPBOARD_OTHER:
             error("Unsupported format."
@@ -111,6 +111,10 @@ clipboard_daemon_watch(void) {
         case CLIPBOARD_ERROR:
             history_recover(-1);
             break;
+        default:
+            error("Unhandled result from clipboard_get_clipboard:\n");
+            error("save: %p\n", save);
+            error("length: %lu\n", length);
         }
         mtx_unlock(&lock);
     }
@@ -125,7 +129,7 @@ clipboard_check_target(const Atom target) {
         DEBUG_PRINT("%lu", target);
 #endif
     XEvent xevent;
-    int nevents = 0;
+    int32 nevents = 0;
 
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA,
                       window, CurrentTime);
@@ -143,7 +147,7 @@ clipboard_check_target(const Atom target) {
 int32
 clipboard_get_clipboard(char **save, ulong *length) {
     DEBUG_PRINT("%p, %p", (void *) save, (void *) length);
-    int actual_format_return;
+    int32 actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
     Atom actual_type_return;

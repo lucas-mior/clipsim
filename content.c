@@ -21,7 +21,7 @@
 static magic_t magic;
 
 void
-content_remove_newline(char *text, int *length) {
+content_remove_newline(char *text, int32 *length) {
     DEBUG_PRINT("%s, %d", text, *length);
     text[*length] = '\0';
     while (text[*length - 1] == '\n') {
@@ -32,8 +32,8 @@ content_remove_newline(char *text, int *length) {
 }
 
 void
-content_trim_spaces(char **trimmed, int *trimmed_length,
-                    char *content, const int length) {
+content_trim_spaces(char **trimmed, int32 *trimmed_length,
+                    char *content, const int32 length) {
     DEBUG_PRINT("%p, %p, %s, %d",
                 (void *) trimmed, (void *) trimmed_length, content, length);
     char *p;
@@ -58,7 +58,7 @@ content_trim_spaces(char **trimmed, int *trimmed_length,
         c += 1;
     }
     *p = '\0';
-    *trimmed_length = (int) (p - *trimmed);
+    *trimmed_length = (int32) (p - *trimmed);
 
     if (temp) {
         content[TRIMMED_SIZE] = temp;
@@ -75,7 +75,7 @@ content_trim_spaces(char **trimmed, int *trimmed_length,
 }
 
 int32
-content_check_content(uchar *data, const int length) {
+content_check_content(uchar *data, const int32 length) {
     DEBUG_PRINT("%s, %d", data, length);
 
     { /* Check if it is made only of spaces and newlines */

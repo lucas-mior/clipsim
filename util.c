@@ -71,7 +71,7 @@ util_calloc(const usize nmemb, const usize size) {
     return p;
 }
 
-int
+int32
 util_string_int32(int32 *number, const char *string) {
     char *endptr;
     long x;
@@ -90,7 +90,7 @@ util_string_int32(int32 *number, const char *string) {
 void
 util_die_notify(const char *format, ...) {
     char *notifiers[2] = { "dunstify", "notify-send" };
-    int n;
+    int32 n;
     va_list args;
     char buffer[BUFSIZ];
 
@@ -111,7 +111,7 @@ util_die_notify(const char *format, ...) {
 }
 
 void
-util_segv_handler(int unused) {
+util_segv_handler(int32 unused) {
     (void) unused;
     char *message = "Memory error. Please send a bug report.\n";
     char *notifiers[2] = { "dunstify", "notify-send" };
@@ -143,8 +143,8 @@ util_close(File *file) {
     return;
 }
 
-int
-util_open(File *file, const int flag) {
+int32
+util_open(File *file, const int32 flag) {
     if ((file->fd = open(file->name, flag)) < 0) {
         error("Error opening %s: %s\n",
                         file->name, strerror(errno));
@@ -154,9 +154,9 @@ util_open(File *file, const int flag) {
     }
 }
 
-int
+int32
 util_copy_file(const char *destination, const char *source) {
-    int source_fd, destination_fd;
+    int32 source_fd, destination_fd;
     char buffer[BUFSIZ];
     isize r = 0;
     isize w = 0;
@@ -204,16 +204,15 @@ util_copy_file(const char *destination, const char *source) {
 }
 
 void error(char *format, ...) {
-    char *notifiers[2] = { "dunstify", "notify-send" };
     char buffer[BUFSIZ];
     va_list args;
-    int n;
+    int32 n;
 
     va_start(args, format);
     n = vsnprintf(buffer, sizeof(buffer) - 1, format, args);
     va_end(args);
 
-    if (n < 0 || n > (int)sizeof(buffer)) {
+    if (n < 0 || n > (int32)sizeof(buffer)) {
         fprintf(stderr, "Error in vsnprintf()\n");
         exit(EXIT_FAILURE);
     }
@@ -223,6 +222,7 @@ void error(char *format, ...) {
 
 #ifdef CLIPSIM_DEBUG
     switch (fork()) {
+        char *notifiers[2] = { "dunstify", "notify-send" };
         case -1:
             fprintf(stderr, "Error forking: %s\n", strerror(errno));
             break;

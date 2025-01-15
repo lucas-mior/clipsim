@@ -51,8 +51,8 @@ static bool main_check_running(void);
 static void main_usage(FILE *) __attribute__((noreturn));
 static void main_launch_daemon(void) __attribute__((noreturn));
 
-int
-main(int argc, char *argv[]) {
+int32
+main(int32 argc, char *argv[]) {
     DEBUG_PRINT("%d, %s", argc, argv[0]);
     int32 id;
     bool spell_error = true;
@@ -66,7 +66,7 @@ main(int argc, char *argv[]) {
     if (argc <= 1 || argc >= 4)
         main_usage(stderr);
 
-    for (int i = 0; i < LENGTH(commands); i += 1) {
+    for (int32 i = 0; i < LENGTH(commands); i += 1) {
         if (!strcmp(argv[1], commands[i].shortname)
             || !strcmp(argv[1], commands[i].longname)) {
             spell_error = false;
@@ -105,7 +105,7 @@ main_usage(FILE *stream) {
     DEBUG_PRINT("%p", (void *) stream);
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
-    for (int i = 0; i < LENGTH(commands); i += 1) {
+    for (int32 i = 0; i < LENGTH(commands); i += 1) {
         fprintf(stream, "%s | %-*s : %s\n",
                 commands[i].shortname, 8, commands[i].longname, 
                 commands[i].description);
@@ -117,9 +117,9 @@ bool
 main_check_cmdline(char *pid) {
     char buffer[256];
     char command[256];
-    int n;
+    int32 n;
     isize r;
-    int cmdline;
+    int32 cmdline;
     char cmd1[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
                    '-', 'd', '\0'};
     char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
@@ -183,7 +183,7 @@ void
 main_launch_daemon(void) {
     DEBUG_PRINT("");
     thrd_t ipc_thread;
-    int mtx_error;
+    int32 mtx_error;
 
     if (main_check_running()) {
         error("clipsim --daemon is already running.\n");
