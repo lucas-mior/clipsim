@@ -28,14 +28,15 @@ static char *XDG_CACHE_HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 static char *directory = "/tmp/clipsim";
 
+static int32 history_callback_delete(const char *,
+                                     const struct stat *, int32, struct FTW *);
 static int32 history_repeated_index(const char *, const int32);
-int32 history_callback_delete(const char *, const struct stat *, int32, struct FTW *);
-static void history_reorder(const int32);
-static void history_free_entry(const Entry *);
 static void history_clean(void);
-static void history_save_image(char **, int32 *);
+static void history_delete_tmp(int32) __attribute__((noreturn));
+static void history_free_entry(const Entry *);
+static void history_reorder(const int32);
 static void history_save_entry(Entry *, int32);
-void history_delete_tmp(int32) __attribute__((noreturn));
+static void history_save_image(char **, int32 *);
 
 int32
 history_length_get(void) {
