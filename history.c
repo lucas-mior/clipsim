@@ -98,7 +98,7 @@ history_save_entry(Entry *e, int index) {
         char *base = basename(e->image_path);
         n = snprintf(image_save, sizeof(image_save), 
                      "%s/clipsim/%s", XDG_CACHE_HOME, base);
-        if (n < 0) {
+        if (n <= 0) {
             error("Error printing image path.\n");
             return;
         }
@@ -337,8 +337,8 @@ history_save_image(char **content, int *length) {
         w = write(fp, *(content + copied), (usize) *length);
         if (w <= 0)
             break;
-        copied += (usize) w;
-        *length -= (usize) w;
+        copied += w;
+        *length -= w;
     } while (*length > 0);
     if (w < 0) {
         error("Error writing to %s: %s\n", buffer, strerror(errno));
