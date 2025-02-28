@@ -64,13 +64,12 @@ history_callback_delete(const char *path,
 }
 
 void
-history_delete_tmp(int32 unused) {
-    (void) unused;
+history_delete_tmp(void) {
     error("Deleting images...");
 
     nftw(directory, history_callback_delete, MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
 
-    _exit(EXIT_SUCCESS);
+    return;
 }
 
 void history_backup(void) {
@@ -175,6 +174,14 @@ history_save(void) {
         error("History saved to disk.\n");
     util_close(&history);
     return saved >= 0;
+}
+
+void history_exit(int32 unused) {
+    (void) unused;
+
+    history_save();
+    history_delete_tmp();
+    _exit(EXIT_SUCCESS);
 }
 
 void

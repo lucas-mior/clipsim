@@ -63,7 +63,8 @@ $ urxvtc -e clip.sh # clip.sh is the script above (see scripts/ for more)
 If you know of some terminal emulator that opens faster than urxvtc,
 please let me know.
 
-To explicity save the clipboard history in `$XDG_CACHE_HOME/clipsim/history`:
+To explicity save the clipboard history in `$XDG_CACHE_HOME/clipsim/history`.
+It should not be necessary since history is already saved on `SIGTERM` and `SIGINT`.
 ```
 $ clipsim --save
 ```

@@ -60,8 +60,8 @@ main(int32 argc, char *argv[]) {
     program = basename(argv[0]);
 
     signal(SIGSEGV, util_segv_handler);
-    signal(SIGTERM, history_delete_tmp);
-    signal(SIGINT, history_delete_tmp);
+    signal(SIGTERM, history_exit);
+    signal(SIGINT, history_exit);
 
     if (argc <= 1 || argc >= 4)
         main_usage(stderr);
@@ -144,9 +144,11 @@ main_check_cmdline(char *pid) {
     case sizeof(cmd1):
         if (!memcmp(command, cmd1, (usize) r))
             return true;
+        break;
     case sizeof(cmd2):
         if (!memcmp(command, cmd2, (usize) r))
             return true;
+        break;
     default:
         break;
     }
