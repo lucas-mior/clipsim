@@ -156,7 +156,8 @@ util_open(File *file, const int32 flag) {
 
 int32
 util_copy_file(const char *destination, const char *source) {
-    int32 source_fd, destination_fd;
+    int32 source_fd;
+    int32 destination_fd;
     char buffer[BUFSIZ];
     isize r = 0;
     isize w = 0;
