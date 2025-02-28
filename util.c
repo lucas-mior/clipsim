@@ -18,6 +18,8 @@
 #include "clipsim.h"
 #include <stdarg.h>
 
+static char *notifiers[2] = { "dunstify", "notify-send" };
+
 void *
 util_malloc(const usize size) {
     void *p;
@@ -89,7 +91,6 @@ util_string_int32(int32 *number, const char *string) {
 
 void
 util_die_notify(const char *format, ...) {
-    char *notifiers[2] = { "dunstify", "notify-send" };
     int32 n;
     va_list args;
     char buffer[BUFSIZ];
@@ -114,7 +115,6 @@ void
 util_segv_handler(int32 unused) {
     (void) unused;
     char *message = "Memory error. Please send a bug report.\n";
-    char *notifiers[2] = { "dunstify", "notify-send" };
 
     (void) write(STDERR_FILENO, message, strlen(message));
     for (uint i = 0; i < LENGTH(notifiers); i += 1) {
@@ -222,7 +222,6 @@ void error(char *format, ...) {
 
 #ifdef CLIPSIM_DEBUG
     switch (fork()) {
-        char *notifiers[2] = { "dunstify", "notify-send" };
         case -1:
             fprintf(stderr, "Error forking: %s\n", strerror(errno));
             break;
