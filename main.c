@@ -140,12 +140,15 @@ main_check_cmdline(char *pid) {
     }
     close(cmdline);
 
-    if (r == sizeof(cmd1)) {
+    switch (r) {
+    case sizeof(cmd1):
         if (!memcmp(command, cmd1, (usize) r))
             return true;
-    } else if (r == sizeof(cmd2)) {
+    case sizeof(cmd2):
         if (!memcmp(command, cmd2, (usize) r))
             return true;
+    default:
+        break;
     }
     return false;
 }
