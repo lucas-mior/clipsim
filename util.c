@@ -163,15 +163,14 @@ util_copy_file(const char *destination, const char *source) {
     isize w = 0;
     
     if ((source_fd = open(source, O_RDONLY)) < 0) {
-        error("Error opening %s for reading: %s\n", 
-                        source, strerror(errno));
+        error("Error opening %s for reading: %s.\n", source, strerror(errno));
         return -1;
     }
 
     if ((destination_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 
                                             S_IRUSR | S_IWUSR)) < 0) {
-        error("Error opening %s for writing: %s\n",
-                         destination, strerror(errno));
+        error("Error opening %s for writing: %s.\n",
+              destination, strerror(errno));
         close(source_fd);
         return -1;
     }
@@ -192,8 +191,7 @@ util_copy_file(const char *destination, const char *source) {
     }
 
     if (r < 0) {
-        error("Error reading data from %s: %s\n",
-                        source, strerror(errno));
+        error("Error reading data from %s: %s.\n", source, strerror(errno));
         close(source_fd);
         close(destination_fd);
         return -1;
