@@ -15,10 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <magic.h>
 #include "clipsim.h"
-
-static magic_t magic;
 
 void
 content_remove_newline(char *text, int32 *length) {
@@ -102,26 +99,14 @@ content_check_content(uchar *data, const int32 length) {
 
     do {
         const char *mime_type;
-        if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
-            error("Error in magic_open(MAGIC_MIME_TYPE): %s\n", strerror(errno));
-            break;
-        }
-        if (magic_load(magic, NULL) != 0) {
-            error("Error in magic_load(): %s\n", strerror(errno));
-            break;
-        }
         if ((mime_type = magic_buffer(magic, data, (usize) length)) == NULL) {
             error("Error in magic_buffer(%s)\n", data);
             break;
         }
         if (!strncmp(mime_type, "image/", 6)) {
-            magic_close(magic);
             return CLIPBOARD_IMAGE;
         }
     } while (0);
-    if (magic)
-        magic_close(magic);
-    magic = NULL;
 
     if (length > (ENTRY_MAX_LENGTH - 1)) {
         error("Too large entry. This wont' be added to history.\n");

@@ -46,6 +46,7 @@ const char TEXT_TAG = (char) 0x01;
 const char IMAGE_TAG = (char) 0x02;
 mtx_t lock;
 char *program;
+magic_t magic;
 
 static bool main_check_cmdline(char *);
 static bool main_check_running(void);
@@ -202,6 +203,15 @@ main_launch_daemon(void) {
     }
 
     history_read();
+
+    if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
+        error("Error in magic_open(MAGIC_MIME_TYPE): %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    if (magic_load(magic, NULL) != 0) {
+        error("Error in magic_load(): %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
 
     thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
     clipboard_daemon_watch();
