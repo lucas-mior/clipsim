@@ -362,7 +362,6 @@ history_save_image(char **content, int32 *length) {
     }
 
     *length = n;
-    *content = util_realloc(*content, (usize) *length + 1);
     memcpy(*content, buffer, (usize) *length + 1);
     return;
 }
