@@ -92,7 +92,7 @@ typedef struct Entry {
     int content_length;
     int trimmed_length;
     char *content;
-    char *trimmed;
+    int trimmed;
 } Entry;
 
 typedef struct File {
@@ -130,7 +130,7 @@ extern magic_t magic;
 
 
 void content_remove_newline(char *, int *);
-void content_trim_spaces(char **, int *, char *, int);
+void content_trim_spaces(int *, int *, char *, int);
 int32 content_check_content(uchar *, int);
 
 int32 history_length_get(void);

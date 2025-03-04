@@ -29,7 +29,7 @@ content_remove_newline(char *text, int32 *length) {
 }
 
 void
-content_trim_spaces(char **trimmed, int32 *trimmed_length,
+content_trim_spaces(int *trimmed, int32 *trimmed_length,
                     char *content, const int32 length) {
     DEBUG_PRINT("%p, %p, %s, %d",
                 (void *) trimmed, (void *) trimmed_length, content, length);
@@ -37,7 +37,8 @@ content_trim_spaces(char **trimmed, int32 *trimmed_length,
     char temp = '\0';
     char *c = content;
 
-    *trimmed = p = util_malloc(MIN((usize) length + 1, TRIMMED_SIZE + 1));
+    *trimmed = length + 1;
+    p = &content[*trimmed];
 
     if (length >= TRIMMED_SIZE) {
         temp = content[TRIMMED_SIZE];
@@ -55,19 +56,15 @@ content_trim_spaces(char **trimmed, int32 *trimmed_length,
         c += 1;
     }
     *p = '\0';
-    *trimmed_length = (int32) (p - *trimmed);
+    *trimmed_length = (int32) (p - &content[*trimmed]);
 
     if (temp) {
         content[TRIMMED_SIZE] = temp;
         temp = '\0';
     }
 
-    if (*trimmed_length == length) {
-        free(*trimmed);
-        *trimmed = content;
-    } else {
-        *trimmed = util_realloc(*trimmed, (usize) *trimmed_length + 1);
-    }
+    if (*trimmed_length == length)
+        trimmed = 0;
     return;
 }
 

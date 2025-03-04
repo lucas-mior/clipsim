@@ -212,7 +212,7 @@ ipc_daemon_pipe_entries(void) {
         Entry *e = &entries[i];
         usize size = (usize) e->trimmed_length + 1;
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
-        if (fwrite(e->trimmed, 1, size, content_fifo.file) < size) {
+        if (fwrite(&e->content[e->trimmed], 1, size, content_fifo.file) < size) {
             error("Error writing to client fifo.\n");
             break;
         }
