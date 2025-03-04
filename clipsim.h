@@ -34,6 +34,7 @@
 #include <threads.h>
 #include <time.h>
 #include <unistd.h>
+#include <magic.h>
 
 #ifndef CLIPSIM_H
 #define CLIPSIM_H
@@ -125,6 +126,8 @@ extern mtx_t lock;
 extern const char TEXT_TAG;
 extern const char IMAGE_TAG;
 extern char *program;
+extern magic_t magic;
+
 
 void content_remove_newline(char *, int *);
 void content_trim_spaces(char **, int *, char *, int);
