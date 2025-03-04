@@ -29,8 +29,8 @@ content_remove_newline(char *text, int32 *length) {
 }
 
 void
-content_trim_spaces(int *trimmed, int32 *trimmed_length,
-                    char *content, const int32 length) {
+content_trim_spaces(int16 *trimmed, int16 *trimmed_length,
+                    char *content, const int16 length) {
     DEBUG_PRINT("%p, %p, %s, %d",
                 (void *) trimmed, (void *) trimmed_length, content, length);
     char *p;
@@ -56,7 +56,7 @@ content_trim_spaces(int *trimmed, int32 *trimmed_length,
         c += 1;
     }
     *p = '\0';
-    *trimmed_length = (int32) (p - &content[*trimmed]);
+    *trimmed_length = (int16) (p - &content[*trimmed]);
 
     if (temp) {
         content[TRIMMED_SIZE] = temp;

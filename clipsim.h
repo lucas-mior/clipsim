@@ -91,8 +91,8 @@ typedef ssize_t isize;
 typedef struct Entry {
     char *content;
     int content_length;
-    int trimmed_length;
-    int trimmed;
+    int16 trimmed_length;
+    int16 trimmed;
 } Entry;
 
 typedef struct File {
@@ -130,7 +130,7 @@ extern magic_t magic;
 
 
 void content_remove_newline(char *, int *);
-void content_trim_spaces(int *, int *, char *, int);
+void content_trim_spaces(int16 *, int16 *, char *, int16);
 int32 content_check_content(uchar *, int);
 
 int32 history_length_get(void);
