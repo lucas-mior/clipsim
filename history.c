@@ -17,6 +17,11 @@
 
 #include "clipsim.h"
 
+#include <X11/X.h>
+#include <X11/Xatom.h>
+#include <X11/Xlib.h>
+#include <X11/extensions/Xfixes.h>
+
 #include <ftw.h>
 
 #define MAX_OPEN_FD 64
@@ -428,9 +433,10 @@ history_append(char *content, int32 length) {
         is_image[history_length] = true;
         break;
     default:
-        is_image[history_length] = false;
-        break;
+        error("Unexpected default case.\n");
+        exit(EXIT_FAILURE);
     }
+    XFree(content);
 
     history_length += 1;
     if (history_length >= HISTORY_BUFFER_SIZE)
