@@ -100,7 +100,8 @@ content_check_content(uchar *data, const int32 length) {
     do {
         const char *mime_type;
         if ((mime_type = magic_buffer(magic, data, (usize) length)) == NULL) {
-            error("Error in magic_buffer(%s): %s.\n", data, magic_error(magic));
+            error("Error in magic_buffer(%.*s): %s.\n",
+                  30, data, magic_error(magic));
             break;
         }
         if (!strncmp(mime_type, "image/", 6)) {
