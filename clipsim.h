@@ -89,9 +89,9 @@ typedef ssize_t isize;
 #endif
 
 typedef struct Entry {
+    char *content;
     int content_length;
     int trimmed_length;
-    char *content;
     int trimmed;
 } Entry;
 
