@@ -433,10 +433,8 @@ history_append(char *content, int32 length) {
     }
 
     history_length += 1;
-    if (history_length >= HISTORY_BUFFER_SIZE) {
+    if (history_length >= HISTORY_BUFFER_SIZE)
         history_clean();
-        history_save();
-    }
 
     return;
 }
