@@ -112,9 +112,8 @@ clipboard_daemon_watch(void) {
             history_recover(-1);
             break;
         default:
-            error("Unhandled result from clipboard_get_clipboard:\n");
-            error("save: %p\n", save);
-            error("length: %lu\n", length);
+            error("Unhandled result from clipboard_get_clipboard.\n");
+            exit(EXIT_FAILURE);
         }
         mtx_unlock(&lock);
     }
