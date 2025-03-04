@@ -41,6 +41,7 @@ static const Command commands[] = {
 };
 
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
+bool is_image[HISTORY_BUFFER_SIZE] = {0};
 const char TEXT_TAG = (char) 0x01;
 const char IMAGE_TAG = (char) 0x02;
 mtx_t lock;

@@ -32,7 +32,7 @@ static int32 history_callback_delete(const char *,
                                      const struct stat *, int32, struct FTW *);
 static int32 history_repeated_index(const char *, const int32);
 static void history_clean(void);
-static void history_free_entry(const Entry *);
+static void history_free_entry(const Entry *, int32);
 static void history_reorder(const int32);
 static void history_save_entry(Entry *, int32);
 static void history_save_image(char **, int32 *);
@@ -94,9 +94,9 @@ history_save_entry(Entry *e, int32 index) {
     usize tag_size = sizeof(*(&IMAGE_TAG));
     isize w;
 
-    if (e->image_path) {
+    if (is_image[index]) {
         int32 n;
-        char *base = basename(e->image_path);
+        char *base = basename(e->content);
         n = snprintf(image_save, sizeof(image_save), 
                      "%s/clipsim/%s", XDG_CACHE_HOME, base);
         if (n <= 0) {
@@ -104,10 +104,10 @@ history_save_entry(Entry *e, int32 index) {
             return;
         }
 
-        if (strcmp(image_save, e->image_path)) {
-            if (util_copy_file(image_save, e->image_path) < 0) {
+        if (strcmp(image_save, e->content)) {
+            if (util_copy_file(image_save, e->content) < 0) {
                 error("Error copying %s to %s: %s.\n", 
-                      e->image_path, image_save, strerror(errno));
+                      e->content, image_save, strerror(errno));
                 history_remove(index);
                 return;
             }
@@ -276,12 +276,12 @@ history_read(void) {
 
             if (c == IMAGE_TAG) {
                 e->trimmed = e->content;
-                e->image_path = e->content;
                 e->trimmed_length = e->content_length;
+                is_image[history_length] = true;
             } else {
                 content_trim_spaces(&e->trimmed, &e->trimmed_length, 
                                      e->content, e->content_length);
-                e->image_path = NULL;
+                is_image[history_length] = false;
             }
             begin = p + 1;
 
@@ -401,23 +401,24 @@ history_append(char *content, int32 length) {
     e->content = content;
     e->content_length = length;
     length_counts[length] += 1;
-    history_length += 1;
 
     switch (kind) {
     case CLIPBOARD_TEXT:
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length), 
                             e->content, e->content_length);
-        e->image_path = NULL;
+        is_image[history_length] = false;
         break;
     case CLIPBOARD_IMAGE:
         e->trimmed = e->content;
         e->trimmed_length = e->content_length;
-        e->image_path = e->content;
+        is_image[history_length] = true;
         break;
     default:
+        is_image[history_length] = false;
         break;
     }
 
+    history_length += 1;
     if (history_length >= HISTORY_BUFFER_SIZE) {
         history_clean();
         history_save();
@@ -449,7 +450,7 @@ history_recover(int32 id) {
     }
 
     e = &entries[id];
-    istext = (e->image_path == NULL);
+    istext = (is_image[id] == false);
     if (istext) {
         if (pipe(fd))
             util_die_notify("Error creating pipe: %s\n", strerror(errno));
@@ -464,7 +465,7 @@ history_recover(int32 id) {
             execl(xclip_path, xclip, "-selection", "clipboard", NULL);
         } else {
             execl(xclip_path, xclip, "-selection", "clipboard",
-                              "-target", "image/png", e->image_path, NULL);
+                              "-target", "image/png", e->content, NULL);
         }
         util_die_notify("Error in exec(%s): %s", xclip_path, strerror(errno));
     case -1:
@@ -508,7 +509,7 @@ history_remove(int32 id) {
         return;
     }
 
-    history_free_entry(&entries[id]);
+    history_free_entry(&entries[id], id);
 
     if (id < history_length) {
         memmove(&entries[id], &(entries[id + 1]),
@@ -524,22 +525,26 @@ void
 history_reorder(const int32 oldindex) {
     DEBUG_PRINT("%d", oldindex);
     Entry aux = entries[oldindex];
+    bool aux2 = is_image[oldindex];
+
     memmove(&entries[oldindex], &entries[oldindex + 1],
             (usize) (history_length - oldindex)*sizeof(*entries));
     memmove(&entries[history_length - 1], &aux, sizeof(*entries));
+
+    memmove(&is_image[oldindex], &is_image[oldindex + 1],
+            (usize) (history_length - oldindex)*sizeof(*is_image));
+    memmove(&is_image[history_length - 1], &aux2, sizeof(*is_image));
     return;
 }
 
 void
-history_free_entry(const Entry *e) {
+history_free_entry(const Entry *e, int32 index) {
     DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
                 e->content, e->content_length, e->trimmed, e->trimmed_length);
     length_counts[e->content_length] -= 1;
 
-    /* image_path does not have to be freed
-     * because e->content is the same pointer */ 
-    if (e->image_path)
-        unlink(e->image_path);
+    if (is_image[index])
+        unlink(e->content);
     free(e->content);
 
     if (e->trimmed != e->content)
@@ -551,12 +556,18 @@ void
 history_clean(void) {
     DEBUG_PRINT("void");
     for (int32 i = 0; i < HISTORY_KEEP_SIZE; i += 1)
-        history_free_entry(&entries[i]);
+        history_free_entry(&entries[i], i);
 
     memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
            HISTORY_KEEP_SIZE * sizeof(*entries));
     memset(&entries[HISTORY_KEEP_SIZE], 0,
            HISTORY_KEEP_SIZE * sizeof(*entries));
+
+    memcpy(&is_image[0], &is_image[HISTORY_KEEP_SIZE],
+           HISTORY_KEEP_SIZE * sizeof(*is_image));
+    memset(&is_image[HISTORY_KEEP_SIZE], 0,
+           HISTORY_KEEP_SIZE * sizeof(*is_image));
+
     history_length = HISTORY_KEEP_SIZE;
     return;
 }

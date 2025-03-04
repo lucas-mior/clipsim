@@ -92,7 +92,6 @@ typedef struct Entry {
     int trimmed_length;
     char *content;
     char *trimmed;
-    char *image_path;
 } Entry;
 
 typedef struct File {
@@ -121,6 +120,7 @@ enum {
 };
 
 extern Entry entries[];
+extern bool is_image[];
 extern mtx_t lock;
 extern const char TEXT_TAG;
 extern const char IMAGE_TAG;
