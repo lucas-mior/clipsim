@@ -244,7 +244,7 @@ ipc_daemon_pipe_id(const int32 id) {
     }
 
     e = &entries[id];
-    if (e->image_path) {
+    if (is_image[id]) {
         isize w = write(content_fifo.fd, &IMAGE_TAG, tag_size);
         if (w < (isize) tag_size) {
             dprintf(content_fifo.fd, "Error printing image tag.\n");
