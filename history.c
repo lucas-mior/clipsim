@@ -88,8 +88,8 @@ void history_backup(void) {
 
 void
 history_save_entry(Entry *e, int32 index) {
-    DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
-                e->content, e->content_length, e->trimmed, e->trimmed_length);
+    DEBUG_PRINT("{\n    %s,\n    %d\n}",
+                e->content, e->content_length);
     char image_save[PATH_MAX];
     usize tag_size = sizeof(*(&IMAGE_TAG));
     isize w;
@@ -272,10 +272,10 @@ history_read(void) {
 
             e = &entries[history_length];
             e->content_length = (int32) (p - begin);
-            e->content = util_memdup(begin, (usize) e->content_length + 1);
+            e->content = util_memdup(begin, (usize) (e->content_length+1)*2);
 
             if (c == IMAGE_TAG) {
-                e->trimmed = e->content;
+                e->trimmed = 0;
                 e->trimmed_length = e->content_length;
                 is_image[history_length] = true;
             } else {
@@ -398,7 +398,7 @@ history_append(char *content, int32 length) {
     }
 
     e = &entries[history_length];
-    e->content = content;
+    e->content = util_memdup(content, length*2);
     e->content_length = length;
     length_counts[length] += 1;
 
@@ -409,7 +409,7 @@ history_append(char *content, int32 length) {
         is_image[history_length] = false;
         break;
     case CLIPBOARD_IMAGE:
-        e->trimmed = e->content;
+        e->trimmed = 0;
         e->trimmed_length = e->content_length;
         is_image[history_length] = true;
         break;
@@ -539,16 +539,14 @@ history_reorder(const int32 oldindex) {
 
 void
 history_free_entry(const Entry *e, int32 index) {
-    DEBUG_PRINT("{\n    %s,\n    %d,\n    %s,\n    %d\n}",
-                e->content, e->content_length, e->trimmed, e->trimmed_length);
+    DEBUG_PRINT("{\n    %s,\n    %d\n}",
+                e->content, e->content_length);
     length_counts[e->content_length] -= 1;
 
     if (is_image[index])
         unlink(e->content);
     free(e->content);
 
-    if (e->trimmed != e->content)
-        free(e->trimmed);
     return;
 }
 
