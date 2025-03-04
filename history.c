@@ -272,13 +272,20 @@ history_read(void) {
 
             e = &entries[history_length];
             e->content_length = (int32) (p - begin);
-            e->content = util_memdup(begin, (usize) (e->content_length+1)*2);
 
             if (c == IMAGE_TAG) {
                 e->trimmed = 0;
                 e->trimmed_length = e->content_length;
                 is_image[history_length] = true;
+                e->content = util_memdup(begin, (usize)e->content_length + 1);
             } else {
+                usize size;
+                if (e->content_length >= TRIMMED_SIZE) {
+                    size = e->content_length + 1 + TRIMMED_SIZE + 1;
+                } else {
+                    size = (e->content_length + 1)*2;
+                }
+                e->content = util_memdup(begin, size);
                 content_trim_spaces(&e->trimmed, &e->trimmed_length, 
                                      e->content, e->content_length);
                 is_image[history_length] = false;
@@ -365,6 +372,7 @@ history_append(char *content, int32 length) {
     DEBUG_PRINT("%s, %d", content, length);
     int32 oldindex;
     int32 kind;
+    usize size;
     Entry *e;
 
     if (!content) {
@@ -398,12 +406,18 @@ history_append(char *content, int32 length) {
     }
 
     e = &entries[history_length];
-    e->content = util_memdup(content, length*2);
     e->content_length = length;
     length_counts[length] += 1;
 
     switch (kind) {
     case CLIPBOARD_TEXT:
+        if (e->content_length >= TRIMMED_SIZE) {
+            size = e->content_length + 1 + TRIMMED_SIZE + 1;
+        } else {
+            size = (e->content_length + 1)*2;
+        }
+        e->content = util_memdup(content, size);
+
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length), 
                             e->content, e->content_length);
         is_image[history_length] = false;
@@ -411,6 +425,7 @@ history_append(char *content, int32 length) {
     case CLIPBOARD_IMAGE:
         e->trimmed = 0;
         e->trimmed_length = e->content_length;
+        e->content = util_memdup(content, length+1);
         is_image[history_length] = true;
         break;
     default:
