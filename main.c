@@ -209,7 +209,7 @@ main_launch_daemon(void) {
         exit(EXIT_FAILURE);
     }
     if (magic_load(magic, NULL) != 0) {
-        error("Error in magic_load(): %s\n", strerror(errno));
+        error("Error in magic_load(): %s\n", magic_error(magic));
         exit(EXIT_FAILURE);
     }
 
