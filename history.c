@@ -346,7 +346,7 @@ history_save_image(char **content, int32 *length) {
     }
 
     if ((file = open(image_file, O_WRONLY | O_CREAT | O_TRUNC,
-                                      S_IRUSR | S_IWUSR)) < 0) {
+                                 S_IRUSR | S_IWUSR)) < 0) {
         util_die_notify("Error opening %s for saving: %s\n",
                         image_file, strerror(errno));
     }
