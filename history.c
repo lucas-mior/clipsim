@@ -31,7 +31,7 @@ static int32 history_length;
 static File history = { .file = NULL, .fd = -1, .name = NULL };
 static char *XDG_CACHE_HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
-static char *directory = "/tmp/clipsim";
+static char *tmp_directory = "/tmp/clipsim";
 
 static int32 history_callback_delete(const char *,
                                      const struct stat *, int32, struct FTW *);
@@ -73,7 +73,7 @@ void
 history_delete_tmp(void) {
     error("Deleting images...\n");
 
-    nftw(directory, history_callback_delete, MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
+    nftw(tmp_directory, history_callback_delete, MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
 
     return;
 }
@@ -346,7 +346,8 @@ history_save_image(char **content, int32 *length) {
     char image_file[256];
     int32 n;
 
-    n = snprintf(image_file, sizeof(image_file), "%s/%ld.png", directory, t);
+    n = snprintf(image_file, sizeof(image_file),
+                 "%s/%ld.png", tmp_directory, t);
     if (n <= 0) {
         error("Error printing image path.\n");
         exit(EXIT_FAILURE);
