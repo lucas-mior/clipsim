@@ -419,7 +419,8 @@ history_append(char *content, int32 length) {
         } else {
             size = (e->content_length + 1)*2;
         }
-        e->content = util_memdup(content, size);
+        e->content = util_malloc(size);
+        memcpy(e->content, content, e->content_length + 1);
 
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length), 
                             e->content, e->content_length);
