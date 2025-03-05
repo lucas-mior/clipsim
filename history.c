@@ -340,7 +340,7 @@ history_save_image(char **content, int32 *length) {
     char buffer[256];
 
     n = snprintf(buffer, sizeof(buffer), "%s/%ld.png", directory, t);
-    if (n < (int32) strlen(directory)) {
+    if (n <= 0) {
         error("Error printing image path.\n");
         exit(EXIT_FAILURE);
     }
