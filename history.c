@@ -96,7 +96,6 @@ void history_backup(void) {
 bool
 history_save(void) {
     DEBUG_PRINT("void");
-    int32 saved;
 
     if (history_length <= 0) {
         error("History is empty. Not saving.\n");
@@ -171,12 +170,8 @@ history_save(void) {
         }
     }
 
-    if ((saved = fsync(history.fd)) < 0)
-        error("Error saving history to disk: %s\n", strerror(errno));
-    else
-        error("History saved to disk.\n");
     util_close(&history);
-    return saved >= 0;
+    return true;
 }
 
 void history_exit(int32 unused) {
