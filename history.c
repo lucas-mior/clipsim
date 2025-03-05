@@ -67,7 +67,7 @@ history_callback_delete(const char *path,
 
 void
 history_delete_tmp(void) {
-    error("Deleting images...");
+    error("Deleting images...\n");
 
     nftw(directory, history_callback_delete, MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
 
