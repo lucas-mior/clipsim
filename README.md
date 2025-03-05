@@ -10,6 +10,9 @@ send a signal to a specific program when clipboard content changes, which is
 useful for updating a status bar, for example. See [environment
 variables](#Environment-variables).
 
+## Breaking changes
+Commit `110fbcc` breaks the history file format.
+
 ## Usage
 
 First, you need to start the daemon by running

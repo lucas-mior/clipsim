@@ -140,6 +140,11 @@ history_save(void) {
                 history_remove(i);
                 continue;
             }
+            if (write(history.fd, &TEXT_TAG, tag_size) < (isize)tag_size) {
+                error("Error writing TEXT_TAG: %s\n", strerror(errno));
+                history_remove(i);
+                continue;
+            }
             if (write(history.fd, &IMAGE_TAG, tag_size) < (isize)tag_size) {
                 error("Error writing IMAGE_TAG: %s\n", strerror(errno));
                 history_remove(i);
@@ -159,6 +164,11 @@ history_save(void) {
             } while (left > 0);
             if (w < 0) {
                 error("Error writing %s: %s\n", e->content, strerror(errno));
+                history_remove(i);
+                continue;
+            }
+            if (write(history.fd, &TEXT_TAG, tag_size) < (isize)tag_size) {
+                error("Error writing TEXT_TAG: %s\n", strerror(errno));
                 history_remove(i);
                 continue;
             }
@@ -262,44 +272,46 @@ history_read(void) {
 
     history_length = 0;
     begin = history_map;
-    for (char *p = history_map; p < history_map + history_size; p += 1) {
+    char *p = history_map;
+    int32 left = history_size;
+
+    while ((left > 0) && (p = memchr(begin, TEXT_TAG, left))) {
         Entry *e;
-        char c;
+        char type = *(p + 1);
+        *p = '\0';
 
-        if ((*p == TEXT_TAG) || (*p == IMAGE_TAG)) {
-            c = *p;
-            *p = '\0';
+        e = &entries[history_length];
+        e->content_length = (int32)(p - begin);
 
-            e = &entries[history_length];
-            e->content_length = (int32)(p - begin);
-
-            if (c == IMAGE_TAG) {
-                e->trimmed = 0;
-                e->trimmed_length = e->content_length;
-                is_image[history_length] = true;
-                e->content = util_memdup(begin, (usize)e->content_length + 1);
+        if (type == IMAGE_TAG) {
+            e->trimmed = 0;
+            e->trimmed_length = e->content_length;
+            is_image[history_length] = true;
+            e->content = util_memdup(begin, (usize)e->content_length + 1);
+        } else {
+            usize size;
+            if (e->content_length >= TRIMMED_SIZE) {
+                size = e->content_length + 1 + TRIMMED_SIZE + 1;
             } else {
-                usize size;
-                if (e->content_length >= TRIMMED_SIZE) {
-                    size = e->content_length + 1 + TRIMMED_SIZE + 1;
-                } else {
-                    size = (e->content_length + 1)*2;
-                }
-                e->content = util_malloc(size);
-                memcpy(e->content, begin, e->content_length + 1);
-
-                content_trim_spaces(&e->trimmed, &e->trimmed_length,
-                                     e->content, e->content_length);
-                is_image[history_length] = false;
+                size = (e->content_length + 1)*2;
             }
-            begin = p + 1;
+            e->content = util_malloc(size);
+            memcpy(e->content, begin, e->content_length + 1);
 
-            length_counts[e->content_length] += 1;
-            history_length += 1;
-
-            if (history_length >= HISTORY_BUFFER_SIZE)
-                break;
+            content_trim_spaces(&e->trimmed, &e->trimmed_length,
+                                 e->content, e->content_length);
+            is_image[history_length] = false;
         }
+        p += 1;
+        begin = p + 1;
+
+        length_counts[e->content_length] += 1;
+        history_length += 1;
+
+        left -= (e->content_length + 1);
+
+        if (history_length >= HISTORY_BUFFER_SIZE)
+            break;
     }
 
     if (munmap(history_map, history_size) < 0) {
