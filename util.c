@@ -105,7 +105,7 @@ util_die_notify(const char *format, ...) {
     buffer[n] = '\0';
     (void) write(STDERR_FILENO, buffer, (usize) n + 1);
     for (uint i = 0; i < LENGTH(notifiers); i += 1) {
-        execlp(notifiers[i], notifiers[i], "-u", "critical", 
+        execlp(notifiers[i], notifiers[i], "-u", "critical",
                              "clipsim", buffer, NULL);
     }
     exit(EXIT_FAILURE);
@@ -118,7 +118,7 @@ util_segv_handler(int32 unused) {
 
     (void) write(STDERR_FILENO, message, strlen(message));
     for (uint i = 0; i < LENGTH(notifiers); i += 1) {
-        execlp(notifiers[i], notifiers[i], "-u", "critical", 
+        execlp(notifiers[i], notifiers[i], "-u", "critical",
                              "clipsim", message, NULL);
     }
     _exit(EXIT_FAILURE);
@@ -156,13 +156,13 @@ util_copy_file(const char *destination, const char *source) {
     char buffer[BUFSIZ];
     isize r = 0;
     isize w = 0;
-    
+
     if ((source_fd = open(source, O_RDONLY)) < 0) {
         error("Error opening %s for reading: %s.\n", source, strerror(errno));
         return -1;
     }
 
-    if ((destination_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, 
+    if ((destination_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC,
                                             S_IRUSR | S_IWUSR)) < 0) {
         error("Error opening %s for writing: %s.\n",
               destination, strerror(errno));
@@ -220,7 +220,7 @@ void error(char *format, ...) {
             break;
         case 0:
             for (uint i = 0; i < LENGTH(notifiers); i += 1) {
-                execlp(notifiers[i], notifiers[i], "-u", "critical", 
+                execlp(notifiers[i], notifiers[i], "-u", "critical",
                                      program, buffer, NULL);
                 fprintf(stderr, "Error trying to exec %s.\n", notifiers[i]);
             }
