@@ -272,11 +272,15 @@ ipc_client_print_entries(void) {
 
     r = read(content_fifo.fd, buffer, sizeof(buffer));
     if (r <= 0) {
-        error("Error reading data from %s: %s\n",
-              content_fifo.name, strerror(errno));
+        error("Error reading data from %s", content_fifo.name);
+        if (r < 0)
+            error(": %s", strerror(errno));
+        error(".\n");
+
         util_close(&content_fifo);
         exit(EXIT_FAILURE);
     }
+
     if (buffer[0] != IMAGE_TAG) {
         do {
             fwrite(buffer, 1, (usize) r, stdout);
@@ -362,9 +366,8 @@ void
 ipc_clean_fifo(const char *name) {
     DEBUG_PRINT("%s", name);
     if (unlink(name) < 0) {
-        if (errno != ENOENT) {
+        if (errno != ENOENT)
             util_die_notify("Error deleting %s: %s\n", name, strerror(errno));
-        }
     }
     return;
 }
