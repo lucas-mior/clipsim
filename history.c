@@ -73,7 +73,8 @@ void
 history_delete_tmp(void) {
     error("Deleting images...\n");
 
-    nftw(tmp_directory, history_callback_delete, MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
+    nftw(tmp_directory, history_callback_delete,
+         MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
 
     return;
 }
