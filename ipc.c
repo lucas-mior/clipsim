@@ -160,9 +160,8 @@ ipc_daemon_history_save(void) {
 
     saved = history_save();
 
-    if (write(content_fifo.fd, &saved, (usize) saved_size) < saved_size) {
+    if (write(content_fifo.fd, &saved, (usize) saved_size) < saved_size)
         error("Error sending save result to client.\n");
-    }
 
     util_close(&content_fifo);
     return;
