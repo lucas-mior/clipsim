@@ -138,7 +138,7 @@ clipboard_check_target(const Atom target) {
         (void) XNextEvent(display, &xevent);
         nevents += 1;
     } while (xevent.type != SelectionNotify
-          || xevent.xselection.selection != CLIPBOARD);
+             || xevent.xselection.selection != CLIPBOARD);
 
     return xevent.xselection.property;
 }
