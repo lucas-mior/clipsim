@@ -301,7 +301,7 @@ ipc_client_print_entries(void) {
         if ((test = open(buffer + 1, O_RDONLY)) >= 0) {
             close(test);
         } else {
-            error("Error opening %s: %s\n", buffer + 1, strerror(errno)); 
+            error("Error opening %s: %s\n", buffer + 1, strerror(errno));
             return;
         }
 
@@ -309,7 +309,7 @@ ipc_client_print_entries(void) {
         if (CLIPSIM_IMAGE_PREVIEW == NULL)
             CLIPSIM_IMAGE_PREVIEW = "chafa";
         if (!strcmp(CLIPSIM_IMAGE_PREVIEW, "stiv_draw"))
-            execlp("stiv_draw", "stiv_draw", buffer + 1, "30", "15", NULL);   
+            execlp("stiv_draw", "stiv_draw", buffer + 1, "30", "15", NULL);
         else
             execlp("chafa", "chafa", buffer + 1, "-s", "40x", NULL);
     }
