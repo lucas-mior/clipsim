@@ -188,7 +188,7 @@ main_check_running(void) {
 
 void
 main_launch_daemon(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     thrd_t ipc_thread;
     int32 mtx_error;
 
