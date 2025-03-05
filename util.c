@@ -142,8 +142,7 @@ util_close(File *file) {
 int32
 util_open(File *file, const int32 flag) {
     if ((file->fd = open(file->name, flag)) < 0) {
-        error("Error opening %s: %s\n",
-                        file->name, strerror(errno));
+        error("Error opening %s: %s\n", file->name, strerror(errno));
         return -1;
     } else {
         return 0;
