@@ -39,7 +39,6 @@ static int32 history_repeated_index(const char *, const int32);
 static void history_clean(void);
 static void history_free_entry(const Entry *, int32);
 static void history_reorder(const int32);
-static void history_save_entry(Entry *, int32);
 static void history_save_image(char **, int32 *);
 
 int32
@@ -91,68 +90,6 @@ void history_backup(void) {
     return;
 }
 
-void
-history_save_entry(Entry *e, int32 index) {
-    DEBUG_PRINT("{\n    %s,\n    %d\n}",
-                e->content, e->content_length);
-    usize tag_size = sizeof(*(&IMAGE_TAG));
-
-    if (is_image[index]) {
-        char image_save[PATH_MAX];
-        int32 n;
-        char *base = basename(e->content);
-
-        n = snprintf(image_save, sizeof(image_save), 
-                     "%s/clipsim/%s", XDG_CACHE_HOME, base);
-        if (n <= 0) {
-            error("Error printing image path.\n");
-            return;
-        }
-
-        if (strcmp(image_save, e->content)) {
-            if (util_copy_file(image_save, e->content) < 0) {
-                error("Error copying %s to %s: %s.\n", 
-                      e->content, image_save, strerror(errno));
-                history_remove(index);
-                return;
-            }
-        }
-        if (write(history.fd, image_save, (usize) n) < n) {
-            error("Error writing %s: %s\n", image_save, strerror(errno));
-            history_remove(index);
-            return;
-        }
-        if (write(history.fd, &IMAGE_TAG, tag_size) < (isize) tag_size) {
-            error("Error writing IMAGE_TAG: %s\n", strerror(errno));
-            history_remove(index);
-            return;
-        }
-    } else {
-        int32 left = e->content_length;
-        int32 offset = 0;
-        isize w;
-
-        do {
-            w = write(history.fd, e->content + offset, (usize) left);
-            left -= w;
-            offset += w;
-            if (left == 0)
-                break;
-        } while (w > 0);
-        if (w < 0) {
-            error("Error writing %s: %s\n", e->content, strerror(errno));
-            history_remove(index);
-            return;
-        }
-        if (write(history.fd, &TEXT_TAG, tag_size) < (isize) tag_size) {
-            error("Error writing TEXT_TAG: %s\n", strerror(errno));
-            history_remove(index);
-            return;
-        }
-    }
-    return;
-}
-
 bool
 history_save(void) {
     DEBUG_PRINT("void");
@@ -172,8 +109,64 @@ history_save(void) {
         return false;
     }
 
-    for (int32 i = 0; i < history_length; i += 1)
-        history_save_entry(&entries[i], i);
+    for (int32 i = 0; i < history_length; i += 1) {
+        usize tag_size = sizeof(*(&IMAGE_TAG));
+        Entry *e = &entries[i];
+
+        if (is_image[i]) {
+            char image_save[PATH_MAX];
+            int32 n;
+            char *base = basename(e->content);
+
+            n = snprintf(image_save, sizeof(image_save), 
+                         "%s/clipsim/%s", XDG_CACHE_HOME, base);
+            if (n <= 0) {
+                error("Error printing image path.\n");
+                continue;
+            }
+
+            if (strcmp(image_save, e->content)) {
+                if (util_copy_file(image_save, e->content) < 0) {
+                    error("Error copying %s to %s: %s.\n", 
+                          e->content, image_save, strerror(errno));
+                    history_remove(i);
+                    continue;
+                }
+            }
+            if (write(history.fd, image_save, (usize) n) < n) {
+                error("Error writing %s: %s\n", image_save, strerror(errno));
+                history_remove(i);
+                continue;
+            }
+            if (write(history.fd, &IMAGE_TAG, tag_size) < (isize) tag_size) {
+                error("Error writing IMAGE_TAG: %s\n", strerror(errno));
+                history_remove(i);
+                continue;
+            }
+        } else {
+            int32 left = e->content_length;
+            int32 offset = 0;
+            isize w;
+
+            do {
+                w = write(history.fd, e->content + offset, (usize) left);
+                left -= w;
+                offset += w;
+                if (left == 0)
+                    break;
+            } while (w > 0);
+            if (w < 0) {
+                error("Error writing %s: %s\n", e->content, strerror(errno));
+                history_remove(i);
+                continue;
+            }
+            if (write(history.fd, &TEXT_TAG, tag_size) < (isize) tag_size) {
+                error("Error writing TEXT_TAG: %s\n", strerror(errno));
+                history_remove(i);
+                continue;
+            }
+        }
+    }
 
     if ((saved = fsync(history.fd)) < 0)
         error("Error saving history to disk: %s\n", strerror(errno));
