@@ -51,8 +51,8 @@ history_callback_delete(const char *path,
                         const struct stat *stat,
                         int32 typeflag,
                         struct FTW *ftwbuf) {
-    (void) stat;
-    (void) ftwbuf;
+    (void)stat;
+    (void)ftwbuf;
 
     if (typeflag == FTW_F) {
         if (unlink(path) < 0)
@@ -135,12 +135,12 @@ history_save(void) {
                     continue;
                 }
             }
-            if (write(history.fd, image_save, (usize) n) < n) {
+            if (write(history.fd, image_save, (usize)n) < n) {
                 error("Error writing %s: %s\n", image_save, strerror(errno));
                 history_remove(i);
                 continue;
             }
-            if (write(history.fd, &IMAGE_TAG, tag_size) < (isize) tag_size) {
+            if (write(history.fd, &IMAGE_TAG, tag_size) < (isize)tag_size) {
                 error("Error writing IMAGE_TAG: %s\n", strerror(errno));
                 history_remove(i);
                 continue;
@@ -151,7 +151,7 @@ history_save(void) {
             isize w;
 
             do {
-                w = write(history.fd, e->content + offset, (usize) left);
+                w = write(history.fd, e->content + offset, (usize)left);
                 if (w <= 0)
                     break;
                 left -= w;
@@ -162,7 +162,7 @@ history_save(void) {
                 history_remove(i);
                 continue;
             }
-            if (write(history.fd, &TEXT_TAG, tag_size) < (isize) tag_size) {
+            if (write(history.fd, &TEXT_TAG, tag_size) < (isize)tag_size) {
                 error("Error writing TEXT_TAG: %s\n", strerror(errno));
                 history_remove(i);
                 continue;
@@ -175,7 +175,7 @@ history_save(void) {
 }
 
 void history_exit(int32 unused) {
-    (void) unused;
+    (void)unused;
 
     history_save();
     history_delete_tmp();
@@ -213,7 +213,7 @@ history_read(void) {
             exit(EXIT_FAILURE);
         }
 
-        usize size = (usize) n + 1;
+        usize size = (usize)n + 1;
         history.name = util_memdup(buffer, size);
 
         char *clipsim_dir = dirname(buffer);
@@ -240,7 +240,7 @@ history_read(void) {
             util_close(&history);
             return;
         }
-        history_size = (usize) history_stat.st_size;
+        history_size = (usize)history_stat.st_size;
         if (history_size <= 0) {
             error("history_size: %zu\n", history_size);
             error("History file is empty.\n");
@@ -271,7 +271,7 @@ history_read(void) {
             *p = '\0';
 
             e = &entries[history_length];
-            e->content_length = (int32) (p - begin);
+            e->content_length = (int32)(p - begin);
 
             if (c == IMAGE_TAG) {
                 e->trimmed = 0;
@@ -322,7 +322,7 @@ history_repeated_index(const char *content, const int32 length) {
 
         if (e->content_length != length)
             continue;
-        if (!memcmp(e->content, content, (usize) length))
+        if (!memcmp(e->content, content, (usize)length))
             return i;
 
         candidates -= 1;
@@ -356,7 +356,7 @@ history_save_image(char **content, int32 *length) {
     }
 
     do {
-        w = write(file, *(content + copied), (usize) *length);
+        w = write(file, *(content + copied), (usize)*length);
         if (w <= 0)
             break;
         copied += w;
@@ -369,7 +369,7 @@ history_save_image(char **content, int32 *length) {
     }
 
     *length = n;
-    memcpy(*content, image_file, (usize) *length + 1);
+    memcpy(*content, image_file, (usize)*length + 1);
     return 0;
 }
 
