@@ -36,7 +36,6 @@ static char *directory = "/tmp/clipsim";
 static int32 history_callback_delete(const char *,
                                      const struct stat *, int32, struct FTW *);
 static int32 history_repeated_index(const char *, const int32);
-static void history_clean(void);
 static void history_free_entry(const Entry *, int32);
 static void history_reorder(const int32);
 static void history_save_image(char **, int32 *);
@@ -436,8 +435,22 @@ history_append(char *content, int32 length) {
     XFree(content);
 
     history_length += 1;
-    if (history_length >= HISTORY_BUFFER_SIZE)
-        history_clean();
+    if (history_length >= HISTORY_BUFFER_SIZE) {
+        for (int32 i = 0; i < HISTORY_KEEP_SIZE; i += 1)
+            history_free_entry(&entries[i], i);
+
+        memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
+               HISTORY_KEEP_SIZE * sizeof(*entries));
+        memset(&entries[HISTORY_KEEP_SIZE], 0,
+               HISTORY_KEEP_SIZE * sizeof(*entries));
+
+        memcpy(&is_image[0], &is_image[HISTORY_KEEP_SIZE],
+               HISTORY_KEEP_SIZE * sizeof(*is_image));
+        memset(&is_image[HISTORY_KEEP_SIZE], 0,
+               HISTORY_KEEP_SIZE * sizeof(*is_image));
+
+        history_length = HISTORY_KEEP_SIZE;
+    }
 
     return;
 }
@@ -560,25 +573,5 @@ history_free_entry(const Entry *e, int32 index) {
         unlink(e->content);
     free(e->content);
 
-    return;
-}
-
-void
-history_clean(void) {
-    DEBUG_PRINT("void");
-    for (int32 i = 0; i < HISTORY_KEEP_SIZE; i += 1)
-        history_free_entry(&entries[i], i);
-
-    memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
-           HISTORY_KEEP_SIZE * sizeof(*entries));
-    memset(&entries[HISTORY_KEEP_SIZE], 0,
-           HISTORY_KEEP_SIZE * sizeof(*entries));
-
-    memcpy(&is_image[0], &is_image[HISTORY_KEEP_SIZE],
-           HISTORY_KEEP_SIZE * sizeof(*is_image));
-    memset(&is_image[HISTORY_KEEP_SIZE], 0,
-           HISTORY_KEEP_SIZE * sizeof(*is_image));
-
-    history_length = HISTORY_KEEP_SIZE;
     return;
 }
