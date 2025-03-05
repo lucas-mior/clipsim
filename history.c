@@ -206,11 +206,12 @@ history_read(void) {
 
     {
         char buffer[PATH_MAX];
-        int32 n = snprintf(buffer, sizeof(buffer), "%s/%s",
-                                                  XDG_CACHE_HOME, clipsim);
-        if (n < (int32) length)
-            util_die_notify("Error printing to buffer: %s\n", strerror(errno));
-        buffer[sizeof(buffer) - 1] = '\0';
+        int32 n = snprintf(buffer, sizeof(buffer),
+                           "%s/%s", XDG_CACHE_HOME, clipsim);
+        if (n <= 0) {
+            error("Error printing to buffer: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
 
         usize size = (usize) n + 1;
         history.name = util_memdup(buffer, size);
@@ -218,13 +219,13 @@ history_read(void) {
         char *clipsim_dir = dirname(buffer);
         if (mkdir(clipsim_dir, 0770) < 0) {
             if (errno != EEXIST) {
-                util_die_notify("Error creating dir %s: %s\n",
-                                clipsim_dir, strerror(errno));
+                error("Error creating dir '%s': %s\n",
+                      clipsim_dir, strerror(errno));
+                exit(EXIT_FAILURE);
             }
         }
     }
 
-    history_length = 0;
     if ((history.fd = open(history.name, O_RDONLY)) < 0) {
         error("Error opening history file for reading: %s\n"
               "History will start empty.\n", strerror(errno));
@@ -259,6 +260,7 @@ history_read(void) {
         return;
     }
 
+    history_length = 0;
     begin = history_map;
     for (char *p = history_map; p < history_map + history_size; p += 1) {
         Entry *e;
