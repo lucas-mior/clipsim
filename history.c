@@ -62,7 +62,6 @@ history_callback_delete(const char *path,
             error("Error deleting %s: %s.\n", path, strerror(errno));
     }
 
-
     return 0;
 }
 
