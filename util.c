@@ -212,7 +212,7 @@ void error(char *format, ...) {
     }
 
     buffer[n] = '\0';
-    (void) write(STDERR_FILENO, buffer, (usize) n);
+    write(STDERR_FILENO, buffer, (usize) n);
 
     switch (fork()) {
         case -1:
