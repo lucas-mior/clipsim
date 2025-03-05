@@ -499,17 +499,23 @@ history_recover(int32 id) {
     case -1:
         util_die_notify("Error in fork(%s): %s", xclip_path, strerror(errno));
     default:
-        if (istext && (close(fd[0]) < 0))
-            util_die_notify("Error closing pipe 0: %s\n", strerror(errno));
+        if (istext && (close(fd[0]) < 0)) {
+            error("Error closing pipe 0: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
     }
 
     if (istext) {
         dprintf(fd[1], "%s", e->content);
-        if (close(fd[1]) < 0)
-            util_die_notify("Error closing pipe 1: %s\n", strerror(errno));
+        if (close(fd[1]) < 0) {
+            error("Error closing pipe 1: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
     }
-    if (wait(NULL) < 0)
-        util_die_notify("Error waiting for fork: %s\n", strerror(errno));
+    if (wait(NULL) < 0) {
+        error("Error waiting for fork: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
 
     if (id != (history_length - 1))
         history_reorder(id);
