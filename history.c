@@ -478,8 +478,8 @@ history_recover(int32 id) {
     }
 
     e = &entries[id];
-    istext = (is_image[id] == false);
-    if (istext) {
+
+    if (istext = (is_image[id] == false)) {
         if (pipe(fd))
             util_die_notify("Error creating pipe: %s\n", strerror(errno));
     }
