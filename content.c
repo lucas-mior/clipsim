@@ -84,16 +84,6 @@ content_check_content(uchar *data, const int32 length) {
         }
     }
 
-    if (length <= 2) { /* Check if it is a single ascii character
-                          possibly followed by new line */
-        if ((' ' <= *data) && (*data <= '~')) {
-            if (length == 1 || (*(data + 1) == '\n')) {
-                error("Ignoring single character '%c'\n", *data);
-                return CLIPBOARD_ERROR;
-            }
-        }
-    }
-
     do {
         const char *mime_type;
         if ((mime_type = magic_buffer(magic, data, (usize) length)) == NULL) {
