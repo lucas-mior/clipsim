@@ -33,30 +33,30 @@ content_trim_spaces(int16 *trimmed, int16 *trimmed_length,
                     char *content, const int16 length) {
     DEBUG_PRINT("%p, %p, %s, %d",
                 (void *) trimmed, (void *) trimmed_length, content, length);
-    char *p;
+    char *out;
     char temp = '\0';
-    char *c = content;
+    char *in = content;
 
     *trimmed = length + 1;
-    p = &content[*trimmed];
+    out = &content[*trimmed];
 
     if (length >= TRIMMED_SIZE) {
         temp = content[TRIMMED_SIZE];
         content[TRIMMED_SIZE] = '\0';
     }
 
-    while (IS_SPACE(*c))
-        c += 1;
-    while (*c != '\0') {
-        while (IS_SPACE(*c) && IS_SPACE(*(c + 1)))
-            c += 1;
+    while (IS_SPACE(*in))
+        in += 1;
+    while (*in != '\0') {
+        while (IS_SPACE(*in) && IS_SPACE(*(in + 1)))
+            in += 1;
 
-        *p = *c;
-        p += 1;
-        c += 1;
+        *out = *in;
+        out += 1;
+        in += 1;
     }
-    *p = '\0';
-    *trimmed_length = (int16) (p - &content[*trimmed]);
+    *out = '\0';
+    *trimmed_length = (int16) (out - &content[*trimmed]);
 
     if (temp) {
         content[TRIMMED_SIZE] = temp;
