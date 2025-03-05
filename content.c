@@ -64,7 +64,7 @@ content_trim_spaces(int16 *trimmed, int16 *trimmed_length,
     }
 
     if (*trimmed_length == length)
-        trimmed = 0;
+        *trimmed = 0;
     return;
 }
 
