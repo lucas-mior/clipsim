@@ -338,11 +338,11 @@ ipc_daemon_get_id(void) {
 
     if (fread(&id, sizeof(*(&id)), 1, passid_fifo.file) != 1) {
         error("Error reading id from pipe: %s\n", strerror(errno));
+        util_close(&passid_fifo);
         return HISTORY_INVALID_ID;
     }
 
     util_close(&passid_fifo);
-
     return id;
 }
 
