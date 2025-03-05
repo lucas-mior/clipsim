@@ -127,17 +127,13 @@ util_segv_handler(int32 unused) {
 void
 util_close(File *file) {
     if (file->fd >= 0) {
-        if (close(file->fd) < 0) {
-            error("Error closing %s: %s\n",
-                            file->name, strerror(errno));
-        }
+        if (close(file->fd) < 0)
+            error("Error closing %s: %s\n", file->name, strerror(errno));
         file->fd = -1;
     }
     if (file->file != NULL) {
-        if (fclose(file->file) != 0) {
-            error("Error closing %s: %s\n",
-                            file->name, strerror(errno));
-        }
+        if (fclose(file->file) != 0)
+            error("Error closing %s: %s\n", file->name, strerror(errno));
         file->file = NULL;
     }
     return;
