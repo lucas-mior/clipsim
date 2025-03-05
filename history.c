@@ -314,8 +314,10 @@ history_repeated_index(const char *content, const int32 length) {
     int32 candidates = length_counts[length];
     if (candidates == 0)
         return -1;
+
     for (int32 i = history_length - 1; i >= 0; i -= 1) {
         Entry *e = &entries[i];
+
         if (e->content_length != length)
             continue;
         if (!memcmp(e->content, content, (usize) length))
