@@ -490,9 +490,8 @@ history_recover(int32 id) {
 
     if (istext) {
         dprintf(fd[1], "%s", e->content);
-        if (close(fd[1]) < 0) {
+        if (close(fd[1]) < 0)
             util_die_notify("Error closing pipe 1: %s\n", strerror(errno));
-        }
     }
     if (wait(NULL) < 0)
         util_die_notify("Error waiting for fork: %s\n", strerror(errno));
