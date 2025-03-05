@@ -53,7 +53,7 @@ sig_abrt_handler(int32 unused) {
 
 int32
 ipc_daemon_listen_fifo(void *unused) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     (void) unused;
     char command;
     struct timespec pause;
@@ -151,7 +151,7 @@ ipc_client_speak_fifo(int32 command, int32 id) {
 
 void
 ipc_daemon_history_save(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     char saved;
     isize saved_size = sizeof(*(&saved));
     error("Trying to save history...\n");
@@ -169,7 +169,7 @@ ipc_daemon_history_save(void) {
 
 void
 ipc_client_check_save(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     isize r;
     char saved = 0;
     error("Trying to save history...\n");
@@ -191,7 +191,7 @@ ipc_client_check_save(void) {
 
 void
 ipc_daemon_pipe_entries(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     static char buffer[BUFSIZ];
     int32 history_length;
 
@@ -263,7 +263,7 @@ ipc_daemon_pipe_id(const int32 id) {
 
 void
 ipc_client_print_entries(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     static char buffer[BUFSIZ];
     isize r;
 
@@ -347,7 +347,7 @@ ipc_client_ask_id(const int32 id) {
 
 void
 ipc_make_fifos(void) {
-    DEBUG_PRINT("");
+    DEBUG_PRINT("void");
     ipc_clean_fifo(command_fifo.name);
     ipc_clean_fifo(passid_fifo.name);
     ipc_clean_fifo(content_fifo.name);
