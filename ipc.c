@@ -343,7 +343,7 @@ ipc_daemon_get_id(void) {
 
     util_close(&passid_fifo);
 
-    return HISTORY_INVALID_ID;
+    return id;
 }
 
 void
