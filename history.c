@@ -443,7 +443,6 @@ history_append(char *content, int32 length) {
 void
 history_recover(int32 id) {
     DEBUG_PRINT("%d", id);
-    pid_t child;
     int32 fd[2];
     Entry *e;
     bool istext;
@@ -469,7 +468,7 @@ history_recover(int32 id) {
             util_die_notify("Error creating pipe: %s\n", strerror(errno));
     }
 
-    switch ((child = fork())) {
+    switch (fork()) {
     case 0:
         if (istext) {
             close(fd[1]);
