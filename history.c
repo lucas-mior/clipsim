@@ -120,7 +120,7 @@ history_save(void) {
             int32 n;
             char *base = basename(e->content);
 
-            n = snprintf(image_save, sizeof(image_save), 
+            n = snprintf(image_save, sizeof(image_save),
                          "%s/clipsim/%s", XDG_CACHE_HOME, base);
             if (n <= 0) {
                 error("Error printing image path.\n");
@@ -129,7 +129,7 @@ history_save(void) {
 
             if (strcmp(image_save, e->content)) {
                 if (util_copy_file(image_save, e->content) < 0) {
-                    error("Error copying %s to %s: %s.\n", 
+                    error("Error copying %s to %s: %s.\n",
                           e->content, image_save, strerror(errno));
                     history_remove(i);
                     continue;
@@ -249,7 +249,7 @@ history_read(void) {
         }
     }
 
-    history_map = mmap(NULL, history_size, 
+    history_map = mmap(NULL, history_size,
                        PROT_READ | PROT_WRITE, MAP_PRIVATE,
                        history.fd, 0);
 
@@ -288,7 +288,7 @@ history_read(void) {
                 e->content = util_malloc(size);
                 memcpy(e->content, begin, e->content_length + 1);
 
-                content_trim_spaces(&e->trimmed, &e->trimmed_length, 
+                content_trim_spaces(&e->trimmed, &e->trimmed_length,
                                      e->content, e->content_length);
                 is_image[history_length] = false;
             }
@@ -426,7 +426,7 @@ history_append(char *content, int32 length) {
         e->content = util_malloc(size);
         memcpy(e->content, content, e->content_length + 1);
 
-        content_trim_spaces(&(e->trimmed), &(e->trimmed_length), 
+        content_trim_spaces(&(e->trimmed), &(e->trimmed_length),
                             e->content, e->content_length);
         is_image[history_length] = false;
         break;
