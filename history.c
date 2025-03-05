@@ -38,7 +38,7 @@ static int32 history_callback_delete(const char *,
 static int32 history_repeated_index(const char *, const int32);
 static void history_free_entry(const Entry *, int32);
 static void history_reorder(const int32);
-static void history_save_image(char **, int32 *);
+static int32 history_save_image(char **, int32 *);
 
 int32
 history_length_get(void) {
@@ -329,7 +329,7 @@ history_repeated_index(const char *content, const int32 length) {
     return -1;
 }
 
-void
+int32
 history_save_image(char **content, int32 *length) {
     DEBUG_PRINT("%p, %d", (void *) content, *length);
     time_t t = time(NULL);
@@ -347,8 +347,8 @@ history_save_image(char **content, int32 *length) {
 
     if ((file = open(image_file, O_WRONLY | O_CREAT | O_TRUNC,
                                  S_IRUSR | S_IWUSR)) < 0) {
-        util_die_notify("Error opening %s for saving: %s\n",
-                        image_file, strerror(errno));
+        error("Error opening %s for saving: %s\n", image_file, strerror(errno));
+        return -1;
     }
 
     do {
@@ -358,14 +358,15 @@ history_save_image(char **content, int32 *length) {
         copied += w;
         *length -= w;
     } while (*length > 0);
+
     if (w < 0) {
         error("Error writing to %s: %s\n", image_file, strerror(errno));
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     *length = n;
     memcpy(*content, image_file, (usize) *length + 1);
-    return;
+    return 0;
 }
 
 void
@@ -392,7 +393,8 @@ history_append(char *content, int32 length) {
         content_remove_newline(content, &length);
         break;
     case CLIPBOARD_IMAGE:
-        history_save_image(&content, &length);
+        if (history_save_image(&content, &length) < 0)
+            return;
         break;
     default:
         return;
