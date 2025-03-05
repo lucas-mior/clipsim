@@ -57,9 +57,13 @@ history_callback_delete(const char *path,
     if (typeflag == FTW_F) {
         if (unlink(path) < 0)
             error("Error deleting %s: %s.\n", path, strerror(errno));
+        else
+            printf("Deleted '%s'.", path);
     } else if (typeflag == FTW_DP) {
         if (rmdir(path) < 0)
             error("Error deleting %s: %s.\n", path, strerror(errno));
+        else
+            printf("Deleted '%s'.", path);
     }
 
     return 0;
