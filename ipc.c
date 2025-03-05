@@ -288,10 +288,13 @@ ipc_client_print_entries(void) {
     } else {
         int32 test;
         char *CLIPSIM_IMAGE_PREVIEW;
+
         if (r == 1) {
             r = read(content_fifo.fd, buffer + 1, sizeof(buffer) - 1);
-            if (r <= 0)
-                util_die_notify("Error reading image name.\n");
+            if (r <= 0) {
+                util_die_notify("Error reading image name from %s.\n",
+                                content_fifo.name);
+            }
         }
         util_close(&content_fifo);
         if ((test = open(buffer + 1, O_RDONLY)) >= 0) {
