@@ -153,11 +153,11 @@ history_save(void) {
 
             do {
                 w = write(history.fd, e->content + offset, (usize) left);
+                if (w <= 0)
+                    break;
                 left -= w;
                 offset += w;
-                if (left == 0)
-                    break;
-            } while (w > 0);
+            } while (left > 0);
             if (w < 0) {
                 error("Error writing %s: %s\n", e->content, strerror(errno));
                 history_remove(i);
