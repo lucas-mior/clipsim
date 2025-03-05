@@ -95,13 +95,13 @@ void
 history_save_entry(Entry *e, int32 index) {
     DEBUG_PRINT("{\n    %s,\n    %d\n}",
                 e->content, e->content_length);
-    char image_save[PATH_MAX];
     usize tag_size = sizeof(*(&IMAGE_TAG));
-    isize w;
 
     if (is_image[index]) {
+        char image_save[PATH_MAX];
         int32 n;
         char *base = basename(e->content);
+
         n = snprintf(image_save, sizeof(image_save), 
                      "%s/clipsim/%s", XDG_CACHE_HOME, base);
         if (n <= 0) {
@@ -130,6 +130,8 @@ history_save_entry(Entry *e, int32 index) {
     } else {
         int32 left = e->content_length;
         int32 offset = 0;
+        isize w;
+
         do {
             w = write(history.fd, e->content + offset, (usize) left);
             left -= w;
