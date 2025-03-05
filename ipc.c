@@ -202,7 +202,7 @@ ipc_daemon_pipe_entries(void) {
 
     if (history_length <= 0) {
         error("Clipboard history empty. Start copying text.\n");
-        dprintf(content_fifo.fd,
+        fprintf(content_fifo.file,
                 "000 Clipboard history empty. Start copying text.\n");
         goto close;
     }
