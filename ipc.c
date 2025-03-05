@@ -17,7 +17,6 @@
 
 #include "clipsim.h"
 
-static const char *tmp = "/tmp/clipsim";
 static File command_fifo = { .file = NULL, .fd = -1,
                              .name = "/tmp/clipsim/command.fifo" };
 static File passid_fifo  = { .file = NULL, .fd = -1,
@@ -60,10 +59,6 @@ ipc_daemon_listen_fifo(void *unused) {
     pause.tv_sec = 0;
     pause.tv_nsec = PAUSE10MS;
 
-    if (mkdir(tmp, 0770) < 0) {
-        if (errno != EEXIST)
-            util_die_notify("Error creating %s: %s\n", tmp, strerror(errno));
-    }
     ipc_make_fifos();
 
     signal(SIGABRT, sig_abrt_handler);
@@ -361,6 +356,13 @@ ipc_client_ask_id(int32 id) {
 void
 ipc_make_fifos(void) {
     DEBUG_PRINT("void");
+
+    char *tmp = "/tmp/clipsim";
+    if (mkdir(tmp, 0770) < 0) {
+        if (errno != EEXIST)
+            util_die_notify("Error creating %s: %s\n", tmp, strerror(errno));
+    }
+
     ipc_clean_fifo(command_fifo.name);
     ipc_clean_fifo(passid_fifo.name);
     ipc_clean_fifo(content_fifo.name);
