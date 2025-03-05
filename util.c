@@ -224,6 +224,7 @@ void error(char *format, ...) {
                                      program, buffer, NULL);
                 fprintf(stderr, "Error trying to exec %s.\n", notifiers[i]);
             }
+            exit(EXIT_FAILURE);
         default:
             break;
     }
