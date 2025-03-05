@@ -440,14 +440,14 @@ history_append(char *content, int32 length) {
             history_free_entry(&entries[i], i);
 
         memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
-               HISTORY_KEEP_SIZE * sizeof(*entries));
+               HISTORY_KEEP_SIZE*sizeof(*entries));
         memset(&entries[HISTORY_KEEP_SIZE], 0,
-               HISTORY_KEEP_SIZE * sizeof(*entries));
+               HISTORY_KEEP_SIZE*sizeof(*entries));
 
         memcpy(&is_image[0], &is_image[HISTORY_KEEP_SIZE],
-               HISTORY_KEEP_SIZE * sizeof(*is_image));
+               HISTORY_KEEP_SIZE*sizeof(*is_image));
         memset(&is_image[HISTORY_KEEP_SIZE], 0,
-               HISTORY_KEEP_SIZE * sizeof(*is_image));
+               HISTORY_KEEP_SIZE*sizeof(*is_image));
 
         history_length = HISTORY_KEEP_SIZE;
     }
