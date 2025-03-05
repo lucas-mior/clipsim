@@ -333,39 +333,38 @@ void
 history_save_image(char **content, int32 *length) {
     DEBUG_PRINT("%p, %d", (void *) content, *length);
     time_t t = time(NULL);
-    int32 fp;
-    isize w = 0;
+    int32 file;
+    isize w;
     isize copied = 0;
+    char image_file[256];
     int32 n;
-    char buffer[256];
 
-    n = snprintf(buffer, sizeof(buffer), "%s/%ld.png", directory, t);
+    n = snprintf(image_file, sizeof(image_file), "%s/%ld.png", directory, t);
     if (n <= 0) {
         error("Error printing image path.\n");
         exit(EXIT_FAILURE);
     }
 
-    buffer[sizeof(buffer) - 1] = '\0';
-    if ((fp = open(buffer, O_WRONLY | O_CREAT | O_TRUNC,
+    if ((file = open(image_file, O_WRONLY | O_CREAT | O_TRUNC,
                                       S_IRUSR | S_IWUSR)) < 0) {
-        util_die_notify("Error opening image file for saving: %s\n",
-                        strerror(errno));
+        util_die_notify("Error opening %s for saving: %s\n",
+                        image_file, strerror(errno));
     }
 
     do {
-        w = write(fp, *(content + copied), (usize) *length);
+        w = write(file, *(content + copied), (usize) *length);
         if (w <= 0)
             break;
         copied += w;
         *length -= w;
     } while (*length > 0);
     if (w < 0) {
-        error("Error writing to %s: %s\n", buffer, strerror(errno));
+        error("Error writing to %s: %s\n", image_file, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     *length = n;
-    memcpy(*content, buffer, (usize) *length + 1);
+    memcpy(*content, image_file, (usize) *length + 1);
     return;
 }
 
