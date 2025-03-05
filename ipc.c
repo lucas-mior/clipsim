@@ -28,10 +28,10 @@ static File content_fifo = { .file = NULL, .fd = -1,
 static void ipc_daemon_history_save(void);
 static void ipc_client_check_save(void);
 static void ipc_daemon_pipe_entries(void);
-static void ipc_daemon_pipe_id(const int32);
+static void ipc_daemon_pipe_id(int32);
 static void ipc_client_print_entries(void);
 static int32 ipc_daemon_get_id(void);
-static void ipc_client_ask_id(const int32);
+static void ipc_client_ask_id(int32);
 static void ipc_make_fifos(void);
 static void ipc_clean_fifo(const char *);
 static void ipc_create_fifo(const char *);
@@ -226,7 +226,7 @@ ipc_daemon_pipe_entries(void) {
 }
 
 void
-ipc_daemon_pipe_id(const int32 id) {
+ipc_daemon_pipe_id(int32 id) {
     DEBUG_PRINT("%d", id);
     Entry *e;
     int32 history_length;
@@ -241,6 +241,13 @@ ipc_daemon_pipe_id(const int32 id) {
         error("Clipboard history empty. Start copying text.\n");
         dprintf(content_fifo.fd,
                 "000 Clipboard history empty. Start copying text.\n");
+        goto close;
+    }
+
+    if (id < 0)
+        id = history_length + id;
+    if ((id >= history_length) || (id < 0)) {
+        error("Invalid index: %d\n", id);
         goto close;
     }
 
@@ -326,21 +333,21 @@ ipc_daemon_get_id(void) {
 
     if ((passid_fifo.file = fopen(passid_fifo.name, "r")) == NULL) {
         error("Error opening fifo for reading id: %s\n", strerror(errno));
-        return -1;
+        return HISTORY_INVALID_ID;
     }
 
     if (fread(&id, sizeof(*(&id)), 1, passid_fifo.file) != 1) {
         error("Error reading id from pipe: %s\n", strerror(errno));
-        return -1;
+        return HISTORY_INVALID_ID;
     }
 
     util_close(&passid_fifo);
 
-    return id;
+    return HISTORY_INVALID_ID;
 }
 
 void
-ipc_client_ask_id(const int32 id) {
+ipc_client_ask_id(int32 id) {
     DEBUG_PRINT("%d", id);
     if ((passid_fifo.file = fopen(passid_fifo.name, "w")) == NULL) {
         util_die_notify("Error opening fifo for sending id to daemon: "
