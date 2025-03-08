@@ -34,8 +34,8 @@ static int32 clipboard_get_clipboard(char **, ulong *);
 int32
 clipboard_daemon_watch(void) {
     DEBUG_PRINT("void");
-    ulong color;
     Window root;
+    ulong color;
     struct timespec pause;
     pause.tv_sec = 0;
     pause.tv_nsec = PAUSE10MS;
@@ -164,11 +164,36 @@ clipboard_get_clipboard(char **save, ulong *length) {
     }
     if (clipboard_check_target(image_png)) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
-                           False, AnyPropertyType, &actual_type_return,
+                           True, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
-        if (actual_type_return == INCR)
+        if (actual_type_return == INCR) {
+            printf("INCR\n");
+            XEvent xevent;
+            XSelectInput(display, window, PropertyChangeMask);
+            do {
+                do {
+                    XNextEvent(display, &xevent);
+                } while (xevent.type != PropertyNotify 
+                         || xevent.xproperty.atom != XSEL_DATA 
+                         || xevent.xproperty.state != PropertyNewValue);
+                XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
+                                   True, AnyPropertyType, &actual_type_return,
+                                   &actual_format_return, &nitems_return,
+                                   &bytes_after_return, (uchar **) save);
+                printf("%d %.*s\n", (int)nitems_return, 20, *save);
+                XFree(*save);
+            } while (nitems_return > 0);
+            XSelectInput(display, window, NoEventMask);
+            printf("AFTER < 0\n");
+
+            XFixesSelectSelectionInput(display, root, CLIPBOARD, (ulong)
+                                       XFixesSetSelectionOwnerNotifyMask
+                                     | XFixesSelectionClientCloseNotifyMask
+                                     | XFixesSelectionWindowDestroyNotifyMask);
+
             return CLIPBOARD_LARGE;
+        }
 
         *length = nitems_return;
         return CLIPBOARD_IMAGE;
