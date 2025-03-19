@@ -172,10 +172,14 @@ ipc_client_check_save(void) {
         exit(EXIT_FAILURE);
 
     if ((r = read(content_fifo.fd, &saved, sizeof(*(&saved)))) > 0) {
-        if (saved)
+        if (saved) {
             error("History saved to disk.\n");
-        else
-            error("Error saving history to disk.\n");
+        } else {
+            error("Error saving history to disk\n");
+            if (r < 0)
+                error(": %s", strerror(errno));
+            error(".\n");
+        }
     }
 
     util_close(&content_fifo);
