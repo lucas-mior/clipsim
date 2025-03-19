@@ -58,10 +58,8 @@ content_trim_spaces(int16 *trimmed, int16 *trimmed_length,
     *out = '\0';
     *trimmed_length = (int16) (out - &content[*trimmed]);
 
-    if (temp) {
+    if (temp)
         content[TRIMMED_SIZE] = temp;
-        temp = '\0';
-    }
 
     if (*trimmed_length == length)
         *trimmed = 0;

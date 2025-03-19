@@ -198,6 +198,8 @@ history_read(void) {
     usize history_size;
     char *history_map;
     char *begin;
+    char *p;
+    int32 left;
 
     const char *clipsim = "clipsim/history";
     usize length;
@@ -272,8 +274,7 @@ history_read(void) {
 
     history_length = 0;
     begin = history_map;
-    char *p = history_map;
-    int32 left = history_size;
+    left = history_size;
 
     while ((left > 0) && (p = memchr(begin, TEXT_TAG, left))) {
         Entry *e;
