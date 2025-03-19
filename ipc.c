@@ -190,7 +190,10 @@ ipc_daemon_pipe_entries(void) {
     static char buffer[BUFSIZ];
     int32 history_length;
 
-    content_fifo.file = fopen(content_fifo.name, "w");
+    if ((content_fifo.file = fopen(content_fifo.name, "w")) == NULL) {
+        error("Error opening %s: %s.\n", content_fifo.name, strerror(errno));
+        exit(EXIT_FAILURE);
+    }
     setvbuf(content_fifo.file, buffer, _IOFBF, BUFSIZ);
 
     history_length = history_length_get();
