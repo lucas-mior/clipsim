@@ -167,6 +167,7 @@ ipc_client_check_save(void) {
     DEBUG_PRINT("void");
     isize r;
     char saved = 0;
+
     error("Trying to save history...\n");
     if (util_open(&content_fifo, O_RDONLY) < 0)
         exit(EXIT_FAILURE);
