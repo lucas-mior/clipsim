@@ -68,15 +68,15 @@ ipc_daemon_listen_fifo(void *unused) {
         nanosleep(&pause, NULL);
         if (util_open(&command_fifo, O_RDONLY) < 0)
             continue;
-        mtx_lock(&lock);
 
         r = read(command_fifo.fd, &command, sizeof(*(&command)));
         if (r < (isize) sizeof(*(&command))) {
             error("Error reading command from %s: %s\n",
                   command_fifo.name, strerror(errno));
-            mtx_unlock(&lock);
             continue;
         }
+
+        mtx_lock(&lock);
 
         util_close(&command_fifo);
         switch (command) {
