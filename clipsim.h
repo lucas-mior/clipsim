@@ -64,9 +64,9 @@ do { \
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n') || (x == '\r'))
 
 #define PAUSE10MS (1000*1000*10)
-#define HISTORY_BUFFER_SIZE 128
-#define HISTORY_INVALID_ID (HISTORY_BUFFER_SIZE+1)
-#define HISTORY_KEEP_SIZE (HISTORY_BUFFER_SIZE/2)
+#define HISTORY_SIZE 128
+#define HISTORY_INVALID_ID (HISTORY_SIZE+1)
+#define HISTORY_KEEP (HISTORY_SIZE/2)
 #define ENTRY_MAX_LENGTH BUFSIZ
 #define PRINT_DIGITS 3
 #define TRIMMED_SIZE 255
