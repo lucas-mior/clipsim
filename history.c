@@ -295,7 +295,7 @@ history_read(void) {
 
         left -= (e->content_length + 1);
 
-        if (history_length >= HISTORY_SIZE)
+        if (history_length >= HISTORY_BUFFER_SIZE)
             break;
     }
 
@@ -435,20 +435,21 @@ history_append(char *content, int32 length) {
     XFree(content);
 
     history_length += 1;
-    if (history_length >= HISTORY_SIZE) {
-        size_t size_entry = sizeof(*entries);
-        size_t size_is = sizeof(*is_image);
-
-        for (int32 i = 0; i < HISTORY_KEEP; i += 1)
+    if (history_length >= HISTORY_BUFFER_SIZE) {
+        for (int32 i = 0; i < HISTORY_KEEP_SIZE; i += 1)
             history_free_entry(&entries[i], i);
 
-        memcpy(&entries[0], &entries[HISTORY_KEEP], HISTORY_KEEP*size_entry);
-        memcpy(&is_image[0], &is_image[HISTORY_KEEP], HISTORY_KEEP*size_is);
+        memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
+               HISTORY_KEEP_SIZE*sizeof(*entries));
+        memset(&entries[HISTORY_KEEP_SIZE], 0,
+               HISTORY_KEEP_SIZE*sizeof(*entries));
 
-        memset(&entries[HISTORY_KEEP], 0, HISTORY_KEEP*size_entry);
-        memset(&is_image[HISTORY_KEEP], 0, HISTORY_KEEP*size_is);
+        memcpy(&is_image[0], &is_image[HISTORY_KEEP_SIZE],
+               HISTORY_KEEP_SIZE*sizeof(*is_image));
+        memset(&is_image[HISTORY_KEEP_SIZE], 0,
+               HISTORY_KEEP_SIZE*sizeof(*is_image));
 
-        history_length = HISTORY_KEEP;
+        history_length = HISTORY_KEEP_SIZE;
     }
 
     return;
