@@ -33,17 +33,13 @@ send_signal(const char *executable, const int32 signal_number) {
         static char command[256];
         int32 pid;
         int32 cmdline;
-        int32 n;
 
         if (process->d_type != DT_DIR)
             continue;
         if ((pid = atoi(process->d_name)) <= 0)
             continue;
 
-        n = snprintf(buffer, sizeof(buffer),
-                     "/proc/%s/cmdline", process->d_name);
-        if (n <= 0)
-            continue;
+        SNPRINTF(buffer, "/proc/%s/cmdline", process->d_name);
 
         if ((cmdline = open(buffer, O_RDONLY)) < 0)
             continue;
