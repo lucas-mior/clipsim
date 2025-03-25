@@ -17,6 +17,7 @@
 
 #include "clipsim.h"
 #include <stdarg.h>
+#include <assert.h>
 
 static char *notifiers[2] = { "dunstify", "notify-send" };
 
@@ -195,6 +196,28 @@ util_copy_file(const char *destination, const char *source) {
     close(source_fd);
     close(destination_fd);
     return 0;
+}
+
+int
+snprintf2(char *buffer, size_t size, char *format, ...) {
+    int n;
+    va_list args;
+
+    assert(size >= strlen(format));
+
+    va_start(args, format);
+    n = vsnprintf(buffer, size, format, args);
+    va_end(args);
+
+    if (n >= (int)size) {
+        error("Error in snprintf.\n");
+        exit(EXIT_FAILURE);
+    }
+    if (n <= 0) {
+        error("Error in snprintf.\n");
+        exit(EXIT_FAILURE);
+    }
+    return n;
 }
 
 void error(char *format, ...) {

@@ -55,6 +55,9 @@ do { \
 #define DEBUG_PRINT(...)
 #endif
 
+#define SNPRINTF(BUFFER, FORMAT, ...) \
+    snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
+
 #define LENGTH(x) (isize) ((sizeof (x) / sizeof (*x)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -162,6 +165,7 @@ void util_close(File *);
 int util_open(File *, const int);
 int util_copy_file(const char *, const char *);
 void util_die_notify(const char *, ...) __attribute__((noreturn));
+int snprintf2(char *, size_t, char *, ...);
 void error(char *, ...);
 
 #endif /* CLIPSIM_H */

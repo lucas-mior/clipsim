@@ -81,11 +81,7 @@ history_delete_tmp(void) {
 
 void history_backup(void) {
     char buffer[PATH_MAX];
-    int32 n = snprintf(buffer, sizeof(buffer), "%s.bak", history.name);
-    if (n <= 0) {
-        error("Error in snprintf.\n");
-        exit(EXIT_FAILURE);
-    }
+    SNPRINTF(buffer, "%s.bak", history.name);
     if (rename(history.name, buffer) < 0) {
         error("Error creating backup history file: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
@@ -120,12 +116,7 @@ history_save(void) {
             int32 n;
             char *base = basename(e->content);
 
-            n = snprintf(image_save, sizeof(image_save),
-                         "%s/clipsim/%s", XDG_CACHE_HOME, base);
-            if (n <= 0) {
-                error("Error printing image path.\n");
-                continue;
-            }
+            n = SNPRINTF(image_save, "%s/clipsim/%s", XDG_CACHE_HOME, base);
 
             if (strcmp(image_save, e->content)) {
                 if (util_copy_file(image_save, e->content) < 0) {
@@ -218,15 +209,8 @@ history_read(void) {
 
     {
         char buffer[PATH_MAX];
-        int32 n = snprintf(buffer, sizeof(buffer),
-                           "%s/%s", XDG_CACHE_HOME, clipsim);
-        if (n <= 0) {
-            error("Error printing to buffer: %s\n", strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-
-        usize size = (usize)n + 1;
-        history.name = util_memdup(buffer, size);
+        int n = SNPRINTF(buffer, "%s/%s", XDG_CACHE_HOME, clipsim);
+        history.name = util_memdup(buffer, (usize)n + 1);
 
         char *clipsim_dir = dirname(buffer);
         if (mkdir(clipsim_dir, 0770) < 0) {
@@ -355,12 +339,7 @@ history_save_image(char **content, int32 *length) {
     char image_file[256];
     int32 n;
 
-    n = snprintf(image_file, sizeof(image_file),
-                 "%s/%ld.png", tmp_directory, t);
-    if (n <= 0) {
-        error("Error printing image path.\n");
-        exit(EXIT_FAILURE);
-    }
+    n = SNPRINTF(image_file, "%s/%ld.png", tmp_directory, t);
 
     if ((file = open(image_file, O_WRONLY | O_CREAT | O_TRUNC,
                                  S_IRUSR | S_IWUSR)) < 0) {
