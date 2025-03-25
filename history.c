@@ -301,7 +301,7 @@ history_read(void) {
 
     if (munmap(history_map, history_size) < 0) {
         error("Error unmapping %p with %zu bytes: %s\n",
-              (void *) history_map, history_size, strerror(errno));
+              (void *)history_map, history_size, strerror(errno));
     }
     util_close(&history);
     return;
@@ -383,7 +383,7 @@ history_append(char *content, int32 length) {
         return;
     }
 
-    kind = content_check_content((uchar *) content, length);
+    kind = content_check_content((uchar *)content, length);
     switch (kind) {
     case CLIPBOARD_TEXT:
         content_remove_newline(content, &length);
@@ -545,7 +545,7 @@ history_remove(int32 id) {
 
     if (id < history_length) {
         memmove(&entries[id], &(entries[id + 1]),
-                (usize) (history_length - id)*sizeof(*entries));
+                (usize)(history_length - id)*sizeof(*entries));
         memset(&entries[history_length - 1], 0, sizeof(*entries));
     }
     history_length -= 1;
@@ -560,11 +560,11 @@ history_reorder(const int32 oldindex) {
     bool aux2 = is_image[oldindex];
 
     memmove(&entries[oldindex], &entries[oldindex + 1],
-            (usize) (history_length - oldindex)*sizeof(*entries));
+            (usize)(history_length - oldindex)*sizeof(*entries));
     memmove(&entries[history_length - 1], &aux, sizeof(*entries));
 
     memmove(&is_image[oldindex], &is_image[oldindex + 1],
-            (usize) (history_length - oldindex)*sizeof(*is_image));
+            (usize)(history_length - oldindex)*sizeof(*is_image));
     memmove(&is_image[history_length - 1], &aux2, sizeof(*is_image));
     return;
 }

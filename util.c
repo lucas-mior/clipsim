@@ -85,7 +85,7 @@ util_string_int32(int32 *number, const char *string) {
     } else if ((x > INT32_MAX) || (x < INT32_MIN)) {
         return -1;
     } else {
-        *number = (int32) x;
+        *number = (int32)x;
         return 0;
     }
 }
@@ -104,7 +104,7 @@ util_die_notify(const char *format, ...) {
         exit(EXIT_FAILURE);
 
     buffer[n] = '\0';
-    (void) write(STDERR_FILENO, buffer, (usize) n + 1);
+    (void)write(STDERR_FILENO, buffer, (usize) n + 1);
     for (uint i = 0; i < LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical",
                              "clipsim", buffer, NULL);
@@ -114,10 +114,10 @@ util_die_notify(const char *format, ...) {
 
 void
 util_segv_handler(int32 unused) {
-    (void) unused;
+    (void)unused;
     char *message = "Memory error. Please send a bug report.\n";
 
-    (void) write(STDERR_FILENO, message, strlen(message));
+    (void)write(STDERR_FILENO, message, strlen(message));
     for (uint i = 0; i < LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical",
                              "clipsim", message, NULL);
@@ -173,7 +173,7 @@ util_copy_file(const char *destination, const char *source) {
 
     errno = 0;
     while ((r = read(source_fd, buffer, BUFSIZ)) > 0) {
-        w = write(destination_fd, buffer, (usize) r);
+        w = write(destination_fd, buffer, (usize)r);
         if (w != r) {
             fprintf(stderr, "Error writing data to %s", destination);
             if (errno)
@@ -235,7 +235,7 @@ void error(char *format, ...) {
     }
 
     buffer[n] = '\0';
-    write(STDERR_FILENO, buffer, (usize) n);
+    write(STDERR_FILENO, buffer, (usize)n);
 
 #ifdef CLIPSIM_DEBUG
     switch (fork()) {

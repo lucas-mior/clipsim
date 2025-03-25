@@ -42,8 +42,8 @@ static const Command commands[] = {
 
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
 bool is_image[HISTORY_BUFFER_SIZE] = {0};
-const char TEXT_TAG = (char) 0x01;
-const char IMAGE_TAG = (char) 0x02;
+const char TEXT_TAG = (char)0x01;
+const char IMAGE_TAG = (char)0x02;
 mtx_t lock;
 char *program;
 magic_t magic;
@@ -104,7 +104,7 @@ main(int32 argc, char *argv[]) {
 
 void
 main_usage(FILE *stream) {
-    DEBUG_PRINT("%p", (void *) stream);
+    DEBUG_PRINT("%p", (void *)stream);
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
@@ -144,11 +144,11 @@ main_check_cmdline(char *pid) {
 
     switch (r) {
     case sizeof(cmd1):
-        if (!memcmp(command, cmd1, (usize) r))
+        if (!memcmp(command, cmd1, (usize)r))
             return true;
         break;
     case sizeof(cmd2):
-        if (!memcmp(command, cmd2, (usize) r))
+        if (!memcmp(command, cmd2, (usize)r))
             return true;
         break;
     default:
