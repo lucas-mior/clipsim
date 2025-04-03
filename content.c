@@ -56,7 +56,7 @@ content_trim_spaces(int16 *trimmed, int16 *trimmed_length,
         in += 1;
     }
     *out = '\0';
-    *trimmed_length = (int16) (out - &content[*trimmed]);
+    *trimmed_length = (int16)(out - &content[*trimmed]);
 
     if (temp)
         content[TRIMMED_SIZE] = temp;
@@ -84,7 +84,7 @@ content_check_content(uchar *data, const int32 length) {
 
     do {
         const char *mime_type;
-        if ((mime_type = magic_buffer(magic, data, (usize) length)) == NULL) {
+        if ((mime_type = magic_buffer(magic, data, (usize)length)) == NULL) {
             error("Error in magic_buffer(%.*s): %s.\n",
                   30, data, magic_error(magic));
             break;
