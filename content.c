@@ -98,9 +98,8 @@ content_check_content(uchar *data, const int32 length) {
         return CLIPBOARD_ERROR;
     }
 
-    if (memchr(data, TEXT_TAG, length) || memchr(data, IMAGE_TAG, length)) {
-        util_die_notify("Entry %s contains control chars.", data);
-    }
+    if (memchr(data, TEXT_TAG, length) || memchr(data, IMAGE_TAG, length))
+        error("Entry '%s' contains control chars.", data);
 
     return CLIPBOARD_TEXT;
 }
