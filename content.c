@@ -94,7 +94,7 @@ content_check_content(uchar *data, const int32 length) {
     } while (0);
 
     if (length > (ENTRY_MAX_LENGTH - 1)) {
-        error("Too large entry. This wont' be added to history.\n");
+        error("Too large entry. This won't be added to history.\n");
         return CLIPBOARD_ERROR;
     }
 
