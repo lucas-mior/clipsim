@@ -98,8 +98,10 @@ content_check_content(uchar *data, const int32 length) {
         return CLIPBOARD_ERROR;
     }
 
-    if (memchr(data, TEXT_TAG, length) || memchr(data, IMAGE_TAG, length))
-        error("Entry '%s' contains control chars.", data);
+    if (memchr(data, TEXT_TAG, length) || memchr(data, IMAGE_TAG, length)) {
+        error("Entry contains control chars. This won't be added to history");
+        return CLIPBOARD_OTHER;
+    }
 
     return CLIPBOARD_TEXT;
 }
