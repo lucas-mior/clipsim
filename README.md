@@ -67,6 +67,7 @@ If you know of some terminal emulator that opens faster than urxvtc,
 please let me know.
 
 To explicity save the clipboard history in `$XDG_CACHE_HOME/clipsim/history`.
+If `$XDG_CACHE_HOME` is not set, it is assumed to be `$HOME/.cache`.
 It should not be necessary since history is already saved on `SIGTERM` and `SIGINT`.
 ```
 $ clipsim --save
