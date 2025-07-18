@@ -121,8 +121,23 @@ clipboard_daemon_watch(void) {
     }
 }
 
-Atom
-clipboard_check_target(const Atom target) {
+#include <stdio.h>
+#include <string.h>
+
+Atom clipboard_check_target(const Atom target) {
+    char cmd[256];
+    FILE *pipe;
+
+    char *xclip = "xclip -selection clipboard -o -t targets 2> /dev/null";
+    char *grep = "grep -Fxq";
+
+    SNPRINTF(cmd, "%s | %s \"%lu\"", xclip, grep, target);
+    if ((pipe = popen(cmd, "r")) == NULL)
+        return 0;
+
+    if (pclose(pipe))
+        return 0;
+
 #ifdef CLIPSIM_DEBUG
     if (target <= XA_LAST_PREDEFINED)
         DEBUG_PRINT("%s", XGetAtomName(display, target));
@@ -188,7 +203,6 @@ clipboard_get_clipboard(char **save, ulong *length) {
                 memcpy(temp + nitems_return_last - nitems_return,
                        data, nitems_return);
                 temp[nitems_return_last] = '\0';
-                printf("temp=%s\n", temp);
             } while (nitems_return > 0);
             XFixesSelectSelectionInput(display, root, CLIPBOARD, (ulong)
                                        XFixesSetSelectionOwnerNotifyMask
@@ -201,6 +215,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
 
         temp = util_malloc(nitems_return);
         memcpy(temp, save, nitems_return);
+        *save = temp;
         *length = nitems_return;
         return CLIPBOARD_TEXT;
     }
