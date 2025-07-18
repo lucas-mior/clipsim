@@ -202,7 +202,7 @@ main_launch_daemon(void) {
         exit(EXIT_FAILURE);
     }
 
-    history_read();
+    /* history_read(); */
 
     if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
         error("Error in magic_open(MAGIC_MIME_TYPE): %s\n", strerror(errno));

@@ -21,12 +21,13 @@
 #include <X11/extensions/Xfixes.h>
 
 #include "clipsim.h"
-#define CHECK_TARGET_MAX_EVENTS 100
+#define CHECK_TARGET_MAX_EVENTS 10
 
 static Display *display;
 static Atom CLIPBOARD, XSEL_DATA, INCR;
 static Atom UTF8_STRING, image_png, TARGETS;
 static Window window;
+static Window root;
 
 static Atom clipboard_check_target(Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
@@ -35,7 +36,6 @@ int32
 clipboard_daemon_watch(void) {
     DEBUG_PRINT("void");
     ulong color;
-    Window root;
     struct timespec pause;
     pause.tv_sec = 0;
     pause.tv_nsec = PAUSE10MS;
@@ -87,7 +87,9 @@ clipboard_daemon_watch(void) {
         ulong length;
 
         nanosleep(&pause, NULL);
+        printf("before event...\n");
         (void) XNextEvent(display, &xevent);
+        printf("event!!!...\n");
         mtx_lock(&lock);
 
         if (CLIPSIM_SIGNAL_PROGRAM)
@@ -137,8 +139,8 @@ clipboard_check_target(const Atom target) {
             return 0;
         (void) XNextEvent(display, &xevent);
         nevents += 1;
-    } while (xevent.type != SelectionNotify
-             || xevent.xselection.selection != CLIPBOARD);
+    } while ((xevent.type != SelectionNotify)
+             || (xevent.xselection.selection != CLIPBOARD));
 
     return xevent.xselection.property;
 }
@@ -148,17 +150,57 @@ clipboard_get_clipboard(char **save, ulong *length) {
     DEBUG_PRINT("%p, %p", (void *) save, (void *) length);
     int32 actual_format_return;
     ulong nitems_return;
+    ulong nitems_return_last = 0;
     ulong bytes_after_return;
     Atom actual_type_return;
+    char *temp = NULL;
 
     if (clipboard_check_target(UTF8_STRING)) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
-                           False, AnyPropertyType, &actual_type_return,
+                           True, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
-        if (actual_type_return == INCR)
-            return CLIPBOARD_LARGE;
+        if (actual_type_return == INCR) {
+            XSelectInput(display, window, PropertyChangeMask);
+            XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
+                               True, AnyPropertyType, &actual_type_return,
+                               &actual_format_return, &nitems_return,
+                               &bytes_after_return, (uchar **) save);
+            printf("INCR!!!!!!!!!!!!!!!!!!!\n");
+            uchar *data;
+            do {
+                printf("INCR LOOP before event\n");
+                XEvent e;
+                do {
+                    XNextEvent(display, &e);
+                    printf("event @ INCR LOOP ================\n");
+                } while (e.type != PropertyNotify 
+                        && e.xproperty.atom != XSEL_DATA
+                        && e.xproperty.state != PropertyNewValue);
 
+                XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
+                                   True, AnyPropertyType, &actual_type_return, &actual_format_return, &nitems_return,
+                                   &bytes_after_return, &data);
+                if (nitems_return <= 0)
+                    break;
+                nitems_return_last += nitems_return;
+                temp = util_realloc(temp, nitems_return_last);
+                memcpy(temp + nitems_return_last - nitems_return,
+                       data, nitems_return);
+                temp[nitems_return_last] = '\0';
+                printf("temp=%s\n", temp);
+            } while (nitems_return > 0);
+            XFixesSelectSelectionInput(display, root, CLIPBOARD, (ulong)
+                                       XFixesSetSelectionOwnerNotifyMask
+                                     | XFixesSelectionClientCloseNotifyMask
+                                     | XFixesSelectionWindowDestroyNotifyMask);
+            *save = temp;
+            *length = nitems_return_last;
+            return CLIPBOARD_LARGE;
+        }
+
+        temp = util_malloc(nitems_return);
+        memcpy(temp, save, nitems_return);
         *length = nitems_return;
         return CLIPBOARD_TEXT;
     }
