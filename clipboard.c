@@ -125,6 +125,12 @@ clipboard_daemon_watch(void) {
 #include <string.h>
 
 Atom clipboard_check_target(const Atom target) {
+#ifdef CLIPSIM_DEBUG
+    if (target <= XA_LAST_PREDEFINED)
+        DEBUG_PRINT("%s", XGetAtomName(display, target));
+    else
+        DEBUG_PRINT("%lu", target);
+#endif
     char cmd[256];
     FILE *pipe;
 
@@ -138,12 +144,6 @@ Atom clipboard_check_target(const Atom target) {
     if (pclose(pipe))
         return 0;
 
-#ifdef CLIPSIM_DEBUG
-    if (target <= XA_LAST_PREDEFINED)
-        DEBUG_PRINT("%s", XGetAtomName(display, target));
-    else
-        DEBUG_PRINT("%lu", target);
-#endif
     XEvent xevent;
     int32 nevents = 0;
 
