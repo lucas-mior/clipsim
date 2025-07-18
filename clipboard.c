@@ -165,53 +165,17 @@ clipboard_get_clipboard(char **save, ulong *length) {
     DEBUG_PRINT("%p, %p", (void *) save, (void *) length);
     int32 actual_format_return;
     ulong nitems_return;
-    ulong nitems_return_last = 0;
     ulong bytes_after_return;
     Atom actual_type_return;
     char *temp = NULL;
 
     if (clipboard_check_target(UTF8_STRING)) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
-                           True, AnyPropertyType, &actual_type_return,
+                           False, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
-        if (actual_type_return == INCR) {
-            XSelectInput(display, window, PropertyChangeMask);
-            XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
-                               True, AnyPropertyType, &actual_type_return,
-                               &actual_format_return, &nitems_return,
-                               &bytes_after_return, (uchar **) save);
-            printf("INCR!!!!!!!!!!!!!!!!!!!\n");
-            uchar *data;
-            do {
-                printf("INCR LOOP before event\n");
-                XEvent e;
-                do {
-                    XNextEvent(display, &e);
-                    printf("event @ INCR LOOP ================\n");
-                } while (e.type != PropertyNotify 
-                        && e.xproperty.atom != XSEL_DATA
-                        && e.xproperty.state != PropertyNewValue);
-
-                XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
-                                   True, AnyPropertyType, &actual_type_return, &actual_format_return, &nitems_return,
-                                   &bytes_after_return, &data);
-                if (nitems_return <= 0)
-                    break;
-                nitems_return_last += nitems_return;
-                temp = util_realloc(temp, nitems_return_last);
-                memcpy(temp + nitems_return_last - nitems_return,
-                       data, nitems_return);
-                temp[nitems_return_last] = '\0';
-            } while (nitems_return > 0);
-            XFixesSelectSelectionInput(display, root, CLIPBOARD, (ulong)
-                                       XFixesSetSelectionOwnerNotifyMask
-                                     | XFixesSelectionClientCloseNotifyMask
-                                     | XFixesSelectionWindowDestroyNotifyMask);
-            *save = temp;
-            *length = nitems_return_last;
+        if (actual_type_return == INCR)
             return CLIPBOARD_LARGE;
-        }
 
         temp = util_malloc(nitems_return);
         memcpy(temp, save, nitems_return);
