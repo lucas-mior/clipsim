@@ -23,6 +23,18 @@
 #include "clipsim.h"
 #define CHECK_TARGET_MAX_EVENTS 10
 
+const char *event_names[LASTEvent] = {
+    "ProtocolError", "ProtocolReply", "KeyPress", "KeyRelease",
+    "ButtonPress", "ButtonRelease", "MotionNotify", "EnterNotify",
+    "LeaveNotify", "FocusIn", "FocusOut", "KeymapNotify", "Expose",
+    "GraphicsExpose", "NoExpose", "VisibilityNotify", "CreateNotify",
+    "DestroyNotify", "UnmapNotify", "MapNotify", "MapRequest",
+    "ReparentNotify", "ConfigureNotify", "ConfigureRequest",
+    "GravityNotify", "ResizeRequest", "CirculateNotify",
+    "CirculateRequest", "PropertyNotify", "SelectionClear",
+    "SelectionRequest", "SelectionNotify", "ColormapNotify",
+    "ClientMessage", "MappingNotify", "GenericEvent", };
+
 static Display *display;
 static Atom CLIPBOARD, XSEL_DATA, INCR;
 static Atom UTF8_STRING, image_png, TARGETS;
@@ -87,9 +99,9 @@ clipboard_daemon_watch(void) {
         ulong length;
 
         nanosleep(&pause, NULL);
-        printf("before event...\n");
         (void) XNextEvent(display, &xevent);
-        printf("event!!!...\n");
+        if (xevent.type == PropertyNotify)
+            continue;
         mtx_lock(&lock);
 
         if (CLIPSIM_SIGNAL_PROGRAM)
@@ -143,17 +155,6 @@ Atom clipboard_check_target(const Atom target) {
     return xevent.xselection.property;
 }
 
-const char *evtstr[LASTEvent] = {
-    "ProtocolError", "ProtocolReply", "KeyPress", "KeyRelease",
-    "ButtonPress", "ButtonRelease", "MotionNotify", "EnterNotify",
-    "LeaveNotify", "FocusIn", "FocusOut", "KeymapNotify", "Expose",
-    "GraphicsExpose", "NoExpose", "VisibilityNotify", "CreateNotify",
-    "DestroyNotify", "UnmapNotify", "MapNotify", "MapRequest",
-    "ReparentNotify", "ConfigureNotify", "ConfigureRequest",
-    "GravityNotify", "ResizeRequest", "CirculateNotify",
-    "CirculateRequest", "PropertyNotify", "SelectionClear",
-    "SelectionRequest", "SelectionNotify", "ColormapNotify",
-    "ClientMessage", "MappingNotify", "GenericEvent", };
 
 
 static size_t
@@ -167,14 +168,15 @@ mach_itemsize(int format) {
     return 0;
 }
 
-int32 clipboard_incremental_case(char **save, ulong *length) {
-    printf("INCR=============\n");
+void
+clipboard_incremental_case(char **save, ulong *length) {
     int32 actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
     Atom actual_type_return;
     char *buffer;
     *length = 0;
+
     XSelectInput(display, window, PropertyChangeMask);
     XDeleteProperty(display, window, XSEL_DATA);
     XFlush(display);
@@ -182,10 +184,7 @@ int32 clipboard_incremental_case(char **save, ulong *length) {
     while (true) {
         XEvent event;
         do {
-            printf("BEFORE INCR event\n");
             XNextEvent(display, &event);
-            printf("INCR event: %s -> %d != %d\n",
-                    evtstr[event.type], event.xproperty.state, PropertyNewValue);
         } while ((event.type != PropertyNotify)
                 || (event.xproperty.state != PropertyNewValue));
         XGetWindowProperty(display, window, XSEL_DATA, 0, 0,
@@ -193,11 +192,12 @@ int32 clipboard_incremental_case(char **save, ulong *length) {
                            &actual_type_return, &actual_format_return,
                            &nitems_return, &bytes_after_return,
                            (uchar **) &buffer);
-        printf("bytes_after_return:%d\n", bytes_after_return);
         XFree(buffer);
         if (bytes_after_return == 0) {
             XDeleteProperty(display, window, XSEL_DATA);
-            return CLIPBOARD_LARGE;
+            XSelectInput(display, window, NoEventMask);
+            XFlush(display);
+            return;
         }
 
         XGetWindowProperty(display, window, XSEL_DATA,
@@ -223,6 +223,7 @@ int32 clipboard_incremental_case(char **save, ulong *length) {
         XDeleteProperty(display, window, XSEL_DATA);
         XFlush(display);
     }
+    return;
 }
 
 int32
@@ -239,7 +240,8 @@ clipboard_get_clipboard(char **save, ulong *length) {
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
         if (actual_type_return == INCR) {
-            return clipboard_incremental_case(save, length);
+            clipboard_incremental_case(save, length);
+            return CLIPBOARD_LARGE;
         }
 
         *length = nitems_return;
@@ -251,7 +253,8 @@ clipboard_get_clipboard(char **save, ulong *length) {
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
         if (actual_type_return == INCR) {
-            return clipboard_incremental_case(save, length);
+            clipboard_incremental_case(save, length);
+            return CLIPBOARD_LARGE;
         }
 
         *length = nitems_return;
