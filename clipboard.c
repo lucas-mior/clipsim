@@ -29,7 +29,7 @@ static Atom UTF8_STRING, image_png, TARGETS;
 static Window window;
 static Window root;
 
-static Atom clipboard_check_target(char *);
+static Atom clipboard_check_target(const Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
 
 int32
@@ -124,28 +124,8 @@ clipboard_daemon_watch(void) {
 #include <stdio.h>
 #include <string.h>
 
-Atom clipboard_check_target(char *string) {
-    DEBUG_PRINT("%s", string);
-    char cmd[256];
-    FILE *pipe;
-    int status;
-    Atom target = XInternAtom(display, string, False);
-
-    char *xclip = "xclip -selection clipboard -o -t TARGETS 2> /dev/null";
-    char *grep = "grep -Fxq";
-
-    SNPRINTF(cmd, "%s | %s \"%s\"", xclip, grep, string);
-    if ((pipe = popen(cmd, "r")) == NULL) {
-        error("Error opening pipe: %s.\n", strerror(errno));
-        return 0;
-    }
-
-    if ((status = pclose(pipe)) < 0) {
-        error("Error closing pipe: %s.\n", strerror(errno));
-        return 0;
-    }
-    if (status != 0)
-        return 0;
+Atom clipboard_check_target(const Atom target) {
+    DEBUG_PRINT("%d", target);
 
     XEvent xevent;
     int32 nevents = 0;
@@ -187,6 +167,64 @@ mach_itemsize(int format) {
     return 0;
 }
 
+int32 clipboard_incremental_case(char **save, ulong *length) {
+    printf("INCR=============\n");
+    int32 actual_format_return;
+    ulong nitems_return;
+    ulong bytes_after_return;
+    Atom actual_type_return;
+    char *buffer;
+    *length = 0;
+    XSelectInput(display, window, PropertyChangeMask);
+    XDeleteProperty(display, window, XSEL_DATA);
+    XFlush(display);
+
+    while (true) {
+        XEvent event;
+        do {
+            printf("BEFORE INCR event\n");
+            XNextEvent(display, &event);
+            printf("INCR event: %s -> %d != %d\n",
+                    evtstr[event.type], event.xproperty.state, PropertyNewValue);
+        } while ((event.type != PropertyNotify)
+                || (event.xproperty.state != PropertyNewValue));
+        XGetWindowProperty(display, window, XSEL_DATA, 0, 0,
+                           False, AnyPropertyType,
+                           &actual_type_return, &actual_format_return,
+                           &nitems_return, &bytes_after_return,
+                           (uchar **) &buffer);
+        printf("bytes_after_return:%d\n", bytes_after_return);
+        XFree(buffer);
+        if (bytes_after_return == 0) {
+            XDeleteProperty(display, window, XSEL_DATA);
+            return CLIPBOARD_LARGE;
+        }
+
+        XGetWindowProperty(display, window, XSEL_DATA,
+                           0, bytes_after_return,
+                           False,
+                           AnyPropertyType,
+                           &actual_type_return, &actual_format_return,
+                           &nitems_return, &bytes_after_return,
+                           (uchar **) &buffer);
+
+        long size = nitems_return*mach_itemsize(actual_format_return);
+        if (*length == 0) {
+            *length = size;
+            *save = util_malloc(*length);
+        } else {
+            *length += size;
+            *save = util_realloc(*save, *length);
+        }
+
+        memcpy(*save + *length - size, buffer, size);
+
+        XFree(buffer);
+        XDeleteProperty(display, window, XSEL_DATA);
+        XFlush(display);
+    }
+}
+
 int32
 clipboard_get_clipboard(char **save, ulong *length) {
     DEBUG_PRINT("%p, %p", (void *) save, (void *) length);
@@ -195,80 +233,31 @@ clipboard_get_clipboard(char **save, ulong *length) {
     ulong bytes_after_return;
     Atom actual_type_return;
 
-    if (clipboard_check_target("image/png")) {
+    if (clipboard_check_target(image_png)) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
         if (actual_type_return == INCR) {
-            printf("INCR=============\n");
-            char *buffer;
-            *length = 0;
-            XSelectInput(display, window, PropertyChangeMask);
-            XDeleteProperty(display, window, XSEL_DATA);
-            XFlush(display);
-
-            while (true) {
-                XEvent event;
-                do {
-                    printf("BEFORE INCR event\n");
-                    XNextEvent(display, &event);
-                    printf("INCR event: %s -> %d != %d\n",
-                            evtstr[event.type], event.xproperty.state, PropertyNewValue);
-                } while ((event.type != PropertyNotify)
-                        || (event.xproperty.state != PropertyNewValue));
-                XGetWindowProperty(display, window, XSEL_DATA, 0, 0,
-                                   False, AnyPropertyType,
-                                   &actual_type_return, &actual_format_return,
-                                   &nitems_return, &bytes_after_return,
-                                   (uchar **) &buffer);
-                printf("bytes_after_return:%d\n", bytes_after_return);
-                XFree(buffer);
-                if (bytes_after_return == 0) {
-                    XDeleteProperty(display, window, XSEL_DATA);
-                    return CLIPBOARD_LARGE;
-                }
-
-                XGetWindowProperty(display, window, XSEL_DATA,
-                                   0, bytes_after_return,
-                                   False,
-                                   AnyPropertyType,
-                                   &actual_type_return, &actual_format_return,
-                                   &nitems_return, &bytes_after_return,
-                                   (uchar **) &buffer);
-
-                long size = nitems_return*mach_itemsize(actual_format_return);
-                if (*length == 0) {
-                    *length = size;
-                    *save = util_malloc(*length);
-                } else {
-                    *length += size;
-                    *save = util_realloc(*save, *length);
-                }
-
-                memcpy(*save + *length - size, buffer, size);
-
-                XFree(buffer);
-                XDeleteProperty(display, window, XSEL_DATA);
-                XFlush(display);
-            }
+            return clipboard_incremental_case(save, length);
         }
 
         *length = nitems_return;
         return CLIPBOARD_TEXT;
     }
-    if (clipboard_check_target("UTF8_STRING")) {
+    if (clipboard_check_target(UTF8_STRING)) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
-        if (actual_type_return == INCR)
-            return CLIPBOARD_LARGE;
+        if (actual_type_return == INCR) {
+            return clipboard_incremental_case(save, length);
+        }
 
         *length = nitems_return;
         return CLIPBOARD_IMAGE;
     }
-    if (clipboard_check_target("TARGETS"))
+    if (clipboard_check_target(TARGETS))
         return CLIPBOARD_OTHER;
 
     return CLIPBOARD_ERROR;
