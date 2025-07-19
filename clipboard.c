@@ -23,7 +23,7 @@
 #include "clipsim.h"
 #define CHECK_TARGET_MAX_EVENTS 10
 
-const char *event_names[LASTEvent] = {
+static const char *event_names[LASTEvent] = {
     "ProtocolError", "ProtocolReply", "KeyPress", "KeyRelease",
     "ButtonPress", "ButtonRelease", "MotionNotify", "EnterNotify",
     "LeaveNotify", "FocusIn", "FocusOut", "KeymapNotify", "Expose",
@@ -33,7 +33,8 @@ const char *event_names[LASTEvent] = {
     "GravityNotify", "ResizeRequest", "CirculateNotify",
     "CirculateRequest", "PropertyNotify", "SelectionClear",
     "SelectionRequest", "SelectionNotify", "ColormapNotify",
-    "ClientMessage", "MappingNotify", "GenericEvent", };
+    "ClientMessage", "MappingNotify", "GenericEvent",
+};
 
 static Display *display;
 static Atom CLIPBOARD, XSEL_DATA, INCR;
@@ -41,6 +42,7 @@ static Atom UTF8_STRING, image_png, TARGETS;
 static Window window;
 static Window root;
 
+static void clipboard_incremental_case(char **, ulong *);
 static Atom clipboard_check_target(const Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
 
@@ -136,9 +138,6 @@ clipboard_daemon_watch(void) {
     }
 }
 
-#include <stdio.h>
-#include <string.h>
-
 Atom clipboard_check_target(const Atom target) {
     DEBUG_PRINT("%d", target);
 
@@ -157,8 +156,6 @@ Atom clipboard_check_target(const Atom target) {
 
     return xevent.xselection.property;
 }
-
-
 
 static size_t
 mach_itemsize(int format) {
@@ -204,7 +201,7 @@ clipboard_incremental_case(char **save, ulong *length) {
         }
 
         XGetWindowProperty(display, window, XSEL_DATA,
-                           0, bytes_after_return,
+                           0, (long)bytes_after_return,
                            False,
                            AnyPropertyType,
                            &actual_type_return, &actual_format_return,
