@@ -29,7 +29,7 @@ static Atom UTF8_STRING, image_png, TARGETS;
 static Window window;
 static Window root;
 
-static Atom clipboard_check_target(Atom);
+static Atom clipboard_check_target(char *);
 static int32 clipboard_get_clipboard(char **, ulong *);
 
 int32
@@ -124,24 +124,27 @@ clipboard_daemon_watch(void) {
 #include <stdio.h>
 #include <string.h>
 
-Atom clipboard_check_target(const Atom target) {
-#ifdef CLIPSIM_DEBUG
-    if (target <= XA_LAST_PREDEFINED)
-        DEBUG_PRINT("%s", XGetAtomName(display, target));
-    else
-        DEBUG_PRINT("%lu", target);
-#endif
+Atom clipboard_check_target(char *string) {
+    DEBUG_PRINT("%s", string);
     char cmd[256];
     FILE *pipe;
+    int status;
+    Atom target = XInternAtom(display, string, False);
 
-    char *xclip = "xclip -selection clipboard -o -t targets 2> /dev/null";
+    char *xclip = "xclip -selection clipboard -o -t TARGETS 2> /dev/null";
     char *grep = "grep -Fxq";
 
-    SNPRINTF(cmd, "%s | %s \"%lu\"", xclip, grep, target);
-    if ((pipe = popen(cmd, "r")) == NULL)
+    SNPRINTF(cmd, "%s | %s \"%s\"", xclip, grep, string);
+    if ((pipe = popen(cmd, "r")) == NULL) {
+        error("popen:%s\n", strerror(errno));
         return 0;
+    }
 
-    if (pclose(pipe))
+    if ((status = pclose(pipe)) < 0) {
+        error("Error closing pipe: %s.\n", strerror(errno));
+        return 0;
+    }
+    if (status != 0)
         return 0;
 
     XEvent xevent;
@@ -167,9 +170,8 @@ clipboard_get_clipboard(char **save, ulong *length) {
     ulong nitems_return;
     ulong bytes_after_return;
     Atom actual_type_return;
-    char *temp = NULL;
 
-    if (clipboard_check_target(UTF8_STRING)) {
+    if (clipboard_check_target("UTF8_STRING")) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
@@ -177,13 +179,10 @@ clipboard_get_clipboard(char **save, ulong *length) {
         if (actual_type_return == INCR)
             return CLIPBOARD_LARGE;
 
-        temp = util_malloc(nitems_return);
-        memcpy(temp, save, nitems_return);
-        *save = temp;
         *length = nitems_return;
         return CLIPBOARD_TEXT;
     }
-    if (clipboard_check_target(image_png)) {
+    if (clipboard_check_target("image/png")) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
@@ -194,7 +193,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
         *length = nitems_return;
         return CLIPBOARD_IMAGE;
     }
-    if (clipboard_check_target(TARGETS))
+    if (clipboard_check_target("TARGETS"))
         return CLIPBOARD_OTHER;
 
     return CLIPBOARD_ERROR;
