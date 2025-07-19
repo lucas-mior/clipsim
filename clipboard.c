@@ -157,7 +157,7 @@ Atom clipboard_check_target(const Atom target) {
     return xevent.xselection.property;
 }
 
-static size_t
+static ulong
 mach_itemsize(int format) {
     if (format == 8)
 	return sizeof(char);
@@ -182,6 +182,7 @@ clipboard_incremental_case(char **save, ulong *length) {
     XFlush(display);
 
     while (true) {
+        ulong buffer_size;
         XEvent event;
         do {
             XNextEvent(display, &event);
@@ -197,7 +198,7 @@ clipboard_incremental_case(char **save, ulong *length) {
             XDeleteProperty(display, window, XSEL_DATA);
             XNextEvent(display, &event);
             XFlush(display);
-            return;
+            break;
         }
 
         XGetWindowProperty(display, window, XSEL_DATA,
@@ -208,16 +209,16 @@ clipboard_incremental_case(char **save, ulong *length) {
                            &nitems_return, &bytes_after_return,
                            (uchar **) &buffer);
 
-        long size = nitems_return*mach_itemsize(actual_format_return);
+        buffer_size = nitems_return*mach_itemsize(actual_format_return);
         if (*length == 0) {
-            *length = size;
+            *length = buffer_size;
             *save = util_malloc(*length);
         } else {
-            *length += size;
+            *length += buffer_size;
             *save = util_realloc(*save, *length);
         }
 
-        memcpy(*save + *length - size, buffer, size);
+        memcpy(*save + *length - buffer_size, buffer, buffer_size);
 
         XFree(buffer);
         XDeleteProperty(display, window, XSEL_DATA);
