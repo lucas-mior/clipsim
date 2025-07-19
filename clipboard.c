@@ -138,7 +138,48 @@ clipboard_daemon_watch(void) {
     }
 }
 
-Atom clipboard_check_target(const Atom target) {
+int32
+clipboard_get_clipboard(char **save, ulong *length) {
+    DEBUG_PRINT("%p, %p", (void *) save, (void *) length);
+    int32 actual_format_return;
+    ulong nitems_return;
+    ulong bytes_after_return;
+    Atom actual_type_return;
+
+    if (clipboard_check_target(image_png)) {
+        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
+                           False, AnyPropertyType, &actual_type_return,
+                           &actual_format_return, &nitems_return,
+                           &bytes_after_return, (uchar **) save);
+        if (actual_type_return == INCR) {
+            clipboard_incremental_case(save, length);
+            return CLIPBOARD_LARGE;
+        }
+
+        *length = nitems_return;
+        return CLIPBOARD_TEXT;
+    }
+    if (clipboard_check_target(UTF8_STRING)) {
+        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
+                           False, AnyPropertyType, &actual_type_return,
+                           &actual_format_return, &nitems_return,
+                           &bytes_after_return, (uchar **) save);
+        if (actual_type_return == INCR) {
+            clipboard_incremental_case(save, length);
+            return CLIPBOARD_LARGE;
+        }
+
+        *length = nitems_return;
+        return CLIPBOARD_IMAGE;
+    }
+    if (clipboard_check_target(TARGETS))
+        return CLIPBOARD_OTHER;
+
+    return CLIPBOARD_ERROR;
+}
+
+Atom
+clipboard_check_target(const Atom target) {
     DEBUG_PRINT("%lu", target);
 
     XEvent xevent;
@@ -226,44 +267,4 @@ clipboard_incremental_case(char **save, ulong *length) {
         XFlush(display);
     }
     return;
-}
-
-int32
-clipboard_get_clipboard(char **save, ulong *length) {
-    DEBUG_PRINT("%p, %p", (void *) save, (void *) length);
-    int32 actual_format_return;
-    ulong nitems_return;
-    ulong bytes_after_return;
-    Atom actual_type_return;
-
-    if (clipboard_check_target(image_png)) {
-        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
-                           False, AnyPropertyType, &actual_type_return,
-                           &actual_format_return, &nitems_return,
-                           &bytes_after_return, (uchar **) save);
-        if (actual_type_return == INCR) {
-            clipboard_incremental_case(save, length);
-            return CLIPBOARD_LARGE;
-        }
-
-        *length = nitems_return;
-        return CLIPBOARD_TEXT;
-    }
-    if (clipboard_check_target(UTF8_STRING)) {
-        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
-                           False, AnyPropertyType, &actual_type_return,
-                           &actual_format_return, &nitems_return,
-                           &bytes_after_return, (uchar **) save);
-        if (actual_type_return == INCR) {
-            clipboard_incremental_case(save, length);
-            return CLIPBOARD_LARGE;
-        }
-
-        *length = nitems_return;
-        return CLIPBOARD_IMAGE;
-    }
-    if (clipboard_check_target(TARGETS))
-        return CLIPBOARD_OTHER;
-
-    return CLIPBOARD_ERROR;
 }
