@@ -250,17 +250,17 @@ clipboard_incremental_case(char **save, ulong *length) {
                            &nitems_return, &bytes_after_return,
                            (uchar **) &buffer);
 
-        buffer_size = nitems_return*mach_itemsize(actual_format_return);
-        if (*length == 0) {
-            *length = buffer_size;
-            *save = util_malloc(*length);
-        } else {
-            *length += buffer_size;
-            *save = util_realloc(*save, *length);
-        }
+        /* buffer_size = nitems_return*mach_itemsize(actual_format_return); */
+        /* if (*length == 0) { */
+        /*     *length = buffer_size; */
+        /*     *save = util_malloc(*length); */
+        /* } else { */
+        /*     *length += buffer_size; */
+        /*     *save = util_realloc(*save, *length); */
+        /* } */
 
-        memcpy(*save + *length - buffer_size, buffer, buffer_size);
-        free(*save);
+        /* memcpy(*save + *length - buffer_size, buffer, buffer_size); */
+        /* free(*save); */
 
         XFree(buffer);
         XDeleteProperty(display, window, XSEL_DATA);
