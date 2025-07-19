@@ -163,6 +163,30 @@ Atom clipboard_check_target(char *string) {
     return xevent.xselection.property;
 }
 
+const char *evtstr[LASTEvent] = {
+    "ProtocolError", "ProtocolReply", "KeyPress", "KeyRelease",
+    "ButtonPress", "ButtonRelease", "MotionNotify", "EnterNotify",
+    "LeaveNotify", "FocusIn", "FocusOut", "KeymapNotify", "Expose",
+    "GraphicsExpose", "NoExpose", "VisibilityNotify", "CreateNotify",
+    "DestroyNotify", "UnmapNotify", "MapNotify", "MapRequest",
+    "ReparentNotify", "ConfigureNotify", "ConfigureRequest",
+    "GravityNotify", "ResizeRequest", "CirculateNotify",
+    "CirculateRequest", "PropertyNotify", "SelectionClear",
+    "SelectionRequest", "SelectionNotify", "ColormapNotify",
+    "ClientMessage", "MappingNotify", "GenericEvent", };
+
+
+static size_t
+mach_itemsize(int format) {
+    if (format == 8)
+	return sizeof(char);
+    if (format == 16)
+	return sizeof(short);
+    if (format == 32)
+	return sizeof(long);
+    return 0;
+}
+
 int32
 clipboard_get_clipboard(char **save, ulong *length) {
     DEBUG_PRINT("%p, %p", (void *) save, (void *) length);
@@ -171,18 +195,69 @@ clipboard_get_clipboard(char **save, ulong *length) {
     ulong bytes_after_return;
     Atom actual_type_return;
 
-    if (clipboard_check_target("UTF8_STRING")) {
+    if (clipboard_check_target("image/png")) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **) save);
-        if (actual_type_return == INCR)
-            return CLIPBOARD_LARGE;
+        if (actual_type_return == INCR) {
+            printf("INCR=============\n");
+            char *buffer;
+            *length = 0;
+            XSelectInput(display, window, PropertyChangeMask);
+            XDeleteProperty(display, window, XSEL_DATA);
+            XFlush(display);
+
+            while (true) {
+                XEvent event;
+                do {
+                    printf("BEFORE INCR event\n");
+                    XNextEvent(display, &event);
+                    printf("INCR event: %s -> %d != %d\n",
+                            evtstr[event.type], event.xproperty.state, PropertyNewValue);
+                } while ((event.type != PropertyNotify)
+                        || (event.xproperty.state != PropertyNewValue));
+                XGetWindowProperty(display, window, XSEL_DATA, 0, 0,
+                                   False, AnyPropertyType,
+                                   &actual_type_return, &actual_format_return,
+                                   &nitems_return, &bytes_after_return,
+                                   (uchar **) &buffer);
+                printf("bytes_after_return:%d\n", bytes_after_return);
+                XFree(buffer);
+                if (bytes_after_return == 0) {
+                    XDeleteProperty(display, window, XSEL_DATA);
+                    return CLIPBOARD_LARGE;
+                }
+
+                XGetWindowProperty(display, window, XSEL_DATA,
+                                   0, bytes_after_return,
+                                   False,
+                                   AnyPropertyType,
+                                   &actual_type_return, &actual_format_return,
+                                   &nitems_return, &bytes_after_return,
+                                   (uchar **) &buffer);
+
+                long size = nitems_return*mach_itemsize(actual_format_return);
+                if (*length == 0) {
+                    *length = size;
+                    *save = util_malloc(*length);
+                } else {
+                    *length += size;
+                    *save = util_realloc(*save, *length);
+                }
+
+                memcpy(*save + *length - size, buffer, size);
+
+                XFree(buffer);
+                XDeleteProperty(display, window, XSEL_DATA);
+                XFlush(display);
+            }
+        }
 
         *length = nitems_return;
         return CLIPBOARD_TEXT;
     }
-    if (clipboard_check_target("image/png")) {
+    if (clipboard_check_target("UTF8_STRING")) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
