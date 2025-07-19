@@ -219,6 +219,7 @@ clipboard_incremental_case(char **save, ulong *length) {
         }
 
         memcpy(*save + *length - buffer_size, buffer, buffer_size);
+        free(*save);
 
         XFree(buffer);
         XDeleteProperty(display, window, XSEL_DATA);
