@@ -136,7 +136,7 @@ Atom clipboard_check_target(char *string) {
 
     SNPRINTF(cmd, "%s | %s \"%s\"", xclip, grep, string);
     if ((pipe = popen(cmd, "r")) == NULL) {
-        error("popen:%s\n", strerror(errno));
+        error("Error opening pipe: %s.\n", strerror(errno));
         return 0;
     }
 
