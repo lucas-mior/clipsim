@@ -50,7 +50,7 @@ clipboard_daemon_watch(void) {
     ulong color;
     struct timespec pause;
     pause.tv_sec = 0;
-    pause.tv_nsec = PAUSE10MS;
+    pause.tv_nsec = 1000*1000*500;
     char *CLIPSIM_SIGNAL_NUMBER;
     char *CLIPSIM_SIGNAL_PROGRAM;
 
@@ -100,8 +100,11 @@ clipboard_daemon_watch(void) {
 
         nanosleep(&pause, NULL);
         (void) XNextEvent(display, &xevent);
-        if (xevent.type == PropertyNotify)
-            continue;
+        if (xevent.type < LENGTH(event_names)) {
+            printf("event: %s\n", event_names[xevent.type]);
+        } else {
+            printf("event: %d\n", xevent.type);
+        }
         mtx_lock(&lock);
 
         if (CLIPSIM_SIGNAL_PROGRAM)
@@ -195,7 +198,7 @@ clipboard_incremental_case(char **save, ulong *length) {
         XFree(buffer);
         if (bytes_after_return == 0) {
             XDeleteProperty(display, window, XSEL_DATA);
-            XSelectInput(display, window, NoEventMask);
+            XNextEvent(display, &event);
             XFlush(display);
             return;
         }
