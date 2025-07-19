@@ -139,7 +139,7 @@ clipboard_daemon_watch(void) {
 }
 
 Atom clipboard_check_target(const Atom target) {
-    DEBUG_PRINT("%d", target);
+    DEBUG_PRINT("%lu", target);
 
     XEvent xevent;
     int32 nevents = 0;
