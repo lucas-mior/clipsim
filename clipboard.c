@@ -198,17 +198,6 @@ clipboard_check_target(const Atom target) {
     return xevent.xselection.property;
 }
 
-static ulong
-mach_itemsize(int format) {
-    if (format == 8)
-	return sizeof(char);
-    if (format == 16)
-	return sizeof(short);
-    if (format == 32)
-	return sizeof(long);
-    return 0;
-}
-
 void
 clipboard_incremental_case(char **save, ulong *length) {
     int32 actual_format_return;
@@ -218,12 +207,12 @@ clipboard_incremental_case(char **save, ulong *length) {
     char *buffer;
     *length = 0;
 
+    (void) save;
     XSelectInput(display, window, PropertyChangeMask);
     XDeleteProperty(display, window, XSEL_DATA);
     XFlush(display);
 
     while (true) {
-        ulong buffer_size;
         XEvent event;
         do {
             XNextEvent(display, &event);
