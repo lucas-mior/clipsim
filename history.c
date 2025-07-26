@@ -71,16 +71,6 @@ history_callback_delete(const char *path,
     return 0;
 }
 
-void
-history_delete_tmp(void) {
-    error("Deleting images...\n");
-
-    nftw(tmp_directory, history_callback_delete,
-         MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
-
-    return;
-}
-
 void history_backup(void) {
     char buffer[PATH_MAX];
     SNPRINTF(buffer, "%s.bak", history.name);
@@ -95,6 +85,7 @@ bool
 history_save(void) {
     DEBUG_PRINT("void");
 
+    error("Saving history...\n");
     if (history_length <= 0) {
         error("History is empty. Not saving.\n");
         return false;
@@ -181,7 +172,11 @@ void history_exit(int32 unused) {
     (void)unused;
 
     history_save();
-    history_delete_tmp();
+
+    error("Deleting images...\n");
+    nftw(tmp_directory, history_callback_delete,
+         MAX_OPEN_FD, FTW_DEPTH | FTW_PHYS);
+
     _exit(EXIT_SUCCESS);
 }
 
