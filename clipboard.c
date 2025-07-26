@@ -102,11 +102,12 @@ clipboard_daemon_watch(void) {
 
         nanosleep(&pause, NULL);
         (void) XNextEvent(display, &xevent);
-        if (xevent.type < LENGTH(event_names)) {
-            printf("event: %s\n", event_names[xevent.type]);
-        } else {
-            printf("event: %d\n", xevent.type);
-        }
+#if CLIPSIM_DEBUG
+        if (xevent.type < LENGTH(event_names))
+            error("X event: %s\n", event_names[xevent.type]);
+        else
+            error("X event: %d\n", xevent.type);
+#endif
         mtx_lock(&lock);
 
         if (CLIPSIM_SIGNAL_PROGRAM)
