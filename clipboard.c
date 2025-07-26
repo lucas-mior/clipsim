@@ -173,8 +173,11 @@ clipboard_get_clipboard(char **save, ulong *length) {
         *length = nitems_return;
         return CLIPBOARD_TEXT;
     }
-    if (clipboard_check_target(TARGETS))
+    if (clipboard_check_target(TARGETS)) {
+        error("Clipboard format:\n");
+        system("xclip -selection clipboard -t TARGETS");
         return CLIPBOARD_OTHER;
+    }
 
     return CLIPBOARD_ERROR;
 }
