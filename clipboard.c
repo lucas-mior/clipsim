@@ -147,19 +147,6 @@ clipboard_get_clipboard(char **save, ulong *length) {
     ulong bytes_after_return;
     Atom actual_type_return;
 
-    if (clipboard_check_target(image_png)) {
-        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
-                           False, AnyPropertyType, &actual_type_return,
-                           &actual_format_return, &nitems_return,
-                           &bytes_after_return, (uchar **) save);
-        if (actual_type_return == INCR) {
-            clipboard_incremental_case(save, length);
-            return CLIPBOARD_LARGE;
-        }
-
-        *length = nitems_return;
-        return CLIPBOARD_TEXT;
-    }
     if (clipboard_check_target(UTF8_STRING)) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
                            False, AnyPropertyType, &actual_type_return,
@@ -172,6 +159,19 @@ clipboard_get_clipboard(char **save, ulong *length) {
 
         *length = nitems_return;
         return CLIPBOARD_IMAGE;
+    }
+    if (clipboard_check_target(image_png)) {
+        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX/4,
+                           False, AnyPropertyType, &actual_type_return,
+                           &actual_format_return, &nitems_return,
+                           &bytes_after_return, (uchar **) save);
+        if (actual_type_return == INCR) {
+            clipboard_incremental_case(save, length);
+            return CLIPBOARD_LARGE;
+        }
+
+        *length = nitems_return;
+        return CLIPBOARD_TEXT;
     }
     if (clipboard_check_target(TARGETS))
         return CLIPBOARD_OTHER;
@@ -197,10 +197,7 @@ clipboard_check_target(const Atom target) {
              || (xevent.xselection.selection != CLIPBOARD));
 #if CLIPSIM_DEBUG
     if (xevent.xselection.property) {
-        if (target <= XA_LAST_PREDEFINED)
-            error("X clipboard target: %s.\n", XGetAtomName(display, target));
-        else
-            error("X clipboard target: %d.\n", target);
+        error("X clipboard target: %s.\n", XGetAtomName(display, target));
     }
 #endif
 
