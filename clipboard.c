@@ -129,6 +129,7 @@ clipboard_daemon_watch(void) {
                   " This data won't be saved to history.\n");
             break;
         case CLIPBOARD_ERROR:
+            error("Empty clipboard detected. Recovering last entry...\n");
             history_recover(-1);
             break;
         default:
