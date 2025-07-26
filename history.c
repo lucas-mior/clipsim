@@ -116,9 +116,9 @@ history_save(void) {
         if (is_image[i]) {
             char image_save[PATH_MAX];
             int32 n;
-            char *base = basename(e->content);
 
-            n = SNPRINTF(image_save, "%s/clipsim/%s", XDG_CACHE_HOME, base);
+            n = SNPRINTF(image_save, "%s/clipsim/%s",
+                                     XDG_CACHE_HOME, basename(e->content));
 
             if (strcmp(image_save, e->content)) {
                 if (util_copy_file(image_save, e->content) < 0) {
