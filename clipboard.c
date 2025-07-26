@@ -52,7 +52,7 @@ clipboard_daemon_watch(void) {
     ulong color;
     struct timespec pause;
     pause.tv_sec = 0;
-    pause.tv_nsec = 1000*1000*500;
+    pause.tv_nsec = 1000*1000*10;
     char *CLIPSIM_SIGNAL_NUMBER;
     char *CLIPSIM_SIGNAL_PROGRAM;
 
@@ -195,6 +195,14 @@ clipboard_check_target(const Atom target) {
         nevents += 1;
     } while ((xevent.type != SelectionNotify)
              || (xevent.xselection.selection != CLIPBOARD));
+#if CLIPSIM_DEBUG
+    if (xevent.xselection.property) {
+        if (target <= XA_LAST_PREDEFINED)
+            error("X clipboard target: %s.\n", XGetAtomName(display, target));
+        else
+            error("X clipboard target: %d.\n", target);
+    }
+#endif
 
     return xevent.xselection.property;
 }
