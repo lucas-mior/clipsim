@@ -210,6 +210,7 @@ clipboard_check_target(const Atom target) {
 
 void
 clipboard_incremental_case(char **save, ulong *length) {
+    DEBUG_PRINT("%p, %ln", save, length);
     int32 actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
