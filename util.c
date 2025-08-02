@@ -236,6 +236,8 @@ void error(char *format, ...) {
 
     buffer[n] = '\0';
     write(STDERR_FILENO, buffer, (usize)n);
+    fsync(STDERR_FILENO);
+    fsync(STDOUT_FILENO);
 
 #ifdef CLIPSIM_DEBUG
     switch (fork()) {
