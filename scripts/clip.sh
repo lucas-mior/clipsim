@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# usage: $0 [-c |-d]
-# usage: $0 [--copy|--delete]
+# usage: $0 [-c |-r]
+# usage: $0 [--copy|--remove]
 
 id="$(clipsim --print 2> /dev/null \
     | fzf --prompt="clipsim $1 " \
