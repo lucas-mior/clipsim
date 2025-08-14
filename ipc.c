@@ -260,7 +260,7 @@ ipc_daemon_pipe_id(int32 id) {
         }
     } else {
         dprintf(content_fifo.fd,
-                "Lenght: \033[31;1m%d\n\033[0;m", e->content_length);
+                "Length: \033[31;1m%d\n\033[0;m", e->content_length);
     }
     dprintf(content_fifo.fd, "%s", e->content);
 
