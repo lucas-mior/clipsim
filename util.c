@@ -220,7 +220,8 @@ snprintf2(char *buffer, size_t size, char *format, ...) {
     return n;
 }
 
-void error(char *format, ...) {
+void
+error(char *format, ...) {
     char buffer[BUFSIZ];
     va_list args;
     int32 n;
