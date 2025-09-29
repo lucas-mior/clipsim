@@ -97,7 +97,7 @@ int main(int argc, const char* argv[]) {
     display = XOpenDisplay(NULL);
     if (display == NULL) {
         error("Error: Failed to connect to the X server\n");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     if ((XMPB_WATCH_SLAVE_DEVICES = getenv("XMPB_WATCH_SLAVE_DEVICES"))) {
