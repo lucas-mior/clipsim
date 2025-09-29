@@ -154,7 +154,8 @@ int main(int argc, const char* argv[]) {
     ev_check_init(x_check, check_cb);
     ev_check_start(ev_loop, x_check);
 
-    error("Initialisation complete, blocking new mouse paste actions from all %s devices\n", watch_slave_devices ? "slave" : "master");
+    error("Blocking new mouse paste actions from all %s devices\n",
+          watch_slave_devices ? "slave" : "master");
 
     ev_run(ev_loop, 0);
 
