@@ -110,15 +110,17 @@ int main(int argc, const char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    int major_op = 2;
-    int minor_op = 2;
-    int result = XIQueryVersion(display, &major_op, &minor_op);
-    if (result == BadRequest) {
-        error("Error: XI2 is not supported in a sufficient version (>=2.2 required).\n");
-        exit(EXIT_FAILURE);
-    } else if (result != Success) {
-        error("Error: Failed to query XI2\n");
-        exit(EXIT_FAILURE);
+    {
+        int major_op = 2;
+        int minor_op = 2;
+        int result;
+        if ((result = XIQueryVersion(display, &major_op, &minor_op)) == BadRequest) {
+            error("Error: XI2 >=%d.%d required).\n", major_op, minor_op);
+            exit(EXIT_FAILURE);
+        } else if (result != Success) {
+            error("Error: Failed to query XI2\n");
+            exit(EXIT_FAILURE);
+        }
     }
     XIEventMask masks[1];
 
