@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2021 Micha LaQua <micha.laqua@gmail.com>
+ *
+ * Special thanks to Ingo Buerk (Airblader) for his work on the
+ * awesome unclutter-xfixes project, upon which the XInput eventcode
+ * is based on.
+ *
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ev.h>
+
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <X11/extensions/XInput2.h>
+
+static Display *display;
+static int xi_opcode = -1;
+
+void clear(void) {
+    /* Clear primary selection */
+    XSetSelectionOwner(display, XA_PRIMARY, None, CurrentTime);
+
+    /* Also clear deprecated cut buffer */
+    XStoreBytes(display, None, 0);
+    XSetSelectionOwner(display, XA_STRING, None, CurrentTime);
+
+    XSync(display, False);
+#ifdef DEBUG
+    printf("DEBUG: Primary selection and cut buffer cleared\n");
+#endif
+    return;
+}
+
+void stub_cb(EV_P_ ev_io *w, int revents) {
+    (void) w;
+    (void) revents;
+    return;
+}
+
+void check_cb(EV_P_ ev_check *w, int revents) {
+    XEvent xevent;
+    (void) w;
+    (void) revents;
+
+    while (XPending(display) > 0) {
+        XNextEvent(display, &xevent);
+        XGenericEventCookie *cookie = &xevent.xcookie;
+        if (cookie->type != GenericEvent
+            || cookie->extension !=  xi_opcode
+            || !XGetEventData(display, cookie)) {
+#ifdef DEBUG
+            printf("DEBUG: Dropping event of type %i", cookie->type);
+#endif
+            continue;
+        }
+
+        const XIRawEvent *data = (const XIRawEvent *) cookie->data;
+#ifdef DEBUG
+        printf("DEBUG: Registered button press %i on device %i (source device %i)\n", data->detail, data->deviceid, data->sourceid);
+#endif
+        if (data->detail == 2) {
+            clear();
+        }
+
+        XFreeEventData(display, cookie);
+    }
+    return;
+}
+
+int main(int argc, const char* argv[]) {
+    struct ev_loop *evloop;
+    int watch_slave_devices = 0;
+
+    (void) argc;
+    (void) argv;
+
+    display = XOpenDisplay(NULL);
+    if (display == NULL) {
+        printf("Error: Failed to connect to the X server\n");
+        return 1;
+    }
+
+    char* watch_slave_devices_env = getenv("XMPB_WATCH_SLAVE_DEVICES");
+    if (watch_slave_devices_env) {
+        for (char *c = watch_slave_devices_env; *c; ++c) {
+           *c = *c > 0x40 && *c < 0x5b ? *c | 0x60 : *c;
+        }
+        if (strcmp(watch_slave_devices_env, "1") == 0
+            || strcmp(watch_slave_devices_env, "true") == 0) {
+            watch_slave_devices = 1;
+        }
+    }
+
+    int event, error;
+    if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event, &error)) {
+        printf("Error: XInput extension not available\n");
+        exit(1);
+    }
+
+    int major_op = 2, minor_op = 2;
+    int result = XIQueryVersion(display, &major_op, &minor_op);
+    if (result == BadRequest) {
+        printf("Error: XI2 is not supported in a sufficient version (>=2.2 required).\n");
+        exit(1);
+    } else if (result != Success) {
+        printf("Error: Failed to query XI2\n");
+        exit(1);
+    }
+    XIEventMask masks[1];
+
+    unsigned char mask_master[(XI_LASTEVENT + 7)/8];
+    memset(mask_master, 0, sizeof(mask_master));
+    masks[0].mask_len = sizeof(mask_master);
+    masks[0].mask = mask_master;
+    if (watch_slave_devices) {
+        masks[0].deviceid = XIAllDevices;
+        XISetMask(mask_master, XI_ButtonPress);
+    } else {
+        masks[0].deviceid = XIAllMasterDevices;
+        XISetMask(mask_master, XI_RawButtonPress);
+    }
+
+    XISelectEvents(display, DefaultRootWindow(display), masks, 1);
+    XFlush(display);
+
+    evloop = EV_DEFAULT;
+    
+    struct ev_io *x_watcher;
+    x_watcher = calloc(1, sizeof(struct ev_io));
+    ev_io_init(x_watcher, stub_cb, XConnectionNumber(display), EV_READ);
+    ev_io_start(evloop, x_watcher);
+    
+    struct ev_check *x_check;
+    x_check = calloc(1, sizeof(struct ev_check));
+    ev_check_init(x_check, check_cb);
+    ev_check_start(evloop, x_check);
+
+    printf("Initialisation complete, blocking new mouse paste actions from all %s devices\n", watch_slave_devices ? "slave" : "master");
+
+    ev_run(evloop, 0);
+
+    return 0;
+}
