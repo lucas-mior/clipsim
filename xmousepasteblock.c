@@ -157,5 +157,5 @@ int main(int argc, const char* argv[]) {
 
     ev_run(ev_loop, 0);
 
-    return 0;
+    exit(EXIT_SUCCESS);
 }
