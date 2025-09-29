@@ -85,7 +85,7 @@ void check_cb(EV_P_ ev_check *w, int revents) {
 }
 
 int main(int argc, const char* argv[]) {
-    struct ev_loop *ev_loop;
+    struct ev_loop *ev_loop = EV_DEFAULT;
     int watch_slave_devices = 0;
     int event;
     int error_num;
@@ -142,8 +142,6 @@ int main(int argc, const char* argv[]) {
     XISelectEvents(display, DefaultRootWindow(display), masks, 1);
     XFlush(display);
 
-    ev_loop = EV_DEFAULT;
-    
     {
         struct ev_io *x_watcher;
         struct ev_check *x_check;
