@@ -33,21 +33,6 @@
 static Display *display;
 static int xi_opcode = -1;
 
-void clear(void) {
-    /* Clear primary selection */
-    XSetSelectionOwner(display, XA_PRIMARY, None, CurrentTime);
-
-    /* Also clear deprecated cut buffer */
-    XStoreBytes(display, None, 0);
-    XSetSelectionOwner(display, XA_STRING, None, CurrentTime);
-
-    XSync(display, False);
-#ifdef DEBUG
-    error("DEBUG: Primary selection and cut buffer cleared\n");
-#endif
-    return;
-}
-
 void stub_cb(EV_P_ ev_io *w, int revents) {
     (void) w;
     (void) revents;
@@ -76,7 +61,18 @@ void check_cb(EV_P_ ev_check *w, int revents) {
         error("DEBUG: Registered button press %i on device %i (source device %i)\n", data->detail, data->deviceid, data->sourceid);
 #endif
         if (data->detail == 2) {
-            clear();
+            /* Clear primary selection */
+            XSetSelectionOwner(display, XA_PRIMARY, None, CurrentTime);
+
+            /* Also clear deprecated cut buffer */
+            XStoreBytes(display, None, 0);
+            XSetSelectionOwner(display, XA_STRING, None, CurrentTime);
+
+            XSync(display, False);
+#ifdef DEBUG
+            error("DEBUG: Primary selection and cut buffer cleared\n");
+#endif
+            return;
         }
 
         XFreeEventData(display, cookie);
