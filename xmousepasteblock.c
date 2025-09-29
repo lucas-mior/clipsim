@@ -89,6 +89,7 @@ int main(int argc, const char* argv[]) {
     int watch_slave_devices = 0;
     int event;
     int error_num;
+    char *watch_slave_devices_env;
 
     (void) argc;
     (void) argv;
@@ -99,7 +100,7 @@ int main(int argc, const char* argv[]) {
         return 1;
     }
 
-    char *watch_slave_devices_env = getenv("XMPB_WATCH_SLAVE_DEVICES");
+    watch_slave_devices_env = getenv("XMPB_WATCH_SLAVE_DEVICES");
     if (watch_slave_devices_env) {
         for (char *c = watch_slave_devices_env; *c; ++c) {
            *c = *c > 0x40 && *c < 0x5b ? *c | 0x60 : *c;
