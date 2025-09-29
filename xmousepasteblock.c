@@ -144,18 +144,20 @@ int main(int argc, const char* argv[]) {
 
     ev_loop = EV_DEFAULT;
     
-    struct ev_io *x_watcher;
-    x_watcher = util_calloc(1, sizeof(*x_watcher));
-    ev_io_init(x_watcher, stub_cb, XConnectionNumber(display), EV_READ);
-    ev_io_start(ev_loop, x_watcher);
+    {
+        struct ev_io *x_watcher;
+        struct ev_check *x_check;
+        x_watcher = util_calloc(1, sizeof(*x_watcher));
+        ev_io_init(x_watcher, stub_cb, XConnectionNumber(display), EV_READ);
+        ev_io_start(ev_loop, x_watcher);
     
-    struct ev_check *x_check;
-    x_check = util_calloc(1, sizeof(*x_check));
-    ev_check_init(x_check, check_cb);
-    ev_check_start(ev_loop, x_check);
+        x_check = util_calloc(1, sizeof(*x_check));
+        ev_check_init(x_check, check_cb);
+        ev_check_start(ev_loop, x_check);
 
-    error("Blocking new mouse paste actions from all %s devices\n",
-          watch_slave_devices ? "slave" : "master");
+        error("Blocking new mouse paste actions from all %s devices\n",
+              watch_slave_devices ? "slave" : "master");
+    }
 
     ev_run(ev_loop, 0);
 
