@@ -43,7 +43,7 @@ void clear(void) {
 
     XSync(display, False);
 #ifdef DEBUG
-    printf("DEBUG: Primary selection and cut buffer cleared\n");
+    error("DEBUG: Primary selection and cut buffer cleared\n");
 #endif
     return;
 }
@@ -66,14 +66,14 @@ void check_cb(EV_P_ ev_check *w, int revents) {
             || cookie->extension !=  xi_opcode
             || !XGetEventData(display, cookie)) {
 #ifdef DEBUG
-            printf("DEBUG: Dropping event of type %i", cookie->type);
+            error("DEBUG: Dropping event of type %i", cookie->type);
 #endif
             continue;
         }
 
         const XIRawEvent *data = (const XIRawEvent *) cookie->data;
 #ifdef DEBUG
-        printf("DEBUG: Registered button press %i on device %i (source device %i)\n", data->detail, data->deviceid, data->sourceid);
+        error("DEBUG: Registered button press %i on device %i (source device %i)\n", data->detail, data->deviceid, data->sourceid);
 #endif
         if (data->detail == 2) {
             clear();
@@ -96,7 +96,7 @@ int main(int argc, const char* argv[]) {
 
     display = XOpenDisplay(NULL);
     if (display == NULL) {
-        printf("Error: Failed to connect to the X server\n");
+        error("Error: Failed to connect to the X server\n");
         return 1;
     }
 
@@ -111,7 +111,7 @@ int main(int argc, const char* argv[]) {
     }
 
     if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event, &error_num)) {
-        printf("Error: XInput extension not available\n");
+        error("Error: XInput extension not available\n");
         exit(1);
     }
 
@@ -153,7 +153,7 @@ int main(int argc, const char* argv[]) {
     ev_check_init(x_check, check_cb);
     ev_check_start(ev_loop, x_check);
 
-    printf("Initialisation complete, blocking new mouse paste actions from all %s devices\n", watch_slave_devices ? "slave" : "master");
+    error("Initialisation complete, blocking new mouse paste actions from all %s devices\n", watch_slave_devices ? "slave" : "master");
 
     ev_run(ev_loop, 0);
 
