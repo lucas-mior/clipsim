@@ -115,7 +115,8 @@ int main(int argc, const char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    int major_op = 2, minor_op = 2;
+    int major_op = 2;
+    int minor_op = 2;
     int result = XIQueryVersion(display, &major_op, &minor_op);
     if (result == BadRequest) {
         error("Error: XI2 is not supported in a sufficient version (>=2.2 required).\n");
