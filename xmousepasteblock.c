@@ -109,7 +109,8 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event, &error_num)) {
+    if (!XQueryExtension(display,
+                         "XInputExtension", &xi_opcode, &event, &error_num)) {
         error("Error: XInput extension not available\n");
         exit(EXIT_FAILURE);
     }
