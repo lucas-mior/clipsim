@@ -87,6 +87,8 @@ void check_cb(EV_P_ ev_check *w, int revents) {
 int main(int argc, const char* argv[]) {
     struct ev_loop *ev_loop;
     int watch_slave_devices = 0;
+    int event;
+    int error_num;
 
     (void) argc;
     (void) argv;
@@ -97,7 +99,7 @@ int main(int argc, const char* argv[]) {
         return 1;
     }
 
-    char* watch_slave_devices_env = getenv("XMPB_WATCH_SLAVE_DEVICES");
+    char *watch_slave_devices_env = getenv("XMPB_WATCH_SLAVE_DEVICES");
     if (watch_slave_devices_env) {
         for (char *c = watch_slave_devices_env; *c; ++c) {
            *c = *c > 0x40 && *c < 0x5b ? *c | 0x60 : *c;
@@ -108,8 +110,7 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    int event, error;
-    if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event, &error)) {
+    if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event, &error_num)) {
         printf("Error: XInput extension not available\n");
         exit(1);
     }
@@ -117,11 +118,11 @@ int main(int argc, const char* argv[]) {
     int major_op = 2, minor_op = 2;
     int result = XIQueryVersion(display, &major_op, &minor_op);
     if (result == BadRequest) {
-        printf("Error: XI2 is not supported in a sufficient version (>=2.2 required).\n");
-        exit(1);
+        error("Error: XI2 is not supported in a sufficient version (>=2.2 required).\n");
+        exit(EXIT_FAILURE);
     } else if (result != Success) {
-        printf("Error: Failed to query XI2\n");
-        exit(1);
+        error("Error: Failed to query XI2\n");
+        exit(EXIT_FAILURE);
     }
     XIEventMask masks[1];
 
