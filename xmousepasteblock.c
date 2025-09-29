@@ -122,16 +122,18 @@ int main(int argc, const char* argv[]) {
     }
     XIEventMask masks[1];
 
-    unsigned char mask_master[(XI_LASTEVENT + 7)/8];
-    memset(mask_master, 0, sizeof(mask_master));
-    masks[0].mask_len = sizeof(mask_master);
-    masks[0].mask = mask_master;
-    if (watch_slave_devices) {
-        masks[0].deviceid = XIAllDevices;
-        XISetMask(mask_master, XI_ButtonPress);
-    } else {
-        masks[0].deviceid = XIAllMasterDevices;
-        XISetMask(mask_master, XI_RawButtonPress);
+    {
+        unsigned char mask_master[(XI_LASTEVENT + 7)/8];
+        memset(mask_master, 0, sizeof(mask_master));
+        masks[0].mask_len = sizeof(mask_master);
+        masks[0].mask = mask_master;
+        if (watch_slave_devices) {
+            masks[0].deviceid = XIAllDevices;
+            XISetMask(mask_master, XI_ButtonPress);
+        } else {
+            masks[0].deviceid = XIAllMasterDevices;
+            XISetMask(mask_master, XI_RawButtonPress);
+        }
     }
 
     XISelectEvents(display, DefaultRootWindow(display), masks, 1);
