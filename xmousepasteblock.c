@@ -112,7 +112,7 @@ int main(int argc, const char* argv[]) {
 
     if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event, &error_num)) {
         error("Error: XInput extension not available\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     int major_op = 2, minor_op = 2;
