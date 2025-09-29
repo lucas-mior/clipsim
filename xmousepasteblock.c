@@ -28,6 +28,8 @@
 #include <X11/Xatom.h>
 #include <X11/extensions/XInput2.h>
 
+#include "util.c"
+
 static Display *display;
 static int xi_opcode = -1;
 
@@ -83,7 +85,7 @@ void check_cb(EV_P_ ev_check *w, int revents) {
 }
 
 int main(int argc, const char* argv[]) {
-    struct ev_loop *evloop;
+    struct ev_loop *ev_loop;
     int watch_slave_devices = 0;
 
     (void) argc;
@@ -138,21 +140,21 @@ int main(int argc, const char* argv[]) {
     XISelectEvents(display, DefaultRootWindow(display), masks, 1);
     XFlush(display);
 
-    evloop = EV_DEFAULT;
+    ev_loop = EV_DEFAULT;
     
     struct ev_io *x_watcher;
-    x_watcher = calloc(1, sizeof(struct ev_io));
+    x_watcher = util_calloc(1, sizeof(struct ev_io));
     ev_io_init(x_watcher, stub_cb, XConnectionNumber(display), EV_READ);
-    ev_io_start(evloop, x_watcher);
+    ev_io_start(ev_loop, x_watcher);
     
     struct ev_check *x_check;
-    x_check = calloc(1, sizeof(struct ev_check));
+    x_check = util_calloc(1, sizeof(struct ev_check));
     ev_check_init(x_check, check_cb);
-    ev_check_start(evloop, x_check);
+    ev_check_start(ev_loop, x_check);
 
     printf("Initialisation complete, blocking new mouse paste actions from all %s devices\n", watch_slave_devices ? "slave" : "master");
 
-    ev_run(evloop, 0);
+    ev_run(ev_loop, 0);
 
     return 0;
 }
