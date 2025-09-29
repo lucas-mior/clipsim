@@ -94,8 +94,7 @@ int main(int argc, const char* argv[]) {
     (void) argc;
     (void) argv;
 
-    display = XOpenDisplay(NULL);
-    if (display == NULL) {
+    if ((display = XOpenDisplay(NULL)) == NULL) {
         error("Error: Failed to connect to the X server\n");
         exit(EXIT_FAILURE);
     }
