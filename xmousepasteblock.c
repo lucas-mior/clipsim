@@ -22,10 +22,11 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/select.h>
+#include <poll.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -33,67 +34,86 @@
 
 #define error(...) fprintf(stderr, __VA_ARGS__)
 
+#define BUTTON_MIDDLE_CODE 2
+
 static bool watch_slave_devices = true;
 
 int main(int argc, const char* argv[]) {
     (void) argc;
     (void) argv;
-    int xi_opcode = -1;
+    int xi_opcode;
     Display *display;
 
-    display = XOpenDisplay(NULL);
-    if (!display) {
-        error("Failed to connect to X server\n");
-        return 1;
+    if ((display = XOpenDisplay(NULL)) == NULL) {
+        error("Error connecting to X server.\n");
+        exit(EXIT_FAILURE);
     }
 
-    int event, error_num;
-    if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event, &error_num)) {
-        error("XInput extension not available\n");
-        return 1;
+    {
+        int event;
+        int error_num;
+        if (!XQueryExtension(display,
+                             "XInputExtension", &xi_opcode,
+                             &event, &error_num)) {
+            error("XInput extension not available.\n");
+            exit(EXIT_FAILURE);
+        }
     }
 
-    int major = 2, minor = 2;
-    if (XIQueryVersion(display, &major, &minor) != Success) {
-        error("XI2 >= 2.2 required\n");
-        return 1;
+    {
+        int major = 2;
+        int minor = 2;
+        if (XIQueryVersion(display, &major, &minor) != Success) {
+            error("XI2 >= %d.%d required\n", major, minor);
+            exit(EXIT_FAILURE);
+        }
     }
 
-    XIEventMask mask;
-    unsigned char mask_bits[(XI_LASTEVENT + 7)/8];
-    memset(mask_bits, 0, sizeof(mask_bits));
+    {
+        XIEventMask mask;
+        unsigned char mask_bits[(XI_LASTEVENT + 7)/8];
+        memset(mask_bits, 0, sizeof(mask_bits));
 
-    mask.deviceid = watch_slave_devices ? XIAllDevices : XIAllMasterDevices;
-    mask.mask_len = sizeof(mask_bits);
-    mask.mask = mask_bits;
-    XISetMask(mask_bits, watch_slave_devices ? XI_ButtonPress : XI_RawButtonPress);
+        mask.deviceid = XIAllDevices;
+        mask.mask_len = sizeof(mask_bits);
+        mask.mask = mask_bits;
+        XISetMask(mask_bits, XI_ButtonPress);
 
-    XISelectEvents(display, DefaultRootWindow(display), &mask, 1);
-    XFlush(display);
+        XISelectEvents(display, DefaultRootWindow(display), &mask, 1);
+        XFlush(display);
+    }
 
     error("Blocking new mouse paste actions from all %s devices\n",
           watch_slave_devices ? "slave" : "master");
 
     int x_connection_fd = XConnectionNumber(display);
-    while (true) {
-        fd_set fds;
-        FD_ZERO(&fds);
-        FD_SET(x_connection_fd, &fds);
+    struct pollfd fds[1];
 
-        if (select(x_connection_fd + 1, &fds, NULL, NULL, NULL) > 0) {
+    fds[0].fd = x_connection_fd;
+    fds[0].events = POLLIN;
+
+    while (true) {
+        int polled;
+        if ((polled = poll(fds, 1, -1)) < 0) {
+            error("Error polling: %s.\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+
+        if (fds[0].revents & POLLIN) {
             XEvent xevent;
             while (XPending(display) > 0) {
                 XNextEvent(display, &xevent);
                 XGenericEventCookie *cookie = &xevent.xcookie;
+                const XIRawEvent *data;
 
                 if (cookie->type != GenericEvent ||
                     cookie->extension != xi_opcode ||
                     !XGetEventData(display, cookie))
                     continue;
 
-                const XIRawEvent *data = (const XIRawEvent *) cookie->data;
+                data = cookie->data;
 
-                if (data->detail == 2) {  // middle mouse button
+                if (data->detail == BUTTON_MIDDLE_CODE) {
                     XSetSelectionOwner(display, XA_PRIMARY, None, CurrentTime);
                     XStoreBytes(display, None, 0);
                     XSetSelectionOwner(display, XA_STRING, None, CurrentTime);
@@ -106,5 +126,5 @@ int main(int argc, const char* argv[]) {
         }
     }
 
-    return 0;
+    exit(EXIT_SUCCESS);
 }
