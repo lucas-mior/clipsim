@@ -127,11 +127,15 @@ Edit `clipsim.h` and recompile.
 $CLIPSIM_SIGNAL_NUMBER  -> which signal should be send to $CLIPSIM_SIGNAL_PROGRAM when clipboard content changes
 $CLIPSIM_SIGNAL_PROGRAM -> which program should $CLIPSIM_SIGNAL_NUMBER be sent to when clipboard content changes
 $CLIPSIM_IMAGE_PREVIEW  -> image preview program (defaults to chafa)
+$CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE -> should clipsim clear primary selection when middle mouse button is pressed
 $XDG_CACHE_HOME         -> used for cache
 ```
 Note: `$CLIPSIM_SIGNAL_NUMBER` should be a number between 1 and SIGRTMAX -
 SIGRTMIN.  It is not interpreted directly, it is added to `SIGRTMIN` (do *not*
 add it yourself).
+
+`CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE` is considered false when undefined, or when
+equal to "0" or "false".
 
 ## Bugs
 Clipsim *might* have an weird behavior if you use it with applications that do
