@@ -32,13 +32,13 @@
 
 #define error(...) fprintf(stderr, __VA_ARGS__)
 
-static Display *display;
-static int xi_opcode = -1;
 static bool watch_slave_devices = true;
 
 int main(int argc, const char* argv[]) {
     (void) argc;
     (void) argv;
+    int xi_opcode = -1;
+    Display *display;
 
     display = XOpenDisplay(NULL);
     if (!display) {
