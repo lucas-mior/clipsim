@@ -111,9 +111,7 @@ $ yay -S clipsim-git
 
 ### Manual
 Make sure you have
-[libxfixes](https://gitlab.freedesktop.org/xorg/lib/libxfixes),
-[xclip](https://github.com/astrand/xclip)
-and libmagic installed.
+libxfixes, libxi, xclip and libmagic installed.
 ```
 $ git clone https://codeberg.org/lucas.mior/clipsim.git clipsim
 $ cd clipsim
