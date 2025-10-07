@@ -90,6 +90,7 @@ clipboard_daemon_watch(void) {
     color = BlackPixel(display, DefaultScreen(display));
     window = XCreateSimpleWindow(display, root, 0,0, 1,1, 0, color, color);
 
+    XSelectInput(display, window, PropertyChangeMask);
     XFixesSelectSelectionInput(display, root, CLIPBOARD, (ulong)
                                XFixesSetSelectionOwnerNotifyMask
                              | XFixesSelectionClientCloseNotifyMask
@@ -219,7 +220,6 @@ clipboard_incremental_case(char **save, ulong *length) {
     *length = 0;
 
     (void) save;
-    XSelectInput(display, window, PropertyChangeMask);
     XDeleteProperty(display, window, XSEL_DATA);
     XFlush(display);
 
