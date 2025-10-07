@@ -168,4 +168,6 @@ void util_die_notify(const char *, ...) __attribute__((noreturn));
 int snprintf2(char *, size_t, char *, ...);
 void error(char *, ...);
 
+int32 xi_daemon_loop(void *);
+
 #endif /* CLIPSIM_H */
