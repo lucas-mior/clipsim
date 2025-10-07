@@ -75,7 +75,7 @@ int main(int argc, const char* argv[]) {
           watch_slave_devices ? "slave" : "master");
 
     int xfd = XConnectionNumber(display);
-    while (1) {
+    while (true) {
         fd_set fds;
         FD_ZERO(&fds);
         FD_SET(xfd, &fds);
