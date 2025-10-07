@@ -42,7 +42,6 @@ static bool watch_slave_devices = true;
 int32
 xi_daemon_loop(void *unused) {
     int xi_opcode;
-    int x_connection_fd;
     struct pollfd poll_file;
     Display *display;
 
@@ -90,9 +89,7 @@ xi_daemon_loop(void *unused) {
     error("Blocking new mouse paste actions from all %s devices\n",
           watch_slave_devices ? "slave" : "master");
 
-    x_connection_fd = XConnectionNumber(display);
-
-    poll_file.fd = x_connection_fd;
+    poll_file.fd = XConnectionNumber(display);
     poll_file.events = POLLIN;
 
     while (true) {
