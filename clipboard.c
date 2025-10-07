@@ -103,6 +103,7 @@ clipboard_daemon_watch(void) {
 
         nanosleep(&pause, NULL);
         (void) XNextEvent(display, &xevent);
+        (void) event_names;
 #if CLIPSIM_DEBUG
         if (xevent.type < LENGTH(event_names))
             error("X event: %s\n", event_names[xevent.type]);
