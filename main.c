@@ -190,6 +190,7 @@ void
 main_launch_daemon(void) {
     DEBUG_PRINT("void");
     thrd_t ipc_thread;
+    thrd_t xi_thread;
     int32 mtx_error;
 
     if (main_check_running()) {
@@ -214,5 +215,6 @@ main_launch_daemon(void) {
     }
 
     thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
+    thrd_create(&xi_thread, xi_daemon_loop, NULL);
     clipboard_daemon_watch();
 }

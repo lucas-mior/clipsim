@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Micha LaQua <micha.laqua@gmail.com>
+ * Copyright (c) 2025 Lucas Mior
  *
  * Special thanks to Ingo Buerk (Airblader) for his work on the
  * awesome unclutter-xfixes project, upon which the XInput eventcode
@@ -32,20 +33,20 @@
 #include <X11/Xatom.h>
 #include <X11/extensions/XInput2.h>
 
-#define error(...) fprintf(stderr, __VA_ARGS__)
+#include "clipsim.h"
 
 #define BUTTON_MIDDLE_CODE 2
 
 static bool watch_slave_devices = true;
 
-int main(int argc, const char* argv[]) {
+int32
+xi_daemon_loop(void *unused) {
     int xi_opcode;
     int x_connection_fd;
     struct pollfd poll_files[1];
     Display *display;
 
-    (void) argc;
-    (void) argv;
+    (void) unused;
 
     if ((display = XOpenDisplay(NULL)) == NULL) {
         error("Error connecting to X server.\n");
