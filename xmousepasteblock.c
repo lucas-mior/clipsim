@@ -39,10 +39,13 @@
 static bool watch_slave_devices = true;
 
 int main(int argc, const char* argv[]) {
+    int xi_opcode;
+    int x_connection_fd;
+    struct pollfd poll_files[1];
+    Display *display;
+
     (void) argc;
     (void) argv;
-    int xi_opcode;
-    Display *display;
 
     if ((display = XOpenDisplay(NULL)) == NULL) {
         error("Error connecting to X server.\n");
@@ -86,25 +89,26 @@ int main(int argc, const char* argv[]) {
     error("Blocking new mouse paste actions from all %s devices\n",
           watch_slave_devices ? "slave" : "master");
 
-    int x_connection_fd = XConnectionNumber(display);
-    struct pollfd fds[1];
+    x_connection_fd = XConnectionNumber(display);
 
-    fds[0].fd = x_connection_fd;
-    fds[0].events = POLLIN;
+    poll_files[0].fd = x_connection_fd;
+    poll_files[0].events = POLLIN;
 
     while (true) {
         int polled;
-        if ((polled = poll(fds, 1, -1)) < 0) {
+        if ((polled = poll(poll_files, 1, -1)) < 0) {
             error("Error polling: %s.\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
 
-        if (fds[0].revents & POLLIN) {
+        if (poll_files[0].revents & POLLIN) {
             XEvent xevent;
             while (XPending(display) > 0) {
-                XNextEvent(display, &xevent);
-                XGenericEventCookie *cookie = &xevent.xcookie;
+                XGenericEventCookie *cookie;
                 const XIRawEvent *data;
+
+                XNextEvent(display, &xevent);
+                cookie = &xevent.xcookie;
 
                 if (cookie->type != GenericEvent ||
                     cookie->extension != xi_opcode ||
@@ -125,6 +129,4 @@ int main(int argc, const char* argv[]) {
             }
         }
     }
-
-    exit(EXIT_SUCCESS);
 }
