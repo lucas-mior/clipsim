@@ -74,13 +74,13 @@ int main(int argc, const char* argv[]) {
     error("Blocking new mouse paste actions from all %s devices\n",
           watch_slave_devices ? "slave" : "master");
 
-    int xfd = XConnectionNumber(display);
+    int x_connection_fd = XConnectionNumber(display);
     while (true) {
         fd_set fds;
         FD_ZERO(&fds);
-        FD_SET(xfd, &fds);
+        FD_SET(x_connection_fd, &fds);
 
-        if (select(xfd + 1, &fds, NULL, NULL, NULL) > 0) {
+        if (select(x_connection_fd + 1, &fds, NULL, NULL, NULL) > 0) {
             XEvent xevent;
             while (XPending(display) > 0) {
                 XNextEvent(display, &xevent);
