@@ -192,6 +192,7 @@ main_launch_daemon(void) {
     thrd_t ipc_thread;
     thrd_t xi_thread;
     int32 mtx_error;
+    char *CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE;
 
     if (main_check_running()) {
         error("clipsim --daemon is already running.\n");
@@ -215,6 +216,19 @@ main_launch_daemon(void) {
     }
 
     thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
-    thrd_create(&xi_thread, xi_daemon_loop, NULL);
+
+    if ((CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE
+          = getenv("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE")) == NULL) {
+        error("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE is not defined.\n");
+    } else {
+        if (!strcmp(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "0")) {
+            CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE = NULL;
+        } else if (!strcmp(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "false")) {
+            CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE = NULL;
+        }
+    }
+
+    if (CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE)
+        thrd_create(&xi_thread, xi_daemon_loop, NULL);
     clipboard_daemon_watch();
 }
