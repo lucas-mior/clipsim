@@ -1,10 +1,11 @@
 PREFIX ?= /usr/local
 
-src = ipc.c util.c clipboard.c history.c content.c send_signal.c main.c
+src = ipc.c util.c clipboard.c history.c content.c send_signal.c main.c xi.c
 headers = clipsim.h
 
 LDLIBS += $(shell pkg-config x11 --libs)
 LDLIBS += $(shell pkg-config xfixes --libs)
+LDLIBS += $(shell pkg-config xi --libs)
 LDLIBS += $(shell pkg-config libmagic --libs)
 LDLIBS += -lpthread
 
