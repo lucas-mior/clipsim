@@ -43,7 +43,7 @@ int32
 xi_daemon_loop(void *unused) {
     int xi_opcode;
     int x_connection_fd;
-    struct pollfd poll_files[1];
+    struct pollfd poll_file;
     Display *display;
 
     (void) unused;
@@ -92,17 +92,17 @@ xi_daemon_loop(void *unused) {
 
     x_connection_fd = XConnectionNumber(display);
 
-    poll_files[0].fd = x_connection_fd;
-    poll_files[0].events = POLLIN;
+    poll_file.fd = x_connection_fd;
+    poll_file.events = POLLIN;
 
     while (true) {
         int polled;
-        if ((polled = poll(poll_files, 1, -1)) < 0) {
+        if ((polled = poll(&poll_file, 1, -1)) < 0) {
             error("Error polling: %s.\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
 
-        if (poll_files[0].revents & POLLIN) {
+        if (poll_file.revents & POLLIN) {
             XEvent xevent;
             while (XPending(display) > 0) {
                 XGenericEventCookie *cookie;
