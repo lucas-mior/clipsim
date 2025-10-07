@@ -35,31 +35,6 @@
 static Display *display;
 static int xi_opcode = -1;
 
-static void handle_xinput_events(void) {
-    XEvent xevent;
-    while (XPending(display) > 0) {
-        XNextEvent(display, &xevent);
-        XGenericEventCookie *cookie = &xevent.xcookie;
-
-        if (cookie->type != GenericEvent ||
-            cookie->extension != xi_opcode ||
-            !XGetEventData(display, cookie))
-            continue;
-
-        const XIRawEvent *data = (const XIRawEvent *) cookie->data;
-
-        if (data->detail == 2) {  // middle mouse button
-            XSetSelectionOwner(display, XA_PRIMARY, None, CurrentTime);
-            XStoreBytes(display, None, 0);
-            XSetSelectionOwner(display, XA_STRING, None, CurrentTime);
-            XSync(display, False);
-            error("Cleared primary selection and cut buffer\n");
-        }
-
-        XFreeEventData(display, cookie);
-    }
-}
-
 int main(int argc, const char* argv[]) {
     int watch_slave_devices = 0;
     (void) argc;
@@ -107,8 +82,30 @@ int main(int argc, const char* argv[]) {
         FD_ZERO(&fds);
         FD_SET(xfd, &fds);
 
-        if (select(xfd + 1, &fds, NULL, NULL, NULL) > 0)
-            handle_xinput_events();
+        if (select(xfd + 1, &fds, NULL, NULL, NULL) > 0) {
+            XEvent xevent;
+            while (XPending(display) > 0) {
+                XNextEvent(display, &xevent);
+                XGenericEventCookie *cookie = &xevent.xcookie;
+
+                if (cookie->type != GenericEvent ||
+                    cookie->extension != xi_opcode ||
+                    !XGetEventData(display, cookie))
+                    continue;
+
+                const XIRawEvent *data = (const XIRawEvent *) cookie->data;
+
+                if (data->detail == 2) {  // middle mouse button
+                    XSetSelectionOwner(display, XA_PRIMARY, None, CurrentTime);
+                    XStoreBytes(display, None, 0);
+                    XSetSelectionOwner(display, XA_STRING, None, CurrentTime);
+                    XSync(display, False);
+                    error("Cleared primary selection and cut buffer\n");
+                }
+
+                XFreeEventData(display, cookie);
+            }
+        }
     }
 
     return 0;
