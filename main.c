@@ -220,6 +220,8 @@ main_launch_daemon(void) {
     if ((CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE
           = getenv("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE")) == NULL) {
         error("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE is not defined.\n");
+        error("Primary selection will not be cleared"
+              " When pressing the middle mouse button.\n");
     } else {
         if (!strcmp(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "0")) {
             CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE = NULL;
