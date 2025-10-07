@@ -34,14 +34,11 @@
 
 static Display *display;
 static int xi_opcode = -1;
+static bool watch_slave_devices = true;
 
 int main(int argc, const char* argv[]) {
-    int watch_slave_devices = 0;
     (void) argc;
     (void) argv;
-    char *env = getenv("XMPB_WATCH_SLAVE_DEVICES");
-    if (env && (strcmp(env, "1") == 0 || strcasecmp(env, "true") == 0))
-        watch_slave_devices = 1;
 
     display = XOpenDisplay(NULL);
     if (!display) {
