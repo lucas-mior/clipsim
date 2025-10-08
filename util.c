@@ -224,6 +224,7 @@ int
 util_command(const int argc, char **argv) {
     pid_t child;
     int status;
+    int waited;
     char command[1024];
 
     switch (child = fork()) {
@@ -239,9 +240,11 @@ util_command(const int argc, char **argv) {
         error("Error forking: %s.\n", strerror(errno));
         exit(EXIT_FAILURE);
     default:
-        if (waitpid(child, &status, 0) < 0) {
-            error("Error waiting for the forked child: %s.\n", strerror(errno));
+        if ((waited = waitpid(child, &status, WNOHANG)) < 0) {
+            error("Error waiting for the child: %s.\n", strerror(errno));
             exit(EXIT_FAILURE);
+        } else if (waited == 0) {
+            return 1;
         }
         if (!WIFEXITED(status)) {
             error("Command exited abnormally.\n");
