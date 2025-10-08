@@ -177,9 +177,17 @@ clipboard_get_clipboard(char **save, ulong *length) {
         return CLIPBOARD_TEXT;
     }
     if (clipboard_check_target(TARGETS)) {
+        char *xclip[] = {
+            "/usr/bin/xclip",
+            "-selection",
+            "-clipboard",
+            "-t",
+            "TARGETS",
+            NULL,
+        };
         error("Error detecting UTF8_STRING and image/png.\n");
         error("Clipboard format detected by xclip:\n");
-        system("xclip -selection clipboard -t TARGETS");
+        util_command(LENGTH(xclip) - 1, xclip);
         return CLIPBOARD_OTHER;
     }
 

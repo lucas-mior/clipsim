@@ -58,13 +58,21 @@ do { \
 #define SNPRINTF(BUFFER, FORMAT, ...) \
     snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
 
+#define ARRAY_STRING(BUFFER, SEP, ARRAY, ARRAY_LENGTH) \
+    _Generic((ARRAY), \
+        int *: array_string(BUFFER, sizeof(BUFFER), SEP, "%d", ARRAY, ARRAY_LENGTH), \
+        float *: array_string(BUFFER, sizeof(BUFFER), SEP, "%f", ARRAY, ARRAY_LENGTH), \
+        double *: array_string(BUFFER, sizeof(BUFFER), SEP, "%f", ARRAY, ARRAY_LENGTH), \
+        char **: array_string(BUFFER, sizeof(BUFFER), SEP, "%s", ARRAY, ARRAY_LENGTH) \
+    )
+
 #define LENGTH(x) (isize) ((sizeof (x) / sizeof (*x)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n') || (x == '\r'))
 
 #define PAUSE10MS (1000*1000*10)
-#define HISTORY_BUFFER_SIZE 128
+#define HISTORY_BUFFER_SIZE 8
 #define HISTORY_INVALID_ID (HISTORY_BUFFER_SIZE+1)
 #define HISTORY_KEEP_SIZE (HISTORY_BUFFER_SIZE/2)
 #define ENTRY_MAX_LENGTH BUFSIZ
@@ -166,6 +174,8 @@ int util_open(File *, const int);
 int util_copy_file(const char *, const char *);
 void util_die_notify(const char *, ...) __attribute__((noreturn));
 int snprintf2(char *, size_t, char *, ...);
+int util_command(const int, char **);
+void array_string(char *, int32, char *, char *, char **, int32);
 void error(char *, ...);
 
 int32 xi_daemon_loop(void *);
