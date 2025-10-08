@@ -48,8 +48,12 @@ send_signal(const char *executable, const int32 signal_number) {
             close(cmdline);
             continue;
         }
-        if (!strcmp(command, executable))
-            kill(pid, signal_number);
+        if (!strcmp(command, executable)) {
+            if (kill(pid, signal_number) < 0) {
+                error("Error sending signal %d to program %s (pid %d): %s.\n",
+                      signal_number, executable, pid, strerror(errno));
+            }
+        }
 
         close(cmdline);
     }
