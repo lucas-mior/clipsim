@@ -220,6 +220,72 @@ snprintf2(char *buffer, size_t size, char *format, ...) {
     return n;
 }
 
+int
+util_command(const int argc, char **argv) {
+    pid_t child;
+    int status;
+    char command[1024];
+
+    switch (child = fork()) {
+    case 0:
+        if (!freopen("/dev/tty", "r", stdin))
+            error("Error reopening stdin: %s.\n", strerror(errno));
+        execvp(argv[0], argv);
+        ARRAY_STRING(command, " ", argv, argc + 1);
+        error("Error running %s\n", command);
+        error("%s.\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    case -1:
+        error("Error forking: %s.\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    default:
+        if (waitpid(child, &status, 0) < 0) {
+            error("Error waiting for the forked child: %s.\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        if (!WIFEXITED(status)) {
+            error("Command exited abnormally.\n");
+            exit(EXIT_FAILURE);
+        }
+        return WEXITSTATUS(status);
+    }
+}
+
+void array_string(char *buffer, int32 size,
+                  char *sep, char *formatter,
+                  char **array, int32 array_length) {
+    char format_string[256];
+    int32 n = 0;
+    SNPRINTF(format_string, "%s%%s", formatter);
+
+    for (int32 i = 0; i < (array_length-1); i += 1) {
+        int32 space = size - n;
+        int32 m = snprintf(buffer + n, (ulong)space, "%s%s", array[i], sep);
+        if (m <= 0) {
+            error("Error in snprintf().\n");
+            exit(EXIT_FAILURE);
+        }
+        if (m > space) {
+            error("Error printing full command, not enough space.\n");
+            exit(EXIT_FAILURE);
+        }
+        n += m;
+    }{
+        int32 i = array_length - 1;
+        int32 space = size - n;
+        int32 m = snprintf(buffer + n, (ulong)space, "%s", array[i]);
+        if (m <= 0) {
+            error("Error in snprintf().\n");
+            exit(EXIT_FAILURE);
+        }
+        if (m > space) {
+            error("Error printing full command, not enough space.\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+    return;
+}
+
 void
 error(char *format, ...) {
     char buffer[BUFSIZ];
