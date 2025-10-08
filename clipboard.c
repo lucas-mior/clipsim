@@ -177,7 +177,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
         return CLIPBOARD_TEXT;
     }
     if (clipboard_check_target(TARGETS)) {
-        error("Error detecting UTF8 and image.\n");
+        error("Error detecting UTF8_STRING and image/png.\n");
         error("Clipboard format detected by xclip:\n");
         system("xclip -selection clipboard -t TARGETS");
         return CLIPBOARD_OTHER;
