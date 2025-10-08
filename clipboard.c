@@ -177,7 +177,8 @@ clipboard_get_clipboard(char **save, ulong *length) {
         return CLIPBOARD_TEXT;
     }
     if (clipboard_check_target(TARGETS)) {
-        error("Clipboard format:\n");
+        error("Error detecting UTF8 and image.\n");
+        error("Clipboard format detected by xclip:\n");
         system("xclip -selection clipboard -t TARGETS");
         return CLIPBOARD_OTHER;
     }
@@ -195,6 +196,7 @@ clipboard_check_target(const Atom target) {
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA,
                       window, CurrentTime);
     do {
+        error("%s: loop\n", __func__);
         if (nevents >= CHECK_TARGET_MAX_EVENTS)
             return 0;
         (void) XNextEvent(display, &xevent);
