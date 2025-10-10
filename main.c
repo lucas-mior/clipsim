@@ -119,7 +119,6 @@ bool
 main_check_cmdline(char *pid) {
     char buffer[256];
     char command[256];
-    int32 n;
     isize r;
     int32 cmdline;
     char cmd1[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
@@ -127,12 +126,7 @@ main_check_cmdline(char *pid) {
     char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
                    '-', '-', 'd', 'a', 'e', 'm', 'o', 'n', '\0'};
 
-    n = snprintf(buffer, sizeof(buffer), "/proc/%s/cmdline", pid);
-    if (n < 0) {
-        error("Error printing buffer name.\n");
-        return false;
-    }
-    buffer[sizeof(buffer) - 1] = '\0';
+    SNPRINTF(buffer, "/proc/%s/cmdline", pid);
 
     if ((cmdline = open(buffer, O_RDONLY)) < 0)
         return false;
