@@ -66,9 +66,7 @@ void
 send_signal(const char *executable, const int32 signal_number) {
     char signal_string[14];
     int32 n;
-    n = snprintf(signal_string, sizeof(signal_string), "%d", signal_number);
-    if (n <= 0)
-        return;
+    SNPRINTF(signal_string, "%d", signal_number);
 
     switch (fork()) {
         case -1:
