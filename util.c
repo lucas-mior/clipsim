@@ -257,7 +257,7 @@ util_command(const int argc, char **argv) {
 void array_string(char *buffer, int32 size,
                   char *sep, char *formatter,
                   char **array, int32 array_length) {
-    char format_string[256];
+    char format_string[16];
     int32 n = 0;
     SNPRINTF(format_string, "%s%%s", formatter);
 
