@@ -115,7 +115,7 @@ ipc_client_speak_fifo(int32 command, int32 id) {
 
     w = write(command_fifo.fd, &command, sizeof(*(&command)));
     util_close(&command_fifo);
-    if (w < (isize) sizeof(*(&command))) {
+    if (w < (isize)sizeof(*(&command))) {
         error("Error writing command to %s: %s\n",
               command_fifo.name, strerror(errno));
         exit(EXIT_FAILURE);

@@ -97,10 +97,13 @@ util_die_notify(const char *format, ...) {
     char buffer[BUFSIZ];
 
     va_start(args, format);
-    n = vsnprintf(buffer, sizeof(buffer) - 1, format, args);
+    n = vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
     if (n < 0)
+        exit(EXIT_FAILURE);
+
+    if (n >= (int32)sizeof(buffer))
         exit(EXIT_FAILURE);
 
     buffer[n] = '\0';
