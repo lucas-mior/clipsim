@@ -296,10 +296,10 @@ error(char *format, ...) {
     int32 n;
 
     va_start(args, format);
-    n = vsnprintf(buffer, sizeof(buffer) - 1, format, args);
+    n = vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    if (n < 0 || n > (int32)sizeof(buffer)) {
+    if (n <= 0 || n >= (int32)sizeof(buffer)) {
         fprintf(stderr, "Error in vsnprintf()\n");
         exit(EXIT_FAILURE);
     }
