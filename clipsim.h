@@ -58,15 +58,15 @@ do { \
 #define SNPRINTF(BUFFER, FORMAT, ...) \
     snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
 
-#define ARRAY_STRING(BUFFER, SEP, ARRAY, ARRAY_LENGTH) \
-    _Generic((ARRAY), \
-        int *: array_string(BUFFER, sizeof(BUFFER), SEP, "%d", ARRAY, ARRAY_LENGTH), \
-        float *: array_string(BUFFER, sizeof(BUFFER), SEP, "%f", ARRAY, ARRAY_LENGTH), \
-        double *: array_string(BUFFER, sizeof(BUFFER), SEP, "%f", ARRAY, ARRAY_LENGTH), \
-        char **: array_string(BUFFER, sizeof(BUFFER), SEP, "%s", ARRAY, ARRAY_LENGTH) \
-    )
+#define ARRAY_STRING(BUFFER, SEP, ARRAY, LENGTH) \
+  _Generic((ARRAY), \
+    int *: array_string(BUFFER, sizeof(BUFFER), SEP, "%d", ARRAY, LENGTH), \
+    float *: array_string(BUFFER, sizeof(BUFFER), SEP, "%f", ARRAY, LENGTH), \
+    double *: array_string(BUFFER, sizeof(BUFFER), SEP, "%f", ARRAY, LENGTH), \
+    char **: array_string(BUFFER, sizeof(BUFFER), SEP, "%s", ARRAY, LENGTH) \
+  )
 
-#define LENGTH(x) (isize) ((sizeof (x) / sizeof (*x)))
+#define LENGTH(x) (isize) ((sizeof(x) / sizeof(*x)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n') || (x == '\r'))
