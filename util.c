@@ -312,7 +312,7 @@ error(char *format, ...) {
 #ifdef CLIPSIM_DEBUG
     switch (fork()) {
         case -1:
-            fprintf(stderr, "Error forking: %s\n", strerror(errno));
+            fprintf(stderr, "Error forking: %s.\n", strerror(errno));
             break;
         case 0:
             for (uint i = 0; i < LENGTH(notifiers); i += 1) {
