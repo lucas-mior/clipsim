@@ -11,8 +11,11 @@ program="clipsim"
 
 CC=${CC:-cc}
 
-# pkg-config libs
-LDLIBS="$(pkg-config x11 --libs) $(pkg-config xfixes --libs) $(pkg-config xi --libs) $(pkg-config libmagic --libs) -lpthread"
+LDLIBS="$LDLIBS $(pkg-config x11 --libs)"
+LDLIBS="$LDLIBS $(pkg-config xfixes --libs)"
+LDLIBS="$LDLIBS $(pkg-config xi --libs)"
+LDLIBS="$LDLIBS $(pkg-config libmagic --libs)"
+LDLIBS="$LDLIBS -lpthread"
 
 # base flags
 CFLAGS="$CFLAGS -std=c99 -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600"
