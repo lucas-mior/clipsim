@@ -252,6 +252,11 @@ history_read(void) {
             util_close(&history);
             return;
         }
+        if (history_size >= INT32_MAX) {
+            error("History file is too big.\n");
+            error("Max size is %d bytes.", INT32_MAX);
+            return;
+        }
     }
 
     history_map = mmap(NULL, history_size,
@@ -267,9 +272,9 @@ history_read(void) {
 
     history_length = 0;
     begin = history_map;
-    left = history_size;
+    left = (int32)history_size;
 
-    while ((left > 0) && (p = memchr(begin, TEXT_TAG, left))) {
+    while ((left > 0) && (p = memchr(begin, TEXT_TAG, (ulong)left))) {
         Entry *e;
         char type = *(p + 1);
         *p = '\0';
@@ -279,18 +284,18 @@ history_read(void) {
 
         if (type == IMAGE_TAG) {
             e->trimmed = 0;
-            e->trimmed_length = e->content_length;
+            e->trimmed_length = (int16)e->content_length;
             is_image[history_length] = true;
-            e->content = util_memdup(begin, (usize)e->content_length + 1);
+            e->content = util_memdup(begin, (usize)(e->content_length + 1));
         } else {
-            usize size;
+            int32 size;
             if (e->content_length >= TRIMMED_SIZE) {
                 size = e->content_length + 1 + TRIMMED_SIZE + 1;
             } else {
                 size = (e->content_length + 1)*2;
             }
-            e->content = xmalloc(size);
-            memcpy(e->content, begin, e->content_length + 1);
+            e->content = xmalloc((usize)size);
+            memcpy(e->content, begin, (usize)(e->content_length + 1));
 
             content_trim_spaces(&e->trimmed, &e->trimmed_length,
                                  e->content, e->content_length);
@@ -379,7 +384,7 @@ history_append(char *content, int32 length) {
     DEBUG_PRINT("%s, %d", content, length);
     int32 oldindex;
     int32 kind;
-    usize size;
+    int32 size;
     Entry *e;
 
     if (!content) {
@@ -424,8 +429,8 @@ history_append(char *content, int32 length) {
         } else {
             size = (e->content_length + 1)*2;
         }
-        e->content = xmalloc(size);
-        memcpy(e->content, content, e->content_length + 1);
+        e->content = xmalloc((usize)size);
+        memcpy(e->content, content, (usize)(e->content_length + 1));
 
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length),
                             e->content, e->content_length);
@@ -433,8 +438,8 @@ history_append(char *content, int32 length) {
         break;
     case CLIPBOARD_IMAGE:
         e->trimmed = 0;
-        e->trimmed_length = e->content_length;
-        e->content = util_memdup(content, length+1);
+        e->trimmed_length = (int16)e->content_length;
+        e->content = util_memdup(content, (usize)(length+1));
         is_image[history_length] = true;
         break;
     default:
