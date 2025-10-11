@@ -47,6 +47,14 @@ static void history_free_entry(const Entry *, int32);
 static void history_reorder(const int32);
 static int32 history_save_image(char **, int32 *);
 
+static void history_read(void);
+static void history_append(char *, int);
+static bool history_save(void);
+static void history_recover(int32);
+static void history_remove(int32);
+static void history_backup(void);
+static void history_exit(int) __attribute__((noreturn));
+
 int32
 history_callback_delete(const char *path,
                         const struct stat *stat,

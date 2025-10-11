@@ -18,6 +18,10 @@
 #include "clipsim.h"
 #include "util.c"
 
+static void content_remove_newline(char *, int *);
+static void content_trim_spaces(int16 *, int16 *, char *, int16);
+static int32 content_check_content(uchar *, int);
+
 void
 content_remove_newline(char *text, int32 *length) {
     DEBUG_PRINT("%s, %d", text, *length);

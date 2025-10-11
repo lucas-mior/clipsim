@@ -144,27 +144,6 @@ extern const char IMAGE_TAG;
 extern char *program;
 extern magic_t magic;
 
-static void content_remove_newline(char *, int *);
-static void content_trim_spaces(int16 *, int16 *, char *, int16);
-static int32 content_check_content(uchar *, int);
-
-static void history_read(void);
-static void history_append(char *, int);
-static bool history_save(void);
-static void history_recover(int32);
-static void history_remove(int32);
-static void history_backup(void);
-static void history_exit(int) __attribute__((noreturn));
-
-static int clipboard_daemon_watch(void) __attribute__((noreturn));
-
-static int ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
-static void ipc_client_speak_fifo(int32, int32);
-
-static void send_signal(const char *, const int);
-
-static int32 xi_daemon_loop(void *);
-
 static int32 util_open(File *file, const int32 flag);
 static void util_close(File *file);
 

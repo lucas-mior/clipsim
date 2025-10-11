@@ -18,6 +18,8 @@
 #include "clipsim.h"
 #include "util.c"
 
+static void send_signal(const char *, const int);
+
 #ifdef __linux__
 void
 send_signal(const char *executable, const int32 signal_number) {
