@@ -21,6 +21,10 @@
 #include <X11/extensions/Xfixes.h>
 
 #include "clipsim.h"
+#include "util.c"
+#include "send_signal.c"
+#include "xi.c"
+
 #define CHECK_TARGET_MAX_EVENTS 10
 
 static const char *event_names[LASTEvent] = {

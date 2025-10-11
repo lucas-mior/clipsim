@@ -15,7 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef HISTORY_C
+#define HISTORY_C
+
 #include "clipsim.h"
+#include "util.c"
+#include "content.c"
 
 #include <X11/X.h>
 #include <X11/Xatom.h>
@@ -41,12 +46,6 @@ static int32 history_repeated_index(const char *, const int32);
 static void history_free_entry(const Entry *, int32);
 static void history_reorder(const int32);
 static int32 history_save_image(char **, int32 *);
-
-int32
-history_length_get(void) {
-    DEBUG_PRINT("void");
-    return history_length;
-}
 
 int32
 history_callback_delete(const char *path,
@@ -282,7 +281,7 @@ history_read(void) {
             } else {
                 size = (e->content_length + 1)*2;
             }
-            e->content = util_malloc(size);
+            e->content = xmalloc(size);
             memcpy(e->content, begin, e->content_length + 1);
 
             content_trim_spaces(&e->trimmed, &e->trimmed_length,
@@ -417,7 +416,7 @@ history_append(char *content, int32 length) {
         } else {
             size = (e->content_length + 1)*2;
         }
-        e->content = util_malloc(size);
+        e->content = xmalloc(size);
         memcpy(e->content, content, e->content_length + 1);
 
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length),
@@ -583,3 +582,5 @@ history_free_entry(const Entry *e, int32 index) {
 
     return;
 }
+
+#endif /* HISTORY_C */

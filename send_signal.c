@@ -16,6 +16,7 @@
  */
 
 #include "clipsim.h"
+#include "util.c"
 
 #ifdef __linux__
 void
