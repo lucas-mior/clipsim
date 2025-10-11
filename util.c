@@ -41,6 +41,10 @@
 #ifndef LENGTH
 #define LENGTH(x) (isize)((sizeof(x) / sizeof(*x)))
 #endif
+#ifndef SNPRINTF
+#define SNPRINTF(BUFFER, FORMAT, ...) \
+    snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
+#endif
 
 #if defined(MAP_HUGETLB) && defined(MAP_HUGE_2MB)
   #define FLAGS_HUGE_PAGES MAP_HUGETLB|MAP_HUGE_2MB
@@ -429,8 +433,8 @@ error(char *format, ...) {
 
 void
 util_segv_handler(int32 unused) {
-    (void)unused;
     char *message = "Memory error. Please send a bug report.\n";
+    (void)unused;
 
     (void)write(STDERR_FILENO, message, strlen(message));
     for (uint i = 0; i < LENGTH(notifiers); i += 1) {
