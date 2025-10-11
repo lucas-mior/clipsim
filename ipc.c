@@ -38,6 +38,9 @@ static void ipc_clean_fifo(const char *);
 static void ipc_create_fifo(const char *);
 static void sig_abrt_handler(int32) __attribute__((noreturn));
 
+static int ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
+static void ipc_client_speak_fifo(int32, int32);
+
 void
 sig_abrt_handler(int32 unused) {
     (void) unused;
