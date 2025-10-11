@@ -1,6 +1,6 @@
 PREFIX ?= /usr/local
 
-src = ipc.c util.c clipboard.c history.c content.c send_signal.c main.c xi.c
+src = main.c
 headers = clipsim.h
 
 LDLIBS += $(shell pkg-config x11 --libs)
@@ -22,7 +22,8 @@ clang: CFLAGS += -Wno-format-zero-length
 clang: clean release
 
 CFLAGS += -std=c99 -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600
-CFLAGS += -Wall -Wextra
+CFLAGS += -Wall -Wextra -Werror -Wno-unused-function -Wno-sign-conversion
+CFLAGS += -Wno-implicit-int-conversion -Wno-constant-logical-operand
 
 release: CFLAGS += -O2 -flto
 release: clipsim

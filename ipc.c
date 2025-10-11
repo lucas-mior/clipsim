@@ -16,6 +16,8 @@
  */
 
 #include "clipsim.h"
+#include "util.c"
+#include "history.c"
 
 static File command_fifo = { .file = NULL, .fd = -1,
                              .name = "/tmp/clipsim/command.fifo" };
@@ -193,15 +195,12 @@ void
 ipc_daemon_pipe_entries(void) {
     DEBUG_PRINT("void");
     static char buffer[BUFSIZ];
-    int32 history_length;
 
     if ((content_fifo.file = fopen(content_fifo.name, "w")) == NULL) {
         error("Error opening %s: %s.\n", content_fifo.name, strerror(errno));
         exit(EXIT_FAILURE);
     }
     setvbuf(content_fifo.file, buffer, _IOFBF, BUFSIZ);
-
-    history_length = history_length_get();
 
     if (history_length <= 0) {
         error("Clipboard history empty. Start copying text.\n");
@@ -230,13 +229,10 @@ void
 ipc_daemon_pipe_id(int32 id) {
     DEBUG_PRINT("%d", id);
     Entry *e;
-    int32 history_length;
     usize tag_size = sizeof(*(&IMAGE_TAG));
 
     if (util_open(&content_fifo, O_WRONLY) < 0)
         return;
-
-    history_length = history_length_get();
 
     if (history_length <= -1) {
         error("Clipboard history empty. Start copying text.\n");
