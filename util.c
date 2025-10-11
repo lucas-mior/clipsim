@@ -87,23 +87,22 @@ typedef ssize_t isize;
 
 static char *notifiers[2] = { "dunstify", "notify-send" };
 
+static void *xmmap_commit(size_t *);
+static void xmunmap(void *, size_t);
+static void *xcalloc(const size_t, const size_t);
+static void *xmalloc(const size_t);
+static void *xrealloc(void *, const size_t);
+static void *util_memdup(const void *, const usize);
 static char *xstrdup(char *);
 static int32 snprintf2(char *, size_t, char *, ...);
+static void error(char *, ...);
+static void array_string(char *, int32, char *, char *, char **, int32);
 static int32 util_copy_file(const char *, const char *);
 static int32 util_string_int32(int32 *, const char *);
 static int util_command(const int, char **);
 static uint32 util_nthreads(void);
-static void array_string(char *, int32, char *, char *, char **, int32);
-static void error(char *, ...);
 static void util_die_notify(const char *, ...) __attribute__((noreturn));
-static void *util_memdup(const void *, const usize);
 static void util_segv_handler(int32) __attribute__((noreturn));
-static void *xcalloc(const size_t, const size_t);
-static void *xmalloc(const size_t);
-static void *xmmap_commit(size_t *);
-static void xmunmap(void *, size_t);
-static void *xrealloc(void *, const size_t);
-static void *xrealloc(void *old, const size_t);
 
 static size_t util_page_size = 0;
 
