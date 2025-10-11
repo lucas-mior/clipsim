@@ -96,8 +96,7 @@ xi_daemon_loop(void *unused) {
     poll_file.events = POLLIN;
 
     while (true) {
-        int polled;
-        if ((polled = poll(&poll_file, 1, -1)) < 0) {
+        if (poll(&poll_file, 1, -1) < 0) {
             error("Error polling: %s.\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
