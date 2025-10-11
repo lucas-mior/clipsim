@@ -19,7 +19,7 @@
 #include "util.c"
 
 static void content_remove_newline(char *, int *);
-static void content_trim_spaces(int16 *, int16 *, char *, int16);
+static void content_trim_spaces(int16 *, int16 *, char *, int32);
 static int32 content_check_content(uchar *, int);
 
 void
@@ -35,14 +35,14 @@ content_remove_newline(char *text, int32 *length) {
 
 void
 content_trim_spaces(int16 *trimmed, int16 *trimmed_length,
-                    char *content, const int16 length) {
+                    char *content, const int32 length) {
     DEBUG_PRINT("%p, %p, %s, %d",
                 (void *) trimmed, (void *) trimmed_length, content, length);
     char *out;
     char temp = '\0';
     char *in = content;
 
-    *trimmed = length + 1;
+    *trimmed = (int16)length + 1;
     out = &content[*trimmed];
 
     if (length >= TRIMMED_SIZE) {
@@ -75,6 +75,11 @@ int32
 content_check_content(uchar *data, const int32 length) {
     DEBUG_PRINT("%s, %d", data, length);
 
+    if (length <= 0) {
+        error("Content length is equal or less than zero.\n");
+        exit(EXIT_FAILURE);
+    }
+
     { /* Check if it is made only of spaces and newlines */
         uchar *aux = data;
         do {
@@ -103,7 +108,8 @@ content_check_content(uchar *data, const int32 length) {
         return CLIPBOARD_ERROR;
     }
 
-    if (memchr(data, TEXT_TAG, length) || memchr(data, IMAGE_TAG, length)) {
+    if (memchr(data, TEXT_TAG, (ulong)length)
+        || memchr(data, IMAGE_TAG, (ulong)length)) {
         error("Entry contains control chars. This won't be added to history");
         return CLIPBOARD_OTHER;
     }
