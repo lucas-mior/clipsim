@@ -43,7 +43,11 @@
 #define GREEN "\x1b[32m"
 #define RESET "\x1b[0m"
 
-#ifdef CLIPSIM_DEBUG
+#ifndef CLIPSIM_DEBUG
+#define CLIPSIM_DEBUG 0
+#endif
+
+#if CLIPSIM_DEBUG
 #define DEPRINTF(...) dprintf(STDERR_FILENO, __VA_ARGS__);
 #define DEBUG_PRINT(...) \
 do { \
@@ -66,7 +70,7 @@ do { \
     char **: array_string(BUFFER, sizeof(BUFFER), SEP, "%s", ARRAY, LENGTH) \
   )
 
-#define LENGTH(x) (isize) ((sizeof(x) / sizeof(*x)))
+#define LENGTH(x) (isize)((sizeof(x) / sizeof(*x)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n') || (x == '\r'))
@@ -140,44 +144,52 @@ extern const char IMAGE_TAG;
 extern char *program;
 extern magic_t magic;
 
+static void content_remove_newline(char *, int *);
+static void content_trim_spaces(int16 *, int16 *, char *, int16);
+static int32 content_check_content(uchar *, int);
 
-void content_remove_newline(char *, int *);
-void content_trim_spaces(int16 *, int16 *, char *, int16);
-int32 content_check_content(uchar *, int);
+static void history_read(void);
+static void history_append(char *, int);
+static bool history_save(void);
+static void history_recover(int32);
+static void history_remove(int32);
+static void history_backup(void);
+static void history_exit(int) __attribute__((noreturn));
 
-int32 history_length_get(void);
-void history_read(void);
-void history_append(char *, int);
-bool history_save(void);
-void history_recover(int32);
-void history_remove(int32);
-void history_backup(void);
-void history_delete_tmp(void);
-void history_exit(int) __attribute__((noreturn));
+static int clipboard_daemon_watch(void) __attribute__((noreturn));
 
-int clipboard_daemon_watch(void) __attribute__((noreturn));
+static int ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
+static void ipc_client_speak_fifo(int32, int32);
 
-int ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
-void ipc_client_speak_fifo(int32, int32);
+static void send_signal(const char *, const int);
 
-void send_signal(const char *, const int);
+static int32 xi_daemon_loop(void *);
 
-void *util_malloc(const usize);
-void *util_memdup(const void *, const usize);
-char *util_strdup(const char *);
-void *util_realloc(void *, const usize);
-void *util_calloc(const usize, const usize);
-int util_string_int32(int32 *, const char *);
-void util_segv_handler(int) __attribute__((noreturn));
-void util_close(File *);
-int util_open(File *, const int);
-int util_copy_file(const char *, const char *);
-void util_die_notify(const char *, ...) __attribute__((noreturn));
-int snprintf2(char *, size_t, char *, ...);
-int util_command(const int, char **);
-void array_string(char *, int32, char *, char *, char **, int32);
-void error(char *, ...);
+static int32 util_open(File *file, const int32 flag);
+static void util_close(File *file);
 
-int32 xi_daemon_loop(void *);
+int32
+util_open(File *file, const int32 flag) {
+    if ((file->fd = open(file->name, flag)) < 0) {
+        fprintf(stderr, "Error opening %s: %s\n", file->name, strerror(errno));
+        return -1;
+    } else {
+        return 0;
+    }
+}
 
+void
+util_close(File *file) {
+    if (file->fd >= 0) {
+        if (close(file->fd) < 0)
+            fprintf(stderr, "Error closing %s: %s\n", file->name, strerror(errno));
+        file->fd = -1;
+    }
+    if (file->file != NULL) {
+        if (fclose(file->file) != 0)
+            fprintf(stderr, "Error closing %s: %s\n", file->name, strerror(errno));
+        file->file = NULL;
+    }
+    return;
+}
 #endif /* CLIPSIM_H */

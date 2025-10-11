@@ -16,6 +16,10 @@
  */
 
 #include "clipsim.h"
+#include "util.c"
+#include "history.c"
+#include "ipc.c"
+#include "clipboard.c"
 
 typedef struct Command {
     const char *shortname;

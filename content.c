@@ -16,6 +16,7 @@
  */
 
 #include "clipsim.h"
+#include "util.c"
 
 void
 content_remove_newline(char *text, int32 *length) {
