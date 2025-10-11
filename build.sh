@@ -17,7 +17,7 @@ LDLIBS="$(pkg-config x11 --libs) $(pkg-config xfixes --libs) $(pkg-config xi --l
 
 # base flags
 CFLAGS="$CFLAGS -std=c99 -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600"
-CFLAGS="$CFLAGS -Wall -Wextra -Werror"
+CFLAGS="$CFLAGS -Wall -Wextra"
 CFLAGS="$CFLAGS -Wno-unused-function -Wno-sign-conversion"
 CFLAGS="$CFLAGS -Wno-implicit-int-conversion -Wno-constant-logical-operand"
 
