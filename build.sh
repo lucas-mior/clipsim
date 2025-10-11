@@ -7,7 +7,6 @@ PREFIX="${PREFIX:-/usr/local}"
 DESTDIR="${DESTDIR:-/}"
 
 src="main.c"
-headers="clipsim.h"
 program="clipsim"
 
 CC=${CC:-cc}
