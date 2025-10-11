@@ -33,7 +33,7 @@ echo "target=$target"
 
 case "$target" in
     "debug")
-        CFLAGS="$CFLAGS -g -fsanitize=undefined -DCLIPSIM_DEBUG"
+        CFLAGS="$CFLAGS -g -fsanitize=undefined -DCLIPSIM_DEBUG=1"
         CFLAGS="$CFLAGS -Wno-format-zero-length"
         ;;
     "release"|"build")
