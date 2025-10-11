@@ -38,13 +38,6 @@ case "$target" in
     "release"|"build")
         CFLAGS="$CFLAGS -O2 -flto"
         ;;
-    "clang")
-        CC=clang
-        CFLAGS="$CFLAGS -Weverything -Wno-unsafe-buffer-usage"
-        CFLAGS="$CFLAGS -Wno-format-nonliteral -Wno-declaration-after-statement"
-        CFLAGS="$CFLAGS -Wno-format-zero-length"
-        CFLAGS="$CFLAGS -O2 -flto"
-        ;;
 esac
 
 case "$target" in
