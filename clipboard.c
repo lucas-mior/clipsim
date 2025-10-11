@@ -116,10 +116,11 @@ clipboard_daemon_watch(void) {
         else
             error("X event: %d\n", xevent.type);
 #endif
-        mtx_lock(&lock);
 
         if (CLIPSIM_SIGNAL_PROGRAM)
             send_signal(CLIPSIM_SIGNAL_PROGRAM, signal_number);
+
+        mtx_lock(&lock);
 
         switch (clipboard_get_clipboard(&save, &length)) {
         case CLIPBOARD_TEXT:
