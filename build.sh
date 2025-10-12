@@ -17,12 +17,10 @@ LDLIBS="$LDLIBS $(pkg-config xi --libs)"
 LDLIBS="$LDLIBS $(pkg-config libmagic --libs)"
 LDLIBS="$LDLIBS -lpthread"
 
-# base flags
 CFLAGS="$CFLAGS -std=c99 -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600"
 CFLAGS="$CFLAGS -Wall -Wextra"
 CFLAGS="$CFLAGS -Wno-unused-function -Wno-constant-logical-operand"
 
-# clang-specific flags
 if [ "$CC" = "clang" ]; then
     CFLAGS="$CFLAGS -Weverything -Wno-unsafe-buffer-usage"
     CFLAGS="$CFLAGS -Wno-format-nonliteral -Wno-declaration-after-statement"
