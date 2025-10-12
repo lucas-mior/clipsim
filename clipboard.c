@@ -23,7 +23,6 @@
 #include "clipsim.h"
 #include "util.c"
 #include "history.c"
-#include "send_signal.c"
 #include "xi.c"
 
 #define CHECK_TARGET_MAX_EVENTS 10
