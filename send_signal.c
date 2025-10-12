@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "clipsim.h"
 #include "util.c"
 
 static void send_signal(const char *, const int);
 
 #ifdef __linux__
+#include <dirent.h>
 void
 send_signal(const char *executable, const int32 signal_number) {
     DIR *processes;
