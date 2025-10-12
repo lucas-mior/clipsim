@@ -439,7 +439,7 @@ history_append(char *content, int32 length) {
     case CLIPBOARD_IMAGE:
         e->trimmed = 0;
         e->trimmed_length = (int16)e->content_length;
-        e->content = util_memdup(content, (usize)(length+1));
+        e->content = util_memdup(content, (usize)(length + 1));
         is_image[history_length] = true;
         break;
     default:
