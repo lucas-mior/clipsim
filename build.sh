@@ -63,7 +63,7 @@ case "$target" in
         set -x
         rm -f *.o *~ ${program}
         ;;
-    "build"|"debug"|"release"|"clang")
+    "build"|"debug"|"release")
         ctags --kinds-C=+l ./*.h ./*.c 2>/dev/null || true
         vtags.sed tags > .tags.vim 2>/dev/null || true
         set -x
