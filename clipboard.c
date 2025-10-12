@@ -22,6 +22,7 @@
 
 #include "clipsim.h"
 #include "util.c"
+#include "history.c"
 #include "send_signal.c"
 #include "xi.c"
 
