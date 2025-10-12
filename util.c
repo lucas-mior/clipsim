@@ -20,6 +20,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -104,7 +105,7 @@ static uint32 util_nthreads(void);
 static void util_die_notify(const char *, ...) __attribute__((noreturn));
 static void util_segv_handler(int32) __attribute__((noreturn));
 static void send_signal(const char *, const int);
-
+static char *itoa(long, char *);
 static size_t util_page_size = 0;
 
 #ifdef __WIN32__
@@ -602,6 +603,34 @@ send_signal(const char *executable, const int32 signal_number) {
     return;
 }
 #endif
+
+static char *
+itoa(long num, char *str) {
+    int i = 0;
+    bool negative = false;
+
+    if (num < 0) {
+        negative = true;
+        num = -num;
+    }
+
+    do {
+        str[i++] = num % 10 + '0';
+        num /= 10;
+    } while (num > 0);
+
+    if (negative)
+        str[i++] = '-';
+
+    str[i] = '\0';
+
+    for (int j = 0; j < i / 2; j++) {
+        char temp = str[j];
+        str[j] = str[i - j - 1];
+        str[i - j - 1] = temp;
+    }
+    return str;
+}
 
 #ifdef TESTING_util
 #include <assert.h>
