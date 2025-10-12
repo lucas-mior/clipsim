@@ -615,16 +615,19 @@ itoa(long num, char *str) {
     }
 
     do {
-        str[i++] = num % 10 + '0';
+        str[i] = num % 10 + '0';
+        i += 1;
         num /= 10;
     } while (num > 0);
 
-    if (negative)
-        str[i++] = '-';
+    if (negative) {
+        str[i] = '-';
+        i += 1
+    }
 
     str[i] = '\0';
 
-    for (int j = 0; j < i / 2; j++) {
+    for (int j = 0; j < i / 2; j += 1) {
         char temp = str[j];
         str[j] = str[i - j - 1];
         str[i - j - 1] = temp;
