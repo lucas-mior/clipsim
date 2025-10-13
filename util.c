@@ -622,7 +622,7 @@ itoa(long num, char *str) {
 
     if (negative) {
         str[i] = '-';
-        i += 1
+        i += 1;
     }
 
     str[i] = '\0';
