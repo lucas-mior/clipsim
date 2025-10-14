@@ -107,6 +107,7 @@ static void *util_memdup(const void *, const usize);
 static char *xstrdup(char *);
 static int32 snprintf2(char *, size_t, char *, ...);
 static void error(char *, ...);
+static void fatal(int) __attribute__((noreturn));
 static void array_string(char *, int32, char *, char *, char **, int32);
 static int32 util_copy_file(const char *, const char *);
 static int32 util_string_int32(int32 *, const char *);
@@ -143,7 +144,7 @@ xmmap_commit(size_t *size) {
         long aux;
         if ((aux = sysconf(_SC_PAGESIZE)) <= 0) {
             fprintf(stderr, "Error getting page size: %s.\n", strerror(errno));
-            exit(EXIT_FAILURE);
+            fatal(EXIT_FAILURE);
         }
         util_page_size = (size_t)aux;
     }
@@ -166,7 +167,7 @@ xmmap_commit(size_t *size) {
     } while (0);
     if (p == MAP_FAILED) {
         error("Error in mmap(%zu): %s.\n", *size, strerror(errno));
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
     return p;
 }
@@ -187,7 +188,7 @@ xmmap_commit(size_t *size) {
         util_page_size = si.dwPageSize;
         if (util_page_size <= 0) {
             fprintf(stderr, "Error getting page size.\n");
-            exit(EXIT_FAILURE);
+            fatal(EXIT_FAILURE);
         }
     }
 
@@ -197,7 +198,7 @@ xmmap_commit(size_t *size) {
     if (p == NULL) {
         fprintf(stderr, "Error in VirtualAlloc(%zu): %lu.\n",
                         *size, GetLastError());
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
     return p;
 }
@@ -217,7 +218,7 @@ xmalloc(const size_t size) {
     void *p;
     if ((p = malloc(size)) == NULL) {
         error("Failed to allocate %zu bytes.\n", size);
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
     return p;
 }
@@ -227,7 +228,7 @@ xrealloc(void *old, const size_t size) {
     void *p;
     if ((p = realloc(old, size)) == NULL) {
         error("Failed to reallocate %zu bytes from %p.\n", size, old);
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
     return p;
 }
@@ -237,7 +238,7 @@ xcalloc(const size_t nmemb, const size_t size) {
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
         error("Error allocating %zu members of %zu bytes each.\n", nmemb, size);
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
     return p;
 }
@@ -251,7 +252,7 @@ xstrdup(char *string) {
     if ((p = malloc(length)) == NULL) {
         error("Error allocating %zu bytes to duplicate '%s': %s\n",
               length, string, strerror(errno));
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
 
     memcpy(p, string, length);
@@ -269,11 +270,11 @@ snprintf2(char *buffer, size_t size, char *format, ...) {
 
     if (n <= 0) {
         error("Error in snprintf.\n");
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
     if (n >= (int)size) {
         error("Error in snprintf: Buffer is too small.\n");
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
     return n;
 }
@@ -286,7 +287,7 @@ util_command(const int argc, char **argv) {
 
     if (argc == 0 || argv == NULL) {
         error("Invalid arguments.\n");
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
 
     for (int i = 0; i < argc - 1; i += 1)
@@ -305,7 +306,7 @@ util_command(const int argc, char **argv) {
     if (!tty) {
         error("Error reopening stdin: %s.\n", strerror(errno));
         free(cmdline);
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
 
     STARTUPINFO si;
@@ -332,7 +333,7 @@ util_command(const int argc, char **argv) {
             error(" %s", argv[i]);
         error("': %lu.\n", GetLastError());
         free(cmdline);
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
 
     WaitForSingleObject(pi.hProcess, INFINITE);
@@ -360,18 +361,18 @@ util_command(const int argc, char **argv) {
         for (int i = 1; i < argc; i += 1)
             error(" %s", argv[i]);
         error("': %s.\n", strerror(errno));
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     case -1:
         error("Error forking: %s.\n", strerror(errno));
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     default:
         if (waitpid(child, &status, 0) < 0) {
             error("Error waiting for the forked child: %s.\n", strerror(errno));
-            exit(EXIT_FAILURE);
+            fatal(EXIT_FAILURE);
         }
         if (!WIFEXITED(status)) {
             error("Command exited abnormally.\n");
-            exit(EXIT_FAILURE);
+            fatal(EXIT_FAILURE);
         }
         return WEXITSTATUS(status);
     }
@@ -390,11 +391,11 @@ void array_string(char *buffer, int32 size,
         int32 m = snprintf(buffer + n, (ulong)space, "%s%s", array[i], sep);
         if (m <= 0) {
             error("Error in snprintf().\n");
-            exit(EXIT_FAILURE);
+            fatal(EXIT_FAILURE);
         }
         if (m > space) {
             error("Error printing full command, not enough space.\n");
-            exit(EXIT_FAILURE);
+            fatal(EXIT_FAILURE);
         }
         n += m;
     }{
@@ -403,11 +404,11 @@ void array_string(char *buffer, int32 size,
         int32 m = snprintf(buffer + n, (ulong)space, "%s", array[i]);
         if (m <= 0) {
             error("Error in snprintf().\n");
-            exit(EXIT_FAILURE);
+            fatal(EXIT_FAILURE);
         }
         if (m > space) {
             error("Error printing full command, not enough space.\n");
-            exit(EXIT_FAILURE);
+            fatal(EXIT_FAILURE);
         }
     }
     return;
@@ -425,7 +426,7 @@ error(char *format, ...) {
 
     if (n <= 0 || n >= (int32)sizeof(buffer)) {
         fprintf(stderr, "Error in vsnprintf()\n");
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
 
     buffer[n] = '\0';
@@ -435,6 +436,15 @@ error(char *format, ...) {
     fsync(STDOUT_FILENO);
 #endif
     return;
+}
+
+void
+fatal(int status) {
+#ifdef DEBUGGING
+    abort();
+#else
+    exit(status);
+#endif
 }
 
 void
@@ -477,10 +487,10 @@ util_die_notify(const char *format, ...) {
     va_end(args);
 
     if (n < 0)
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
 
     if (n >= (int32)sizeof(buffer))
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
 
     buffer[n] = '\0';
     (void)write(STDERR_FILENO, buffer, (usize) n + 1);
@@ -488,7 +498,7 @@ util_die_notify(const char *format, ...) {
         execlp(notifiers[i], notifiers[i], "-u", "critical",
                              "clipsim", buffer, NULL);
     }
-    exit(EXIT_FAILURE);
+    fatal(EXIT_FAILURE);
 }
 
 void *
@@ -496,7 +506,7 @@ util_memdup(const void *source, const usize size) {
     void *p;
     if ((p = malloc(size)) == NULL) {
         error("Error allocating %zu bytes.\n", size);
-         exit(EXIT_FAILURE);
+         fatal(EXIT_FAILURE);
      }
      memcpy(p, source, size);
      return p;
@@ -609,7 +619,7 @@ send_signal(const char *executable, const int32 signal_number) {
         case 0:
             execlp("pkill", "pkill", signal_string, executable, NULL);
             error("Error executing pkill: %s\n", strerror(errno));
-            exit(EXIT_FAILURE);
+            fatal(EXIT_FAILURE);
         default:
             wait(NULL);
     }
@@ -678,7 +688,7 @@ int main(void) {
 
     error("%s == %s is working? %b\n", string, p3, !strcmp(string, p3));
 
-    srand(time(NULL));
+    srand((uint)time(NULL));
     for (int i = 0; i < 10; i += 1) {
         int n = rand() - RAND_MAX/2;
         assert(atoi2(itoa2(n, buffer)) == n);
