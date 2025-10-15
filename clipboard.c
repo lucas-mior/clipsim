@@ -110,7 +110,7 @@ clipboard_daemon_watch(void) {
         nanosleep(&pause, NULL);
         (void) XNextEvent(display, &xevent);
         (void) event_names;
-#if CLIPSIM_DEBUG
+#if DEBUGGING
         if (xevent.type < LENGTH(event_names))
             error("X event: %s\n", event_names[xevent.type]);
         else
@@ -205,7 +205,7 @@ clipboard_check_target(const Atom target) {
         nevents += 1;
     } while ((xevent.type != SelectionNotify)
              || (xevent.xselection.selection != CLIPBOARD));
-#if CLIPSIM_DEBUG
+#if DEBUGGING
     if (xevent.xselection.property) {
         error("X clipboard target: %s.\n", XGetAtomName(display, target));
     }

@@ -43,11 +43,11 @@
 #define GREEN "\x1b[32m"
 #define RESET "\x1b[0m"
 
-#ifndef CLIPSIM_DEBUG
-#define CLIPSIM_DEBUG 0
+#ifndef DEBUGGING
+#define DEBUGGING 0
 #endif
 
-#if CLIPSIM_DEBUG
+#if DEBUGGING
 #define DEPRINTF(...) dprintf(STDERR_FILENO, __VA_ARGS__);
 #define DEBUG_PRINT(...) \
 do { \
