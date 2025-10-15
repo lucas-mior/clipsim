@@ -57,6 +57,10 @@
   )
 #endif
 
+#ifndef DEBUGGING
+#define DEBUGGING 0
+#endif
+
 #if defined(MAP_HUGETLB) && defined(MAP_HUGE_2MB)
   #define FLAGS_HUGE_PAGES MAP_HUGETLB|MAP_HUGE_2MB
 #else
@@ -227,8 +231,7 @@ void *
 xrealloc(void *old, const size_t size) {
     void *p;
     if ((p = realloc(old, size)) == NULL) {
-        error("Failed to reallocate %zu bytes from %p.\n", size, old);
-        fatal(EXIT_FAILURE);
+        error("Failed to reallocate %zu bytes from %p.\n", size, old); fatal(EXIT_FAILURE);
     }
     return p;
 }
@@ -572,23 +575,43 @@ send_signal(const char *executable, const int32 signal_number) {
         return;
     }
 
+    error("looking for %s -> %d\n", executable, signal_number);
+
     while ((process = readdir(processes))) {
-        static char buffer[256];
-        static char command[256];
+        char buffer[256];
+        char command[256];
         int32 pid;
         int32 cmdline;
+        ssize_t r;
 
-        if (process->d_type != DT_DIR)
+        if (process->d_type != DT_DIR) {
+            if (DEBUGGING)
+                error("Error: %s is not directory.\n", process->d_name);
             continue;
-        if ((pid = atoi(process->d_name)) <= 0)
+        }
+        if ((pid = atoi(process->d_name)) <= 0) {
+            if (DEBUGGING)
+                error("Error: atoi(%s) <= 0.\n", process->d_name);
             continue;
+        }
 
         SNPRINTF(buffer, "/proc/%s/cmdline", process->d_name);
 
-        if ((cmdline = open(buffer, O_RDONLY)) < 0)
-            continue;
+        if ((cmdline = open(buffer, O_RDONLY)) < 0) {
+            if (errno != ENOENT || DEBUGGING)
+                error("Error opening %s: %s.\n", buffer, strerror(errno));
+            if (errno != ENOENT)
+                fatal(EXIT_FAILURE);
+        }
 
-        if (read(cmdline, command, sizeof(command)) <= 0) {
+        errno = 0;
+        if ((r = read(cmdline, command, sizeof(command))) <= 0) {
+            if (DEBUGGING) {
+                error("Error reading from %s");
+                if (r < 0)
+                    error(": %s", buffer, strerror(errno));
+                error(".\n");
+            }
             close(cmdline);
             continue;
         }
@@ -596,6 +619,10 @@ send_signal(const char *executable, const int32 signal_number) {
             if (kill(pid, signal_number) < 0) {
                 error("Error sending signal %d to program %s (pid %d): %s.\n",
                       signal_number, executable, pid, strerror(errno));
+            } else {
+                if (DEBUGGING)
+                    error("Sended signal %d to program %s (pid %d): %s.\n",
+                          signal_number, executable, pid);
             }
         }
 
