@@ -19,12 +19,9 @@
 #include "util.c"
 #include "history.c"
 
-static File command_fifo = { .file = NULL, .fd = -1,
-                             .name = "/tmp/clipsim/command.fifo" };
-static File passid_fifo  = { .file = NULL, .fd = -1,
-                             .name = "/tmp/clipsim/passid.fifo" };
-static File content_fifo = { .file = NULL, .fd = -1,
-                             .name = "/tmp/clipsim/content.fifo" };
+static File command_fifo = {.file = NULL, .fd = -1, .name = "/tmp/clipsim/command.fifo"};
+static File passid_fifo = {.file = NULL, .fd = -1, .name = "/tmp/clipsim/passid.fifo"};
+static File content_fifo = {.file = NULL, .fd = -1, .name = "/tmp/clipsim/content.fifo"};
 
 static void ipc_daemon_history_save(void);
 static void ipc_client_check_save(void);
@@ -43,7 +40,7 @@ static void ipc_client_speak_fifo(int32, int32);
 
 void
 sig_abrt_handler(int32 unused) {
-    (void) unused;
+    (void)unused;
     error("Received SIGABRT signal, something is wrong with history file.\n");
     error("Creating backup for history file...\n");
     history_backup();
@@ -58,7 +55,7 @@ sig_abrt_handler(int32 unused) {
 int32
 ipc_daemon_listen_fifo(void *unused) {
     DEBUG_PRINT("void");
-    (void) unused;
+    (void)unused;
     char command;
     struct timespec pause;
     pause.tv_sec = 0;
@@ -71,13 +68,13 @@ ipc_daemon_listen_fifo(void *unused) {
     while (true) {
         isize r;
         nanosleep(&pause, NULL);
-        if (util_open(&command_fifo, O_RDONLY) < 0)
+        if (util_open(&command_fifo, O_RDONLY) < 0) {
             continue;
+        }
 
         r = read(command_fifo.fd, &command, sizeof(*(&command)));
-        if (r < (isize) sizeof(*(&command))) {
-            error("Error reading command from %s: %s\n",
-                  command_fifo.name, strerror(errno));
+        if (r < (isize)sizeof(*(&command))) {
+            error("Error reading command from %s: %s\n", command_fifo.name, strerror(errno));
             continue;
         }
 
@@ -114,15 +111,15 @@ ipc_client_speak_fifo(int32 command, int32 id) {
     isize w;
     if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
         error("Could not open Fifo for sending command to daemon. "
-              "Is `%s daemon` running?\n", "clipsim");
+              "Is `%s daemon` running?\n",
+              "clipsim");
         exit(EXIT_FAILURE);
     }
 
     w = write(command_fifo.fd, &command, sizeof(*(&command)));
     util_close(&command_fifo);
     if (w < (isize)sizeof(*(&command))) {
-        error("Error writing command to %s: %s\n",
-              command_fifo.name, strerror(errno));
+        error("Error writing command to %s: %s\n", command_fifo.name, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -155,13 +152,15 @@ ipc_daemon_history_save(void) {
     char saved;
     isize saved_size = sizeof(*(&saved));
     error("Trying to save history...\n");
-    if (util_open(&content_fifo, O_WRONLY) < 0)
+    if (util_open(&content_fifo, O_WRONLY) < 0) {
         return;
+    }
 
     saved = history_save();
 
-    if (write(content_fifo.fd, &saved, (usize) saved_size) < saved_size)
+    if (write(content_fifo.fd, &saved, (usize)saved_size) < saved_size) {
         error("Error sending save result to client.\n");
+    }
 
     util_close(&content_fifo);
     return;
@@ -174,23 +173,26 @@ ipc_client_check_save(void) {
     char saved = 0;
 
     error("Trying to save history...\n");
-    if (util_open(&content_fifo, O_RDONLY) < 0)
+    if (util_open(&content_fifo, O_RDONLY) < 0) {
         exit(EXIT_FAILURE);
+    }
 
     if ((r = read(content_fifo.fd, &saved, sizeof(*(&saved)))) > 0) {
         if (saved) {
             error("History saved to disk.\n");
         } else {
             error("Error saving history to disk\n");
-            if (r < 0)
+            if (r < 0) {
                 error(": %s", strerror(errno));
+            }
             error(".\n");
         }
     }
 
     util_close(&content_fifo);
-    if (!saved)
+    if (!saved) {
         exit(EXIT_FAILURE);
+    }
     return;
 }
 
@@ -212,7 +214,7 @@ ipc_daemon_pipe_entries(void) {
 
     for (int32 i = history_length - 1; i >= 0; i -= 1) {
         Entry *e = &entries[i];
-        usize size = (usize) e->trimmed_length + 1;
+        usize size = (usize)e->trimmed_length + 1;
         char *trimmed = &e->content[e->trimmed];
 
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
@@ -223,7 +225,7 @@ ipc_daemon_pipe_entries(void) {
     }
     fflush(content_fifo.file);
 
-    close:
+close:
     util_close(&content_fifo);
     return;
 }
@@ -234,18 +236,19 @@ ipc_daemon_pipe_id(int32 id) {
     Entry *e;
     usize tag_size = sizeof(*(&IMAGE_TAG));
 
-    if (util_open(&content_fifo, O_WRONLY) < 0)
+    if (util_open(&content_fifo, O_WRONLY) < 0) {
         return;
+    }
 
     if (history_length <= -1) {
         error("Clipboard history empty. Start copying text.\n");
-        dprintf(content_fifo.fd,
-                "000 Clipboard history empty. Start copying text.\n");
+        dprintf(content_fifo.fd, "000 Clipboard history empty. Start copying text.\n");
         goto close;
     }
 
-    if (id < 0)
+    if (id < 0) {
         id = history_length + id;
+    }
     if ((id >= history_length) || (id < 0)) {
         error("Invalid index: %d\n", id);
         goto close;
@@ -258,16 +261,14 @@ ipc_daemon_pipe_id(int32 id) {
             goto close;
         }
     } else {
-        dprintf(content_fifo.fd,
-                "Length: \033[31;1m%d\n\033[0;m", e->content_length);
+        dprintf(content_fifo.fd, "Length: \033[31;1m%d\n\033[0;m", e->content_length);
     }
     dprintf(content_fifo.fd, "%s", e->content);
 
-    close:
+close:
     util_close(&content_fifo);
     return;
 }
-
 
 void
 ipc_client_print_entries(void) {
@@ -275,14 +276,16 @@ ipc_client_print_entries(void) {
     static char buffer[BUFSIZ];
     isize r;
 
-    if (util_open(&content_fifo, O_RDONLY) < 0)
+    if (util_open(&content_fifo, O_RDONLY) < 0) {
         return;
+    }
 
     r = read(content_fifo.fd, buffer, sizeof(buffer));
     if (r <= 0) {
         error("Error reading data from %s", content_fifo.name);
-        if (r < 0)
+        if (r < 0) {
             error(": %s", strerror(errno));
+        }
         error(".\n");
 
         util_close(&content_fifo);
@@ -291,7 +294,7 @@ ipc_client_print_entries(void) {
 
     if (buffer[0] != IMAGE_TAG) {
         do {
-            fwrite(buffer, 1, (usize) r, stdout);
+            fwrite(buffer, 1, (usize)r, stdout);
         } while ((r = read(content_fifo.fd, buffer, sizeof(buffer))) > 0);
     } else {
         int32 test;
@@ -300,8 +303,7 @@ ipc_client_print_entries(void) {
         if (r == 1) {
             r = read(content_fifo.fd, buffer + 1, sizeof(buffer) - 1);
             if (r <= 0) {
-                util_die_notify("Error reading image name from %s.\n",
-                                content_fifo.name);
+                util_die_notify("Error reading image name from %s.\n", content_fifo.name);
             }
         }
         util_close(&content_fifo);
@@ -313,12 +315,14 @@ ipc_client_print_entries(void) {
         }
 
         CLIPSIM_IMAGE_PREVIEW = getenv("CLIPSIM_IMAGE_PREVIEW");
-        if (CLIPSIM_IMAGE_PREVIEW == NULL)
+        if (CLIPSIM_IMAGE_PREVIEW == NULL) {
             CLIPSIM_IMAGE_PREVIEW = "chafa";
-        if (!strcmp(CLIPSIM_IMAGE_PREVIEW, "stiv_draw"))
+        }
+        if (!strcmp(CLIPSIM_IMAGE_PREVIEW, "stiv_draw")) {
             execlp("stiv_draw", "stiv_draw", buffer + 1, "30", "15", NULL);
-        else
+        } else {
             execlp("chafa", "chafa", buffer + 1, "-s", "40x", NULL);
+        }
     }
 
     util_close(&content_fifo);
@@ -350,11 +354,13 @@ ipc_client_ask_id(int32 id) {
     DEBUG_PRINT("%d", id);
     if ((passid_fifo.file = fopen(passid_fifo.name, "w")) == NULL) {
         util_die_notify("Error opening fifo for sending id to daemon: "
-                        "%s\n", strerror(errno));
+                        "%s\n",
+                        strerror(errno));
     }
 
-    if (fwrite(&id, sizeof(*(&id)), 1, passid_fifo.file) != 1)
+    if (fwrite(&id, sizeof(*(&id)), 1, passid_fifo.file) != 1) {
         error("Error sending id to daemon: %s\n", strerror(errno));
+    }
 
     util_close(&passid_fifo);
     return;
@@ -366,8 +372,9 @@ ipc_make_fifos(void) {
 
     char *tmp = "/tmp/clipsim";
     if (mkdir(tmp, 0770) < 0) {
-        if (errno != EEXIST)
+        if (errno != EEXIST) {
             util_die_notify("Error creating %s: %s\n", tmp, strerror(errno));
+        }
     }
 
     ipc_clean_fifo(command_fifo.name);
@@ -384,8 +391,9 @@ void
 ipc_clean_fifo(const char *name) {
     DEBUG_PRINT("%s", name);
     if (unlink(name) < 0) {
-        if (errno != ENOENT)
+        if (errno != ENOENT) {
             util_die_notify("Error deleting %s: %s\n", name, strerror(errno));
+        }
     }
     return;
 }
@@ -395,8 +403,7 @@ ipc_create_fifo(const char *name) {
     DEBUG_PRINT("%s", name);
     if (mkfifo(name, 0600) < 0) {
         if (errno != EEXIST) {
-            util_die_notify("Error creating fifo %s: %s\n",
-                            name, strerror(errno));
+            util_die_notify("Error creating fifo %s: %s\n", name, strerror(errno));
         }
     }
     return;

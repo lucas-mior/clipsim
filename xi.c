@@ -47,7 +47,7 @@ xi_daemon_loop(void *unused) {
     struct pollfd poll_file;
     Display *display;
 
-    (void) unused;
+    (void)unused;
 
     if ((display = XOpenDisplay(NULL)) == NULL) {
         error("Error connecting to X server.\n");
@@ -57,9 +57,7 @@ xi_daemon_loop(void *unused) {
     {
         int event;
         int error_num;
-        if (!XQueryExtension(display,
-                             "XInputExtension", &xi_opcode,
-                             &event, &error_num)) {
+        if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event, &error_num)) {
             error("XInput extension not available.\n");
             exit(EXIT_FAILURE);
         }
@@ -76,7 +74,7 @@ xi_daemon_loop(void *unused) {
 
     {
         XIEventMask mask;
-        unsigned char mask_bits[(XI_LASTEVENT + 7)/8];
+        unsigned char mask_bits[(XI_LASTEVENT + 7) / 8];
         memset(mask_bits, 0, sizeof(mask_bits));
 
         mask.deviceid = XIAllDevices;
@@ -109,10 +107,10 @@ xi_daemon_loop(void *unused) {
                 XNextEvent(display, &xevent);
                 cookie = &xevent.xcookie;
 
-                if (cookie->type != GenericEvent ||
-                    cookie->extension != xi_opcode ||
-                    !XGetEventData(display, cookie))
+                if (cookie->type != GenericEvent || cookie->extension != xi_opcode
+                    || !XGetEventData(display, cookie)) {
                     continue;
+                }
 
                 data = cookie->data;
 
