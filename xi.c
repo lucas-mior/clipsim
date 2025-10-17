@@ -57,7 +57,8 @@ xi_daemon_loop(void *unused) {
     {
         int event;
         int error_num;
-        if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event, &error_num)) {
+        if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event,
+                             &error_num)) {
             error("XInput extension not available.\n");
             exit(EXIT_FAILURE);
         }
@@ -107,7 +108,8 @@ xi_daemon_loop(void *unused) {
                 XNextEvent(display, &xevent);
                 cookie = &xevent.xcookie;
 
-                if (cookie->type != GenericEvent || cookie->extension != xi_opcode
+                if (cookie->type != GenericEvent
+                    || cookie->extension != xi_opcode
                     || !XGetEventData(display, cookie)) {
                     continue;
                 }
