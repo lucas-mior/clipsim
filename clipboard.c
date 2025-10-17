@@ -57,7 +57,7 @@ clipboard_daemon_watch(void) {
     ulong color;
     struct timespec pause;
     pause.tv_sec = 0;
-    pause.tv_nsec = 1000*1000 * 10;
+    pause.tv_nsec = 1000*1000*10;
     char *CLIPSIM_SIGNAL_NUMBER;
     char *CLIPSIM_SIGNAL_PROGRAM;
 
