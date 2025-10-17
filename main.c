@@ -28,12 +28,17 @@ typedef struct Command {
 } Command;
 
 static const Command commands[] = {
-    [COMMAND_PRINT] = {"-p", "--print", "print entire history, with trimmed whitespace"},
-    [COMMAND_INFO] = {"-i", "--info", "print entry number <n>, with original whitespace"},
-    [COMMAND_COPY] = {"-c", "--copy", "copy entry number <n>, with original whitespace"},
+    [COMMAND_PRINT]
+    = {"-p", "--print", "print entire history, with trimmed whitespace"},
+    [COMMAND_INFO]
+    = {"-i", "--info", "print entry number <n>, with original whitespace"},
+    [COMMAND_COPY]
+    = {"-c", "--copy", "copy entry number <n>, with original whitespace"},
     [COMMAND_REMOVE] = {"-r", "--remove", "remove entry number <n>"},
-    [COMMAND_SAVE] = {"-s", "--save", "save history to $XDG_CACHE_HOME/clipsim/history"},
-    [COMMAND_DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command fifo)"},
+    [COMMAND_SAVE]
+    = {"-s", "--save", "save history to $XDG_CACHE_HOME/clipsim/history"},
+    [COMMAND_DAEMON]
+    = {"-d", "--daemon", "spawn daemon (clipboard watcher and command fifo)"},
     [COMMAND_HELP] = {"-h", "--help", "print this help message"},
 };
 
@@ -67,7 +72,8 @@ main(int32 argc, char *argv[]) {
     }
 
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
-        if (!strcmp(argv[1], commands[i].shortname) || !strcmp(argv[1], commands[i].longname)) {
+        if (!strcmp(argv[1], commands[i].shortname)
+            || !strcmp(argv[1], commands[i].longname)) {
             spell_error = false;
             switch (i) {
             case COMMAND_PRINT:
@@ -107,8 +113,8 @@ main_usage(FILE *stream) {
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
-        fprintf(stream, "%s | %-*s : %s\n", commands[i].shortname, 8, commands[i].longname,
-                commands[i].description);
+        fprintf(stream, "%s | %-*s : %s\n", commands[i].shortname, 8,
+                commands[i].longname, commands[i].description);
     }
     exit(stream != stdout);
 }
@@ -120,8 +126,8 @@ main_check_cmdline(char *pid) {
     isize r;
     int32 cmdline;
     char cmd1[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0', '-', 'd', '\0'};
-    char cmd2[]
-        = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0', '-', '-', 'd', 'a', 'e', 'm', 'o', 'n', '\0'};
+    char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0', '-',
+                   '-', 'd', 'a', 'e', 'm', 'o', 'n', '\0'};
 
     SNPRINTF(buffer, "/proc/%s/cmdline", pid);
 
@@ -213,7 +219,9 @@ main_launch_daemon(void) {
 
     thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
 
-    if ((CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE = getenv("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE")) == NULL) {
+    if ((CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE
+         = getenv("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE"))
+        == NULL) {
         error("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE is not defined.\n");
         error("Primary selection will not be cleared"
               " When pressing the middle mouse button.\n");

@@ -19,9 +19,12 @@
 #include "util.c"
 #include "history.c"
 
-static File command_fifo = {.file = NULL, .fd = -1, .name = "/tmp/clipsim/command.fifo"};
-static File passid_fifo = {.file = NULL, .fd = -1, .name = "/tmp/clipsim/passid.fifo"};
-static File content_fifo = {.file = NULL, .fd = -1, .name = "/tmp/clipsim/content.fifo"};
+static File command_fifo
+    = {.file = NULL, .fd = -1, .name = "/tmp/clipsim/command.fifo"};
+static File passid_fifo
+    = {.file = NULL, .fd = -1, .name = "/tmp/clipsim/passid.fifo"};
+static File content_fifo
+    = {.file = NULL, .fd = -1, .name = "/tmp/clipsim/content.fifo"};
 
 static void ipc_daemon_history_save(void);
 static void ipc_client_check_save(void);
@@ -74,7 +77,8 @@ ipc_daemon_listen_fifo(void *unused) {
 
         r = read(command_fifo.fd, &command, sizeof(*(&command)));
         if (r < (isize)sizeof(*(&command))) {
-            error("Error reading command from %s: %s\n", command_fifo.name, strerror(errno));
+            error("Error reading command from %s: %s\n", command_fifo.name,
+                  strerror(errno));
             continue;
         }
 
@@ -119,7 +123,8 @@ ipc_client_speak_fifo(int32 command, int32 id) {
     w = write(command_fifo.fd, &command, sizeof(*(&command)));
     util_close(&command_fifo);
     if (w < (isize)sizeof(*(&command))) {
-        error("Error writing command to %s: %s\n", command_fifo.name, strerror(errno));
+        error("Error writing command to %s: %s\n", command_fifo.name,
+              strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -242,7 +247,8 @@ ipc_daemon_pipe_id(int32 id) {
 
     if (history_length <= -1) {
         error("Clipboard history empty. Start copying text.\n");
-        dprintf(content_fifo.fd, "000 Clipboard history empty. Start copying text.\n");
+        dprintf(content_fifo.fd,
+                "000 Clipboard history empty. Start copying text.\n");
         goto close;
     }
 
@@ -261,7 +267,8 @@ ipc_daemon_pipe_id(int32 id) {
             goto close;
         }
     } else {
-        dprintf(content_fifo.fd, "Length: \033[31;1m%d\n\033[0;m", e->content_length);
+        dprintf(content_fifo.fd, "Length: \033[31;1m%d\n\033[0;m",
+                e->content_length);
     }
     dprintf(content_fifo.fd, "%s", e->content);
 
@@ -303,7 +310,8 @@ ipc_client_print_entries(void) {
         if (r == 1) {
             r = read(content_fifo.fd, buffer + 1, sizeof(buffer) - 1);
             if (r <= 0) {
-                util_die_notify("Error reading image name from %s.\n", content_fifo.name);
+                util_die_notify("Error reading image name from %s.\n",
+                                content_fifo.name);
             }
         }
         util_close(&content_fifo);
@@ -403,7 +411,8 @@ ipc_create_fifo(const char *name) {
     DEBUG_PRINT("%s", name);
     if (mkfifo(name, 0600) < 0) {
         if (errno != EEXIST) {
-            util_die_notify("Error creating fifo %s: %s\n", name, strerror(errno));
+            util_die_notify("Error creating fifo %s: %s\n", name,
+                            strerror(errno));
         }
     }
     return;
