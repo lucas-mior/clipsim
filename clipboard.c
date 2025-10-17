@@ -28,14 +28,15 @@
 #define CHECK_TARGET_MAX_EVENTS 10
 
 static const char *event_names[LASTEvent] = {
-    "ProtocolError",    "ProtocolReply",   "KeyPress",         "KeyRelease",       "ButtonPress",
-    "ButtonRelease",    "MotionNotify",    "EnterNotify",      "LeaveNotify",      "FocusIn",
-    "FocusOut",         "KeymapNotify",    "Expose",           "GraphicsExpose",   "NoExpose",
-    "VisibilityNotify", "CreateNotify",    "DestroyNotify",    "UnmapNotify",      "MapNotify",
-    "MapRequest",       "ReparentNotify",  "ConfigureNotify",  "ConfigureRequest", "GravityNotify",
-    "ResizeRequest",    "CirculateNotify", "CirculateRequest", "PropertyNotify",   "SelectionClear",
-    "SelectionRequest", "SelectionNotify", "ColormapNotify",   "ClientMessage",    "MappingNotify",
-    "GenericEvent",
+    "ProtocolError",  "ProtocolReply",  "KeyPress",         "KeyRelease",
+    "ButtonPress",    "ButtonRelease",  "MotionNotify",     "EnterNotify",
+    "LeaveNotify",    "FocusIn",        "FocusOut",         "KeymapNotify",
+    "Expose",         "GraphicsExpose", "NoExpose",         "VisibilityNotify",
+    "CreateNotify",   "DestroyNotify",  "UnmapNotify",      "MapNotify",
+    "MapRequest",     "ReparentNotify", "ConfigureNotify",  "ConfigureRequest",
+    "GravityNotify",  "ResizeRequest",  "CirculateNotify",  "CirculateRequest",
+    "PropertyNotify", "SelectionClear", "SelectionRequest", "SelectionNotify",
+    "ColormapNotify", "ClientMessage",  "MappingNotify",    "GenericEvent",
 };
 
 static Display *display;
@@ -161,8 +162,9 @@ clipboard_get_clipboard(char **save, ulong *length) {
     Atom actual_type_return;
 
     if (clipboard_check_target(UTF8_STRING)) {
-        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX / 4, False, AnyPropertyType,
-                           &actual_type_return, &actual_format_return, &nitems_return,
+        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX / 4, False,
+                           AnyPropertyType, &actual_type_return,
+                           &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **)save);
         if (actual_type_return == INCR) {
             clipboard_incremental_case(save, length);
@@ -173,8 +175,9 @@ clipboard_get_clipboard(char **save, ulong *length) {
         return CLIPBOARD_IMAGE;
     }
     if (clipboard_check_target(image_png)) {
-        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX / 4, False, AnyPropertyType,
-                           &actual_type_return, &actual_format_return, &nitems_return,
+        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX / 4, False,
+                           AnyPropertyType, &actual_type_return,
+                           &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **)save);
         if (actual_type_return == INCR) {
             clipboard_incremental_case(save, length);
@@ -198,14 +201,16 @@ clipboard_check_target(const Atom target) {
     XEvent xevent;
     int32 nevents = 0;
 
-    XConvertSelection(display, CLIPBOARD, target, XSEL_DATA, window, CurrentTime);
+    XConvertSelection(display, CLIPBOARD, target, XSEL_DATA, window,
+                      CurrentTime);
     do {
         if (nevents >= CHECK_TARGET_MAX_EVENTS) {
             return 0;
         }
         (void)XNextEvent(display, &xevent);
         nevents += 1;
-    } while ((xevent.type != SelectionNotify) || (xevent.xselection.selection != CLIPBOARD));
+    } while ((xevent.type != SelectionNotify)
+             || (xevent.xselection.selection != CLIPBOARD));
 #if DEBUGGING
     if (xevent.xselection.property) {
         error("X clipboard target: %s.\n", XGetAtomName(display, target));
@@ -233,9 +238,11 @@ clipboard_incremental_case(char **save, ulong *length) {
         XEvent event;
         do {
             XNextEvent(display, &event);
-        } while ((event.type != PropertyNotify) || (event.xproperty.state != PropertyNewValue));
-        XGetWindowProperty(display, window, XSEL_DATA, 0, 0, False, AnyPropertyType,
-                           &actual_type_return, &actual_format_return, &nitems_return,
+        } while ((event.type != PropertyNotify)
+                 || (event.xproperty.state != PropertyNewValue));
+        XGetWindowProperty(display, window, XSEL_DATA, 0, 0, False,
+                           AnyPropertyType, &actual_type_return,
+                           &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **)&buffer);
         XFree(buffer);
         if (bytes_after_return == 0) {
@@ -245,9 +252,10 @@ clipboard_incremental_case(char **save, ulong *length) {
             break;
         }
 
-        XGetWindowProperty(display, window, XSEL_DATA, 0, (long)bytes_after_return, False,
-                           AnyPropertyType, &actual_type_return, &actual_format_return,
-                           &nitems_return, &bytes_after_return, (uchar **)&buffer);
+        XGetWindowProperty(
+            display, window, XSEL_DATA, 0, (long)bytes_after_return, False,
+            AnyPropertyType, &actual_type_return, &actual_format_return,
+            &nitems_return, &bytes_after_return, (uchar **)&buffer);
 
         XFree(buffer);
         XDeleteProperty(display, window, XSEL_DATA);

@@ -34,8 +34,10 @@ content_remove_newline(char *text, int32 *length) {
 }
 
 void
-content_trim_spaces(int16 *trimmed, int16 *trimmed_length, char *content, const int32 length) {
-    DEBUG_PRINT("%p, %p, %s, %d", (void *)trimmed, (void *)trimmed_length, content, length);
+content_trim_spaces(int16 *trimmed, int16 *trimmed_length, char *content,
+                    const int32 length) {
+    DEBUG_PRINT("%p, %p, %s, %d", (void *)trimmed, (void *)trimmed_length,
+                content, length);
     char *out;
     char temp = '\0';
     char *in = content;
@@ -97,7 +99,8 @@ content_check_content(uchar *data, const int32 length) {
     do {
         const char *mime_type;
         if ((mime_type = magic_buffer(magic, data, (usize)length)) == NULL) {
-            error("Error in magic_buffer(%.*s): %s.\n", 30, data, magic_error(magic));
+            error("Error in magic_buffer(%.*s): %s.\n", 30, data,
+                  magic_error(magic));
             break;
         }
         if (!strncmp(mime_type, "image/", 6)) {
@@ -110,7 +113,8 @@ content_check_content(uchar *data, const int32 length) {
         return CLIPBOARD_ERROR;
     }
 
-    if (memchr(data, TEXT_TAG, (ulong)length) || memchr(data, IMAGE_TAG, (ulong)length)) {
+    if (memchr(data, TEXT_TAG, (ulong)length)
+        || memchr(data, IMAGE_TAG, (ulong)length)) {
         error("Entry contains control chars. This won't be added to history");
         return CLIPBOARD_OTHER;
     }

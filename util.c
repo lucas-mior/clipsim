@@ -44,10 +44,11 @@
 #define LENGTH(x) (isize)((sizeof(x) / sizeof(*x)))
 #endif
 #ifndef SNPRINTF
-#define SNPRINTF(BUFFER, FORMAT, ...) snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
+#define SNPRINTF(BUFFER, FORMAT, ...)                                          \
+    snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
 #endif
 #ifndef ARRAY_STRING
-#define ARRAY_STRING(BUFFER, SEP, ARRAY, LENGTH)                                                   \
+#define ARRAY_STRING(BUFFER, SEP, ARRAY, LENGTH)                               \
     array_string(BUFFER, sizeof(BUFFER), SEP, ARRAY, LENGTH)
 #endif
 
@@ -150,14 +151,16 @@ xmmap_commit(size_t *size) {
     do {
         if ((*size >= SIZEMB(2)) && FLAGS_HUGE_PAGES) {
             p = mmap(NULL, *size, PROT_READ | PROT_WRITE,
-                     MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE | FLAGS_HUGE_PAGES, -1, 0);
+                     MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE
+                         | FLAGS_HUGE_PAGES,
+                     -1, 0);
             if (p != MAP_FAILED) {
                 *size = UTIL_ALIGN(*size, SIZEMB(2));
                 break;
             }
         }
-        p = mmap(NULL, *size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE,
-                 -1, 0);
+        p = mmap(NULL, *size, PROT_READ | PROT_WRITE,
+                 MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE, -1, 0);
         *size = UTIL_ALIGN(*size, util_page_size);
     } while (0);
     if (p == MAP_FAILED) {
@@ -190,7 +193,8 @@ xmmap_commit(size_t *size) {
 
     p = VirtualAlloc(NULL, *size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     if (p == NULL) {
-        fprintf(stderr, "Error in VirtualAlloc(%zu): %lu.\n", *size, GetLastError());
+        fprintf(stderr, "Error in VirtualAlloc(%zu): %lu.\n", *size,
+                GetLastError());
         fatal(EXIT_FAILURE);
     }
     return p;
@@ -242,8 +246,8 @@ xstrdup(char *string) {
 
     length = strlen(string) + 1;
     if ((p = malloc(length)) == NULL) {
-        error("Error allocating %zu bytes to duplicate '%s': %s\n", length, string,
-              strerror(errno));
+        error("Error allocating %zu bytes to duplicate '%s': %s\n", length,
+              string, strerror(errno));
         fatal(EXIT_FAILURE);
     }
 
@@ -307,7 +311,8 @@ util_command(const int argc, char **argv) {
     si.cb = sizeof(si);
     PROCESS_INFORMATION pi = {0};
 
-    BOOL success = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+    BOOL success = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL,
+                                  NULL, &si, &pi);
 
     if (!success) {
         error("Error running '%s", argv[0]);
@@ -365,7 +370,8 @@ util_command(const int argc, char **argv) {
 #endif
 
 void
-array_string(char *buffer, int32 size, char *sep, char **array, int32 array_length) {
+array_string(char *buffer, int32 size, char *sep, char **array,
+             int32 array_length) {
     int32 n = 0;
 
     for (int32 i = 0; i < (array_length - 1); i += 1) {
@@ -438,7 +444,8 @@ util_segv_handler(int32 unused) {
 
     (void)write(STDERR_FILENO, message, strlen(message));
     for (uint i = 0; i < LENGTH(notifiers); i += 1) {
-        execlp(notifiers[i], notifiers[i], "-u", "critical", "clipsim", message, NULL);
+        execlp(notifiers[i], notifiers[i], "-u", "critical", "clipsim", message,
+               NULL);
     }
     _exit(EXIT_FAILURE);
 }
@@ -480,7 +487,8 @@ util_die_notify(const char *format, ...) {
     buffer[n] = '\0';
     (void)write(STDERR_FILENO, buffer, (usize)n + 1);
     for (uint i = 0; i < LENGTH(notifiers); i += 1) {
-        execlp(notifiers[i], notifiers[i], "-u", "critical", "clipsim", buffer, NULL);
+        execlp(notifiers[i], notifiers[i], "-u", "critical", "clipsim", buffer,
+               NULL);
     }
     fatal(EXIT_FAILURE);
 }
@@ -509,8 +517,11 @@ util_copy_file(const char *destination, const char *source) {
         return -1;
     }
 
-    if ((destination_fd = open(destination, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
-        error("Error opening %s for writing: %s.\n", destination, strerror(errno));
+    if ((destination_fd
+         = open(destination, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
+        < 0) {
+        error("Error opening %s for writing: %s.\n", destination,
+              strerror(errno));
         close(source_fd);
         return -1;
     }
@@ -602,12 +613,12 @@ send_signal(const char *executable, const int32 signal_number) {
         }
         if (!strcmp(command, executable)) {
             if (kill(pid, signal_number) < 0) {
-                error("Error sending signal %d to program %s (pid %d): %s.\n", signal_number,
-                      executable, pid, strerror(errno));
+                error("Error sending signal %d to program %s (pid %d): %s.\n",
+                      signal_number, executable, pid, strerror(errno));
             } else {
                 if (DEBUGGING) {
-                    error("Sended signal %d to program %s (pid %d): %s.\n", signal_number,
-                          executable, pid);
+                    error("Sended signal %d to program %s (pid %d): %s.\n",
+                          signal_number, executable, pid);
                 }
             }
         }
