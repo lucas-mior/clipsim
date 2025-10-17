@@ -28,20 +28,13 @@ typedef struct Command {
 } Command;
 
 static const Command commands[] = {
-    [COMMAND_PRINT]  = {"-p", "--print",
-                        "print entire history, with trimmed whitespace" },
-    [COMMAND_INFO]   = {"-i", "--info",
-                        "print entry number <n>, with original whitespace" },
-    [COMMAND_COPY]   = {"-c", "--copy",
-                        "copy entry number <n>, with original whitespace" },
-    [COMMAND_REMOVE] = {"-r", "--remove",
-                        "remove entry number <n>" },
-    [COMMAND_SAVE]   = {"-s", "--save",
-                        "save history to $XDG_CACHE_HOME/clipsim/history" },
-    [COMMAND_DAEMON] = {"-d", "--daemon",
-                        "spawn daemon (clipboard watcher and command fifo)" },
-    [COMMAND_HELP]   = {"-h", "--help",
-                        "print this help message" },
+    [COMMAND_PRINT] = {"-p", "--print", "print entire history, with trimmed whitespace"},
+    [COMMAND_INFO] = {"-i", "--info", "print entry number <n>, with original whitespace"},
+    [COMMAND_COPY] = {"-c", "--copy", "copy entry number <n>, with original whitespace"},
+    [COMMAND_REMOVE] = {"-r", "--remove", "remove entry number <n>"},
+    [COMMAND_SAVE] = {"-s", "--save", "save history to $XDG_CACHE_HOME/clipsim/history"},
+    [COMMAND_DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command fifo)"},
+    [COMMAND_HELP] = {"-h", "--help", "print this help message"},
 };
 
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
@@ -69,12 +62,12 @@ main(int32 argc, char *argv[]) {
     signal(SIGTERM, history_exit);
     signal(SIGINT, history_exit);
 
-    if (argc <= 1 || argc >= 4)
+    if (argc <= 1 || argc >= 4) {
         main_usage(stderr);
+    }
 
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
-        if (!strcmp(argv[1], commands[i].shortname)
-            || !strcmp(argv[1], commands[i].longname)) {
+        if (!strcmp(argv[1], commands[i].shortname) || !strcmp(argv[1], commands[i].longname)) {
             spell_error = false;
             switch (i) {
             case COMMAND_PRINT:
@@ -83,8 +76,9 @@ main(int32 argc, char *argv[]) {
             case COMMAND_INFO:
             case COMMAND_COPY:
             case COMMAND_REMOVE:
-                if ((argc != 3) || util_string_int32(&id, argv[2]) < 0)
+                if ((argc != 3) || util_string_int32(&id, argv[2]) < 0) {
                     main_usage(stderr);
+                }
                 ipc_client_speak_fifo(i, id);
                 break;
             case COMMAND_SAVE:
@@ -100,8 +94,9 @@ main(int32 argc, char *argv[]) {
         }
     }
 
-    if (spell_error)
+    if (spell_error) {
         main_usage(stderr);
+    }
 
     exit(EXIT_SUCCESS);
 }
@@ -112,8 +107,7 @@ main_usage(FILE *stream) {
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
-        fprintf(stream, "%s | %-*s : %s\n",
-                commands[i].shortname, 8, commands[i].longname,
+        fprintf(stream, "%s | %-*s : %s\n", commands[i].shortname, 8, commands[i].longname,
                 commands[i].description);
     }
     exit(stream != stdout);
@@ -125,15 +119,15 @@ main_check_cmdline(char *pid) {
     char command[256];
     isize r;
     int32 cmdline;
-    char cmd1[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
-                   '-', 'd', '\0'};
-    char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0',
-                   '-', '-', 'd', 'a', 'e', 'm', 'o', 'n', '\0'};
+    char cmd1[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0', '-', 'd', '\0'};
+    char cmd2[]
+        = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0', '-', '-', 'd', 'a', 'e', 'm', 'o', 'n', '\0'};
 
     SNPRINTF(buffer, "/proc/%s/cmdline", pid);
 
-    if ((cmdline = open(buffer, O_RDONLY)) < 0)
+    if ((cmdline = open(buffer, O_RDONLY)) < 0) {
         return false;
+    }
     if ((r = read(cmdline, command, sizeof(command))) <= 0) {
         close(cmdline);
         return false;
@@ -142,12 +136,14 @@ main_check_cmdline(char *pid) {
 
     switch (r) {
     case sizeof(cmd1):
-        if (!memcmp(command, cmd1, (usize)r))
+        if (!memcmp(command, cmd1, (usize)r)) {
             return true;
+        }
         break;
     case sizeof(cmd2):
-        if (!memcmp(command, cmd2, (usize)r))
+        if (!memcmp(command, cmd2, (usize)r)) {
             return true;
+        }
         break;
     default:
         break;
@@ -169,11 +165,13 @@ main_check_running(void) {
 
     while ((process = readdir(processes))) {
         pid_t pid;
-        if ((pid = atoi(process->d_name)) <= 0)
+        if ((pid = atoi(process->d_name)) <= 0) {
             continue;
+        }
 
-        if (pid == pid_this)
+        if (pid == pid_this) {
             continue;
+        }
 
         if (main_check_cmdline(process->d_name)) {
             closedir(processes);
@@ -215,8 +213,7 @@ main_launch_daemon(void) {
 
     thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
 
-    if ((CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE
-          = getenv("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE")) == NULL) {
+    if ((CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE = getenv("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE")) == NULL) {
         error("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE is not defined.\n");
         error("Primary selection will not be cleared"
               " When pressing the middle mouse button.\n");
@@ -228,7 +225,8 @@ main_launch_daemon(void) {
         }
     }
 
-    if (CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE)
+    if (CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE) {
         thrd_create(&xi_thread, xi_daemon_loop, NULL);
+    }
     clipboard_daemon_watch();
 }
