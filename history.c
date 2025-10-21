@@ -91,7 +91,7 @@ history_backup(void) {
 
 bool
 history_save(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
 
     error("Saving history...\n");
     if (history_length <= 0) {
@@ -193,7 +193,7 @@ history_exit(int32 unused) {
 
 void
 history_read(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
     usize history_size;
     char *history_map;
     char *begin;
@@ -330,7 +330,7 @@ history_read(void) {
 
 int32
 history_repeated_index(const char *content, const int32 length) {
-    DEBUG_PRINT("%s, %d", content, length);
+    DEBUG_PRINT("%s, %d", content, length)
     int32 candidates = length_counts[length];
     if (candidates == 0) {
         return -1;
@@ -356,7 +356,7 @@ history_repeated_index(const char *content, const int32 length) {
 
 int32
 history_save_image(char **content, int32 *length) {
-    DEBUG_PRINT("%p, %d", (void *)content, *length);
+    DEBUG_PRINT("%p, %d", (void *)content, *length)
     time_t t = time(NULL);
     int32 file;
     isize w;
@@ -394,7 +394,7 @@ history_save_image(char **content, int32 *length) {
 
 void
 history_append(char *content, int32 length) {
-    DEBUG_PRINT("%s, %d", content, length);
+    DEBUG_PRINT("%s, %d", content, length)
     int32 oldindex;
     int32 kind;
     int32 size;
@@ -487,7 +487,7 @@ history_append(char *content, int32 length) {
 
 void
 history_recover(int32 id) {
-    DEBUG_PRINT("%d", id);
+    DEBUG_PRINT("%d", id)
     int32 fd[2];
     Entry *e;
     bool istext;
@@ -558,7 +558,7 @@ history_recover(int32 id) {
 
 void
 history_remove(int32 id) {
-    DEBUG_PRINT("%d", id);
+    DEBUG_PRINT("%d", id)
     if (history_length <= 0) {
         return;
     }
@@ -589,7 +589,7 @@ history_remove(int32 id) {
 
 void
 history_reorder(const int32 oldindex) {
-    DEBUG_PRINT("%d", oldindex);
+    DEBUG_PRINT("%d", oldindex)
     Entry aux = entries[oldindex];
     bool aux2 = is_image[oldindex];
 
@@ -605,7 +605,7 @@ history_reorder(const int32 oldindex) {
 
 void
 history_free_entry(const Entry *e, int32 index) {
-    DEBUG_PRINT("{\n    %s,\n    %d\n}", e->content, e->content_length);
+    DEBUG_PRINT("{\n    %s,\n    %d\n}", e->content, e->content_length)
     length_counts[e->content_length] -= 1;
 
     if (is_image[index]) {

@@ -60,7 +60,7 @@ sig_abrt_handler(int32 unused) {
 
 int32
 ipc_daemon_listen_fifo(void *unused) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
     (void)unused;
     char command;
     struct timespec pause;
@@ -114,7 +114,7 @@ ipc_daemon_listen_fifo(void *unused) {
 
 void
 ipc_client_speak_fifo(int32 command, int32 id) {
-    DEBUG_PRINT("%u, %d", command, id);
+    DEBUG_PRINT("%u, %d", command, id)
     isize w;
     if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
         error("Could not open Fifo for sending command to daemon. "
@@ -156,7 +156,7 @@ ipc_client_speak_fifo(int32 command, int32 id) {
 
 void
 ipc_daemon_history_save(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
     char saved;
     isize saved_size = sizeof(*(&saved));
     error("Trying to save history...\n");
@@ -176,7 +176,7 @@ ipc_daemon_history_save(void) {
 
 void
 ipc_client_check_save(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
     isize r;
     char saved = 0;
 
@@ -206,7 +206,7 @@ ipc_client_check_save(void) {
 
 void
 ipc_daemon_pipe_entries(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
     static char buffer[BUFSIZ];
 
     if ((content_fifo.file = fopen(content_fifo.name, "w")) == NULL) {
@@ -240,7 +240,7 @@ close:
 
 void
 ipc_daemon_pipe_id(int32 id) {
-    DEBUG_PRINT("%d", id);
+    DEBUG_PRINT("%d", id)
     Entry *e;
     usize tag_size = sizeof(*(&IMAGE_TAG));
 
@@ -282,7 +282,7 @@ close:
 
 void
 ipc_client_print_entries(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
     static char buffer[BUFSIZ];
     isize r;
 
@@ -342,7 +342,7 @@ ipc_client_print_entries(void) {
 
 int32
 ipc_daemon_get_id(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
     int32 id;
 
     if ((passid_fifo.file = fopen(passid_fifo.name, "r")) == NULL) {
@@ -362,7 +362,7 @@ ipc_daemon_get_id(void) {
 
 void
 ipc_client_ask_id(int32 id) {
-    DEBUG_PRINT("%d", id);
+    DEBUG_PRINT("%d", id)
     if ((passid_fifo.file = fopen(passid_fifo.name, "w")) == NULL) {
         util_die_notify("Error opening fifo for sending id to daemon: "
                         "%s\n",
@@ -379,7 +379,7 @@ ipc_client_ask_id(int32 id) {
 
 void
 ipc_make_fifos(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
 
     char *tmp = "/tmp/clipsim";
     if (mkdir(tmp, 0770) < 0) {
@@ -400,7 +400,7 @@ ipc_make_fifos(void) {
 
 void
 ipc_clean_fifo(const char *name) {
-    DEBUG_PRINT("%s", name);
+    DEBUG_PRINT("%s", name)
     if (unlink(name) < 0) {
         if (errno != ENOENT) {
             util_die_notify("Error deleting %s: %s\n", name, strerror(errno));
@@ -411,7 +411,7 @@ ipc_clean_fifo(const char *name) {
 
 void
 ipc_create_fifo(const char *name) {
-    DEBUG_PRINT("%s", name);
+    DEBUG_PRINT("%s", name)
     if (mkfifo(name, 0600) < 0) {
         if (errno != EEXIST) {
             util_die_notify("Error creating fifo %s: %s\n", name,

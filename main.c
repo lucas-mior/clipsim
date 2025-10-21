@@ -58,7 +58,7 @@ static void main_launch_daemon(void) __attribute__((noreturn));
 
 int32
 main(int32 argc, char *argv[]) {
-    DEBUG_PRINT("%d, %s", argc, argv[0]);
+    DEBUG_PRINT("%d, %s", argc, argv[0])
     int32 id;
     bool spell_error = true;
 
@@ -110,7 +110,7 @@ main(int32 argc, char *argv[]) {
 
 void
 main_usage(FILE *stream) {
-    DEBUG_PRINT("%p", (void *)stream);
+    DEBUG_PRINT("%p", (void *)stream)
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
@@ -160,7 +160,7 @@ main_check_cmdline(char *pid) {
 
 bool
 main_check_running(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
     DIR *processes;
     struct dirent *process;
     pid_t pid_this = getpid();
@@ -191,7 +191,7 @@ main_check_running(void) {
 
 void
 main_launch_daemon(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
     thrd_t ipc_thread;
     thrd_t xi_thread;
     int32 mtx_error;
