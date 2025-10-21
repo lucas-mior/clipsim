@@ -58,17 +58,18 @@ clipboard_daemon_watch(void) {
     DEBUG_PRINT("void")
     ulong color;
     struct timespec pause;
-    pause.tv_sec = 0;
-    pause.tv_nsec = 1000*1000*10;
     char *CLIPSIM_SIGNAL_NUMBER;
     char *CLIPSIM_SIGNAL_PROGRAM;
+    int32 signal_number = 0;
+
+    pause.tv_sec = 0;
+    pause.tv_nsec = 1000*1000*10;
 
     if ((display = XOpenDisplay(NULL)) == NULL) {
         error("Error opening X display.");
         exit(EXIT_FAILURE);
     }
 
-    int32 signal_number = 0;
     if ((CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")) == NULL) {
         error("CLIPSIM_SIGNAL_PROGRAM is not defined.\n");
     }

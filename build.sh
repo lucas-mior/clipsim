@@ -27,7 +27,6 @@ if [ "$CC" = "clang" ]; then
     CFLAGS="$CFLAGS -Wno-format-nonliteral"
     CFLAGS="$CFLAGS -Wno-format-zero-length"
     CFLAGS="$CFLAGS -Wno-implicit-void-ptr-cast"
-    CFLAGS="$CFLAGS -Wno-declaration-after-statement"
 fi
 
 echo "target=$target"
