@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HISTORY_C
+#if !defined(HISTORY_C)
 #define HISTORY_C
 
 #include "clipsim.h"

@@ -36,14 +36,14 @@
 #include <unistd.h>
 #include <magic.h>
 
-#ifndef CLIPSIM_H
+#if !defined(CLIPSIM_H)
 #define CLIPSIM_H
 
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
 #define RESET "\x1b[0m"
 
-#ifndef DEBUGGING
+#if !defined(DEBUGGING)
 #define DEBUGGING 0
 #endif
 
@@ -83,7 +83,7 @@ do { \
 #define PRINT_DIGITS 3
 #define TRIMMED_SIZE 255
 
-#ifndef INTEGERS
+#if !defined(INTEGERS)
 #define INTEGERS
 typedef unsigned char uchar;
 typedef unsigned short ushort;
