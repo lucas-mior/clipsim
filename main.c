@@ -20,6 +20,7 @@
 #include "history.c"
 #include "ipc.c"
 #include "clipboard.c"
+#include "xi.c"
 
 typedef struct Command {
     const char *shortname;
