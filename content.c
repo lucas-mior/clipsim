@@ -27,7 +27,7 @@ static int32 content_check_content(uchar *, int);
 
 void
 content_remove_newline(char *text, int32 *length) {
-    DEBUG_PRINT("%s, %d", text, *length);
+    DEBUG_PRINT("%s, %d", text, *length)
     text[*length] = '\0';
     while (text[*length - 1] == '\n') {
         text[*length - 1] = '\0';
@@ -80,7 +80,7 @@ content_trim_spaces(int16 *trimmed, int16 *trimmed_length, char *content,
 
 int32
 content_check_content(uchar *data, const int32 length) {
-    DEBUG_PRINT("%s, %d", data, length);
+    DEBUG_PRINT("%s, %d", data, length)
 
     if (length <= 0) {
         error("Content length is equal or less than zero.\n");

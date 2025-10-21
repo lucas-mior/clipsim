@@ -53,7 +53,7 @@ do { \
     DEPRINTF("%s:%d -> "RED"%s("RESET"", __FILE__, __LINE__, __func__); \
     DEPRINTF(__VA_ARGS__); \
     DEPRINTF(RED")"RESET"\n"); \
-} while (0)
+} while (0);
 #undef DEPRINTF
 #else
 #define DEBUG_PRINT(...)

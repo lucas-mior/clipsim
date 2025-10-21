@@ -55,7 +55,7 @@ static int clipboard_daemon_watch(void) __attribute__((noreturn));
 
 int32
 clipboard_daemon_watch(void) {
-    DEBUG_PRINT("void");
+    DEBUG_PRINT("void")
     ulong color;
     struct timespec pause;
     pause.tv_sec = 0;
@@ -157,7 +157,7 @@ clipboard_daemon_watch(void) {
 
 int32
 clipboard_get_clipboard(char **save, ulong *length) {
-    DEBUG_PRINT("%p, %p", (void *)save, (void *)length);
+    DEBUG_PRINT("%p, %p", (void *)save, (void *)length)
     int32 actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
@@ -198,7 +198,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
 
 Atom
 clipboard_check_target(const Atom target) {
-    DEBUG_PRINT("%lu", target);
+    DEBUG_PRINT("%lu", target)
 
     XEvent xevent;
     int32 nevents = 0;
@@ -224,7 +224,7 @@ clipboard_check_target(const Atom target) {
 
 void
 clipboard_incremental_case(char **save, ulong *length) {
-    DEBUG_PRINT("%p, %ln", save, length);
+    DEBUG_PRINT("%p, %ln", save, length)
     int32 actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
