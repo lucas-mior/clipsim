@@ -22,9 +22,12 @@ CFLAGS="$CFLAGS -Wall -Wextra"
 CFLAGS="$CFLAGS -Wno-unused-function -Wno-constant-logical-operand"
 
 if [ "$CC" = "clang" ]; then
-    CFLAGS="$CFLAGS -Weverything -Wno-unsafe-buffer-usage"
-    CFLAGS="$CFLAGS -Wno-format-nonliteral -Wno-declaration-after-statement"
+    CFLAGS="$CFLAGS -Weverything"
+    CFLAGS="$CFLAGS -Wno-unsafe-buffer-usage"
+    CFLAGS="$CFLAGS -Wno-format-nonliteral"
     CFLAGS="$CFLAGS -Wno-format-zero-length"
+    CFLAGS="$CFLAGS -Wno-implicit-void-ptr-cast"
+    CFLAGS="$CFLAGS -Wno-declaration-after-statement"
 fi
 
 echo "target=$target"
