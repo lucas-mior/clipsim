@@ -699,7 +699,7 @@ atoi2(char *str) {
     return atoi(str);
 }
 
-#if defined(TESTING_util)
+#if __INCLUDE_LEVEL__ == 0
 #include <assert.h>
 
 int
