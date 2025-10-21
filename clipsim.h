@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if !defined(CLIPSIM_H)
+#define CLIPSIM_H
+
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -35,9 +38,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <magic.h>
-
-#if !defined(CLIPSIM_H)
-#define CLIPSIM_H
 
 #define RED "\x1b[31m"
 #define GREEN "\x1b[32m"
