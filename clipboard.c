@@ -112,13 +112,13 @@ clipboard_daemon_watch(void) {
         nanosleep(&pause, NULL);
         (void)XNextEvent(display, &xevent);
         (void)event_names;
-#if DEBUGGING
-        if (xevent.type < LENGTH(event_names)) {
-            error("X event: %s\n", event_names[xevent.type]);
-        } else {
-            error("X event: %d\n", xevent.type);
+        if (DEBUGGING) {
+            if (xevent.type < LENGTH(event_names)) {
+                error("X event: %s\n", event_names[xevent.type]);
+            } else {
+                error("X event: %d\n", xevent.type);
+            }
         }
-#endif
 
         if (CLIPSIM_SIGNAL_PROGRAM) {
             send_signal(CLIPSIM_SIGNAL_PROGRAM, signal_number);
@@ -211,11 +211,11 @@ clipboard_check_target(const Atom target) {
         nevents += 1;
     } while ((xevent.type != SelectionNotify)
              || (xevent.xselection.selection != CLIPBOARD));
-#if DEBUGGING
-    if (xevent.xselection.property) {
-        error("X clipboard target: %s.\n", XGetAtomName(display, target));
+    if (DEBUGGING) {
+        if (xevent.xselection.property) {
+            error("X clipboard target: %s.\n", XGetAtomName(display, target));
+        }
     }
-#endif
 
     return xevent.xselection.property;
 }
