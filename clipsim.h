@@ -54,6 +54,7 @@ do { \
     DEPRINTF(__VA_ARGS__); \
     DEPRINTF(RED")"RESET"\n"); \
 } while (0)
+#undef DEPRINTF
 #else
 #define DEBUG_PRINT(...)
 #endif
