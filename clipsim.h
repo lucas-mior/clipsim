@@ -47,14 +47,13 @@
 #endif
 
 #if DEBUGGING
-#define DEPRINTF(...) dprintf(STDERR_FILENO, __VA_ARGS__);
 #define DEBUG_PRINT(...) \
 do { \
-    DEPRINTF("%s:%d -> "RED"%s("RESET"", __FILE__, __LINE__, __func__); \
-    DEPRINTF(__VA_ARGS__); \
-    DEPRINTF(RED")"RESET"\n"); \
+    dprintf(STDERR_FILENO, \
+            "%s:%d -> "RED"%s("RESET"", __FILE__, __LINE__, __func__); \
+    dprintf(STDERR_FILENO, __VA_ARGS__); \
+    dprintf(STDERR_FILENO, RED")"RESET"\n"); \
 } while (0);
-#undef DEPRINTF
 #else
 #define DEBUG_PRINT(...)
 #endif
