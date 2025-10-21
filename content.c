@@ -40,7 +40,7 @@ void
 content_trim_spaces(int16 *trimmed, int16 *trimmed_length, char *content,
                     const int32 length) {
     DEBUG_PRINT("%p, %p, %s, %d", (void *)trimmed, (void *)trimmed_length,
-                content, length);
+                content, length)
     char *out;
     char temp = '\0';
     char *in = content;

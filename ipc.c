@@ -61,12 +61,12 @@ sig_abrt_handler(int32 unused) {
 int32
 ipc_daemon_listen_fifo(void *unused) {
     DEBUG_PRINT("void")
-    (void)unused;
     char command;
     struct timespec pause;
     pause.tv_sec = 0;
     pause.tv_nsec = PAUSE10MS;
 
+    (void)unused;
     ipc_make_fifos();
 
     signal(SIGABRT, sig_abrt_handler);
