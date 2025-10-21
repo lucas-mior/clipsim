@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if !defined(CLIPBOARD_C)
+#define CLIPBOARD_C
+
 #include <X11/X.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
@@ -23,7 +26,6 @@
 #include "clipsim.h"
 #include "util.c"
 #include "history.c"
-#include "xi.c"
 
 #define CHECK_TARGET_MAX_EVENTS 10
 
@@ -263,3 +265,5 @@ clipboard_incremental_case(char **save, ulong *length) {
     }
     return;
 }
+
+#endif /* CLIPBOARD_C */

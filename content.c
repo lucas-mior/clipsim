@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if !defined(CONTENT_C)
+#define CONTENT_C
+
 #include "clipsim.h"
 #include "util.c"
 
@@ -121,3 +124,5 @@ content_check_content(uchar *data, const int32 length) {
 
     return CLIPBOARD_TEXT;
 }
+
+#endif /* CONTENT_C */

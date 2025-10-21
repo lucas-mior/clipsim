@@ -21,6 +21,9 @@
  *
  */
 
+#if !defined(XI_C)
+#define XI_C
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <errno.h>
@@ -129,3 +132,5 @@ xi_daemon_loop(void *unused) {
         }
     }
 }
+
+#endif /* XI_C */

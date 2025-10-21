@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if !defined(IPC_C)
+#define IPC_C
+
 #include "clipsim.h"
 #include "util.c"
 #include "history.c"
@@ -417,3 +420,5 @@ ipc_create_fifo(const char *name) {
     }
     return;
 }
+
+#endif /* IPC_C */
