@@ -48,11 +48,11 @@ int32
 xi_daemon_loop(void *unused) {
     int xi_opcode;
     struct pollfd poll_file;
-    Display *display;
+    Display *display2;
 
     (void)unused;
 
-    if ((display = XOpenDisplay(NULL)) == NULL) {
+    if ((display2 = XOpenDisplay(NULL)) == NULL) {
         error("Error connecting to X server.\n");
         exit(EXIT_FAILURE);
     }
@@ -60,7 +60,7 @@ xi_daemon_loop(void *unused) {
     {
         int event;
         int error_num;
-        if (!XQueryExtension(display, "XInputExtension", &xi_opcode, &event,
+        if (!XQueryExtension(display2, "XInputExtension", &xi_opcode, &event,
                              &error_num)) {
             error("XInput extension not available.\n");
             exit(EXIT_FAILURE);
@@ -70,7 +70,7 @@ xi_daemon_loop(void *unused) {
     {
         int major = 2;
         int minor = 2;
-        if (XIQueryVersion(display, &major, &minor) != Success) {
+        if (XIQueryVersion(display2, &major, &minor) != Success) {
             error("XI2 >= %d.%d required\n", major, minor);
             exit(EXIT_FAILURE);
         }
@@ -86,14 +86,14 @@ xi_daemon_loop(void *unused) {
         mask.mask = mask_bits;
         XISetMask(mask_bits, XI_ButtonPress);
 
-        XISelectEvents(display, DefaultRootWindow(display), &mask, 1);
-        XFlush(display);
+        XISelectEvents(display2, DefaultRootWindow(display2), &mask, 1);
+        XFlush(display2);
     }
 
     error("Blocking new mouse paste actions from all %s devices\n",
           watch_slave_devices ? "slave" : "master");
 
-    poll_file.fd = XConnectionNumber(display);
+    poll_file.fd = XConnectionNumber(display2);
     poll_file.events = POLLIN;
 
     while (true) {
@@ -104,30 +104,30 @@ xi_daemon_loop(void *unused) {
 
         if (poll_file.revents & POLLIN) {
             XEvent xevent;
-            while (XPending(display) > 0) {
+            while (XPending(display2) > 0) {
                 XGenericEventCookie *cookie;
                 const XIRawEvent *data;
 
-                XNextEvent(display, &xevent);
+                XNextEvent(display2, &xevent);
                 cookie = &xevent.xcookie;
 
                 if (cookie->type != GenericEvent
                     || cookie->extension != xi_opcode
-                    || !XGetEventData(display, cookie)) {
+                    || !XGetEventData(display2, cookie)) {
                     continue;
                 }
 
                 data = cookie->data;
 
                 if (data->detail == BUTTON_MIDDLE_CODE) {
-                    XSetSelectionOwner(display, XA_PRIMARY, None, CurrentTime);
-                    XStoreBytes(display, None, 0);
-                    XSetSelectionOwner(display, XA_STRING, None, CurrentTime);
-                    XSync(display, False);
+                    XSetSelectionOwner(display2, XA_PRIMARY, None, CurrentTime);
+                    XStoreBytes(display2, None, 0);
+                    XSetSelectionOwner(display2, XA_STRING, None, CurrentTime);
+                    XSync(display2, False);
                     error("Cleared primary selection and cut buffer\n");
                 }
 
-                XFreeEventData(display, cookie);
+                XFreeEventData(display2, cookie);
             }
         }
     }
