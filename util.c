@@ -122,7 +122,8 @@ static int32 util_copy_file(const char *, const char *);
 static int32 util_string_int32(int32 *, const char *);
 static int util_command(const int, char **);
 static uint32 util_nthreads(void);
-static void util_die_notify(const char *, ...) __attribute__((noreturn));
+static void util_die_notify(char *, const char *, ...)
+    __attribute__((noreturn));
 static void util_segv_handler(int32) __attribute__((noreturn));
 static void send_signal(const char *, const int);
 static char *itoa2(long, char *);
@@ -439,12 +440,12 @@ error(char *format, ...) {
 
 void
 fatal(int status) {
-#if defined(DEBUGGING)
-    (void)status;
-    abort();
-#else
-    exit(status);
-#endif
+    if (DEBUGGING) {
+        (void)status;
+        abort();
+    } else {
+        exit(status);
+    }
 }
 
 void
@@ -454,7 +455,7 @@ util_segv_handler(int32 unused) {
 
     (void)write(STDERR_FILENO, message, strlen(message));
     for (uint i = 0; i < LENGTH(notifiers); i += 1) {
-        execlp(notifiers[i], notifiers[i], "-u", "critical", "clipsim", message,
+        execlp(notifiers[i], notifiers[i], "-u", "critical", program, message,
                NULL);
     }
     _exit(EXIT_FAILURE);
@@ -477,7 +478,7 @@ util_string_int32(int32 *number, const char *string) {
 }
 
 void
-util_die_notify(const char *format, ...) {
+util_die_notify(char *program_name, const char *format, ...) {
     int32 n;
     va_list args;
     char buffer[BUFSIZ];
@@ -497,8 +498,8 @@ util_die_notify(const char *format, ...) {
     buffer[n] = '\0';
     (void)write(STDERR_FILENO, buffer, (usize)n + 1);
     for (uint i = 0; i < LENGTH(notifiers); i += 1) {
-        execlp(notifiers[i], notifiers[i], "-u", "critical", "clipsim", buffer,
-               NULL);
+        execlp(notifiers[i], notifiers[i], "-u", "critical", program_name,
+               buffer, NULL);
     }
     fatal(EXIT_FAILURE);
 }
