@@ -115,8 +115,8 @@ libxfixes, libxi, xclip and libmagic installed.
 ```
 $ git clone https://github.com/lucas.mior/clipsim.git clipsim
 $ cd clipsim
-$ make
-$ sudo make install
+$ ./build.sh
+$ sudo ./build.sh install
 ```
 
 ## Configuration
