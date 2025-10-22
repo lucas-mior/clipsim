@@ -358,11 +358,11 @@ history_repeated_index(const char *content, const int32 length) {
 int32
 history_save_image(char **content, int32 *length) {
     DEBUG_PRINT("%p, %d", (void *)content, *length)
-    time_t t = time(NULL);
     int32 file;
     isize w;
     isize copied = 0;
     char image_file[256];
+    time_t t = time(NULL);
     int32 n;
 
     n = SNPRINTF(image_file, "%s/%ld.png", tmp_directory, t);
