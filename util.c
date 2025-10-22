@@ -38,6 +38,7 @@
 
 #if defined(__INCLUDE_LEVEL__) && __INCLUDE_LEVEL__ == 0
 #define TESTING_util 1
+char *program = __FILE__;
 #elif !defined(TESTING_util)
 #define TESTING_util 0
 #endif
