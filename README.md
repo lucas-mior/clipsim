@@ -113,7 +113,7 @@ $ yay -S clipsim-git
 Make sure you have
 libxfixes, libxi, xclip and libmagic installed.
 ```
-$ git clone https://codeberg.org/lucas.mior/clipsim.git clipsim
+$ git clone https://github.com/lucas.mior/clipsim.git clipsim
 $ cd clipsim
 $ make
 $ sudo make install
