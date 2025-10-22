@@ -36,6 +36,12 @@
 #include <sys/wait.h>
 #endif
 
+#if defined(__INCLUDE_LEVEL__) && __INCLUDE_LEVEL__ == 0
+#define TESTING_util 1
+#elif !defined(TESTING_util)
+#define TESTING_util 0
+#endif
+
 #if !defined(SIZEKB)
 #define SIZEKB(X) ((size_t)(X)*1024ul)
 #define SIZEMB(X) ((size_t)(X)*1024ul*1024ul)
@@ -699,7 +705,7 @@ atoi2(char *str) {
     return atoi(str);
 }
 
-#if defined(__INCLUDE_LEVEL__) && __INCLUDE_LEVEL__ == 0
+#if TESTING_util
 #include <assert.h>
 
 int
