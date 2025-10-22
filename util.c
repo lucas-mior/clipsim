@@ -49,9 +49,9 @@
 #define SNPRINTF(BUFFER, FORMAT, ...)                                          \
     snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
 #endif
-#if !defined(ARRAY_STRING)
-#define ARRAY_STRING(BUFFER, SEP, ARRAY, LENGTH)                               \
-    array_string(BUFFER, sizeof(BUFFER), SEP, ARRAY, LENGTH)
+#if !defined(STRING_FROM_STRINGS)
+#define STRING_FROM_STRINGS(BUFFER, SEP, ARRAY, LENGTH)                        \
+    string_from_strings(BUFFER, sizeof(BUFFER), SEP, ARRAY, LENGTH)
 #endif
 
 #if !defined(DEBUGGING)
@@ -111,7 +111,7 @@ static char *xstrdup(char *);
 static int32 snprintf2(char *, size_t, char *, ...);
 static void error(char *, ...);
 static void fatal(int) __attribute__((noreturn));
-static void array_string(char *, int32, char *, char **, int32);
+static void string_from_strings(char *, int32, char *, char **, int32);
 static int32 util_copy_file(const char *, const char *);
 static int32 util_string_int32(int32 *, const char *);
 static int util_command(const int, char **);
@@ -374,8 +374,8 @@ util_command(const int argc, char **argv) {
 #endif
 
 void
-array_string(char *buffer, int32 size, char *sep, char **array,
-             int32 array_length) {
+string_from_strings(char *buffer, int32 size, char *sep, char **array,
+                    int32 array_length) {
     int32 n = 0;
 
     for (int32 i = 0; i < (array_length - 1); i += 1) {
@@ -570,8 +570,6 @@ send_signal(const char *executable, const int32 signal_number) {
         return;
     }
 
-    error("looking for %s -> %d\n", executable, signal_number);
-
     while ((process = readdir(processes))) {
         char buffer[256];
         char command[256];
@@ -597,6 +595,7 @@ send_signal(const char *executable, const int32 signal_number) {
         if ((cmdline = open(buffer, O_RDONLY)) < 0) {
             if (errno != ENOENT || DEBUGGING) {
                 error("Error opening %s: %s.\n", buffer, strerror(errno));
+                continue;
             }
             if (errno != ENOENT) {
                 fatal(EXIT_FAILURE);
@@ -606,12 +605,13 @@ send_signal(const char *executable, const int32 signal_number) {
         errno = 0;
         if ((r = read(cmdline, command, sizeof(command))) <= 0) {
             if (DEBUGGING) {
-                error("Error reading from %s");
+                error("Error reading from %s", buffer);
                 if (r < 0) {
-                    error(": %s", buffer, strerror(errno));
+                    error(": %s", strerror(errno));
                 }
                 error(".\n");
             }
+            (void)r;
             close(cmdline);
             continue;
         }
@@ -699,7 +699,7 @@ atoi2(char *str) {
     return atoi(str);
 }
 
-#if __INCLUDE_LEVEL__ == 0
+#if defined(__INCLUDE_LEVEL__) && __INCLUDE_LEVEL__ == 0
 #include <assert.h>
 
 int
