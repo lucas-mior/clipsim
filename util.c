@@ -28,20 +28,64 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <time.h>
+#include <libgen.h>
+#include <limits.h>
+#include <sys/stat.h>
 
-#if defined(__WIN32__)
-#include <windows.h>
+#if defined(__linux__)
+#define OS_LINUX 1
+#define OS_MAC 0
+#define OS_BSD 0
+#define OS_WINDOWS 0
+#elif defined(__APPLE__) && defined(__MACH__)
+#define OS_LINUX 0
+#define OS_MAC 1
+#define OS_BSD 0
+#define OS_WINDOWS 0
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#define OS_LINUX 0
+#define OS_MAC 0
+#define OS_BSD 1
+#define OS_WINDOWS 0
+#elif defined(_WIN32) || defined(_WIN64)
+#define OS_LINUX 0
+#define OS_MAC 0
+#define OS_BSD 0
+#define OS_WINDOWS 1
 #else
+#error "Unsupported OS.\n"
+#endif
+
+#define OS_UNIX (OS_LINUX || OS_MAC || OS_BSD)
+
+#if OS_WINDOWS
+#include <windows.h>
+#endif
+
+#if OS_UNIX
 #include <sys/mman.h>
 #include <sys/wait.h>
+#include <unistd.h>
+#include <fcntl.h>
+#endif
+
+#ifndef DEBUGGING
+#define DEBUGGING 0
 #endif
 
 #if defined(__INCLUDE_LEVEL__) && __INCLUDE_LEVEL__ == 0
 #define TESTING_util 1
-static char *program = __FILE__;
 #elif !defined(TESTING_util)
 #define TESTING_util 0
 #endif
+
+#if TESTING_util
+static char *program = __FILE__;
+#else
+static char *program;
+#endif
+
+#define SIZEOF(X) (int64)sizeof(X)
 
 #if !defined(SIZEKB)
 #define SIZEKB(X) ((size_t)(X)*1024ul)
@@ -50,7 +94,7 @@ static char *program = __FILE__;
 #endif
 
 #if !defined(LENGTH)
-#define LENGTH(x) (isize)((sizeof(x) / sizeof(*x)))
+#define LENGTH(x) (int64)((sizeof(x) / sizeof(*x)))
 #endif
 #if !defined(SNPRINTF)
 #define SNPRINTF(BUFFER, FORMAT, ...)                                          \
@@ -59,6 +103,37 @@ static char *program = __FILE__;
 #if !defined(STRING_FROM_STRINGS)
 #define STRING_FROM_STRINGS(BUFFER, SEP, ARRAY, LENGTH)                        \
     string_from_strings(BUFFER, sizeof(BUFFER), SEP, ARRAY, LENGTH)
+#endif
+
+#if DEBUGGING || TESTING_util
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wc11-extensions"
+#pragma clang diagnostic ignored "-Wformat"
+#pragma clang diagnostic ignored "-Wdouble-promotion"
+#endif
+
+#define PRINT_VAR_EVAL(FORMAT, variable)                                       \
+    printf("%s = " FORMAT "\n", #variable, variable)
+
+#define PRINT_VAR(variable)                                                    \
+    _Generic((variable),                                                       \
+        bool: PRINT_VAR_EVAL("%b", variable),                                  \
+        char: PRINT_VAR_EVAL("%c", variable),                                  \
+        char *: PRINT_VAR_EVAL("%s", variable),                                \
+        float: PRINT_VAR_EVAL("%f", variable),                                 \
+        double: PRINT_VAR_EVAL("%f", variable),                                \
+        long double: PRINT_VAR_EVAL("%Lf", variable),                          \
+        int8: PRINT_VAR_EVAL("%d", variable),                                  \
+        int16: PRINT_VAR_EVAL("%d", variable),                                 \
+        int32: PRINT_VAR_EVAL("%d", variable),                                 \
+        int64: PRINT_VAR_EVAL("%ld", variable),                                \
+        uint8: PRINT_VAR_EVAL("%u", variable),                                 \
+        uint16: PRINT_VAR_EVAL("%u", variable),                                \
+        uint32: PRINT_VAR_EVAL("%u", variable),                                \
+        uint64: PRINT_VAR_EVAL("%lu", variable),                               \
+        void *: PRINT_VAR_EVAL("%p", variable),                                \
+        default: printf("%s = ?\n", #variable))
+
 #endif
 
 #if !defined(DEBUGGING)
@@ -78,6 +153,7 @@ static char *program = __FILE__;
 #endif
 
 #define UTIL_ALIGN(S, A) (((S) + ((A) - 1)) & ~((A) - 1))
+
 #if !defined(ALIGNMENT)
 #define ALIGNMENT 16ul
 #endif
@@ -111,8 +187,8 @@ static char *notifiers[2] = {"dunstify", "notify-send"};
 static void *xmmap_commit(size_t *);
 static void xmunmap(void *, size_t);
 static void *xcalloc(const size_t, const size_t);
-static void *xmalloc(const size_t);
-static void *xrealloc(void *, const size_t);
+static void *xmalloc(int64);
+static void *xrealloc(void *, const int64);
 static void *util_memdup(const void *, const usize);
 static char *xstrdup(char *);
 static int32 snprintf2(char *, size_t, char *, ...);
@@ -130,8 +206,9 @@ static void send_signal(const char *, const int);
 static char *itoa2(long, char *);
 static long atoi2(char *);
 static size_t util_page_size = 0;
+char *basename2(char *);
 
-#if defined(__WIN32__)
+#if OS_WINDOWS
 uint32
 util_nthreads(void) {
     SYSTEM_INFO sysinfo;
@@ -146,7 +223,42 @@ util_nthreads(void) {
 }
 #endif
 
-#if !defined(__WIN32__)
+#if OS_WINDOWS || OS_MAC
+#define basename basename2
+#endif
+
+char *
+basename2(char *path) {
+    int64 left = (int64)strlen(path);
+    char *fslash = NULL;
+    char *bslash = NULL;
+    char *p = path;
+
+    while (left > 0) {
+        int64 length;
+
+        fslash = memchr(p, '/', (usize)left);
+        if (OS_WINDOWS) {
+            bslash = memchr(p, '\\', (usize)left);
+        }
+
+        if ((fslash == NULL) && (bslash == NULL)) {
+            return p;
+        }
+        if (fslash > bslash) {
+            length = fslash - p + 1;
+            p = fslash + 1;
+        } else {
+            length = bslash - p + 1;
+            p = bslash + 1;
+        }
+
+        left -= length;
+    }
+    return path;
+}
+
+#if OS_UNIX
 void *
 xmmap_commit(size_t *size) {
     void *p;
@@ -222,9 +334,13 @@ xmunmap(void *p, size_t size) {
 #endif
 
 void *
-xmalloc(const size_t size) {
+xmalloc(int64 size) {
     void *p;
-    if ((p = malloc(size)) == NULL) {
+    if (size <= 0) {
+        error("Error in xmalloc: invalid size = %ld.\n", size);
+        fatal(EXIT_FAILURE);
+    }
+    if ((p = malloc((size_t)size)) == NULL) {
         error("Failed to allocate %zu bytes.\n", size);
         fatal(EXIT_FAILURE);
     }
@@ -232,10 +348,15 @@ xmalloc(const size_t size) {
 }
 
 void *
-xrealloc(void *old, const size_t size) {
+xrealloc(void *old, const int64 size) {
     void *p;
-    if ((p = realloc(old, size)) == NULL) {
-        error("Failed to reallocate %zu bytes from %p.\n", size, old);
+    uint64 old_save = (uint64)old;
+    if (size <= 0) {
+        error("Error in xmalloc: invalid size = %ld.\n", size);
+        fatal(EXIT_FAILURE);
+    }
+    if ((p = realloc(old, (usize)size)) == NULL) {
+        error("Failed to reallocate %zu bytes from %x.\n", size, old_save);
         fatal(EXIT_FAILURE);
     }
     return p;
@@ -287,11 +408,14 @@ snprintf2(char *buffer, size_t size, char *format, ...) {
     return n;
 }
 
-#if defined(__WIN32__)
+#if OS_WINDOWS
 int
 util_command(const int argc, char **argv) {
-    char *cmdline;
-    uint32 len = 1;
+    char cmdline[1024] = {0};
+    int64 j = 0;
+    FILE *tty;
+    PROCESS_INFORMATION proc_info = {0};
+    DWORD exit_code = 0;
 
     if (argc == 0 || argv == NULL) {
         error("Invalid arguments.\n");
@@ -299,51 +423,44 @@ util_command(const int argc, char **argv) {
     }
 
     for (int i = 0; i < argc - 1; i += 1) {
-        len += strlen(argv[i]) + 3;
-    }
-    cmdline = xmalloc(len);
-
-    cmdline[0] = '\0';
-    for (int i = 0; i < (argc - 1); i += 1) {
-        strcat(cmdline, "\"");
-        strcat(cmdline, argv[i]);
-        strcat(cmdline, "\"");
-        strcat(cmdline, " ");
-    }
-
-    FILE *tty = freopen("CONIN$", "r", stdin);
-    if (!tty) {
-        error("Error reopening stdin: %s.\n", strerror(errno));
-        free(cmdline);
-        fatal(EXIT_FAILURE);
-    }
-
-    STARTUPINFO si;
-    memset(&si, 0, sizeof(si));
-    si.cb = sizeof(si);
-    PROCESS_INFORMATION pi = {0};
-
-    BOOL success = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL,
-                                  NULL, &si, &pi);
-
-    if (!success) {
-        error("Error running '%s", argv[0]);
-        for (int i = 1; i < (argc - 1); i += 1) {
-            error(" %s", argv[i]);
+        int64 len = (int64)strlen(argv[i]);
+        if ((j + len) >= (int64)sizeof(cmdline)) {
+            error("Command line is too long.\n");
+            fatal(EXIT_FAILURE);
         }
-        error("': %lu.\n", GetLastError());
-        free(cmdline);
+
+        cmdline[j] = '"';
+        memcpy(&cmdline[j + 1], argv[i], len);
+        cmdline[j + len + 1] = '"';
+        cmdline[j + len + 2] = ' ';
+        j += len + 3;
+    }
+    cmdline[j - 1] = '\0';
+
+    if ((tty = freopen("CONIN$", "r", stdin)) == NULL) {
+        error("Error reopening stdin: %s.\n", strerror(errno));
         fatal(EXIT_FAILURE);
     }
 
-    WaitForSingleObject(pi.hProcess, INFINITE);
+    {
+        BOOL success;
+        STARTUPINFO startup_info = {0};
+        startup_info.cb = sizeof(startup_info);
 
-    DWORD exit_code = 0;
-    GetExitCodeProcess(pi.hProcess, &exit_code);
+        success = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, NULL,
+                                 &startup_info, &proc_info);
+        if (!success) {
+            error("Error running '%s': %d\n", cmdline, GetLastError());
+            return -1;
+        }
+    }
 
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
-    free(cmdline);
+    WaitForSingleObject(proc_info.hProcess, INFINITE);
+
+    GetExitCodeProcess(proc_info.hProcess, &exit_code);
+
+    CloseHandle(proc_info.hProcess);
+    CloseHandle(proc_info.hThread);
     return 0;
 }
 #else
@@ -374,7 +491,7 @@ util_command(const int argc, char **argv) {
         }
         if (!WIFEXITED(status)) {
             error("Command exited abnormally.\n");
-            fatal(EXIT_FAILURE);
+            return -1;
         }
         return WEXITSTATUS(status);
     }
@@ -432,7 +549,7 @@ error(char *format, ...) {
 
     buffer[n] = '\0';
     write(STDERR_FILENO, buffer, (size_t)n);
-#if !defined(__WIN32__)
+#if OS_UNIX
     fsync(STDERR_FILENO);
     fsync(STDOUT_FILENO);
 #endif
@@ -455,7 +572,7 @@ util_segv_handler(int32 unused) {
     (void)unused;
 
     (void)write(STDERR_FILENO, message, strlen(message));
-    for (uint i = 0; i < LENGTH(notifiers); i += 1) {
+    for (uint32 i = 0; i < LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", program, message,
                NULL);
     }
@@ -492,13 +609,13 @@ util_die_notify(char *program_name, const char *format, ...) {
         fatal(EXIT_FAILURE);
     }
 
-    if (n >= (int32)sizeof(buffer)) {
+    if (n >= SIZEOF(buffer)) {
         fatal(EXIT_FAILURE);
     }
 
     buffer[n] = '\0';
     (void)write(STDERR_FILENO, buffer, (usize)n + 1);
-    for (uint i = 0; i < LENGTH(notifiers); i += 1) {
+    for (uint32 i = 0; i < LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", program_name,
                buffer, NULL);
     }
@@ -516,6 +633,7 @@ util_memdup(const void *source, const usize size) {
     return p;
 }
 
+#if OS_UNIX
 int32
 util_copy_file(const char *destination, const char *source) {
     int32 source_fd;
@@ -565,8 +683,9 @@ util_copy_file(const char *destination, const char *source) {
     close(destination_fd);
     return 0;
 }
+#endif
 
-#if defined(__linux__)
+#if OS_LINUX
 #include <dirent.h>
 void
 send_signal(const char *executable, const int32 signal_number) {
@@ -641,8 +760,7 @@ send_signal(const char *executable, const int32 signal_number) {
     closedir(processes);
     return;
 }
-#else
-#if !defined(__WIN32__)
+#elif OS_UNIX
 void
 send_signal(const char *executable, const int32 signal_number) {
     char signal_string[14];
@@ -668,7 +786,6 @@ send_signal(const char *executable, const int32 signal_number) {
     (void)signal_number;
     return;
 }
-#endif
 #endif
 
 char *
@@ -718,17 +835,69 @@ main(void) {
     char *p3;
     char *string = __FILE__;
 
+    bool var_bool = true;
+    char var_char = 'c';
+    char *var_string = "a nice string";
+    void *var_voidptr = NULL;
+    float var_float = 0.5f;
+    double var_double = 0.5;
+    long double var_longdouble = 0.5L;
+    int8 var_int8 = INT8_MAX;
+    int16 var_int16 = INT16_MAX;
+    int32 var_int32 = INT32_MAX;
+    int64 var_int64 = INT64_MAX;
+    uint8 var_uint8 = UINT8_MAX;
+    uint16 var_uint16 = UINT16_MAX;
+    uint32 var_uint32 = UINT32_MAX;
+    uint64 var_uint64 = UINT64_MAX;
+
+    char *paths[] = {
+        "/aaaa/bbbb/cccc", "/aa/bb/cc", "/a/b/c",    "a/b/c",
+        "a/b/cccc",        "a/bb/cccc", "aaaa/cccc",
+    };
+    char *bases[] = {
+        "cccc", "cc", "c", "c", "cccc", "cccc", "cccc",
+    };
+
+#if defined(__clang__)
+    PRINT_VAR(var_bool);
+    PRINT_VAR(var_char);
+    PRINT_VAR(var_string);
+    PRINT_VAR(var_voidptr);
+    PRINT_VAR(var_float);
+    PRINT_VAR(var_double);
+    PRINT_VAR(var_longdouble);
+    PRINT_VAR(var_int8);
+    PRINT_VAR(var_int16);
+    PRINT_VAR(var_int32);
+    PRINT_VAR(var_int64);
+    PRINT_VAR(var_uint8);
+    PRINT_VAR(var_uint16);
+    PRINT_VAR(var_uint32);
+    PRINT_VAR(var_uint64);
+#endif
+
     memset(p1, 0, SIZEMB(1));
     memcpy(p1, string, strlen(string));
     memset(p2, 0, SIZEMB(1));
     p3 = xstrdup(p1);
 
-    error("%s == %s is working? %b\n", string, p3, !strcmp(string, p3));
+    assert(!strcmp(string, p3));
 
     srand((uint)time(NULL));
     for (int i = 0; i < 10; i += 1) {
         int n = rand() - RAND_MAX / 2;
         assert(atoi2(itoa2(n, buffer)) == n);
+    }
+
+    for (int64 i = 0; i < LENGTH(paths); i += 1) {
+        char *path = paths[i];
+        assert(!strcmp(basename2(path), bases[i]));
+    }
+
+    if (OS_WINDOWS) {
+        char *path2 = "aa\\cc";
+        assert(!strcmp(basename2(path2), "cc"));
     }
 
     free(p1);

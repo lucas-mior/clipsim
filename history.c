@@ -301,7 +301,7 @@ history_read(void) {
             } else {
                 size = (e->content_length + 1)*2;
             }
-            e->content = xmalloc((usize)size);
+            e->content = xmalloc(size);
             memcpy(e->content, begin, (usize)(e->content_length + 1));
 
             content_trim_spaces(&e->trimmed, &e->trimmed_length, e->content,
@@ -445,7 +445,7 @@ history_append(char *content, int32 length) {
         } else {
             size = (e->content_length + 1)*2;
         }
-        e->content = xmalloc((usize)size);
+        e->content = xmalloc(size);
         memcpy(e->content, content, (usize)(e->content_length + 1));
 
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length), e->content,
