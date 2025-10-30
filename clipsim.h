@@ -129,7 +129,6 @@ extern bool is_image[];
 extern mtx_t lock;
 extern const char TEXT_TAG;
 extern const char IMAGE_TAG;
-extern char *program;
 extern magic_t magic;
 
 static int32 util_open(File *file, const int32 flag);
