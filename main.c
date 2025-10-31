@@ -192,7 +192,6 @@ void
 main_launch_daemon(void) {
     DEBUG_PRINT("void")
     pthread_t ipc_thread;
-    pthread_t xi_thread;
     char *CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE;
 
     if (main_check_running()) {
@@ -230,6 +229,7 @@ main_launch_daemon(void) {
     }
 
     if (CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE) {
+        pthread_t xi_thread;
         pthread_create(&xi_thread, NULL, xi_daemon_loop, NULL);
     }
     clipboard_daemon_watch();
