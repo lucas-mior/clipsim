@@ -41,7 +41,7 @@ static void ipc_clean_fifo(const char *);
 static void ipc_create_fifo(const char *);
 static void sig_abrt_handler(int32) __attribute__((noreturn));
 
-static int ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
+static void *ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
 static void ipc_client_speak_fifo(int32, int32);
 
 void
@@ -58,7 +58,7 @@ sig_abrt_handler(int32 unused) {
     exit(EXIT_FAILURE);
 }
 
-int32
+void *
 ipc_daemon_listen_fifo(void *unused) {
     DEBUG_PRINT("void")
     char command;
@@ -85,7 +85,7 @@ ipc_daemon_listen_fifo(void *unused) {
             continue;
         }
 
-        mtx_lock(&lock);
+        xpthread_mutex_lock(&lock);
 
         util_close(&command_fifo);
         switch (command) {
@@ -108,7 +108,7 @@ ipc_daemon_listen_fifo(void *unused) {
             error("Invalid command received: '%c'\n", command);
         }
 
-        mtx_unlock(&lock);
+        xpthread_mutex_unlock(&lock);
     }
 }
 

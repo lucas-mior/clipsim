@@ -40,11 +40,11 @@
 
 #define BUTTON_MIDDLE_CODE 2
 
-static int32 xi_daemon_loop(void *);
+static void *xi_daemon_loop(void *);
 
 static bool watch_slave_devices = true;
 
-int32
+void *
 xi_daemon_loop(void *unused) {
     int xi_opcode;
     struct pollfd poll_file;
