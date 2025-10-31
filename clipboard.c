@@ -127,7 +127,7 @@ clipboard_daemon_watch(void) {
             send_signal(CLIPSIM_SIGNAL_PROGRAM, signal_number);
         }
 
-        mtx_lock(&lock);
+        xpthread_mutex_lock(&lock);
 
         switch (clipboard_get_clipboard(&save, &length)) {
         case CLIPBOARD_TEXT:
@@ -152,7 +152,7 @@ clipboard_daemon_watch(void) {
             error("Unhandled result from clipboard_get_clipboard.\n");
             exit(EXIT_FAILURE);
         }
-        mtx_unlock(&lock);
+        xpthread_mutex_unlock(&lock);
     }
 }
 

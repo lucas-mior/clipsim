@@ -33,7 +33,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <threads.h>
+#include <pthread.h>
 #include <time.h>
 #include <unistd.h>
 #include <magic.h>
@@ -126,7 +126,7 @@ enum {
 
 extern Entry entries[];
 extern bool is_image[];
-extern mtx_t lock;
+extern pthread_mutex_t lock;
 extern const char TEXT_TAG;
 extern const char IMAGE_TAG;
 extern magic_t magic;

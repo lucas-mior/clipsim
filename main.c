@@ -47,7 +47,7 @@ Entry entries[HISTORY_BUFFER_SIZE] = {0};
 bool is_image[HISTORY_BUFFER_SIZE] = {0};
 const char TEXT_TAG = (char)0x01;
 const char IMAGE_TAG = (char)0x02;
-mtx_t lock;
+pthread_mutex_t lock;
 magic_t magic;
 
 static bool main_check_cmdline(char *);
@@ -191,9 +191,8 @@ main_check_running(void) {
 void
 main_launch_daemon(void) {
     DEBUG_PRINT("void")
-    thrd_t ipc_thread;
-    thrd_t xi_thread;
-    int32 mtx_error;
+    pthread_t ipc_thread;
+    pthread_t xi_thread;
     char *CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE;
 
     if (main_check_running()) {
@@ -201,10 +200,7 @@ main_launch_daemon(void) {
         exit(EXIT_FAILURE);
     }
 
-    if ((mtx_error = mtx_init(&lock, mtx_plain)) != thrd_success) {
-        error("Error initializing lock: %s\n", strerror(mtx_error));
-        exit(EXIT_FAILURE);
-    }
+    pthread_mutex_init(&lock, NULL);
 
     history_read();
 
@@ -217,7 +213,7 @@ main_launch_daemon(void) {
         exit(EXIT_FAILURE);
     }
 
-    thrd_create(&ipc_thread, ipc_daemon_listen_fifo, NULL);
+    pthread_create(&ipc_thread, NULL, ipc_daemon_listen_fifo, NULL);
 
     if ((CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE
          = getenv("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE"))
@@ -234,7 +230,7 @@ main_launch_daemon(void) {
     }
 
     if (CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE) {
-        thrd_create(&xi_thread, xi_daemon_loop, NULL);
+        pthread_create(&xi_thread, NULL, xi_daemon_loop, NULL);
     }
     clipboard_daemon_watch();
 }
