@@ -101,7 +101,6 @@ clipboard_daemon_watch(void) {
     color = BlackPixel(display, DefaultScreen(display));
     window = XCreateSimpleWindow(display, root, 0, 0, 1, 1, 0, color, color);
 
-    XSelectInput(display, window, PropertyChangeMask);
     XFixesSelectSelectionInput(display, root, CLIPBOARD,
                                (ulong)XFixesSetSelectionOwnerNotifyMask
                                    | XFixesSelectionClientCloseNotifyMask
@@ -214,11 +213,12 @@ clipboard_check_target(const Atom target) {
         nevents += 1;
     } while ((xevent.type != SelectionNotify)
              || (xevent.xselection.selection != CLIPBOARD));
-    if (DEBUGGING) {
-        if (xevent.xselection.property) {
-            error("X clipboard target: %s.\n", XGetAtomName(display, target));
-        }
-    }
+    /* if (DEBUGGING) { */
+    /*     if (xevent.xselection.property) { */
+    /*         error("X clipboard target: %s.\n", XGetAtomName(display,
+     * target)); */
+    /*     } */
+    /* } */
 
     return xevent.xselection.property;
 }
@@ -234,6 +234,7 @@ clipboard_incremental_case(char **save, ulong *length) {
     *length = 0;
 
     (void)save;
+    XSelectInput(display, window, PropertyChangeMask);
     XDeleteProperty(display, window, XSEL_DATA);
     XFlush(display);
 
@@ -248,6 +249,7 @@ clipboard_incremental_case(char **save, ulong *length) {
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **)&buffer);
         XFree(buffer);
+        error("bytes_after_return: %d\n", bytes_after_return);
         if (bytes_after_return == 0) {
             XDeleteProperty(display, window, XSEL_DATA);
             XNextEvent(display, &event);
@@ -264,6 +266,8 @@ clipboard_incremental_case(char **save, ulong *length) {
         XDeleteProperty(display, window, XSEL_DATA);
         XFlush(display);
     }
+
+    XSelectInput(display, window, NoEventMask);
     return;
 }
 
