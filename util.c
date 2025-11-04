@@ -211,6 +211,42 @@ static size_t util_page_size = 0;
 char *basename2(char *);
 
 #if OS_WINDOWS
+static void *
+memmem(const void *haystack, size_t hay_len, const void *needle,
+       size_t needle_len) {
+    const uchar *h = haystack;
+    const uchar *n = needle;
+    const uchar *end = h + hay_len;
+    const uchar *limit = end - needle_len + 1;
+
+    if (needle_len == 0) {
+        return (void *)haystack;
+    }
+    if ((haystack == NULL) || (needle == NULL)) {
+        return NULL;
+    }
+    if (hay_len < needle_len) {
+        return NULL;
+    }
+
+    while (h < limit) {
+        const uchar *p;
+
+        if ((p = memchr(h, n[0], (size_t)(limit - h))) == NULL) {
+            return NULL;
+        }
+
+        if (memcmp(p, n, needle_len) == 0) {
+            return (void *)p;
+        }
+        h = p + 1;
+    }
+
+    return NULL;
+}
+#endif
+
+#if OS_WINDOWS
 uint32
 util_nthreads(void) {
     SYSTEM_INFO sysinfo;
@@ -458,10 +494,20 @@ util_command(const int argc, char **argv) {
     FILE *tty;
     PROCESS_INFORMATION proc_info = {0};
     DWORD exit_code = 0;
+    int64 len = strlen(argv[0]);
+    char *argv0_windows;
+    char *exe = ".exe";
 
     if (argc == 0 || argv == NULL) {
         error("Invalid arguments.\n");
         fatal(EXIT_FAILURE);
+    }
+
+    if (memmem(argv[0], len + 1, exe, strlen(exe) + 1) == NULL) {
+        argv0_windows = xmalloc(len + strlen(exe) + 1);
+        memcpy(argv0_windows,       argv[0], len);
+        memcpy(argv0_windows + len, exe, strlen(exe) + 1);
+        argv[0] = argv0_windows;
     }
 
     for (int i = 0; i < argc - 1; i += 1) {
@@ -488,22 +534,48 @@ util_command(const int argc, char **argv) {
         BOOL success;
         STARTUPINFO startup_info = {0};
         startup_info.cb = sizeof(startup_info);
-
-        success = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, NULL,
-                                 &startup_info, &proc_info);
+        success = CreateProcessA(NULL,
+                                 cmdline,
+                                 NULL,
+                                 NULL,
+                                 TRUE,
+                                 0,
+                                 NULL,
+                                 NULL,
+                                 &startup_info,
+                                 &proc_info);
         if (!success) {
-            error("Error running '%s': %d\n", cmdline, GetLastError());
+            int err = GetLastError();
+            error("Error running '%s': %d.\n", cmdline, err);
+            if (err == ERROR_PATH_NOT_FOUND) {
+                error("Path not found.\n");
+            }
             return -1;
         }
     }
 
-    WaitForSingleObject(proc_info.hProcess, INFINITE);
+    if (WaitForSingleObject(proc_info.hProcess, INFINITE) != WAIT_OBJECT_0) {
+        CloseHandle(proc_info.hThread);
+        CloseHandle(proc_info.hProcess);
+        return -1;
+    }
 
-    GetExitCodeProcess(proc_info.hProcess, &exit_code);
+    if (!GetExitCodeProcess(proc_info.hProcess, &exit_code)) {
+        CloseHandle(proc_info.hThread);
+        CloseHandle(proc_info.hProcess);
+        return -1;
+    }
 
-    CloseHandle(proc_info.hProcess);
-    CloseHandle(proc_info.hThread);
-    return 0;
+    if (!CloseHandle(proc_info.hThread)) {
+        CloseHandle(proc_info.hProcess);
+        return -1;
+    }
+
+    if (!CloseHandle(proc_info.hProcess)) {
+        return -1;
+    }
+
+    return (int)exit_code;
 }
 #else
 int
@@ -747,24 +819,15 @@ send_signal(const char *executable, const int32 signal_number) {
         ssize_t r;
 
         if (process->d_type != DT_DIR) {
-            if (DEBUGGING) {
-                error("Error: %s is not directory.\n", process->d_name);
-            }
             continue;
         }
         if ((pid = atoi(process->d_name)) <= 0) {
-            if (DEBUGGING) {
-                error("Error: atoi(%s) <= 0.\n", process->d_name);
-            }
             continue;
         }
 
         SNPRINTF(buffer, "/proc/%s/cmdline", process->d_name);
 
         if ((cmdline = open(buffer, O_RDONLY)) < 0) {
-            if (errno != ENOENT || DEBUGGING) {
-                error("Error opening %s: %s.\n", buffer, strerror(errno));
-            }
             continue;
         }
 
