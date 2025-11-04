@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <libgen.h>
+#include <pthread.h>
 #include <limits.h>
 #include <sys/stat.h>
 
@@ -763,11 +764,8 @@ send_signal(const char *executable, const int32 signal_number) {
         if ((cmdline = open(buffer, O_RDONLY)) < 0) {
             if (errno != ENOENT || DEBUGGING) {
                 error("Error opening %s: %s.\n", buffer, strerror(errno));
-                continue;
             }
-            if (errno != ENOENT) {
-                fatal(EXIT_FAILURE);
-            }
+            continue;
         }
 
         errno = 0;
@@ -789,7 +787,7 @@ send_signal(const char *executable, const int32 signal_number) {
                       signal_number, executable, pid, strerror(errno));
             } else {
                 if (DEBUGGING) {
-                    error("Sended signal %d to program %s (pid %d): %s.\n",
+                    error("Sended signal %d to program %s (pid %d).\n",
                           signal_number, executable, pid);
                 }
             }
