@@ -833,13 +833,6 @@ send_signal(const char *executable, const int32 signal_number) {
 
         errno = 0;
         if ((r = read(cmdline, command, sizeof(command))) <= 0) {
-            if (DEBUGGING) {
-                error("Error reading from %s", buffer);
-                if (r < 0) {
-                    error(": %s", strerror(errno));
-                }
-                error(".\n");
-            }
             (void)r;
             close(cmdline);
             continue;
