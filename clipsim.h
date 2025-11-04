@@ -50,9 +50,9 @@
 #define DEBUG_PRINT(...) \
 do { \
     dprintf(STDERR_FILENO, \
-            "%s:%d -> "RED"%s("RESET"", __FILE__, __LINE__, __func__); \
+            "%s:%d -> %s(", __FILE__, __LINE__, __func__); \
     dprintf(STDERR_FILENO, __VA_ARGS__); \
-    dprintf(STDERR_FILENO, RED")"RESET"\n"); \
+    dprintf(STDERR_FILENO, ")\n"); \
 } while (0);
 #else
 #define DEBUG_PRINT(...)
