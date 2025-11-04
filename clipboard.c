@@ -112,7 +112,6 @@ clipboard_daemon_watch(void) {
         char *save = NULL;
         ulong length;
 
-        nanosleep(&pause, NULL);
         (void)XNextEvent(display, &xevent);
         (void)event_names;
         if (DEBUGGING) {
@@ -126,6 +125,7 @@ clipboard_daemon_watch(void) {
         if (xevent.type == PropertyNotify) {
             continue;
         }
+        nanosleep(&pause, NULL);
 
         if (CLIPSIM_SIGNAL_PROGRAM) {
             send_signal(CLIPSIM_SIGNAL_PROGRAM, signal_number);
