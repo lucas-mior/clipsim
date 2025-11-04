@@ -505,7 +505,7 @@ util_command(const int argc, char **argv) {
 
     if (memmem(argv[0], len + 1, exe, strlen(exe) + 1) == NULL) {
         argv0_windows = xmalloc(len + strlen(exe) + 1);
-        memcpy(argv0_windows,       argv[0], len);
+        memcpy(argv0_windows, argv[0], len);
         memcpy(argv0_windows + len, exe, strlen(exe) + 1);
         argv[0] = argv0_windows;
     }
@@ -534,16 +534,8 @@ util_command(const int argc, char **argv) {
         BOOL success;
         STARTUPINFO startup_info = {0};
         startup_info.cb = sizeof(startup_info);
-        success = CreateProcessA(NULL,
-                                 cmdline,
-                                 NULL,
-                                 NULL,
-                                 TRUE,
-                                 0,
-                                 NULL,
-                                 NULL,
-                                 &startup_info,
-                                 &proc_info);
+        success = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, NULL,
+                                 &startup_info, &proc_info);
         if (!success) {
             int err = GetLastError();
             error("Error running '%s': %d.\n", cmdline, err);
