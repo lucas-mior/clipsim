@@ -101,6 +101,7 @@ clipboard_daemon_watch(void) {
     color = BlackPixel(display, DefaultScreen(display));
     window = XCreateSimpleWindow(display, root, 0, 0, 1, 1, 0, color, color);
 
+    XSelectInput(display, window, PropertyChangeMask);
     XFixesSelectSelectionInput(display, root, CLIPBOARD,
                                (ulong)XFixesSetSelectionOwnerNotifyMask
                                    | XFixesSelectionClientCloseNotifyMask
@@ -120,6 +121,10 @@ clipboard_daemon_watch(void) {
             } else {
                 error("X event: %d\n", xevent.type);
             }
+        }
+
+        if (xevent.type == PropertyNotify) {
+            continue;
         }
 
         if (CLIPSIM_SIGNAL_PROGRAM) {
@@ -234,7 +239,6 @@ clipboard_incremental_case(char **save, ulong *length) {
     *length = 0;
 
     (void)save;
-    XSelectInput(display, window, PropertyChangeMask);
     XDeleteProperty(display, window, XSEL_DATA);
     XFlush(display);
 
@@ -266,8 +270,6 @@ clipboard_incremental_case(char **save, ulong *length) {
         XDeleteProperty(display, window, XSEL_DATA);
         XFlush(display);
     }
-
-    XSelectInput(display, window, NoEventMask);
     return;
 }
 
