@@ -174,7 +174,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
         }
 
         *length = nitems_return;
-        return CLIPBOARD_IMAGE;
+        return CLIPBOARD_TEXT;
     }
     if (clipboard_check_target(image_png)) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX / 4, False,
@@ -187,7 +187,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
         }
 
         *length = nitems_return;
-        return CLIPBOARD_TEXT;
+        return CLIPBOARD_IMAGE;
     }
     if (clipboard_check_target(TARGETS)) {
         return CLIPBOARD_OTHER;
