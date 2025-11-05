@@ -811,6 +811,7 @@ void
 send_signal(const char *executable, const int32 signal_number) {
     DIR *processes;
     struct dirent *process;
+    int64 len = (int64)strlen(executable);
 
     if ((processes = opendir("/proc")) == NULL) {
         error("Error opening /proc: %s\n", strerror(errno));
@@ -843,7 +844,7 @@ send_signal(const char *executable, const int32 signal_number) {
             close(cmdline);
             continue;
         }
-        if (!strcmp(command, executable)) {
+        if (memmem(command, r, executable, (size_t)len)) {
             if (kill(pid, signal_number) < 0) {
                 error("Error sending signal %d to program %s (pid %d): %s.\n",
                       signal_number, executable, pid, strerror(errno));
