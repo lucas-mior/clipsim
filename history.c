@@ -177,6 +177,7 @@ history_save(void) {
     return true;
 }
 
+// clang-format off
 #define XSIGNAL(NAME) [NAME] = #NAME,
 char *signal_names[]
     = {XSIGNAL(SIGABRT) XSIGNAL(SIGALRM) XSIGNAL(SIGVTALRM) XSIGNAL(SIGPROF)
@@ -189,6 +190,7 @@ char *signal_names[]
                                    XSIGNAL(SIGUSR1) XSIGNAL(SIGUSR2)
                                        XSIGNAL(SIGXCPU) XSIGNAL(SIGXFSZ)};
 #undef XSIGNAL
+// clang-format on
 
 void
 history_exit(int32 signum) {
