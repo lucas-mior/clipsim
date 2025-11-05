@@ -164,18 +164,6 @@ case "$target" in
     trace_off
     exit
     ;;
-"perf")
-    create_temp_files
-
-    cd /tmp/clipsim || exit
-    trace_on
-    perf record -b -o $dir/perf.data $dir/$exe -s -q -d .
-    cd "$dir"
-    perf annotate $dir/$exe
-    perf report -v perf.data
-    trace_off
-    exit
-    ;;
 "check")
     scan-build --view -analyze-headers --status-bugs ./build.sh
     exit
