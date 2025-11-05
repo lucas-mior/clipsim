@@ -323,15 +323,15 @@ xmmap_commit(int64 *size) {
     return p;
 }
 static void
-xmunmap(void *p, size_t size) {
-    if (munmap(p, size) < 0) {
-        error("Error in munmap(%p, %zu): %s.\n", p, size, strerror(errno));
+xmunmap(void *p, int64 size) {
+    if (munmap(p, (size_t)size) < 0) {
+        error("Error in munmap(%p, %ld): %s.\n", p, size, strerror(errno));
     }
     return;
 }
 #else
 static void *
-xmmap_commit(size_t *size) {
+xmmap_commit(int64 *size) {
     void *p;
 
     if (util_page_size == 0) {
@@ -344,9 +344,9 @@ xmmap_commit(size_t *size) {
         }
     }
 
-    p = VirtualAlloc(NULL, *size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    p = VirtualAlloc(NULL, (size_t)*size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     if (p == NULL) {
-        fprintf(stderr, "Error in VirtualAlloc(%zu): %lu.\n", *size,
+        fprintf(stderr, "Error in VirtualAlloc(%jd): %lu.\n", *size,
                 GetLastError());
         fatal(EXIT_FAILURE);
     }
