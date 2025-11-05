@@ -204,15 +204,14 @@ static size_t util_page_size = 0;
 
 #if OS_WINDOWS
 static void *
-memmem(const void *haystack, size_t hay_len, const void *needle,
-       size_t needle_len) {
-    const uchar *h = haystack;
-    const uchar *n = needle;
-    const uchar *end = h + hay_len;
-    const uchar *limit = end - needle_len + 1;
+memmem(void *haystack, size_t hay_len, void *needle, size_t needle_len) {
+    uchar *h = haystack;
+    uchar *n = needle;
+    uchar *end = h + hay_len;
+    uchar *limit = end - needle_len + 1;
 
     if (needle_len == 0) {
-        return (void *)haystack;
+        return haystack;
     }
     if ((haystack == NULL) || (needle == NULL)) {
         return NULL;
@@ -222,7 +221,7 @@ memmem(const void *haystack, size_t hay_len, const void *needle,
     }
 
     while (h < limit) {
-        const uchar *p;
+        uchar *p;
 
         if ((p = memchr(h, n[0], (size_t)(limit - h))) == NULL) {
             return NULL;
@@ -486,34 +485,35 @@ util_command(const int argc, char **argv) {
     FILE *tty;
     PROCESS_INFORMATION proc_info = {0};
     DWORD exit_code = 0;
-    int64 len = strlen(argv[0]);
+    int64 len = (int64)strlen(argv[0]);
     char *argv0_windows;
     char *exe = ".exe";
+    int64 exe_len = (int64)(strlen(exe));
 
     if (argc == 0 || argv == NULL) {
         error("Invalid arguments.\n");
         fatal(EXIT_FAILURE);
     }
 
-    if (memmem(argv[0], len + 1, exe, strlen(exe) + 1) == NULL) {
-        argv0_windows = xmalloc(len + strlen(exe) + 1);
-        memcpy(argv0_windows, argv[0], len);
-        memcpy(argv0_windows + len, exe, strlen(exe) + 1);
+    if (memmem(argv[0], (size_t)len + 1, exe, (size_t)exe_len + 1) == NULL) {
+        argv0_windows = xmalloc(len + exe_len + 1);
+        memcpy(argv0_windows, argv[0], (size_t)len);
+        memcpy(argv0_windows + len, exe, (size_t)exe_len + 1);
         argv[0] = argv0_windows;
     }
 
     for (int i = 0; i < argc - 1; i += 1) {
-        int64 len = (int64)strlen(argv[i]);
-        if ((j + len) >= (int64)sizeof(cmdline)) {
+        int64 len2 = (int64)strlen(argv[i]);
+        if ((j + len2) >= (int64)sizeof(cmdline)) {
             error("Command line is too long.\n");
             fatal(EXIT_FAILURE);
         }
 
         cmdline[j] = '"';
-        memcpy(&cmdline[j + 1], argv[i], len);
-        cmdline[j + len + 1] = '"';
-        cmdline[j + len + 2] = ' ';
-        j += len + 3;
+        memcpy(&cmdline[j + 1], argv[i], (size_t)len2);
+        cmdline[j + len2 + 1] = '"';
+        cmdline[j + len2 + 2] = ' ';
+        j += len2 + 3;
     }
     cmdline[j - 1] = '\0';
 
@@ -529,7 +529,7 @@ util_command(const int argc, char **argv) {
         success = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, NULL,
                                  &startup_info, &proc_info);
         if (!success) {
-            int err = GetLastError();
+            DWORD err = GetLastError();
             error("Error running '%s': %d.\n", cmdline, err);
             if (err == ERROR_PATH_NOT_FOUND) {
                 error("Path not found.\n");
@@ -634,7 +634,7 @@ void
 error(char *format, ...) {
     char buffer[BUFSIZ];
     va_list args;
-    int32 n;
+    int64 n;
 
     va_start(args, format);
     n = vsnprintf(buffer, sizeof(buffer), format, args);
@@ -646,7 +646,7 @@ error(char *format, ...) {
     }
 
     buffer[n] = '\0';
-    write(STDERR_FILENO, buffer, (size_t)n);
+    write(STDERR_FILENO, buffer, (uint32)n);
 #if OS_UNIX
     fsync(STDERR_FILENO);
     fsync(STDOUT_FILENO);
@@ -669,7 +669,7 @@ util_segv_handler(int32 unused) {
     char *message = "Memory error. Please send a bug report.\n";
     (void)unused;
 
-    (void)write(STDERR_FILENO, message, strlen(message));
+    write(STDERR_FILENO, message, (uint32)strlen(message));
     for (uint32 i = 0; i < LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", program, message,
                NULL);
@@ -712,7 +712,7 @@ util_die_notify(char *program_name, const char *format, ...) {
     }
 
     buffer[n] = '\0';
-    (void)write(STDERR_FILENO, buffer, (usize)n + 1);
+    write(STDERR_FILENO, buffer, (uint32)n + 1);
     for (uint32 i = 0; i < LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", program_name,
                buffer, NULL);
