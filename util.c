@@ -188,9 +188,6 @@ static char *notifiers[2] = {"dunstify", "notify-send"};
 
 static void *xmmap_commit(size_t *);
 static void xmunmap(void *, size_t);
-static void *xcalloc(const size_t, const size_t);
-static void *xmalloc(int64);
-static void *xrealloc(void *, const int64);
 static void *util_memdup(const void *, const usize);
 static char *xstrdup(char *);
 static int32 snprintf2(char *, size_t, char *, ...);
