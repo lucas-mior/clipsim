@@ -135,15 +135,6 @@ case "$target" in
     ;;
 esac
 
-create_temp_files() {
-    tmpdir="/tmp/clipsim"
-    rm -rf "$tmpdir"
-    mkdir -p "$tmpdir"
-    cd "$tmpdir" || exit
-
-    seq -w 100000 | sed 's/^/0011223344/g' | xargs -P"$(nproc)" touch
-}
-
 case "$target" in
 "valgrind") 
     vg_flags="--error-exitcode=1 --errors-for-leak-kinds=all"
