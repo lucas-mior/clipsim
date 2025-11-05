@@ -22,6 +22,7 @@
 #include "util.c"
 #include "content.c"
 
+#include <poll.h>
 #include <X11/X.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
@@ -90,6 +91,10 @@ history_backup(void) {
 bool
 history_save(void) {
     DEBUG_PRINT("void")
+    struct pollfd pipes[HISTORY_BUFFER_SIZE];
+    nfds_t nfds = 0;
+    int32 polled;
+    int dests[HISTORY_BUFFER_SIZE];
 
     error("Saving history...\n");
     if (history_length <= 0) {
@@ -114,17 +119,20 @@ history_save(void) {
         if (is_image[i]) {
             char image_save[PATH_MAX];
             int32 n;
+            int fd;
 
             n = SNPRINTF(image_save, "%s/clipsim/%s", XDG_CACHE_HOME,
                          basename(e->content));
 
             if (strcmp(image_save, e->content)) {
-                if (util_copy_file_sync(image_save, e->content) < 0) {
+                if ((fd = util_copy_file_async(image_save, e->content, &dests[nfds])) < 0) {
                     error("Error copying %s to %s: %s.\n", e->content,
                           image_save, strerror(errno));
                     history_remove(i);
                     continue;
                 }
+                pipes[nfds].fd = fd;
+                pipes[nfds].events = POLLIN;
             }
             if (write(history.fd, image_save, (usize)n) < n) {
                 error("Error writing %s: %s\n", image_save, strerror(errno));
@@ -141,6 +149,7 @@ history_save(void) {
                 history_remove(i);
                 continue;
             }
+            nfds += 1;
         } else {
             int32 left = e->content_length;
             int32 offset = 0;
@@ -169,6 +178,58 @@ history_save(void) {
                 history_remove(i);
                 continue;
             }
+        }
+    }
+
+    switch (polled = poll(pipes, nfds, 1000)) {
+        ssize_t r;
+        ssize_t w;
+        char buffer[BUFSIZ];
+    case -1:
+        error("Error polling: %s.\n", strerror(errno));
+        fatal(EXIT_FAILURE);
+    case 0:
+        error("Polled 0 files.");
+        if (nfds != 0)
+            fatal(EXIT_FAILURE);
+        break;
+    default:
+        if (polled != (int32)nfds) {
+            error("Polled less files than expected.\n");
+            fatal(EXIT_FAILURE);
+        }
+        for (int32 i = 0; i < polled; i += 1) {
+            int source_fd = pipes[i].fd;
+            int destination_fd = dests[i];
+
+            if (!(pipes[i].revents & POLLIN))
+                continue;
+
+            errno = 0;
+            while ((r = read(source_fd, buffer, BUFSIZ)) > 0) {
+                w = write(destination_fd, buffer, (usize)r);
+                if (w != r) {
+                    fprintf(stderr, "Error writing data.");
+                    if (errno) {
+                        fprintf(stderr, ": %s", strerror(errno));
+                    }
+                    fprintf(stderr, ".\n");
+
+                    close(source_fd);
+                    close(destination_fd);
+                    return -1;
+                }
+            }
+
+            if (r < 0) {
+                error("Error reading data: %s.\n", strerror(errno));
+                close(source_fd);
+                close(destination_fd);
+                return -1;
+            }
+
+            close(source_fd);
+            close(destination_fd);
         }
     }
 
