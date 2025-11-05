@@ -177,45 +177,26 @@ history_save(void) {
     return true;
 }
 
-#define SIGNAL(NAME) [NAME] = #NAME,
-char *signal_names[] = {
-    SIGNAL(SIGABRT)
-    SIGNAL(SIGALRM)
-    SIGNAL(SIGVTALRM)
-    SIGNAL(SIGPROF)
-    SIGNAL(SIGBUS)
-    SIGNAL(SIGCHLD)
-    SIGNAL(SIGCONT)
-    SIGNAL(SIGFPE)
-    SIGNAL(SIGHUP)
-    SIGNAL(SIGILL)
-    SIGNAL(SIGINT)
-    SIGNAL(SIGKILL)
-    SIGNAL(SIGPIPE)
-    SIGNAL(SIGPOLL)
-    SIGNAL(SIGQUIT)
-    SIGNAL(SIGSEGV)
-    SIGNAL(SIGSTOP)
-    SIGNAL(SIGSYS)
-    SIGNAL(SIGTERM)
-    SIGNAL(SIGTSTP)
-    SIGNAL(SIGTTIN)
-    SIGNAL(SIGTTOU)
-    SIGNAL(SIGTRAP)
-    SIGNAL(SIGURG)
-    SIGNAL(SIGUSR1)
-    SIGNAL(SIGUSR2)
-    SIGNAL(SIGXCPU)
-    SIGNAL(SIGXFSZ)
-};
-#undef SIGNAL
+#define XSIGNAL(NAME) [NAME] = #NAME,
+char *signal_names[]
+    = {XSIGNAL(SIGABRT) XSIGNAL(SIGALRM) XSIGNAL(SIGVTALRM) XSIGNAL(SIGPROF)
+           XSIGNAL(SIGBUS) XSIGNAL(SIGCHLD) XSIGNAL(SIGCONT) XSIGNAL(SIGFPE)
+               XSIGNAL(SIGHUP) XSIGNAL(SIGILL) XSIGNAL(SIGINT) XSIGNAL(SIGKILL)
+                   XSIGNAL(SIGPIPE) XSIGNAL(SIGPOLL) XSIGNAL(SIGQUIT)
+                       XSIGNAL(SIGSEGV) XSIGNAL(SIGSTOP) XSIGNAL(SIGSYS)
+                           XSIGNAL(SIGTERM) XSIGNAL(SIGTSTP) XSIGNAL(SIGTTIN)
+                               XSIGNAL(SIGTTOU) XSIGNAL(SIGTRAP) XSIGNAL(SIGURG)
+                                   XSIGNAL(SIGUSR1) XSIGNAL(SIGUSR2)
+                                       XSIGNAL(SIGXCPU) XSIGNAL(SIGXFSZ)};
+#undef XSIGNAL
 
 void
 history_exit(int32 signum) {
-    if (signum < LENGTH(signal_names))
+    if (signum < LENGTH(signal_names)) {
         error("Received signal %s.\n", signal_names[signum]);
-    else
+    } else {
         error("Received signal %d.\n", signum);
+    }
     history_save();
 
     error("Deleting images...\n");
