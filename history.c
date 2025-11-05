@@ -335,8 +335,7 @@ history_read(void) {
             is_image[history_length] = true;
             e->content = util_memdup(begin, (usize)(e->content_length + 1));
             e->content = arena_push(arena, (e->content_length + 1));
-            memcpy(e->content, begin, (e->content_length + 1));
-            ;
+            memcpy(e->content, begin, (size_t)(e->content_length + 1));
         } else {
             int32 size;
             if (e->content_length >= TRIMMED_SIZE) {
@@ -498,8 +497,8 @@ history_append(char *content, int32 length) {
     case CLIPBOARD_IMAGE:
         e->trimmed = 0;
         e->trimmed_length = (int16)e->content_length;
-        e->content = arena_push(arena, (usize)(length + 1));
-        memcpy(e->content, content, (usize)(length + 1));
+        e->content = arena_push(arena, length + 1);
+        memcpy(e->content, content, (size_t)(length + 1));
         is_image[history_length] = true;
         break;
     default:

@@ -90,9 +90,9 @@ static char *program;
 #define SIZEOF(X) (int64)sizeof(X)
 
 #if !defined(SIZEKB)
-#define SIZEKB(X) ((size_t)(X)*1024ul)
-#define SIZEMB(X) ((size_t)(X)*1024ul*1024ul)
-#define SIZEGB(X) ((size_t)(X)*1024ul*1024ul*1024ul)
+#define SIZEKB(X) ((int64)(X)*1024l)
+#define SIZEMB(X) ((int64)(X)*1024l*1024l)
+#define SIZEGB(X) ((int64)(X)*1024l*1024l*1024l)
 #endif
 
 #if !defined(LENGTH)
@@ -289,7 +289,7 @@ basename2(char *path) {
 
 #if OS_UNIX
 static void *
-xmmap_commit(size_t *size) {
+xmmap_commit(int64 *size) {
     void *p;
 
     if (util_page_size == 0) {
@@ -303,18 +303,18 @@ xmmap_commit(size_t *size) {
 
     do {
         if ((*size >= SIZEMB(2)) && FLAGS_HUGE_PAGES) {
-            p = mmap(NULL, *size, PROT_READ | PROT_WRITE,
+            p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
                      MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE
                          | FLAGS_HUGE_PAGES,
                      -1, 0);
             if (p != MAP_FAILED) {
-                *size = UTIL_ALIGN(*size, SIZEMB(2));
+                *size = (int64)UTIL_ALIGN((size_t)size, (size_t)SIZEMB(2));
                 break;
             }
         }
-        p = mmap(NULL, *size, PROT_READ | PROT_WRITE,
+        p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
                  MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE, -1, 0);
-        *size = UTIL_ALIGN(*size, util_page_size);
+        *size = (int64)UTIL_ALIGN((size_t)*size, util_page_size);
     } while (0);
     if (p == MAP_FAILED) {
         error("Error in mmap(%zu): %s.\n", *size, strerror(errno));

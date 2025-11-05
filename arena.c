@@ -171,7 +171,7 @@ arena_allocate(int64 *size) {
             p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
                      MAP_ANON | MAP_PRIVATE | FLAGS_HUGE_PAGES, -1, 0);
             if (p != MAP_FAILED) {
-                *size = (int64)ARENA_ALIGN((size_t)*size, SIZEMB(2));
+                *size = (int64)ARENA_ALIGN((size_t)*size, (size_t)SIZEMB(2));
                 break;
             }
         }
