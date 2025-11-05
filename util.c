@@ -197,7 +197,6 @@ static int32 snprintf2(char *, size_t, char *, ...);
 static void error(char *, ...);
 static void fatal(int) __attribute__((noreturn));
 static void string_from_strings(char *, int32, char *, char **, int32);
-static int32 util_copy_file(const char *, const char *);
 static int32 util_string_int32(int32 *, const char *);
 static int util_command(const int, char **);
 static uint32 util_nthreads(void);
@@ -740,8 +739,8 @@ util_memdup(const void *source, const usize size) {
 }
 
 #if OS_UNIX
-int32
-util_copy_file(const char *destination, const char *source) {
+static int32
+util_copy_file_sync(const char *destination, const char *source) {
     int32 source_fd;
     int32 destination_fd;
     char buffer[BUFSIZ];
