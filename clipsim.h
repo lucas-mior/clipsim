@@ -94,7 +94,7 @@ typedef ssize_t isize;
 
 typedef struct Entry {
     char *content;
-    int content_length;
+    int32 content_length;
     int16 trimmed_length;
     int16 trimmed;
 } Entry;
