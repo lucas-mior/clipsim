@@ -186,14 +186,11 @@ typedef ssize_t isize;
 
 static char *notifiers[2] = {"dunstify", "notify-send"};
 
-static void *xmmap_commit(size_t *);
-static void xmunmap(void *, size_t);
 static void *util_memdup(const void *, const usize);
 static char *xstrdup(char *);
 static int32 snprintf2(char *, size_t, char *, ...);
 static void error(char *, ...);
 static void fatal(int) __attribute__((noreturn));
-static void string_from_strings(char *, int32, char *, char **, int32);
 static int32 util_string_int32(int32 *, const char *);
 static int util_command(const int, char **);
 static uint32 util_nthreads(void);
@@ -204,7 +201,6 @@ static void send_signal(const char *, const int);
 static char *itoa2(long, char *);
 static long atoi2(char *);
 static size_t util_page_size = 0;
-char *basename2(char *);
 
 #if OS_WINDOWS
 static void *
@@ -261,7 +257,7 @@ util_nthreads(void) {
 #define basename basename2
 #endif
 
-char *
+static char *
 basename2(char *path) {
     int64 left = (int64)strlen(path);
     char *fslash = NULL;
@@ -293,7 +289,7 @@ basename2(char *path) {
 }
 
 #if OS_UNIX
-void *
+static void *
 xmmap_commit(size_t *size) {
     void *p;
 
@@ -327,7 +323,7 @@ xmmap_commit(size_t *size) {
     }
     return p;
 }
-void
+static void
 xmunmap(void *p, size_t size) {
     if (munmap(p, size) < 0) {
         error("Error in munmap(%p, %zu): %s.\n", p, size, strerror(errno));
@@ -335,7 +331,7 @@ xmunmap(void *p, size_t size) {
     return;
 }
 #else
-void *
+static void *
 xmmap_commit(size_t *size) {
     void *p;
 
@@ -357,7 +353,7 @@ xmmap_commit(size_t *size) {
     }
     return p;
 }
-void
+static void
 xmunmap(void *p, size_t size) {
     (void)size;
     if (!VirtualFree(p, 0, MEM_RELEASE)) {
@@ -367,7 +363,7 @@ xmunmap(void *p, size_t size) {
 }
 #endif
 
-void *
+static void *
 xmalloc(int64 size) {
     void *p;
     if (size <= 0) {
@@ -381,7 +377,7 @@ xmalloc(int64 size) {
     return p;
 }
 
-void *
+static void *
 xrealloc(void *old, const int64 size) {
     void *p;
     uint64 old_save = (uint64)old;
@@ -396,7 +392,7 @@ xrealloc(void *old, const int64 size) {
     return p;
 }
 
-void *
+static void *
 xcalloc(const size_t nmemb, const size_t size) {
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
@@ -600,7 +596,7 @@ util_command(const int argc, char **argv) {
 }
 #endif
 
-void
+static void
 string_from_strings(char *buffer, int32 size, char *sep, char **array,
                     int32 array_length) {
     int32 n = 0;
