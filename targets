@@ -1,0 +1,32 @@
+targets='
+build
+debug
+# install
+# uninstall
+# valgrind
+# test_all
+# check
+cross aarch64-linux-gnu
+cross aarch64-linux-musl
+cross riscv32-linux-musl
+cross riscv64-linux-musl
+cross riscv32-linux-gnu
+cross riscv64-linux-gnu
+cross x86_64-linux-musl
+cross x86_64-linux-muslx32
+cross x86-linux-gnu
+cross x86-linux-musl
+cross aarch64-freebsd-none
+cross aarch64-netbsd-none
+cross arm-freebsd-eabihf
+cross arm-netbsd-eabi
+cross mips-netbsd-eabi
+cross powerpc64-freebsd-none
+cross powerpc-freebsd-eabihf
+cross powerpc-netbsd-eabi
+cross riscv64-freebsd-none
+cross x86_64-freebsd-none
+cross x86_64-netbsd-none
+cross x86-freebsd-none
+cross x86-netbsd-none
+'
