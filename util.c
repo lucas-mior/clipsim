@@ -844,7 +844,7 @@ send_signal(const char *executable, const int32 signal_number) {
             close(cmdline);
             continue;
         }
-        if (memmem(command, r, executable, (size_t)len)) {
+        if (memmem(command, (size_t)r, executable, (size_t)len)) {
             if (kill(pid, signal_number) < 0) {
                 error("Error sending signal %d to program %s (pid %d): %s.\n",
                       signal_number, executable, pid, strerror(errno));
