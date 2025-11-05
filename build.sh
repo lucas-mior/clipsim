@@ -48,7 +48,7 @@ CC=${CC:-cc}
 
 case "$target" in
 "debug")
-    CFLAGS="$CFLAGS -g -fsanitize=undefined"
+    CFLAGS="$CFLAGS -Wno-declaration-after-statement -g -fsanitize=undefined"
     CPPFLAGS="$CPPFLAGS $GNUSOURCE -DDEBUGGING=1"
     exe="bin/${program}_debug"
     ;;
@@ -146,6 +146,7 @@ case "$target" in
     exit
     ;;
 "check")
+    CC=gcc CFLAGS="-fanalyzer" ./build.sh
     scan-build --view -analyze-headers --status-bugs ./build.sh
     exit
     ;;

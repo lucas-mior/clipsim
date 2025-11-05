@@ -54,7 +54,7 @@ static void history_remove(int32);
 static void history_backup(void);
 static void history_exit(int) __attribute__((noreturn));
 
-int32
+static int32
 history_callback_delete(const char *path, const struct stat *stat,
                         int32 typeflag, struct FTW *ftwbuf) {
     (void)stat;
