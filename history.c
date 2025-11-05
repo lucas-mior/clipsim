@@ -472,7 +472,7 @@ history_append(char *content, int32 length) {
         if (oldindex != (history_length - 1)) {
             history_reorder(oldindex);
         }
-        free(content);
+        XFree(content);
         return;
     }
 
@@ -655,7 +655,7 @@ history_free_entry(const Entry *e, int32 index) {
     if (is_image[index]) {
         unlink(e->content);
     }
-    free(e->content);
+    assert(arena_pop(arena, e->content) == 0);
 
     return;
 }
