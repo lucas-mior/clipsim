@@ -145,16 +145,6 @@ create_temp_files() {
 }
 
 case "$target" in
-"benchmark") 
-    create_temp_files
-
-    # strace -f -c -o $dir/strace.txt $dir/clipsim -s -q -d . 2>&1
-    trace_on
-    $dir/$exe -s -q -d .
-    trace_off
-    rm $dir/$exe
-    exit
-    ;;
 "valgrind") 
     vg_flags="--error-exitcode=1 --errors-for-leak-kinds=all"
     vg_flags="$vg_flags --leak-check=full --show-leak-kinds=all"
