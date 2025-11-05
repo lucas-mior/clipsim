@@ -50,7 +50,6 @@ case "$target" in
 "debug")
     CFLAGS="$CFLAGS -Wno-declaration-after-statement -g -fsanitize=undefined"
     CPPFLAGS="$CPPFLAGS $GNUSOURCE -DDEBUGGING=1"
-    exe="bin/${program}_debug"
     ;;
 "valgrind") 
     CFLAGS="$CFLAGS -g -O0 -ftree-vectorize"
@@ -109,7 +108,9 @@ case "$target" in
     exit
     ;;
 "install")
-    [ ! -f $program ] && $0 build
+    if [ ! -f bin/$program ]; then
+        $0 build
+    fi
     trace_on
     install -Dm755 bin/${program}              ${DESTDIR}${PREFIX}/bin/${program}
     install -Dm644 ${program}.1                ${DESTDIR}${PREFIX}/man/man1/${program}.1
