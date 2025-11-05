@@ -21,6 +21,7 @@
 #include "clipsim.h"
 #include "util.c"
 #include "content.c"
+#include "arena.c"
 
 #include <poll.h>
 #include <X11/X.h>
@@ -40,6 +41,7 @@ static char xdg_cache_home_buffer[256];
 static char *HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 static char *tmp_directory = "/tmp/clipsim";
+static Arena *arena;
 
 static int32 history_repeated_index(const char *, const int32);
 static void history_free_entry(const Entry *, int32);
@@ -256,6 +258,8 @@ history_read(void) {
         exit(EXIT_FAILURE);
     }
 
+    arena = arena_create(SIZEGB(1));
+
     {
         char *clipsim_dir;
         char buffer[PATH_MAX];
@@ -330,6 +334,9 @@ history_read(void) {
             e->trimmed_length = (int16)e->content_length;
             is_image[history_length] = true;
             e->content = util_memdup(begin, (usize)(e->content_length + 1));
+            e->content = arena_push(arena, (e->content_length + 1));
+            memcpy(e->content, begin, (e->content_length + 1));
+            ;
         } else {
             int32 size;
             if (e->content_length >= TRIMMED_SIZE) {
@@ -337,7 +344,7 @@ history_read(void) {
             } else {
                 size = (e->content_length + 1)*2;
             }
-            e->content = xmalloc(size);
+            e->content = arena_push(arena, size);
             memcpy(e->content, begin, (usize)(e->content_length + 1));
 
             content_trim_spaces(&e->trimmed, &e->trimmed_length, e->content,
@@ -481,7 +488,7 @@ history_append(char *content, int32 length) {
         } else {
             size = (e->content_length + 1)*2;
         }
-        e->content = xmalloc(size);
+        e->content = arena_push(arena, size);
         memcpy(e->content, content, (usize)(e->content_length + 1));
 
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length), e->content,
@@ -491,7 +498,8 @@ history_append(char *content, int32 length) {
     case CLIPBOARD_IMAGE:
         e->trimmed = 0;
         e->trimmed_length = (int16)e->content_length;
-        e->content = util_memdup(content, (usize)(length + 1));
+        e->content = arena_push(arena, (usize)(length + 1));
+        memcpy(e->content, content, (usize)(length + 1));
         is_image[history_length] = true;
         break;
     default:

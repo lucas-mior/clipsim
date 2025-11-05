@@ -69,9 +69,9 @@
 #include <stdint.h>
 
 #if !defined(SIZEKB)
-#define SIZEKB(X) ((size_t)(X)*1024ul)
-#define SIZEMB(X) ((size_t)(X)*1024ul*1024ul)
-#define SIZEGB(X) ((size_t)(X)*1024ul*1024ul*1024ul)
+#define SIZEKB(X) ((int64)(X)*1024l)
+#define SIZEMB(X) ((int64)(X)*1024l*1024l)
+#define SIZEGB(X) ((int64)(X)*1024l*1024l*1024l)
 #endif
 
 #define ARENA_ALIGN(S, A) (((S) + ((A) - 1)) & ~((A) - 1))
@@ -113,29 +113,31 @@ typedef struct Arena {
     char *name;
     char *begin;
     void *pos;
-    size_t size;
+    int64 size;
     int32 npushed;
     int32 padding;
     struct Arena *next;
 } Arena;
 
-static Arena *arena_create(size_t);
-static void *arena_allocate(size_t *);
+static void *arena_allocate(int64 *);
 static void arena_destroy(Arena *);
 static void arena_free(Arena *);
-static Arena *arena_with_space(Arena *, uint32);
-static void *arena_push(Arena *, uint32);
+static Arena *arena_with_space(Arena *, int64);
+static void *arena_push(Arena *, int64);
 static uint32 arena_push_index32(Arena *, uint32);
 static int32 arena_pop(Arena *, void *);
 static void *arena_reset(Arena *);
 
 static size_t arena_page_size = 0;
 
-Arena *
-arena_create(size_t size) {
+static Arena *
+arena_create(int64 size) {
     void *p;
     Arena *arena;
 
+    if (size < 0) {
+        return NULL;
+    }
     if ((p = arena_allocate(&size)) == NULL) {
         return NULL;
     }
@@ -152,7 +154,7 @@ arena_create(size_t size) {
 
 #if OS_UNIX
 void *
-arena_allocate(size_t *size) {
+arena_allocate(int64 *size) {
     void *p;
 
     if (arena_page_size == 0) {
@@ -166,28 +168,28 @@ arena_allocate(size_t *size) {
 
     do {
         if ((*size >= SIZEMB(2)) && FLAGS_HUGE_PAGES) {
-            p = mmap(NULL, *size, PROT_READ | PROT_WRITE,
+            p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
                      MAP_ANON | MAP_PRIVATE | FLAGS_HUGE_PAGES, -1, 0);
             if (p != MAP_FAILED) {
-                *size = ARENA_ALIGN(*size, SIZEMB(2));
+                *size = (int64)ARENA_ALIGN((size_t)*size, SIZEMB(2));
                 break;
             }
         }
-        p = mmap(NULL, *size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE,
-                 -1, 0);
-        *size = ARENA_ALIGN(*size, arena_page_size);
+        p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
+                 MAP_ANON | MAP_PRIVATE, -1, 0);
+        *size = (int64)ARENA_ALIGN((size_t)*size, arena_page_size);
     } while (0);
 
     if (p == MAP_FAILED) {
-        fprintf(stderr, "Error in mmap(%zu): %s.\n", *size, strerror(errno));
+        fprintf(stderr, "Error in mmap(%ld): %s.\n", *size, strerror(errno));
         exit(EXIT_FAILURE);
     }
     return p;
 }
 void
 arena_free(Arena *arena) {
-    if (munmap(arena, arena->size) < 0) {
-        fprintf(stderr, "Error in munmap(%p, %zu): %s.\n", (void *)arena,
+    if (munmap(arena, (size_t)arena->size) < 0) {
+        fprintf(stderr, "Error in munmap(%p, %ld): %s.\n", (void *)arena,
                 arena->size, strerror(errno));
         exit(EXIT_FAILURE);
     }
@@ -240,14 +242,14 @@ arena_destroy(Arena *arena) {
     return;
 }
 
-static size_t
+static int64
 arena_data_size(Arena *arena) {
-    size_t size = arena->size - (size_t)(arena->begin - (char *)arena);
+    int64 size = arena->size - (arena->begin - (char *)arena);
     return size;
 }
 
 Arena *
-arena_with_space(Arena *arena, uint32 size) {
+arena_with_space(Arena *arena, int64 size) {
     if (arena == NULL) {
         return NULL;
     }
@@ -274,7 +276,7 @@ arena_with_space(Arena *arena, uint32 size) {
 }
 
 void *
-arena_push(Arena *arena, uint32 size) {
+arena_push(Arena *arena, int64 size) {
     void *before;
 
     if ((arena = arena_with_space(arena, size)) == NULL) {
@@ -360,13 +362,13 @@ main(void) {
 
     assert((arena = arena_create(SIZEMB(3))));
     assert(arena->pos == arena->begin);
-    error("arena->size:%zu\n", arena->size);
+    error("arena->size:%ld\n", arena->size);
     arena_size = (uint32)arena_data_size(arena);
 
     srand((uint32)time(NULL));
 
     {
-        size_t total_size = 0;
+        int64 total_size = 0;
         int64 total_pushed = 0;
 
         for (uint32 i = 0; i < LENGTH(objs); i += 1) {
