@@ -793,14 +793,13 @@ static int32
 util_copy_file_async(const char *destination, const char *source,
                      int *dest_fd) {
     int32 source_fd;
-    int32 destination_fd;
 
     if ((source_fd = open(source, O_RDONLY)) < 0) {
         error("Error opening %s for reading: %s.\n", source, strerror(errno));
         return -1;
     }
 
-    if ((destination_fd = *dest_fd
+    if ((*dest_fd
          = open(destination, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
         < 0) {
         error("Error opening %s for writing: %s.\n", destination,
