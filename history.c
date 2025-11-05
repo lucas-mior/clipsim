@@ -119,7 +119,7 @@ history_save(void) {
                          basename(e->content));
 
             if (strcmp(image_save, e->content)) {
-                if (util_copy_file(image_save, e->content) < 0) {
+                if (util_copy_file_sync(image_save, e->content) < 0) {
                     error("Error copying %s to %s: %s.\n", e->content,
                           image_save, strerror(errno));
                     history_remove(i);
