@@ -179,7 +179,7 @@ history_save(void) {
 
 // clang-format off
 #define XSIGNAL(NAME) [NAME] = #NAME,
-char *signal_names[] = {
+static char *signal_names[] = {
     XSIGNAL(SIGABRT)
     XSIGNAL(SIGALRM)
     XSIGNAL(SIGVTALRM)
