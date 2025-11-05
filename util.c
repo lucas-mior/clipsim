@@ -790,7 +790,8 @@ util_copy_file_sync(const char *destination, const char *source) {
 }
 
 static int32
-util_copy_file_async(const char *destination, const char *source, int *dest_fd) {
+util_copy_file_async(const char *destination, const char *source,
+                     int *dest_fd) {
     int32 source_fd;
     int32 destination_fd;
 
