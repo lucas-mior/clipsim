@@ -177,10 +177,45 @@ history_save(void) {
     return true;
 }
 
-void
-history_exit(int32 unused) {
-    (void)unused;
+#define SIGNAL(NAME) [NAME] = #NAME,
+char *signal_names[] = {
+    SIGNAL(SIGABRT)
+    SIGNAL(SIGALRM)
+    SIGNAL(SIGVTALRM)
+    SIGNAL(SIGPROF)
+    SIGNAL(SIGBUS)
+    SIGNAL(SIGCHLD)
+    SIGNAL(SIGCONT)
+    SIGNAL(SIGFPE)
+    SIGNAL(SIGHUP)
+    SIGNAL(SIGILL)
+    SIGNAL(SIGINT)
+    SIGNAL(SIGKILL)
+    SIGNAL(SIGPIPE)
+    SIGNAL(SIGPOLL)
+    SIGNAL(SIGQUIT)
+    SIGNAL(SIGSEGV)
+    SIGNAL(SIGSTOP)
+    SIGNAL(SIGSYS)
+    SIGNAL(SIGTERM)
+    SIGNAL(SIGTSTP)
+    SIGNAL(SIGTTIN)
+    SIGNAL(SIGTTOU)
+    SIGNAL(SIGTRAP)
+    SIGNAL(SIGURG)
+    SIGNAL(SIGUSR1)
+    SIGNAL(SIGUSR2)
+    SIGNAL(SIGXCPU)
+    SIGNAL(SIGXFSZ)
+};
+#undef SIGNAL
 
+void
+history_exit(int32 signum) {
+    if (signum < LENGTH(signal_names))
+        error("Received signal %s.\n", signal_names[signum]);
+    else
+        error("Received signal %d.\n", signum);
     history_save();
 
     error("Deleting images...\n");
