@@ -40,8 +40,6 @@ static char *HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 static char *tmp_directory = "/tmp/clipsim";
 
-static int32 history_callback_delete(const char *, const struct stat *, int32,
-                                     struct FTW *);
 static int32 history_repeated_index(const char *, const int32);
 static void history_free_entry(const Entry *, int32);
 static void history_reorder(const int32);
