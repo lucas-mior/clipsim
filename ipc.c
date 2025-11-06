@@ -79,7 +79,7 @@ ipc_daemon_listen_fifo(void *unused) {
         }
 
         r = read64(command_fifo.fd, &command, sizeof(*(&command)));
-        if (r < sizeof(*(&command))) {
+        if (r < SIZEOF(*(&command))) {
             error("Error reading command from %s: %s\n", command_fifo.name,
                   strerror(errno));
             continue;
@@ -125,7 +125,7 @@ ipc_client_speak_fifo(int32 command, int32 id) {
 
     w = write64(command_fifo.fd, &command, sizeof(*(&command)));
     util_close(&command_fifo);
-    if (w < sizeof(*(&command))) {
+    if (w < SIZEOF(*(&command))) {
         error("Error writing command to %s: %s\n", command_fifo.name,
               strerror(errno));
         exit(EXIT_FAILURE);
