@@ -212,19 +212,13 @@ _Generic((S), \
 // clang-format on
 
 static char *notifiers[2] = {"dunstify", "notify-send"};
+static int64 util_page_size = 0;
 
-static char *xstrdup(char *);
-static int32 snprintf2(char *, int, char *, ...);
 static void error(char *, ...);
 static void fatal(int) __attribute__((noreturn));
-static int32 util_string_int32(int32 *, const char *);
-static int util_command(const int, char **);
-static void util_die_notify(char *, const char *, ...)
-    __attribute__((noreturn));
 static void util_segv_handler(int32) __attribute__((noreturn));
 static char *itoa2(long, char *);
 static long atoi2(char *);
-static int64 util_page_size = 0;
 INLINE void *memchr64(void *pointer, int32 value, int64 size);
 
 #if !defined(CAT)
@@ -526,7 +520,7 @@ xcalloc(const size_t nmemb, const size_t size) {
     return p;
 }
 
-char *
+static char *
 xstrdup(char *string) {
     char *p;
     int64 length;
@@ -582,7 +576,7 @@ xpthread_mutex_destroy(pthread_mutex_t *mutex) {
     return;
 }
 
-int32
+static int32
 snprintf2(char *buffer, int size, char *format, ...) {
     int n;
     va_list args;
@@ -603,7 +597,7 @@ snprintf2(char *buffer, int size, char *format, ...) {
 }
 
 #if OS_WINDOWS
-int
+static int
 util_command(const int argc, char **argv) {
     char cmdline[1024] = {0};
     int64 j = 0;
@@ -687,7 +681,7 @@ util_command(const int argc, char **argv) {
     return (int)exit_code;
 }
 #else
-int
+static int
 util_command(const int argc, char **argv) {
     pid_t child;
     int status;
@@ -786,7 +780,7 @@ util_segv_handler(int32 unused) {
     _exit(EXIT_FAILURE);
 }
 
-int32
+static int32
 util_string_int32(int32 *number, const char *string) {
     char *endptr;
     long x;
@@ -802,7 +796,7 @@ util_string_int32(int32 *number, const char *string) {
     }
 }
 
-void
+static void __attribute__((noreturn))
 util_die_notify(char *program_name, const char *format, ...) {
     int32 n;
     va_list args;
