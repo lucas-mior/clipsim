@@ -111,7 +111,7 @@ history_save(void) {
     }
 
     for (int32 i = 0; i < history_length; i += 1) {
-        usize tag_size = sizeof(*(&IMAGE_TAG));
+        int64 tag_size = sizeof(*(&IMAGE_TAG));
         Entry *e = &entries[i];
 
         if (is_image[i]) {
@@ -129,17 +129,17 @@ history_save(void) {
                     continue;
                 }
             }
-            if (write(history.fd, image_save, (usize)n) < n) {
+            if (write64(history.fd, image_save, n) < n) {
                 error("Error writing %s: %s\n", image_save, strerror(errno));
                 history_remove(i);
                 continue;
             }
-            if (write(history.fd, &TEXT_TAG, tag_size) < (isize)tag_size) {
+            if (write64(history.fd, &TEXT_TAG, tag_size) < tag_size) {
                 error("Error writing TEXT_TAG: %s\n", strerror(errno));
                 history_remove(i);
                 continue;
             }
-            if (write(history.fd, &IMAGE_TAG, tag_size) < (isize)tag_size) {
+            if (write64(history.fd, &IMAGE_TAG, tag_size) < tag_size) {
                 error("Error writing IMAGE_TAG: %s\n", strerror(errno));
                 history_remove(i);
                 continue;
@@ -150,7 +150,7 @@ history_save(void) {
             isize w;
 
             do {
-                w = write(history.fd, e->content + offset, (usize)left);
+                w = write64(history.fd, e->content + offset, left);
                 if (w <= 0) {
                     break;
                 }
@@ -162,12 +162,12 @@ history_save(void) {
                 history_remove(i);
                 continue;
             }
-            if (write(history.fd, &TEXT_TAG, tag_size) < (isize)tag_size) {
+            if (write64(history.fd, &TEXT_TAG, tag_size) < (isize)tag_size) {
                 error("Error writing TEXT_TAG: %s\n", strerror(errno));
                 history_remove(i);
                 continue;
             }
-            if (write(history.fd, &TEXT_TAG, tag_size) < (isize)tag_size) {
+            if (write64(history.fd, &TEXT_TAG, tag_size) < (isize)tag_size) {
                 error("Error writing TEXT_TAG: %s\n", strerror(errno));
                 history_remove(i);
                 continue;
@@ -416,7 +416,7 @@ history_save_image(char **content, int32 *length) {
     }
 
     do {
-        w = write(file, *(content + copied), (usize)*length);
+        w = write64(file, *(content + copied), *length);
         if (w <= 0) {
             break;
         }

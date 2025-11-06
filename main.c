@@ -45,8 +45,8 @@ static const Command commands[] = {
 
 Entry entries[HISTORY_BUFFER_SIZE] = {0};
 bool is_image[HISTORY_BUFFER_SIZE] = {0};
-const char TEXT_TAG = (char)0x01;
-const char IMAGE_TAG = (char)0x02;
+char TEXT_TAG = (char)0x01;
+char IMAGE_TAG = (char)0x02;
 pthread_mutex_t lock;
 magic_t magic;
 
@@ -134,7 +134,7 @@ main_check_cmdline(char *pid) {
     if ((cmdline = open(buffer, O_RDONLY)) < 0) {
         return false;
     }
-    if ((r = read(cmdline, command, sizeof(command))) <= 0) {
+    if ((r = read64(cmdline, command, sizeof(command))) <= 0) {
         close(cmdline);
         return false;
     }
