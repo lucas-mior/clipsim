@@ -311,6 +311,14 @@ strlen64(char *string) {
     return (int64)len;
 }
 
+INLINE int
+memcmp64(void *left, void *right, int64 size) {
+    if (size == 0)
+        return 0;
+    assert((uint64)size <= SIZE_MAX);
+    return memcmp(left, right, (size_t)size);
+}
+
 #define X64(func) \
     INLINE int64 \
 CAT(func, 64)(int fd, char *buffer, int64 size) { \
