@@ -327,7 +327,7 @@ xmmap_commit(int64 *size) {
 static void
 xmunmap(void *p, int64 size) {
     if (munmap(p, (size_t)size) < 0) {
-        error("Error in munmap(%p, %lld): %s.\n", p, size, strerror(errno));
+        error("Error in munmap(%p, %lld): %s.\n", p, (llong)size, strerror(errno));
     }
     return;
 }
@@ -349,7 +349,7 @@ xmmap_commit(int64 *size) {
     p = VirtualAlloc(NULL, (size_t)*size, MEM_COMMIT | MEM_RESERVE,
                      PAGE_READWRITE);
     if (p == NULL) {
-        fprintf(stderr, "Error in VirtualAlloc(%lld): %lu.\n", (long long)*size,
+        fprintf(stderr, "Error in VirtualAlloc(%lld): %lu.\n", (llong)*size,
                 GetLastError());
         fatal(EXIT_FAILURE);
     }
@@ -369,11 +369,11 @@ static void *
 xmalloc(int64 size) {
     void *p;
     if (size <= 0) {
-        error("Error in xmalloc: invalid size = %ld.\n", size);
+        error("Error in xmalloc: invalid size = %lld.\n", (llong)size);
         fatal(EXIT_FAILURE);
     }
     if ((p = malloc((size_t)size)) == NULL) {
-        error("Failed to allocate %lld bytes.\n", (long long)size);
+        error("Failed to allocate %lld bytes.\n", (llong)size);
         fatal(EXIT_FAILURE);
     }
     return p;
