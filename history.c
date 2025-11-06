@@ -43,7 +43,7 @@ static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 static char *tmp_directory = "/tmp/clipsim";
 static Arena *arena;
 
-static int32 history_repeated_index(const char *, const int32);
+static int32 history_repeated_index(char *, const int32);
 static void history_free_entry(const Entry *, int32);
 static void history_reorder(const int32);
 static int32 history_save_image(char **, int32 *);
@@ -370,7 +370,7 @@ history_read(void) {
 }
 
 int32
-history_repeated_index(const char *content, const int32 length) {
+history_repeated_index(char *content, const int32 length) {
     DEBUG_PRINT("%s, %d", content, length)
     int32 candidates = length_counts[length];
     if (candidates == 0) {
@@ -383,7 +383,7 @@ history_repeated_index(const char *content, const int32 length) {
         if (e->content_length != length) {
             continue;
         }
-        if (!memcmp(e->content, content, (usize)length)) {
+        if (!memcmp64(e->content, content, length)) {
             return i;
         }
 

@@ -313,8 +313,9 @@ strlen64(char *string) {
 
 INLINE int
 memcmp64(void *left, void *right, int64 size) {
-    if (size == 0)
+    if (size == 0) {
         return 0;
+    }
     assert((uint64)size <= SIZE_MAX);
     return memcmp(left, right, (size_t)size);
 }
