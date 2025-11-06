@@ -161,12 +161,12 @@ history_save(void) {
                 history_remove(i);
                 continue;
             }
-            if (write64(history.fd, &TEXT_TAG, tag_size) < (isize)tag_size) {
+            if (write64(history.fd, &TEXT_TAG, tag_size) < tag_size) {
                 error("Error writing TEXT_TAG: %s\n", strerror(errno));
                 history_remove(i);
                 continue;
             }
-            if (write64(history.fd, &TEXT_TAG, tag_size) < (isize)tag_size) {
+            if (write64(history.fd, &TEXT_TAG, tag_size) < tag_size) {
                 error("Error writing TEXT_TAG: %s\n", strerror(errno));
                 history_remove(i);
                 continue;
