@@ -123,7 +123,7 @@ bool
 main_check_cmdline(char *pid) {
     char buffer[256];
     char command[256];
-    isize r;
+    int64 r;
     int32 cmdline;
     char cmd1[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0', '-', 'd', '\0'};
     char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0', '-',
