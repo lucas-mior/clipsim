@@ -290,13 +290,16 @@ memset64(void *buffer, int value, int64 size) {
 
 INLINE void *
 memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
+    void *result;
     if (hay_len <= 0) {
         return NULL;
     }
     if (needle_len <= 0) {
         return NULL;
     }
-    return memmem(haystack, (size_t)hay_len, needle, (size_t)needle_len);
+
+    result = memmem(haystack, (size_t)hay_len, needle, (size_t)needle_len);
+    return result;
 }
 
 INLINE void *
@@ -311,27 +314,42 @@ strlen64(char *string) {
     return (int64)len;
 }
 
+INLINE int64
+strnlen64(char *string, int64 size) {
+    size_t len;
+    assert((uint64)size <= SIZE_MAX);
+    len = strnlen(string, (size_t)size);
+    return (int64)len;
+}
+
 INLINE int
 memcmp64(void *left, void *right, int64 size) {
+    int result;
     if (size == 0) {
         return 0;
     }
     assert((uint64)size <= SIZE_MAX);
-    return memcmp(left, right, (size_t)size);
+    result = memcmp(left, right, (size_t)size);
+    return result;
 }
 
-#define X64(func) \
+#define X64(func, TYPE_MAX, TYPE) \
     INLINE int64 \
 CAT(func, 64)(int fd, char *buffer, int64 size) { \
     ssize_t w; \
     assert(size >= 0); \
-    assert((uint64)size <= SIZE_MAX); \
-    w = func(fd, buffer, (size_t)size); \
+    assert((uint64)size <= TYPE_MAX); \
+    w = func(fd, buffer, (TYPE)size); \
     return (int64)w; \
 }
 
-X64(write)
-X64(read)
+#if OS_WINDOWS
+X64(write, UINT_MAX, uint)
+X64(read, UINT_MAX, uint)
+#else
+X64(write, SIZE_MAX, size_t)
+X64(read, SIZE_MAX, size_t)
+#endif
 
 #undef X64
 
