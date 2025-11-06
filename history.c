@@ -150,8 +150,7 @@ history_save(void) {
             isize w;
 
             do {
-                w = write64(history.fd, e->content + offset, left);
-                if (w <= 0) {
+                if ((w = write64(history.fd, e->content + offset, left)) <= 0) {
                     break;
                 }
                 left -= w;
@@ -515,12 +514,12 @@ history_append(char *content, int32 length) {
         memcpy64(&entries[0], &entries[HISTORY_KEEP_SIZE],
                  HISTORY_KEEP_SIZE*sizeof(*entries));
         memset64(&entries[HISTORY_KEEP_SIZE], 0,
-               HISTORY_KEEP_SIZE*sizeof(*entries));
+                 HISTORY_KEEP_SIZE*sizeof(*entries));
 
         memcpy64(&is_image[0], &is_image[HISTORY_KEEP_SIZE],
                  HISTORY_KEEP_SIZE*sizeof(*is_image));
         memset64(&is_image[HISTORY_KEEP_SIZE], 0,
-               HISTORY_KEEP_SIZE*sizeof(*is_image));
+                 HISTORY_KEEP_SIZE*sizeof(*is_image));
 
         history_length = HISTORY_KEEP_SIZE;
     }
