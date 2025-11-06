@@ -123,7 +123,7 @@ ipc_client_speak_fifo(int32 command, int32 id) {
         exit(EXIT_FAILURE);
     }
 
-    w = write(command_fifo.fd, &command, sizeof(*(&command)));
+    w = write64(command_fifo.fd, &command, sizeof(*(&command)));
     util_close(&command_fifo);
     if (w < (isize)sizeof(*(&command))) {
         error("Error writing command to %s: %s\n", command_fifo.name,
@@ -166,7 +166,7 @@ ipc_daemon_history_save(void) {
 
     saved = history_save();
 
-    if (write(content_fifo.fd, &saved, (usize)saved_size) < saved_size) {
+    if (write64(content_fifo.fd, &saved, saved_size) < saved_size) {
         error("Error sending save result to client.\n");
     }
 
@@ -222,11 +222,11 @@ ipc_daemon_pipe_entries(void) {
 
     for (int32 i = history_length - 1; i >= 0; i -= 1) {
         Entry *e = &entries[i];
-        usize size = (usize)e->trimmed_length + 1;
+        int64 size = e->trimmed_length + 1;
         char *trimmed = &e->content[e->trimmed];
 
         fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
-        if (fwrite(trimmed, 1, size, content_fifo.file) < size) {
+        if (fwrite64(trimmed, 1, size, content_fifo.file) < size) {
             error("Error writing to client fifo.\n");
             break;
         }
@@ -304,7 +304,7 @@ ipc_client_print_entries(void) {
 
     if (buffer[0] != IMAGE_TAG) {
         do {
-            fwrite(buffer, 1, (usize)r, stdout);
+            fwrite64(buffer, 1, r, stdout);
         } while ((r = read(content_fifo.fd, buffer, sizeof(buffer))) > 0);
     } else {
         int32 test;
@@ -369,7 +369,7 @@ ipc_client_ask_id(int32 id) {
                         strerror(errno));
     }
 
-    if (fwrite(&id, sizeof(*(&id)), 1, passid_fifo.file) != 1) {
+    if (fwrite64(&id, sizeof(*(&id)), 1, passid_fifo.file) != 1) {
         error("Error sending id to daemon: %s\n", strerror(errno));
     }
 

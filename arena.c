@@ -137,7 +137,7 @@ static uint32 arena_push_index32(Arena *, uint32);
 static int64 arena_pop(Arena *, void *);
 static void *arena_reset(Arena *);
 
-static size_t arena_page_size = 0;
+static int64 arena_page_size = 0;
 
 static Arena *
 arena_create(int64 size) {
@@ -173,7 +173,7 @@ arena_allocate(int64 *size) {
             fprintf(stderr, "Error getting page size: %s.\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
-        arena_page_size = (size_t)aux;
+        arena_page_size = aux;
     }
 
     do {
@@ -181,13 +181,13 @@ arena_allocate(int64 *size) {
             p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
                      MAP_ANON | MAP_PRIVATE | FLAGS_HUGE_PAGES, -1, 0);
             if (p != MAP_FAILED) {
-                *size = (int64)ARENA_ALIGN((size_t)*size, (size_t)SIZEMB(2));
+                *size = ARENA_ALIGN(*size, SIZEMB(2));
                 break;
             }
         }
         p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
                  MAP_ANON | MAP_PRIVATE, -1, 0);
-        *size = (int64)ARENA_ALIGN((size_t)*size, arena_page_size);
+        *size = ARENA_ALIGN(*size, arena_page_size);
     } while (0);
 
     if (p == MAP_FAILED) {
