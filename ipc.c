@@ -242,7 +242,7 @@ void
 ipc_daemon_pipe_id(int32 id) {
     DEBUG_PRINT("%d", id)
     Entry *e;
-    usize tag_size = sizeof(*(&IMAGE_TAG));
+    int64 tag_size = sizeof(*(&IMAGE_TAG));
 
     if (util_open(&content_fifo, O_WRONLY) < 0) {
         return;
@@ -265,7 +265,7 @@ ipc_daemon_pipe_id(int32 id) {
 
     e = &entries[id];
     if (is_image[id]) {
-        if (write64(content_fifo.fd, &IMAGE_TAG, tag_size) < (isize)tag_size) {
+        if (write64(content_fifo.fd, &IMAGE_TAG, tag_size) < tag_size) {
             dprintf(content_fifo.fd, "Error printing image tag.\n");
             goto close;
         }
