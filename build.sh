@@ -87,7 +87,7 @@ else
     LDFLAGS="$LDFLAGS -lpthread"
 fi
 
-if [ "$target" != "test" ] && [ "$CC" = "clang" ]; then
+if [ "$CC" = "clang" ]; then
     CFLAGS="$CFLAGS -Weverything"
     CFLAGS="$CFLAGS -Wno-unsafe-buffer-usage"
     CFLAGS="$CFLAGS -Wno-format-nonliteral"
