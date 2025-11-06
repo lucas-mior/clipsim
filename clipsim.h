@@ -129,8 +129,8 @@ enum {
 extern Entry entries[];
 extern bool is_image[];
 extern pthread_mutex_t lock;
-extern const char TEXT_TAG;
-extern const char IMAGE_TAG;
+extern char TEXT_TAG;
+extern char IMAGE_TAG;
 extern magic_t magic;
 
 static int32 util_open(File *file, const int32 flag);
