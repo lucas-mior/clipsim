@@ -116,8 +116,7 @@ content_check_content(uchar *data, const int32 length) {
         return CLIPBOARD_ERROR;
     }
 
-    if (memchr64(data, TEXT_TAG, length)
-        || memchr64(data, IMAGE_TAG, length)) {
+    if (memchr64(data, TEXT_TAG, length) || memchr64(data, IMAGE_TAG, length)) {
         error("Entry contains control chars. This won't be added to history");
         return CLIPBOARD_OTHER;
     }
