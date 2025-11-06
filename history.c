@@ -264,7 +264,7 @@ history_read(void) {
         char *clipsim_dir;
         char buffer[PATH_MAX];
         int n = SNPRINTF(buffer, "%s/%s", XDG_CACHE_HOME, clipsim);
-        history.name = util_memdup(buffer, (usize)n + 1);
+        history.name = util_memdup(buffer, n + 1);
 
         clipsim_dir = dirname(buffer);
         if (mkdir(clipsim_dir, 0770) < 0) {
@@ -333,7 +333,7 @@ history_read(void) {
             e->trimmed = 0;
             e->trimmed_length = (int16)e->content_length;
             is_image[history_length] = true;
-            e->content = util_memdup(begin, (usize)(e->content_length + 1));
+            e->content = util_memdup(begin, e->content_length + 1);
             e->content = arena_push(arena, (e->content_length + 1));
             memcpy(e->content, begin, (size_t)(e->content_length + 1));
         } else {
@@ -404,10 +404,10 @@ history_save_image(char **content, int32 *length) {
     isize w;
     isize copied = 0;
     char image_file[256];
-    time_t t = time(NULL);
+    int64 t = time(NULL);
     int32 n;
 
-    n = SNPRINTF(image_file, "%s/%ld.png", tmp_directory, t);
+    n = SNPRINTF(image_file, "%s/%lld.png", tmp_directory, (llong)t);
 
     if ((file
          = open(image_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))

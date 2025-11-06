@@ -32,6 +32,7 @@
 #include <pthread.h>
 #include <limits.h>
 #include <sys/stat.h>
+#include <assert.h>
 
 #if defined(__linux__)
 #define OS_LINUX 1
@@ -154,13 +155,12 @@ static char *program;
 #define MAP_POPULATE 0
 #endif
 
-#define UTIL_ALIGN(S, A) (((S) + ((A) - 1)) & ~((A) - 1))
-
-#if !defined(ALIGNMENT)
-#define ALIGNMENT 16ul
+#if !defined(INLINE)
+#if defined(__GNUC__)
+#define INLINE static inline __attribute__((always_inline))
+#else
+#define INLINE static inline
 #endif
-#if !defined(ALIGN)
-#define ALIGN(x) UTIL_ALIGN(x, ALIGNMENT)
 #endif
 
 #if !defined(INTEGERS)
@@ -181,28 +181,56 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
-
-typedef size_t usize;
-typedef ssize_t isize;
 #endif
+
+// clang-format off
+#define UTIL_ALIGN_UINT(S, A) (((S) + ((A) - 1)) & ~((A) - 1))
+#define COMPILE_STOP "aaaaa"
+
+#if __STDC__== 1 && __STDC_VERSION__ >= 201112L
+#define UTIL_ALIGN(S, A) \
+_Generic((S), \
+    unsigned long long: (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    unsigned long:      (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    unsigned int:       (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    long long:          (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    long:               (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    int:                (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    default:            COMPILE_STOP \
+)
+#else
+#define UTIL_ALIGN(S, A) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A)
+#endif
+
+
+#if !defined(ALIGNMENT)
+#define ALIGNMENT 16ul
+#endif
+#if !defined(ALIGN)
+#define ALIGN(x) UTIL_ALIGN(x, ALIGNMENT)
+#endif
+// clang-format on
 
 static char *notifiers[2] = {"dunstify", "notify-send"};
 
-static void *util_memdup(const void *, const usize);
 static char *xstrdup(char *);
-static int32 snprintf2(char *, size_t, char *, ...);
+static int32 snprintf2(char *, int, char *, ...);
 static void error(char *, ...);
 static void fatal(int) __attribute__((noreturn));
 static int32 util_string_int32(int32 *, const char *);
 static int util_command(const int, char **);
-static uint32 util_nthreads(void);
 static void util_die_notify(char *, const char *, ...)
     __attribute__((noreturn));
 static void util_segv_handler(int32) __attribute__((noreturn));
-static void send_signal(const char *, const int);
 static char *itoa2(long, char *);
 static long atoi2(char *);
-static size_t util_page_size = 0;
+static int64 util_page_size = 0;
+INLINE void *memchr64(void *pointer, int32 value, int64 size);
+
+#if !defined(CAT)
+#define CAT_(a, b) a##b
+#define CAT(a, b) CAT_(a, b)
+#endif
 
 #if OS_WINDOWS
 static void *
@@ -225,7 +253,7 @@ memmem(void *haystack, size_t hay_len, void *needle, size_t needle_len) {
     while (h < limit) {
         uchar *p;
 
-        if ((p = memchr(h, n[0], (size_t)(limit - h))) == NULL) {
+        if ((p = memchr64(h, n[0], limit - h)) == NULL) {
             return NULL;
         }
 
@@ -239,8 +267,59 @@ memmem(void *haystack, size_t hay_len, void *needle, size_t needle_len) {
 }
 #endif
 
+#define X64(func) \
+  INLINE void \
+      CAT(func, 64)(void *dest, void *source, int64 size) { \
+      assert(size > 0); \
+      assert((uint64)size < SIZE_MAX); \
+      func(dest, source, (size_t)size); \
+      return; \
+  }
+
+X64(memcpy)
+X64(memmove)
+#undef X64
+
+INLINE void *
+memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
+    if (hay_len <= 0) {
+        return NULL;
+    }
+    if (needle_len <= 0) {
+        return NULL;
+    }
+    return memmem(haystack, (size_t)hay_len, needle, (size_t)needle_len);
+}
+
+INLINE void *
+memchr64(void *pointer, int32 value, int64 size) {
+    assert(size >= 0);
+    return memchr(pointer, value, (size_t)size);
+}
+
+INLINE int64
+strlen64(char *string) {
+    size_t len = strlen(string);
+    return (int64)len;
+}
+
+#define X64(func) \
+    INLINE int64 \
+CAT(func, 64)(int fd, char *buffer, int64 size) { \
+    ssize_t w; \
+    assert(size >= 0); \
+    assert((uint64)size < SIZE_MAX); \
+    w = func(fd, buffer, (size_t)size); \
+    return (int64)w; \
+}
+
+X64(write)
+X64(read)
+
+#undef X64
+
 #if OS_WINDOWS
-uint32
+static uint32
 util_nthreads(void) {
     SYSTEM_INFO sysinfo;
     memset(&sysinfo, 0, sizeof(sysinfo));
@@ -248,7 +327,7 @@ util_nthreads(void) {
     return sysinfo.dwNumberOfProcessors;
 }
 #else
-uint32
+static uint32
 util_nthreads(void) {
     return (uint32)sysconf(_SC_NPROCESSORS_ONLN);
 }
@@ -260,7 +339,7 @@ util_nthreads(void) {
 
 static char *
 basename2(char *path) {
-    int64 left = (int64)strlen(path);
+    int64 left = strlen64(path);
     char *fslash = NULL;
     char *bslash = NULL;
     char *p = path;
@@ -268,9 +347,9 @@ basename2(char *path) {
     while (left > 0) {
         int64 length;
 
-        fslash = memchr(p, '/', (usize)left);
+        fslash = memchr64(p, '/', left);
         if (OS_WINDOWS) {
-            bslash = memchr(p, '\\', (usize)left);
+            bslash = memchr64(p, '\\', left);
         }
 
         if ((fslash == NULL) && (bslash == NULL)) {
@@ -300,7 +379,7 @@ xmmap_commit(int64 *size) {
             fprintf(stderr, "Error getting page size: %s.\n", strerror(errno));
             fatal(EXIT_FAILURE);
         }
-        util_page_size = (size_t)aux;
+        util_page_size = aux;
     }
 
     do {
@@ -310,13 +389,13 @@ xmmap_commit(int64 *size) {
                          | FLAGS_HUGE_PAGES,
                      -1, 0);
             if (p != MAP_FAILED) {
-                *size = (int64)UTIL_ALIGN((size_t)size, (size_t)SIZEMB(2));
+                *size = UTIL_ALIGN(*size, SIZEMB(2));
                 break;
             }
         }
         p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
                  MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE, -1, 0);
-        *size = (int64)UTIL_ALIGN((size_t)*size, util_page_size);
+        *size = UTIL_ALIGN(*size, util_page_size);
     } while (0);
     if (p == MAP_FAILED) {
         error("Error in mmap(%zu): %s.\n", *size, strerror(errno));
@@ -327,7 +406,8 @@ xmmap_commit(int64 *size) {
 static void
 xmunmap(void *p, int64 size) {
     if (munmap(p, (size_t)size) < 0) {
-        error("Error in munmap(%p, %lld): %s.\n", p, (llong)size, strerror(errno));
+        error("Error in munmap(%p, %lld): %s.\n", p, (llong)size,
+              strerror(errno));
     }
     return;
 }
@@ -368,10 +448,13 @@ xmunmap(void *p, size_t size) {
 static void *
 xmalloc(int64 size) {
     void *p;
+
     if (size <= 0) {
         error("Error in xmalloc: invalid size = %lld.\n", (llong)size);
         fatal(EXIT_FAILURE);
     }
+    assert((uint64)size < SIZE_MAX);
+
     if ((p = malloc((size_t)size)) == NULL) {
         error("Failed to allocate %lld bytes.\n", (llong)size);
         fatal(EXIT_FAILURE);
@@ -383,14 +466,18 @@ static void *
 xrealloc(void *old, const int64 size) {
     void *p;
     uint64 old_save = (uint64)old;
+
     if (size <= 0) {
         error("Error in xmalloc: invalid size = %lld.\n", (long long)size);
         fatal(EXIT_FAILURE);
     }
-    if ((p = realloc(old, (usize)size)) == NULL) {
+    assert((uint64)size < SIZE_MAX);
+
+    if ((p = realloc(old, (size_t)size)) == NULL) {
         error("Failed to reallocate %zu bytes from %x.\n", size, old_save);
         fatal(EXIT_FAILURE);
     }
+
     return p;
 }
 
@@ -407,16 +494,16 @@ xcalloc(const size_t nmemb, const size_t size) {
 char *
 xstrdup(char *string) {
     char *p;
-    size_t length;
+    int64 length;
 
-    length = strlen(string) + 1;
-    if ((p = malloc(length)) == NULL) {
+    length = strlen64(string) + 1;
+    if ((p = malloc((size_t)length)) == NULL) {
         error("Error allocating %zu bytes to duplicate '%s': %s\n", length,
               string, strerror(errno));
         fatal(EXIT_FAILURE);
     }
 
-    memcpy(p, string, length);
+    memcpy64(p, string, length);
     return p;
 }
 
@@ -461,19 +548,19 @@ xpthread_mutex_destroy(pthread_mutex_t *mutex) {
 }
 
 int32
-snprintf2(char *buffer, size_t size, char *format, ...) {
+snprintf2(char *buffer, int size, char *format, ...) {
     int n;
     va_list args;
 
     va_start(args, format);
-    n = vsnprintf(buffer, size, format, args);
+    n = vsnprintf(buffer, (size_t)size, format, args);
     va_end(args);
 
     if (n <= 0) {
         error("Error in snprintf.\n");
         fatal(EXIT_FAILURE);
     }
-    if (n >= (int)size) {
+    if (n >= size) {
         error("Error in snprintf: Buffer is too small.\n");
         fatal(EXIT_FAILURE);
     }
@@ -488,32 +575,32 @@ util_command(const int argc, char **argv) {
     FILE *tty;
     PROCESS_INFORMATION proc_info = {0};
     DWORD exit_code = 0;
-    int64 len = (int64)strlen(argv[0]);
+    int64 len = strlen64(argv[0]);
     char *argv0_windows;
     char *exe = ".exe";
-    int64 exe_len = (int64)(strlen(exe));
+    int64 exe_len = (int64)(strlen64(exe));
 
     if (argc == 0 || argv == NULL) {
         error("Invalid arguments.\n");
         fatal(EXIT_FAILURE);
     }
 
-    if (memmem(argv[0], (size_t)len + 1, exe, (size_t)exe_len + 1) == NULL) {
+    if (memmem64(argv[0], len + 1, exe, exe_len + 1) == NULL) {
         argv0_windows = xmalloc(len + exe_len + 1);
-        memcpy(argv0_windows, argv[0], (size_t)len);
-        memcpy(argv0_windows + len, exe, (size_t)exe_len + 1);
+        memcpy64(argv0_windows, argv[0], len);
+        memcpy64(argv0_windows + len, exe, exe_len + 1);
         argv[0] = argv0_windows;
     }
 
     for (int i = 0; i < argc - 1; i += 1) {
-        int64 len2 = (int64)strlen(argv[i]);
+        int64 len2 = strlen64(argv[i]);
         if ((j + len2) >= (int64)sizeof(cmdline)) {
             error("Command line is too long.\n");
             fatal(EXIT_FAILURE);
         }
 
         cmdline[j] = '"';
-        memcpy(&cmdline[j + 1], argv[i], (size_t)len2);
+        memcpy64(&cmdline[j + 1], argv[i], len2);
         cmdline[j + len2 + 1] = '"';
         cmdline[j + len2 + 2] = ' ';
         j += len2 + 3;
@@ -606,29 +693,13 @@ string_from_strings(char *buffer, int32 size, char *sep, char **array,
 
     for (int32 i = 0; i < (array_length - 1); i += 1) {
         int32 space = size - n;
-        int32 m = snprintf(buffer + n, (size_t)space, "%s%s", array[i], sep);
-        if (m <= 0) {
-            error("Error in snprintf().\n");
-            fatal(EXIT_FAILURE);
-        }
-        if (m >= space) {
-            error("Error printing array, not enough space.\n");
-            fatal(EXIT_FAILURE);
-        }
+        int32 m = snprintf2(buffer + n, space, "%s%s", array[i], sep);
         n += m;
     }
     {
         int32 i = array_length - 1;
         int32 space = size - n;
-        int32 m = snprintf(buffer + n, (size_t)space, "%s", array[i]);
-        if (m <= 0) {
-            error("Error in snprintf().\n");
-            fatal(EXIT_FAILURE);
-        }
-        if (m >= space) {
-            error("Error printing array, not enough space.\n");
-            fatal(EXIT_FAILURE);
-        }
+        snprintf2(buffer + n, space, "%s", array[i]);
     }
     return;
 }
@@ -649,7 +720,7 @@ error(char *format, ...) {
     }
 
     buffer[n] = '\0';
-    write(STDERR_FILENO, buffer, (uint32)n);
+    write64(STDERR_FILENO, buffer, (uint32)n);
 #if OS_UNIX
     fsync(STDERR_FILENO);
     fsync(STDOUT_FILENO);
@@ -672,7 +743,7 @@ util_segv_handler(int32 unused) {
     char *message = "Memory error. Please send a bug report.\n";
     (void)unused;
 
-    write(STDERR_FILENO, message, (uint32)strlen(message));
+    write64(STDERR_FILENO, message, (uint32)strlen64(message));
     for (uint32 i = 0; i < LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", program, message,
                NULL);
@@ -715,7 +786,7 @@ util_die_notify(char *program_name, const char *format, ...) {
     }
 
     buffer[n] = '\0';
-    write(STDERR_FILENO, buffer, (uint32)n + 1);
+    write64(STDERR_FILENO, buffer, (uint32)n + 1);
     for (uint32 i = 0; i < LENGTH(notifiers); i += 1) {
         execlp(notifiers[i], notifiers[i], "-u", "critical", program_name,
                buffer, NULL);
@@ -723,14 +794,10 @@ util_die_notify(char *program_name, const char *format, ...) {
     fatal(EXIT_FAILURE);
 }
 
-void *
-util_memdup(const void *source, const usize size) {
-    void *p;
-    if ((p = malloc(size)) == NULL) {
-        error("Error allocating %zu bytes.\n", size);
-        fatal(EXIT_FAILURE);
-    }
-    memcpy(p, source, size);
+static void *
+util_memdup(void *source, int64 size) {
+    void *p = xmalloc(size);
+    memcpy64(p, source, size);
     return p;
 }
 
@@ -740,8 +807,8 @@ util_copy_file_sync(const char *destination, const char *source) {
     int32 source_fd;
     int32 destination_fd;
     char buffer[BUFSIZ];
-    isize r = 0;
-    isize w = 0;
+    ssize_t r = 0;
+    ssize_t w = 0;
 
     if ((source_fd = open(source, O_RDONLY)) < 0) {
         error("Error opening %s for reading: %s.\n", source, strerror(errno));
@@ -758,8 +825,8 @@ util_copy_file_sync(const char *destination, const char *source) {
     }
 
     errno = 0;
-    while ((r = read(source_fd, buffer, BUFSIZ)) > 0) {
-        w = write(destination_fd, buffer, (usize)r);
+    while ((r = read64(source_fd, buffer, BUFSIZ)) > 0) {
+        w = write64(destination_fd, buffer, r);
         if (w != r) {
             fprintf(stderr, "Error writing data to %s", destination);
             if (errno) {
@@ -810,11 +877,11 @@ util_copy_file_async(const char *destination, const char *source,
 
 #if OS_LINUX
 #include <dirent.h>
-void
-send_signal(const char *executable, const int32 signal_number) {
+static void
+send_signal(char *executable, const int32 signal_number) {
     DIR *processes;
     struct dirent *process;
-    int64 len = (int64)strlen(executable);
+    int64 len = strlen64(executable);
 
     if ((processes = opendir("/proc")) == NULL) {
         error("Error opening /proc: %s\n", strerror(errno));
@@ -842,12 +909,12 @@ send_signal(const char *executable, const int32 signal_number) {
         }
 
         errno = 0;
-        if ((r = read(cmdline, command, sizeof(command))) <= 0) {
+        if ((r = read64(cmdline, command, sizeof(command))) <= 0) {
             (void)r;
             close(cmdline);
             continue;
         }
-        if (memmem(command, (size_t)r, executable, (size_t)len)) {
+        if (memmem64(command, r, executable, len)) {
             if (kill(pid, signal_number) < 0) {
                 error("Error sending signal %d to program %s (pid %d): %s.\n",
                       signal_number, executable, pid, strerror(errno));
@@ -866,8 +933,8 @@ send_signal(const char *executable, const int32 signal_number) {
     return;
 }
 #elif OS_UNIX
-void
-send_signal(const char *executable, const int32 signal_number) {
+static void
+send_signal(char *executable, int32 signal_number) {
     char signal_string[14];
     SNPRINTF(signal_string, "%d", signal_number);
 
@@ -885,8 +952,8 @@ send_signal(const char *executable, const int32 signal_number) {
     return;
 }
 #else
-void
-send_signal(const char *executable, const int32 signal_number) {
+static void
+send_signal(char *executable, int32 signal_number) {
     (void)executable;
     (void)signal_number;
     return;
@@ -930,7 +997,6 @@ atoi2(char *str) {
 }
 
 #if TESTING_util
-#include <assert.h>
 
 int
 main(void) {
@@ -983,7 +1049,7 @@ main(void) {
 #endif
 
     memset(p1, 0, SIZEMB(1));
-    memcpy(p1, string, strlen(string));
+    memcpy64(p1, string, strlen64(string));
     memset(p2, 0, SIZEMB(1));
     p3 = xstrdup(p1);
 

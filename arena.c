@@ -96,6 +96,8 @@ typedef unsigned int uint;
 typedef unsigned long ulong;
 typedef unsigned long long ulonglong;
 
+typedef long long llong;
+
 typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
@@ -181,7 +183,7 @@ arena_allocate(int64 *size) {
     } while (0);
 
     if (p == MAP_FAILED) {
-        fprintf(stderr, "Error in mmap(%ld): %s.\n", *size, strerror(errno));
+        fprintf(stderr, "Error in mmap(%lld): %s.\n", (llong)*size, strerror(errno));
         exit(EXIT_FAILURE);
     }
     return p;
@@ -189,8 +191,8 @@ arena_allocate(int64 *size) {
 void
 arena_free(Arena *arena) {
     if (munmap(arena, (size_t)arena->size) < 0) {
-        fprintf(stderr, "Error in munmap(%p, %ld): %s.\n", (void *)arena,
-                arena->size, strerror(errno));
+        fprintf(stderr, "Error in munmap(%p, %lld): %s.\n", (void *)arena,
+                (llong)arena->size, strerror(errno));
         exit(EXIT_FAILURE);
     }
     return;
@@ -362,7 +364,7 @@ main(void) {
 
     assert((arena = arena_create(SIZEMB(3))));
     assert(arena->pos == arena->begin);
-    error("arena->size:%ld\n", arena->size);
+    error("arena->size:%lld\n", (llong)arena->size);
     arena_size = (uint32)arena_data_size(arena);
 
     srand((uint32)time(NULL));
