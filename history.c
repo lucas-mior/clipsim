@@ -231,7 +231,7 @@ history_exit(int32 signum) {
 void
 history_read(void) {
     DEBUG_PRINT("void")
-    usize history_size;
+    int64 history_size;
     char *history_map;
     char *begin;
     char *p;
@@ -291,7 +291,7 @@ history_read(void) {
             util_close(&history);
             return;
         }
-        history_size = (usize)history_stat.st_size;
+        history_size = history_stat.st_size;
         if (history_size <= 0) {
             error("history_size: %zu\n", history_size);
             error("History file is empty.\n");
@@ -305,8 +305,8 @@ history_read(void) {
         }
     }
 
-    history_map = mmap(NULL, history_size, PROT_READ | PROT_WRITE, MAP_PRIVATE,
-                       history.fd, 0);
+    history_map = mmap(NULL, (size_t)history_size, PROT_READ | PROT_WRITE,
+                       MAP_PRIVATE, history.fd, 0);
 
     if (history_map == MAP_FAILED) {
         error("Error mapping history file to memory: %s"
@@ -361,7 +361,7 @@ history_read(void) {
         }
     }
 
-    if (munmap(history_map, history_size) < 0) {
+    if (munmap(history_map, (size_t)history_size) < 0) {
         error("Error unmapping %p with %zu bytes: %s\n", (void *)history_map,
               history_size, strerror(errno));
     }
