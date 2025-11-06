@@ -128,7 +128,7 @@ static char *program;
         int8: PRINT_VAR_EVAL("%d", variable),                                  \
         int16: PRINT_VAR_EVAL("%d", variable),                                 \
         int32: PRINT_VAR_EVAL("%d", variable),                                 \
-        int64: PRINT_VAR_EVAL("%ld", variable),                                \
+        int64: PRINT_VAR_EVAL("%lld", (long long)variable),                                \
         uint8: PRINT_VAR_EVAL("%u", variable),                                 \
         uint16: PRINT_VAR_EVAL("%u", variable),                                \
         uint32: PRINT_VAR_EVAL("%u", variable),                                \
@@ -325,7 +325,7 @@ xmmap_commit(int64 *size) {
 static void
 xmunmap(void *p, int64 size) {
     if (munmap(p, (size_t)size) < 0) {
-        error("Error in munmap(%p, %ld): %s.\n", p, size, strerror(errno));
+        error("Error in munmap(%p, %lld): %s.\n", p, size, strerror(errno));
     }
     return;
 }
