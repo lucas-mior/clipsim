@@ -621,8 +621,8 @@ history_remove(int32 id) {
     history_free_entry(&entries[id], id);
 
     if (id < history_length) {
-        memmove(&entries[id], &(entries[id + 1]),
-                (usize)(history_length - id)*sizeof(*entries));
+        memmove64(&entries[id], &(entries[id + 1]),
+                  (history_length - id)*SIZEOF(*entries));
         memset(&entries[history_length - 1], 0, sizeof(*entries));
     }
     history_length -= 1;
@@ -635,14 +635,14 @@ history_reorder(const int32 oldindex) {
     DEBUG_PRINT("%d", oldindex)
     Entry aux = entries[oldindex];
     bool aux2 = is_image[oldindex];
+    int32 n = history_length - oldindex;
 
-    memmove(&entries[oldindex], &entries[oldindex + 1],
-            (usize)(history_length - oldindex)*sizeof(*entries));
-    memmove(&entries[history_length - 1], &aux, sizeof(*entries));
+    memmove64(&entries[oldindex], &entries[oldindex + 1], n*SIZEOF(*entries));
+    memmove64(&entries[history_length - 1], &aux, SIZEOF(*entries));
 
-    memmove(&is_image[oldindex], &is_image[oldindex + 1],
-            (usize)(history_length - oldindex)*sizeof(*is_image));
-    memmove(&is_image[history_length - 1], &aux2, sizeof(*is_image));
+    memmove64(&is_image[oldindex], &is_image[oldindex + 1],
+              n*SIZEOF(*is_image));
+    memmove64(&is_image[history_length - 1], &aux2, SIZEOF(*is_image));
     return;
 }
 
