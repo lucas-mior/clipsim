@@ -147,7 +147,7 @@ history_save(void) {
         } else {
             int32 left = e->content_length;
             int32 offset = 0;
-            isize w;
+            int64 w;
 
             do {
                 if ((w = write64(history.fd, e->content + offset, left)) <= 0) {
@@ -399,8 +399,8 @@ int32
 history_save_image(char **content, int32 *length) {
     DEBUG_PRINT("%p, %d", (void *)content, *length)
     int32 file;
-    isize w;
-    isize copied = 0;
+    int64 w;
+    int64 copied = 0;
     char image_file[256];
     int64 t = time(NULL);
     int32 n;

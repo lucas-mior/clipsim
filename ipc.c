@@ -72,14 +72,14 @@ ipc_daemon_listen_fifo(void *unused) {
     signal(SIGABRT, sig_abrt_handler);
 
     while (true) {
-        isize r;
+        int64 r;
         nanosleep(&pause, NULL);
         if (util_open(&command_fifo, O_RDONLY) < 0) {
             continue;
         }
 
         r = read64(command_fifo.fd, &command, sizeof(*(&command)));
-        if (r < (isize)sizeof(*(&command))) {
+        if (r < sizeof(*(&command))) {
             error("Error reading command from %s: %s\n", command_fifo.name,
                   strerror(errno));
             continue;
@@ -115,7 +115,7 @@ ipc_daemon_listen_fifo(void *unused) {
 void
 ipc_client_speak_fifo(int32 command, int32 id) {
     DEBUG_PRINT("%u, %d", command, id)
-    isize w;
+    int64 w;
     if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
         error("Could not open Fifo for sending command to daemon. "
               "Is `%s daemon` running?\n",
@@ -125,7 +125,7 @@ ipc_client_speak_fifo(int32 command, int32 id) {
 
     w = write64(command_fifo.fd, &command, sizeof(*(&command)));
     util_close(&command_fifo);
-    if (w < (isize)sizeof(*(&command))) {
+    if (w < sizeof(*(&command))) {
         error("Error writing command to %s: %s\n", command_fifo.name,
               strerror(errno));
         exit(EXIT_FAILURE);
@@ -158,7 +158,7 @@ void
 ipc_daemon_history_save(void) {
     DEBUG_PRINT("void")
     char saved;
-    isize saved_size = sizeof(*(&saved));
+    int64 saved_size = sizeof(*(&saved));
     error("Trying to save history...\n");
     if (util_open(&content_fifo, O_WRONLY) < 0) {
         return;
@@ -177,7 +177,7 @@ ipc_daemon_history_save(void) {
 void
 ipc_client_check_save(void) {
     DEBUG_PRINT("void")
-    isize r;
+    int64 r;
     char saved = 0;
 
     error("Trying to save history...\n");
@@ -284,7 +284,7 @@ void
 ipc_client_print_entries(void) {
     DEBUG_PRINT("void")
     static char buffer[BUFSIZ];
-    isize r;
+    int64 r;
 
     if (util_open(&content_fifo, O_RDONLY) < 0) {
         return;
