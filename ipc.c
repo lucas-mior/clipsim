@@ -78,7 +78,7 @@ ipc_daemon_listen_fifo(void *unused) {
             continue;
         }
 
-        r = read(command_fifo.fd, &command, sizeof(*(&command)));
+        r = read64(command_fifo.fd, &command, sizeof(*(&command)));
         if (r < (isize)sizeof(*(&command))) {
             error("Error reading command from %s: %s\n", command_fifo.name,
                   strerror(errno));
@@ -185,7 +185,7 @@ ipc_client_check_save(void) {
         exit(EXIT_FAILURE);
     }
 
-    if ((r = read(content_fifo.fd, &saved, sizeof(*(&saved)))) > 0) {
+    if ((r = read64(content_fifo.fd, &saved, sizeof(*(&saved)))) > 0) {
         if (saved) {
             error("History saved to disk.\n");
         } else {
@@ -265,7 +265,7 @@ ipc_daemon_pipe_id(int32 id) {
 
     e = &entries[id];
     if (is_image[id]) {
-        if (write(content_fifo.fd, &IMAGE_TAG, tag_size) < (isize)tag_size) {
+        if (write64(content_fifo.fd, &IMAGE_TAG, tag_size) < (isize)tag_size) {
             dprintf(content_fifo.fd, "Error printing image tag.\n");
             goto close;
         }
@@ -290,7 +290,7 @@ ipc_client_print_entries(void) {
         return;
     }
 
-    r = read(content_fifo.fd, buffer, sizeof(buffer));
+    r = read64(content_fifo.fd, buffer, sizeof(buffer));
     if (r <= 0) {
         error("Error reading data from %s", content_fifo.name);
         if (r < 0) {
@@ -305,13 +305,13 @@ ipc_client_print_entries(void) {
     if (buffer[0] != IMAGE_TAG) {
         do {
             fwrite64(buffer, 1, r, stdout);
-        } while ((r = read(content_fifo.fd, buffer, sizeof(buffer))) > 0);
+        } while ((r = read64(content_fifo.fd, buffer, sizeof(buffer))) > 0);
     } else {
         int32 test;
         char *CLIPSIM_IMAGE_PREVIEW;
 
         if (r == 1) {
-            r = read(content_fifo.fd, buffer + 1, sizeof(buffer) - 1);
+            r = read64(content_fifo.fd, buffer + 1, sizeof(buffer) - 1);
             if (r <= 0) {
                 util_die_notify("Error reading image name from %s.\n",
                                 content_fifo.name);
@@ -350,7 +350,7 @@ ipc_daemon_get_id(void) {
         return HISTORY_INVALID_ID;
     }
 
-    if (fread(&id, sizeof(*(&id)), 1, passid_fifo.file) != 1) {
+    if (fread64(&id, sizeof(*(&id)), 1, passid_fifo.file) != 1) {
         error("Error reading id from pipe: %s\n", strerror(errno));
         util_close(&passid_fifo);
         return HISTORY_INVALID_ID;
