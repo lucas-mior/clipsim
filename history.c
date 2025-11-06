@@ -333,7 +333,6 @@ history_read(void) {
             e->trimmed = 0;
             e->trimmed_length = (int16)e->content_length;
             is_image[history_length] = true;
-            e->content = util_memdup(begin, e->content_length + 1);
             e->content = arena_push(arena, (e->content_length + 1));
             memcpy(e->content, begin, (size_t)(e->content_length + 1));
         } else {
