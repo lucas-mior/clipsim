@@ -321,7 +321,7 @@ history_read(void) {
     begin = history_map;
     left = (int32)history_size;
 
-    while ((left > 0) && (p = memchr(begin, TEXT_TAG, (ulong)left))) {
+    while ((left > 0) && (p = memchr64(begin, TEXT_TAG, left))) {
         Entry *e;
         char type = *(p + 1);
         *p = '\0';
@@ -334,7 +334,7 @@ history_read(void) {
             e->trimmed_length = (int16)e->content_length;
             is_image[history_length] = true;
             e->content = arena_push(arena, (e->content_length + 1));
-            memcpy(e->content, begin, (size_t)(e->content_length + 1));
+            memcpy64(e->content, begin, e->content_length + 1);
         } else {
             int32 size;
             if (e->content_length >= TRIMMED_SIZE) {
@@ -343,7 +343,7 @@ history_read(void) {
                 size = (e->content_length + 1)*2;
             }
             e->content = arena_push(arena, size);
-            memcpy(e->content, begin, (usize)(e->content_length + 1));
+            memcpy64(e->content, begin, e->content_length + 1);
 
             content_trim_spaces(&e->trimmed, &e->trimmed_length, e->content,
                                 e->content_length);
@@ -430,7 +430,7 @@ history_save_image(char **content, int32 *length) {
     }
 
     *length = n;
-    memcpy(*content, image_file, (usize)*length + 1);
+    memcpy64(*content, image_file, *length + 1);
     return 0;
 }
 
@@ -487,7 +487,7 @@ history_append(char *content, int32 length) {
             size = (e->content_length + 1)*2;
         }
         e->content = arena_push(arena, size);
-        memcpy(e->content, content, (usize)(e->content_length + 1));
+        memcpy64(e->content, content, e->content_length + 1);
 
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length), e->content,
                             e->content_length);
@@ -497,7 +497,7 @@ history_append(char *content, int32 length) {
         e->trimmed = 0;
         e->trimmed_length = (int16)e->content_length;
         e->content = arena_push(arena, length + 1);
-        memcpy(e->content, content, (size_t)(length + 1));
+        memcpy64(e->content, content, length + 1);
         is_image[history_length] = true;
         break;
     default:
@@ -512,13 +512,13 @@ history_append(char *content, int32 length) {
             history_free_entry(&entries[i], i);
         }
 
-        memcpy(&entries[0], &entries[HISTORY_KEEP_SIZE],
-               HISTORY_KEEP_SIZE*sizeof(*entries));
+        memcpy64(&entries[0], &entries[HISTORY_KEEP_SIZE],
+                 HISTORY_KEEP_SIZE*sizeof(*entries));
         memset(&entries[HISTORY_KEEP_SIZE], 0,
                HISTORY_KEEP_SIZE*sizeof(*entries));
 
-        memcpy(&is_image[0], &is_image[HISTORY_KEEP_SIZE],
-               HISTORY_KEEP_SIZE*sizeof(*is_image));
+        memcpy64(&is_image[0], &is_image[HISTORY_KEEP_SIZE],
+                 HISTORY_KEEP_SIZE*sizeof(*is_image));
         memset(&is_image[HISTORY_KEEP_SIZE], 0,
                HISTORY_KEEP_SIZE*sizeof(*is_image));
 
