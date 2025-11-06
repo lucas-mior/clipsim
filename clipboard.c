@@ -122,6 +122,9 @@ clipboard_daemon_watch(void) {
             }
         }
 
+        if (xevent.type == PropertyNotify) {
+            continue;
+        }
         nanosleep(&pause, NULL);
 
         if (CLIPSIM_SIGNAL_PROGRAM) {
