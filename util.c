@@ -184,18 +184,18 @@ typedef uint64_t uint64;
 #endif
 
 // clang-format off
-#define UTIL_ALIGN_UINT(S, A) (((S) + ((A) - 1)) & ~((A) - 1))
+#define UTIL_ALIGN_UINT(S, A) (int64)(((S) + ((A) - 1)) & ~((A) - 1))
 #define COMPILE_STOP "aaaaa"
 
 #if __STDC__== 1 && __STDC_VERSION__ >= 201112L
 #define UTIL_ALIGN(S, A) \
 _Generic((S), \
-    unsigned long long: (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    unsigned long:      (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    unsigned int:       (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    long long:          (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    long:               (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    int:                (int64) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    unsigned long long: UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    unsigned long:      UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    unsigned int:       UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    long long:          UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    long:               UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
+    int:                UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
     default:            COMPILE_STOP \
 )
 #else
