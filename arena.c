@@ -88,6 +88,14 @@
 #define FLAGS_HUGE_PAGES 0
 #endif
 
+#if !defined(INLINE)
+#if defined(__GNUC__)
+#define INLINE static inline __attribute__((always_inline))
+#else
+#define INLINE static inline
+#endif
+#endif
+
 #if !defined(INTEGERS)
 #define INTEGERS
 typedef unsigned char uchar;
@@ -116,8 +124,7 @@ typedef struct Arena {
     char *begin;
     void *pos;
     int64 size;
-    int32 npushed;
-    int32 padding;
+    int64 npushed;
     struct Arena *next;
 } Arena;
 
@@ -127,7 +134,7 @@ static void arena_free(Arena *);
 static Arena *arena_with_space(Arena *, int64);
 static void *arena_push(Arena *, int64);
 static uint32 arena_push_index32(Arena *, uint32);
-static int32 arena_pop(Arena *, void *);
+static int64 arena_pop(Arena *, void *);
 static void *arena_reset(Arena *);
 
 static size_t arena_page_size = 0;
@@ -145,6 +152,7 @@ arena_create(int64 size) {
     }
 
     arena = p;
+    arena->name = "arena";
     arena->begin = (char *)arena + ALIGN(sizeof(*arena));
     arena->size = size;
     arena->pos = arena->begin;
@@ -183,7 +191,7 @@ arena_allocate(int64 *size) {
     } while (0);
 
     if (p == MAP_FAILED) {
-        fprintf(stderr, "Error in mmap(%lld): %s.\n", (llong)*size,
+        fprintf(stderr, "Error in mmap(%lld): %s.\n", (long long)*size,
                 strerror(errno));
         exit(EXIT_FAILURE);
     }
@@ -200,7 +208,7 @@ arena_free(Arena *arena) {
 }
 #else
 void *
-arena_allocate(size_t *size) {
+arena_allocate(int64 *size) {
     void *p;
 
     if (arena_page_size == 0) {
@@ -215,7 +223,7 @@ arena_allocate(size_t *size) {
 
     p = VirtualAlloc(NULL, *size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     if (p == NULL) {
-        fprintf(stderr, "Error in VirtualAlloc(%zu): %lu.\n", *size,
+        fprintf(stderr, "Error in VirtualAlloc(%lld): %lu.\n", (long long)*size,
                 GetLastError());
         exit(EXIT_FAILURE);
     }
@@ -324,7 +332,7 @@ arena_of(Arena *arena, void *p) {
     return NULL;
 }
 
-int32
+int64
 arena_pop(Arena *arena, void *p) {
     if ((arena = arena_of(arena, p)) == NULL) {
         return -1;
@@ -354,6 +362,14 @@ arena_reset(Arena *arena) {
 #include "assert.h"
 #include <stdio.h>
 
+INLINE void
+memset64(void *buffer, int value, int64 size) {
+    assert(size >= 0);
+    assert((uint64)size <= SIZE_MAX);
+    memset(buffer, value, (size_t)size);
+    return;
+}
+
 #define LENGTH(X) ((int64)(sizeof(X) / sizeof(*X)))
 #define error(...) fprintf(stderr, __VA_ARGS__)
 
@@ -365,7 +381,6 @@ main(void) {
 
     assert((arena = arena_create(SIZEMB(3))));
     assert(arena->pos == arena->begin);
-    error("arena->size:%lld\n", (llong)arena->size);
     arena_size = (uint32)arena_data_size(arena);
 
     srand((uint32)time(NULL));
@@ -375,10 +390,10 @@ main(void) {
         int64 total_pushed = 0;
 
         for (uint32 i = 0; i < LENGTH(objs); i += 1) {
-            int32 size = 10 + (rand() % 10000);
-            assert((objs[i] = arena_push(arena, (uint32)size)));
+            int64 size = 10 + (rand() % 10000);
+            assert((objs[i] = arena_push(arena, size)));
 
-            total_size += (size_t)size;
+            total_size += size;
             memset64(objs[i], 0xCD, size);
 
             if (total_size < arena_data_size(arena)) {
