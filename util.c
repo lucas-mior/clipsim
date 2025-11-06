@@ -317,6 +317,17 @@ strnlen64(char *string, int64 size) {
 }
 
 INLINE int
+strncmp64(char *left, char *right, int64 size) {
+    int result;
+    if (size == 0) {
+        return 0;
+    }
+    assert((uint64)size <= SIZE_MAX);
+    result = strncmp(left, right, (size_t)size);
+    return result;
+}
+
+INLINE int
 memcmp64(void *left, void *right, int64 size) {
     int result;
     if (size == 0) {
