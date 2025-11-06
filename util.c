@@ -271,7 +271,7 @@ memmem(void *haystack, size_t hay_len, void *needle, size_t needle_len) {
   INLINE void \
       CAT(func, 64)(void *dest, void *source, int64 size) { \
       assert(size > 0); \
-      assert((uint64)size < SIZE_MAX); \
+      assert((uint64)size <= SIZE_MAX); \
       func(dest, source, (size_t)size); \
       return; \
   }
@@ -283,7 +283,7 @@ X64(memmove)
 INLINE void
 memset64(void *buffer, int value, int64 size) {
     assert(size >= 0);
-    assert((uint64)size < SIZE_MAX);
+    assert((uint64)size <= SIZE_MAX);
     memset(buffer, value, (size_t)size);
     return;
 }
@@ -316,7 +316,7 @@ strlen64(char *string) {
 CAT(func, 64)(int fd, char *buffer, int64 size) { \
     ssize_t w; \
     assert(size >= 0); \
-    assert((uint64)size < SIZE_MAX); \
+    assert((uint64)size <= SIZE_MAX); \
     w = func(fd, buffer, (size_t)size); \
     return (int64)w; \
 }
@@ -461,7 +461,7 @@ xmalloc(int64 size) {
         error("Error in xmalloc: invalid size = %lld.\n", (llong)size);
         fatal(EXIT_FAILURE);
     }
-    assert((uint64)size < SIZE_MAX);
+    assert((uint64)size <= SIZE_MAX);
 
     if ((p = malloc((size_t)size)) == NULL) {
         error("Failed to allocate %lld bytes.\n", (llong)size);
@@ -479,7 +479,7 @@ xrealloc(void *old, const int64 size) {
         error("Error in xmalloc: invalid size = %lld.\n", (long long)size);
         fatal(EXIT_FAILURE);
     }
-    assert((uint64)size < SIZE_MAX);
+    assert((uint64)size <= SIZE_MAX);
 
     if ((p = realloc(old, (size_t)size)) == NULL) {
         error("Failed to reallocate %zu bytes from %x.\n", size, old_save);
