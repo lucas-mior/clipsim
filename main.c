@@ -142,12 +142,12 @@ main_check_cmdline(char *pid) {
 
     switch (r) {
     case sizeof(cmd1):
-        if (!memcmp(command, cmd1, (usize)r)) {
+        if (!memcmp64(command, cmd1, r)) {
             return true;
         }
         break;
     case sizeof(cmd2):
-        if (!memcmp(command, cmd2, (usize)r)) {
+        if (!memcmp64(command, cmd2, r)) {
             return true;
         }
         break;

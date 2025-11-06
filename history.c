@@ -237,8 +237,8 @@ history_read(void) {
     char *p;
     int32 left;
 
-    const char *clipsim = "clipsim/history";
-    usize length;
+    char *clipsim = "clipsim/history";
+    int64 length;
 
     if ((XDG_CACHE_HOME = getenv("XDG_CACHE_HOME")) == NULL) {
         error("XDG_CACHE_HOME is not set, using HOME...\n");
@@ -250,8 +250,8 @@ history_read(void) {
         XDG_CACHE_HOME = xdg_cache_home_buffer;
     }
 
-    length = strlen(XDG_CACHE_HOME);
-    length += 1 + strlen(clipsim);
+    length = strlen64(XDG_CACHE_HOME);
+    length += 1 + strlen64(clipsim);
     if (length > (PATH_MAX - 1)) {
         error("XDG_CACHE_HOME is too long.\n");
         exit(EXIT_FAILURE);

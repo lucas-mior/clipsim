@@ -101,7 +101,7 @@ content_check_content(uchar *data, const int32 length) {
 
     do {
         const char *mime_type;
-        if ((mime_type = magic_buffer(magic, data, (usize)length)) == NULL) {
+        if ((mime_type = magic_buffer(magic, data, (size_t)length)) == NULL) {
             error("Error in magic_buffer(%.*s): %s.\n", 30, data,
                   magic_error(magic));
             break;
@@ -116,8 +116,8 @@ content_check_content(uchar *data, const int32 length) {
         return CLIPBOARD_ERROR;
     }
 
-    if (memchr(data, TEXT_TAG, (ulong)length)
-        || memchr(data, IMAGE_TAG, (ulong)length)) {
+    if (memchr64(data, TEXT_TAG, length)
+        || memchr64(data, IMAGE_TAG, length)) {
         error("Entry contains control chars. This won't be added to history");
         return CLIPBOARD_OTHER;
     }

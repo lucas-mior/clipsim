@@ -79,7 +79,7 @@ xi_daemon_loop(void *unused) {
     {
         XIEventMask mask;
         unsigned char mask_bits[(XI_LASTEVENT + 7) / 8];
-        memset(mask_bits, 0, sizeof(mask_bits));
+        memset64(mask_bits, 0, sizeof(mask_bits));
 
         mask.deviceid = XIAllDevices;
         mask.mask_len = sizeof(mask_bits);
