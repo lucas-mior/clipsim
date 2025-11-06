@@ -514,12 +514,12 @@ history_append(char *content, int32 length) {
 
         memcpy64(&entries[0], &entries[HISTORY_KEEP_SIZE],
                  HISTORY_KEEP_SIZE*sizeof(*entries));
-        memset(&entries[HISTORY_KEEP_SIZE], 0,
+        memset64(&entries[HISTORY_KEEP_SIZE], 0,
                HISTORY_KEEP_SIZE*sizeof(*entries));
 
         memcpy64(&is_image[0], &is_image[HISTORY_KEEP_SIZE],
                  HISTORY_KEEP_SIZE*sizeof(*is_image));
-        memset(&is_image[HISTORY_KEEP_SIZE], 0,
+        memset64(&is_image[HISTORY_KEEP_SIZE], 0,
                HISTORY_KEEP_SIZE*sizeof(*is_image));
 
         history_length = HISTORY_KEEP_SIZE;
@@ -623,7 +623,7 @@ history_remove(int32 id) {
     if (id < history_length) {
         memmove64(&entries[id], &(entries[id + 1]),
                   (history_length - id)*SIZEOF(*entries));
-        memset(&entries[history_length - 1], 0, sizeof(*entries));
+        memset64(&entries[history_length - 1], 0, sizeof(*entries));
     }
     history_length -= 1;
 

@@ -280,6 +280,14 @@ X64(memcpy)
 X64(memmove)
 #undef X64
 
+INLINE void
+memset64(void *buffer, int value, int64 size) {
+    assert(size >= 0);
+    assert((uint64)size < SIZE_MAX);
+    memset(buffer, value, (size_t)size);
+    return;
+}
+
 INLINE void *
 memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
     if (hay_len <= 0) {
@@ -322,7 +330,7 @@ X64(read)
 static uint32
 util_nthreads(void) {
     SYSTEM_INFO sysinfo;
-    memset(&sysinfo, 0, sizeof(sysinfo));
+    memset64(&sysinfo, 0, SIZEOF(sysinfo));
     GetSystemInfo(&sysinfo);
     return sysinfo.dwNumberOfProcessors;
 }
@@ -1048,9 +1056,9 @@ main(void) {
     PRINT_VAR(var_uint64);
 #endif
 
-    memset(p1, 0, SIZEMB(1));
+    memset64(p1, 0, SIZEMB(1));
     memcpy64(p1, string, strlen64(string));
-    memset(p2, 0, SIZEMB(1));
+    memset64(p2, 0, SIZEMB(1));
     p3 = xstrdup(p1);
 
     assert(!strcmp(string, p3));
