@@ -84,7 +84,7 @@ content_check_content(uchar *data, const int32 length) {
 
     if (length <= 0) {
         error("Content length is equal or less than zero.\n");
-        exit(EXIT_FAILURE);
+        return CLIPBOARD_ERROR;
     }
 
     { /* Check if it is made only of spaces and newlines */
