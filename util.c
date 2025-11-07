@@ -973,12 +973,13 @@ send_signal(char *executable, const int32 signal_number) {
             continue;
         }
 
-        if ((last = memchr64(command, ' ', r))) {
-            *last = '\0';
-            r = last - command;
-        }
-
         if (memmem64(command, r, executable, len)) {
+            if ((last = memchr64(command, '\0', r))) {
+                r = last - command;
+                if (!memmem64(command, r, executable, len)) {
+                    continue;
+                }
+            }
             if (kill(pid, signal_number) < 0) {
                 error("Error sending signal %d to program %s (pid %d): %s.\n",
                       signal_number, executable, pid, strerror(errno));
