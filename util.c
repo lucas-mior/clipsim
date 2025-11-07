@@ -129,7 +129,7 @@ static char *program;
         int8: PRINT_VAR_EVAL("%d", variable),                                  \
         int16: PRINT_VAR_EVAL("%d", variable),                                 \
         int32: PRINT_VAR_EVAL("%d", variable),                                 \
-        int64: PRINT_VAR_EVAL("%lld", (long long)variable),                                \
+        int64: PRINT_VAR_EVAL("%lld", variable),                                \
         uint8: PRINT_VAR_EVAL("%u", variable),                                 \
         uint16: PRINT_VAR_EVAL("%u", variable),                                \
         uint32: PRINT_VAR_EVAL("%u", variable),                                \
