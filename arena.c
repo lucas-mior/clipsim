@@ -126,13 +126,7 @@ typedef struct Arena {
 } Arena;
 
 static void *arena_allocate(int64 *);
-static void arena_destroy(Arena *);
 static void arena_free(Arena *);
-static Arena *arena_with_space(Arena *, int64);
-static void *arena_push(Arena *, int64);
-static uint32 arena_push_index32(Arena *, uint32);
-static int64 arena_pop(Arena *, void *);
-static void *arena_reset(Arena *);
 
 static int64 arena_page_size = 0;
 
@@ -157,6 +151,18 @@ arena_create(int64 size) {
     arena->npushed = 0;
 
     return arena;
+}
+
+static void
+arena_destroy(Arena *arena) {
+    Arena *next;
+
+    do {
+        next = arena->next;
+        arena_free(arena);
+    } while ((arena = next));
+
+    return;
 }
 
 #if OS_UNIX
@@ -238,25 +244,13 @@ arena_free(Arena *arena) {
 }
 #endif
 
-void
-arena_destroy(Arena *arena) {
-    Arena *next;
-
-    do {
-        next = arena->next;
-        arena_free(arena);
-    } while ((arena = next));
-
-    return;
-}
-
 static int64
 arena_data_size(Arena *arena) {
     int64 size = arena->size - (arena->begin - (char *)arena);
     return size;
 }
 
-Arena *
+static Arena *
 arena_with_space(Arena *arena, int64 size) {
     if (arena == NULL) {
         return NULL;
@@ -283,7 +277,7 @@ arena_with_space(Arena *arena, int64 size) {
     return arena;
 }
 
-void *
+static void *
 arena_push(Arena *arena, int64 size) {
     void *before;
 
@@ -297,7 +291,7 @@ arena_push(Arena *arena, int64 size) {
     return before;
 }
 
-uint32
+static uint32
 arena_push_index32(Arena *arena, uint32 size) {
     void *before;
 
@@ -329,7 +323,7 @@ arena_of(Arena *arena, void *p) {
     return NULL;
 }
 
-int64
+static int64
 arena_pop(Arena *arena, void *p) {
     if ((arena = arena_of(arena, p)) == NULL) {
         return -1;
@@ -343,7 +337,17 @@ arena_pop(Arena *arena, void *p) {
     return 0;
 }
 
-void *
+static int64
+arena_narenas(Arena *arena) {
+    int64 n = 0;
+    while (arena) {
+        n += 1;
+        arena = arena->next;
+    }
+    return n;
+}
+
+static void *
 arena_reset(Arena *arena) {
     Arena *first = arena;
 
@@ -382,6 +386,8 @@ main(void) {
 
     srand((uint32)time(NULL));
 
+    assert(arena_narenas(arena) == 1);
+
     {
         int64 total_size = 0;
         int64 total_pushed = 0;
@@ -394,6 +400,7 @@ main(void) {
             memset64(objs[i], 0xCD, size);
 
             if (total_size < arena_data_size(arena)) {
+                assert(arena_narenas(arena) == 1);
                 assert((char *)objs[i] >= arena->begin);
                 assert((char *)arena->pos >= (char *)objs[i]);
             }
@@ -430,6 +437,7 @@ main(void) {
         assert(arena_pop(arena, &aux) < 0);
     }
 
+    arena_reset(arena);
     {
         void *p1;
         void *p2;
@@ -438,6 +446,7 @@ main(void) {
         assert(arena->npushed == 1);
         assert(p2 = arena_push(arena, arena_size));
         assert(arena->npushed == 1);
+        assert(arena_narenas(arena) == 2);
         assert(arena->next != NULL);
         assert(arena_of(arena, p1) != arena_of(arena, p2));
 

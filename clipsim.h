@@ -58,7 +58,7 @@ do { \
 #define DEBUG_PRINT(...)
 #endif
 
-#define LENGTH(x) (isize)((sizeof(x) / sizeof(*x)))
+#define LENGTH(x) (int64)((sizeof(x) / sizeof(*x)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n') || (x == '\r'))
@@ -89,9 +89,6 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
-
-typedef size_t usize;
-typedef ssize_t isize;
 #endif
 
 typedef struct Entry {
