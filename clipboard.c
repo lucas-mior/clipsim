@@ -254,7 +254,7 @@ clipboard_incremental_case(char **save, ulong *length) {
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **)&buffer);
         XFree(buffer);
-        error("bytes_after_return: %d\n", bytes_after_return);
+        error("bytes_after_return: %lu\n", bytes_after_return);
         if (bytes_after_return == 0) {
             XDeleteProperty(display, window, XSEL_DATA);
             XNextEvent(display, &event);

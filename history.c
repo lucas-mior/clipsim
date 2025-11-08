@@ -292,7 +292,7 @@ history_read(void) {
         }
         history_size = history_stat.st_size;
         if (history_size <= 0) {
-            error("history_size: %zu\n", history_size);
+            error("history_size: %lld\n", (llong)history_size);
             error("History file is empty.\n");
             util_close(&history);
             return;
@@ -361,8 +361,8 @@ history_read(void) {
     }
 
     if (munmap(history_map, (size_t)history_size) < 0) {
-        error("Error unmapping %p with %zu bytes: %s\n", (void *)history_map,
-              history_size, strerror(errno));
+        error("Error unmapping %p with %lld bytes: %s\n", (void *)history_map,
+              (llong)history_size, strerror(errno));
     }
     util_close(&history);
     return;
