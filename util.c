@@ -145,33 +145,34 @@ print_float(char *name, char *variable, enum FloatTypes type) {
     return;
 }
 
-#define PRINT_SIGNED(variable) \
-    printf("%s = %lld \n", #variable, (long long)variable)
+// clang-format off
+#define PRINT_SIGNED(TYPE, VARIABLE) \
+    printf("%s%s = %lld \n", TYPE, #VARIABLE, (long long)VARIABLE)
 
-#define PRINT_UNSIGNED(variable) \
-    printf("%s = %llu \n", #variable, (unsigned long long)variable)
+#define PRINT_UNSIGNED(TYPE, VARIABLE) \
+    printf("%s%s = %lld \n", TYPE, #VARIABLE, (long long)VARIABLE)
 
-#define PRINT_OTHER(FORMAT, variable) \
-    printf("%s = " FORMAT " \n", #variable, variable)
+#define PRINT_OTHER(FORMAT, VARIABLE) \
+    printf("%s = " FORMAT " \n", #VARIABLE, VARIABLE)
 
-#define PRINT_VAR(variable)                                                    \
-_Generic((variable),                                                           \
-    int8:        PRINT_SIGNED(variable),                                       \
-    int16:       PRINT_SIGNED(variable),                                       \
-    int32:       PRINT_SIGNED(variable),                                       \
-    int64:       PRINT_SIGNED(variable),                                       \
-    uint8:       PRINT_UNSIGNED(variable),                                     \
-    uint16:      PRINT_UNSIGNED(variable),                                     \
-    uint32:      PRINT_UNSIGNED(variable),                                     \
-    uint64:      PRINT_UNSIGNED(variable),                                     \
-    char:        PRINT_OTHER("%c", variable),                                  \
-    bool:        PRINT_OTHER("%b", variable),                                  \
-    char *:      PRINT_OTHER("%s", variable),                                  \
-    void *:      PRINT_OTHER("%p", variable),                                  \
-    float:       print_float(#variable, (char *)&variable, FLOAT_FLOAT),       \
-    double:      print_float(#variable, (char *)&variable, FLOAT_DOUBLE),      \
-    long double: print_float(#variable, (char *)&variable, FLOAT_LONG_DOUBLE), \
-    default:     printf("%s = ?\n", #variable) \
+#define PRINT_VAR(VARIABLE)            \
+_Generic((VARIABLE),                   \
+  int8:        PRINT_SIGNED("[int8]", VARIABLE), \
+  int16:       PRINT_SIGNED("[int16]", VARIABLE), \
+  int32:       PRINT_SIGNED("[int32]", VARIABLE), \
+  int64:       PRINT_SIGNED("[int64]", VARIABLE), \
+  uint8:       PRINT_UNSIGNED("[uint8]", VARIABLE),  \
+  uint16:      PRINT_UNSIGNED("[uint16]", VARIABLE), \
+  uint32:      PRINT_UNSIGNED("[uint32]", VARIABLE), \
+  uint64:      PRINT_UNSIGNED("[uint64]", VARIABLE), \
+  char:        PRINT_OTHER("%c", VARIABLE),                                  \
+  bool:        PRINT_OTHER("%b", VARIABLE),                                  \
+  char *:      PRINT_OTHER("%s", VARIABLE),                                  \
+  void *:      PRINT_OTHER("%p", VARIABLE),                                  \
+  float:       print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_FLOAT),       \
+  double:      print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_DOUBLE),      \
+  long double: print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_LONG_DOUBLE), \
+  default:     printf("%s = ?\n", #VARIABLE) \
 )
 
 #endif
@@ -323,6 +324,7 @@ memset64(void *buffer, int value, int64 size) {
 INLINE void *
 memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
     void *result;
+
     if (hay_len <= 0) {
         return NULL;
     }
@@ -540,7 +542,7 @@ xmunmap(void *p, size_t size) {
 }
 #endif
 
-static void *
+INLINE void *
 xmalloc(int64 size) {
     void *p;
 
@@ -557,7 +559,7 @@ xmalloc(int64 size) {
     return p;
 }
 
-static void *
+INLINE void *
 xrealloc(void *old, const int64 size) {
     void *p;
     uint64 old_save = (uint64)old;
@@ -642,7 +644,7 @@ xpthread_mutex_destroy(pthread_mutex_t *mutex) {
     return;
 }
 
-static int32
+static int32 __attribute__((format(printf, 3, 4)))
 snprintf2(char *buffer, int size, char *format, ...) {
     int n;
     va_list args;
@@ -799,7 +801,7 @@ string_from_strings(char *buffer, int32 size, char *sep, char **array,
     return;
 }
 
-void
+void __attribute__((format(printf, 1, 2)))
 error(char *format, ...) {
     char buffer[BUFSIZ];
     va_list args;
@@ -1149,6 +1151,7 @@ main(void) {
     PRINT_VAR(var_bool);
     PRINT_VAR(var_char);
     PRINT_VAR(var_string);
+    PRINT_VAR(*var_string);
     PRINT_VAR(var_float);
     PRINT_VAR(var_double);
     PRINT_VAR(var_longdouble);
