@@ -127,8 +127,31 @@ typedef struct Arena {
 
 static void *arena_allocate(int64 *);
 static void arena_free(Arena *);
+static int64 arena_pop(Arena *arena, void *p);
 
 static int64 arena_page_size = 0;
+
+#define error2(...) fprintf(stderr, __VA_ARGS__)
+
+static void
+arena_print(Arena *arena) {
+    while (arena) {
+        error2("Arena %p {\n", (void *)arena);
+        error2("  name: %s\n", arena->name);
+        error2("  begin: %p\n", arena->begin);
+        error2("  pos: %p\n", arena->pos);
+        error2("  size: %lld\n", (llong)arena->size);
+        error2("  npushed: %lld\n", (llong)arena->npushed);
+        error2("  next:    %p\n", (void *)arena->next);
+        error2("}");
+        if (arena->next) {
+            error2(" -> ");
+        } else {
+            error2("\n");
+        }
+        arena = arena->next;
+    }
+}
 
 static Arena *
 arena_create(int64 size) {
@@ -173,7 +196,7 @@ arena_allocate(int64 *size) {
     if (arena_page_size == 0) {
         long aux;
         if ((aux = sysconf(_SC_PAGESIZE)) <= 0) {
-            fprintf(stderr, "Error getting page size: %s.\n", strerror(errno));
+            error2("Error getting page size: %s.\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
         arena_page_size = aux;
@@ -194,8 +217,7 @@ arena_allocate(int64 *size) {
     } while (0);
 
     if (p == MAP_FAILED) {
-        fprintf(stderr, "Error in mmap(%lld): %s.\n", (long long)*size,
-                strerror(errno));
+        error2("Error in mmap(%lld): %s.\n", (long long)*size, strerror(errno));
         exit(EXIT_FAILURE);
     }
     return p;
@@ -203,8 +225,8 @@ arena_allocate(int64 *size) {
 void
 arena_free(Arena *arena) {
     if (munmap(arena, (size_t)arena->size) < 0) {
-        fprintf(stderr, "Error in munmap(%p, %lld): %s.\n", (void *)arena,
-                (llong)arena->size, strerror(errno));
+        error2("Error in munmap(%p, %lld): %s.\n", (void *)arena,
+               (llong)arena->size, strerror(errno));
         exit(EXIT_FAILURE);
     }
     return;
@@ -219,15 +241,15 @@ arena_allocate(int64 *size) {
         GetSystemInfo(&si);
         arena_page_size = si.dwPageSize;
         if (arena_page_size <= 0) {
-            fprintf(stderr, "Error getting page size.\n");
+            error2("Error getting page size.\n");
             exit(EXIT_FAILURE);
         }
     }
 
     p = VirtualAlloc(NULL, *size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     if (p == NULL) {
-        fprintf(stderr, "Error in VirtualAlloc(%lld): %lu.\n", (long long)*size,
-                GetLastError());
+        error2("Error in VirtualAlloc(%lld): %lu.\n", (long long)*size,
+               GetLastError());
         exit(EXIT_FAILURE);
     }
     *size = ARENA_ALIGN(*size, arena_page_size);
@@ -236,8 +258,7 @@ arena_allocate(int64 *size) {
 void
 arena_free(Arena *arena) {
     if (!VirtualFree(arena, 0, MEM_RELEASE)) {
-        fprintf(stderr, "Error in VirtualFree(%p): %lu.\n", arena,
-                GetLastError());
+        error2("Error in VirtualFree(%p): %lu.\n", arena, GetLastError());
         exit(EXIT_FAILURE);
     }
     return;
@@ -277,7 +298,7 @@ arena_with_space(Arena *arena, int64 size) {
     return arena;
 }
 
-static void *
+static void *__attribute__((malloc))
 arena_push(Arena *arena, int64 size) {
     void *before;
 
@@ -309,9 +330,10 @@ arena_push_index32(Arena *arena, uint32 size) {
 
 static Arena *
 arena_of(Arena *arena, void *p) {
+    char *pchar = p;
     while (arena) {
-        if (((void *)arena->begin <= p)
-            && (p < (void *)((char *)arena + arena->size))) {
+        if ((arena->begin <= pchar)
+            && (pchar < ((char *)arena + arena->size))) {
             return arena;
         }
 
@@ -372,7 +394,6 @@ memset64(void *buffer, int value, int64 size) {
 }
 
 #define LENGTH(X) ((int64)(sizeof(X) / sizeof(*X)))
-#define error(...) fprintf(stderr, __VA_ARGS__)
 
 int
 main(void) {
@@ -426,7 +447,7 @@ main(void) {
                 nallocated -= 1;
             }
             if ((k + 1) < (nallocated / 2)) {
-                assert(objs[j] = arena_push(arena, ALIGNMENT));
+                assert((objs[j] = arena_push(arena, ALIGNMENT)));
                 nallocated += 1;
             }
         }
@@ -442,9 +463,9 @@ main(void) {
         void *p1;
         void *p2;
 
-        assert(p1 = arena_push(arena, arena_size));
+        assert((p1 = arena_push(arena, arena_size)));
         assert(arena->npushed == 1);
-        assert(p2 = arena_push(arena, arena_size));
+        assert((p2 = arena_push(arena, arena_size)));
         assert(arena->npushed == 1);
         assert(arena_narenas(arena) == 2);
         assert(arena->next != NULL);
@@ -463,9 +484,9 @@ main(void) {
         void *p3;
         void *p4;
 
-        assert(p3 = arena_push(arena, arena_size / 2));
+        assert((p3 = arena_push(arena, arena_size / 2)));
         assert(arena->npushed == 1);
-        assert(p4 = arena_push(arena, arena_size / 2));
+        assert((p4 = arena_push(arena, arena_size / 2)));
         assert(arena->npushed == 2);
         assert(arena_of(arena, p3) == arena_of(arena, p4));
 
@@ -493,6 +514,8 @@ main(void) {
         assert(index != UINT32_MAX);
         assert(arena->begin + index == (char *)arena->begin + 32);
     }
+
+    arena_print(arena);
 
     arena_destroy(arena);
     return 0;
