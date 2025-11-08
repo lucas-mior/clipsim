@@ -48,7 +48,6 @@ static void history_free_entry(const Entry *, int32);
 static void history_reorder(const int32);
 static int32 history_save_image(char **, int32 *);
 
-static void history_read(void);
 static void history_append(char *, int);
 static bool history_save(void);
 static void history_recover(int32);
@@ -228,7 +227,7 @@ history_exit(int32 signum) {
     _exit(EXIT_SUCCESS);
 }
 
-void
+static void
 history_read(void) {
     DEBUG_PRINT("void")
     int64 history_size;
