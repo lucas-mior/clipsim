@@ -33,6 +33,7 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <float.h>
 
 #if defined(__linux__)
 #define OS_LINUX 1
@@ -124,36 +125,40 @@ enum FloatTypes {
 
 static void
 print_float(char *name, char *variable, enum FloatTypes type) {
-    char buffer[16]; 
+    float value_f;
+    double value_d;
+    long double value_ld;
+
     switch (type) {
     case FLOAT_FLOAT:
-        memcpy(&(buffer[0]), variable, 4);
-        printf("%s = %f \n", name, (double)(*(float *)&buffer[0]));
+        memcpy(&value_f, variable, sizeof(float));
+        printf("[float]%s = %e = %f\n", name, (double)value_f, (double)value_f);
         break;
     case FLOAT_DOUBLE:
-        memcpy(&(buffer[0]), variable, 8);
-        printf("%s = %f \n", name, *(double *)&buffer[0]);
+        memcpy(&value_d, variable, sizeof(double));
+        printf("[double]%s = %e = %f\n", name, value_d, value_d);
         break;
     case FLOAT_LONG_DOUBLE:
-        memcpy(&(buffer[0]), variable, sizeof(long double));
-        printf("%s = %Lf \n", name, *(long double *)&buffer[0]);
+        memcpy(&value_ld, variable, sizeof(long double));
+        printf("[long double]%s = %Le = %Lf\n", name, value_ld, value_ld);
         break;
     default:
         fprintf(stderr, "Invalid type.\n");
         exit(EXIT_FAILURE);
     }
+
     return;
 }
 
 // clang-format off
 #define PRINT_SIGNED(TYPE, VARIABLE) \
-    printf("%s%s = %lld \n", TYPE, #VARIABLE, (long long)VARIABLE)
+    printf("%s%s = %lld \n", TYPE, #VARIABLE, (llong)VARIABLE)
 
 #define PRINT_UNSIGNED(TYPE, VARIABLE) \
-    printf("%s%s = %lld \n", TYPE, #VARIABLE, (long long)VARIABLE)
+    printf("%s%s = %llu \n", TYPE, #VARIABLE, (ullong)VARIABLE)
 
-#define PRINT_OTHER(FORMAT, VARIABLE) \
-    printf("%s = " FORMAT " \n", #VARIABLE, VARIABLE)
+#define PRINT_OTHER(TYPE, FORMAT, VARIABLE) \
+    printf("%s%s = " FORMAT " \n", TYPE, #VARIABLE, VARIABLE)
 
 #define PRINT_VAR(VARIABLE)            \
 _Generic((VARIABLE),                   \
@@ -165,10 +170,10 @@ _Generic((VARIABLE),                   \
   uint16:      PRINT_UNSIGNED("[uint16]", VARIABLE), \
   uint32:      PRINT_UNSIGNED("[uint32]", VARIABLE), \
   uint64:      PRINT_UNSIGNED("[uint64]", VARIABLE), \
-  char:        PRINT_OTHER("%c", VARIABLE),                                  \
-  bool:        PRINT_OTHER("%b", VARIABLE),                                  \
-  char *:      PRINT_OTHER("%s", VARIABLE),                                  \
-  void *:      PRINT_OTHER("%p", VARIABLE),                                  \
+  char:        PRINT_OTHER("[char]", "%c", VARIABLE),                        \
+  bool:        PRINT_OTHER("[bool]", "%b", VARIABLE),                        \
+  char *:      PRINT_OTHER("[char *]", "%s", VARIABLE),                      \
+  void *:      PRINT_OTHER("[void *]", "%p", VARIABLE),                        \
   float:       print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_FLOAT),       \
   double:      print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_DOUBLE),      \
   long double: print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_LONG_DOUBLE), \
@@ -565,7 +570,7 @@ xrealloc(void *old, const int64 size) {
     uint64 old_save = (uint64)old;
 
     if (size <= 0) {
-        error("Error in xmalloc: invalid size = %lld.\n", (long long)size);
+        error("Error in xrealloc: invalid size = %lld.\n", (long long)size);
         fatal(EXIT_FAILURE);
     }
     assert((uint64)size <= SIZE_MAX);
@@ -639,6 +644,17 @@ xpthread_mutex_destroy(pthread_mutex_t *mutex) {
     int err;
     if ((err = pthread_mutex_destroy(mutex))) {
         error("Error destroying mutex %p: %s.\n", mutex, strerror(err));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+static void
+xpthread_create(pthread_t *thread, pthread_attr_t *attr,
+                void *(*function)(void *), void *arg) {
+    int err;
+    if ((err = pthread_create(thread, attr, function, arg))) {
+        error("Error creating thread: %s.\n", strerror(err));
         fatal(EXIT_FAILURE);
     }
     return;
@@ -1115,9 +1131,9 @@ main(void) {
     char var_char = 'c';
     char *var_string = "a nice string";
     void *var_voidptr = NULL;
-    float var_float = 0.5f;
-    double var_double = 0.5;
-    long double var_longdouble = 0.5L;
+    float var_float = FLT_MAX;
+    double var_double = DBL_MAX;
+    long double var_longdouble = DBL_MAX;
     int8 var_int8 = INT8_MAX;
     int16 var_int16 = INT16_MAX;
     int32 var_int32 = INT32_MAX;

@@ -312,6 +312,17 @@ arena_push(Arena *arena, int64 size) {
     return before;
 }
 
+static void *
+arenas_push(Arena **arenas, int64 number, int64 size) {
+    for (uint32 i = 0; i < number; i += 1) {
+        void *p = arena_push(arenas[i], size);
+        if (p) {
+            return p;
+        }
+    }
+    return NULL;
+}
+
 static uint32
 arena_push_index32(Arena *arena, uint32 size) {
     void *before;
@@ -343,6 +354,16 @@ arena_of(Arena *arena, void *p) {
         arena = arena->next;
     }
     return NULL;
+}
+
+static int64
+arenas_pop(Arena **arenas, uint32 number, void *p) {
+    for (uint32 i = 0; i < number; i += 1) {
+        if (arena_pop(arenas[i], p) == 0) {
+            return 0;
+        }
+    }
+    return -1;
 }
 
 static int64
@@ -379,6 +400,22 @@ arena_reset(Arena *arena) {
     } while ((arena = arena->next));
 
     return first->begin;
+}
+
+static void *
+arenas_reset(Arena **arenas, int64 number) {
+    for (uint32 i = 0; i < number; i += 1) {
+        arena_reset(arenas[i]);
+    }
+    return NULL;
+}
+
+static void *
+arenas_destroy(Arena **arenas, int64 number) {
+    for (uint32 i = 0; i < number; i += 1) {
+        arena_destroy(arenas[i]);
+    }
+    return NULL;
 }
 
 #if TESTING_arena
