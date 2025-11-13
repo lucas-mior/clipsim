@@ -43,7 +43,7 @@ static void ipc_create_fifo(char *);
 static void *ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
 static void ipc_client_speak_fifo(int32, int32);
 
-static void
+static void __attribute__((noreturn))
 sig_abrt_handler(int32 unused) {
     (void)unused;
     error("Received SIGABRT signal, something is wrong with history file.\n");
