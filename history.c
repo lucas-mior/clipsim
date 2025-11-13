@@ -551,7 +551,7 @@ history_recover(int32 id) {
     e = &entries[id];
 
     if ((istext = (is_image[id] == false))) {
-        if (pipe(fd)) {
+        if (pipe(fd) < 0) {
             util_die_notify("Error creating pipe: %s\n", strerror(errno));
         }
     }
