@@ -37,8 +37,8 @@ static void ipc_client_print_entries(void);
 static int32 ipc_daemon_get_id(void);
 static void ipc_client_ask_id(int32);
 static void ipc_make_fifos(void);
-static void ipc_clean_fifo(const char *);
-static void ipc_create_fifo(const char *);
+static void ipc_clean_fifo(char *);
+static void ipc_create_fifo(char *);
 static void sig_abrt_handler(int32) __attribute__((noreturn));
 
 static void *ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
@@ -399,7 +399,7 @@ ipc_make_fifos(void) {
 }
 
 void
-ipc_clean_fifo(const char *name) {
+ipc_clean_fifo(char *name) {
     DEBUG_PRINT("%s", name)
     if (unlink(name) < 0) {
         if (errno != ENOENT) {
@@ -410,7 +410,7 @@ ipc_clean_fifo(const char *name) {
 }
 
 void
-ipc_create_fifo(const char *name) {
+ipc_create_fifo(char *name) {
     DEBUG_PRINT("%s", name)
     if (mkfifo(name, 0600) < 0) {
         if (errno != EEXIST) {
