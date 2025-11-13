@@ -43,20 +43,6 @@ static void ipc_create_fifo(char *);
 static void *ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
 static void ipc_client_speak_fifo(int32, int32);
 
-static void __attribute__((noreturn))
-sig_abrt_handler(int32 unused) {
-    (void)unused;
-    error("Received SIGABRT signal, something is wrong with history file.\n");
-    error("Creating backup for history file...\n");
-    history_backup();
-
-    error("Restarting clipsim --daemon with empty history...\n");
-    execlp("clipsim", "clipsim", "--daemon", NULL);
-
-    error("Error while trying to exec clipsim --daemon: %s\n", strerror(errno));
-    exit(EXIT_FAILURE);
-}
-
 void *
 ipc_daemon_listen_fifo(void *unused) {
     DEBUG_PRINT("void")
@@ -67,8 +53,6 @@ ipc_daemon_listen_fifo(void *unused) {
 
     (void)unused;
     ipc_make_fifos();
-
-    signal(SIGABRT, sig_abrt_handler);
 
     while (true) {
         int64 r;
