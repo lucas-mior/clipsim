@@ -187,6 +187,42 @@ _Generic((VARIABLE),                   \
 #define DEBUGGING 0
 #endif
 
+#define MINOF(VARIABLE)            \
+_Generic((VARIABLE),                   \
+  int8:        INT8_MIN, \
+  int16:       INT16_MIN, \
+  int32:       INT32_MIN, \
+  int64:       INT64_MIN, \
+  uint8:       0, \
+  uint16:      0, \
+  uint32:      0, \
+  uint64:      0, \
+  char:        CHAR_MIN, \
+  bool:        0, \
+  float:       FLT_MIN, \
+  double:      DBL_MIN, \
+  long double: LDBL_MIN, \
+  default:     0 \
+)
+
+#define MAXOF(VARIABLE)            \
+_Generic((VARIABLE),                   \
+  int8:        (int64)INT8_MAX, \
+  int16:       (int64)INT16_MAX, \
+  int32:       (int64)INT32_MAX, \
+  int64:       (int64)INT64_MAX, \
+  uint8:       (int64)UINT8_MAX, \
+  uint16:      (int64)UINT16_MAX, \
+  uint32:      (int64)UINT32_MAX, \
+  uint64:      (uint64)UINT64_MAX, \
+  char:        (int64)CHAR_MAX, \
+  bool:        1, \
+  float:       FLT_MAX, \
+  double:      DBL_MAX, \
+  long double: LDBL_MAX, \
+  default:     0 \
+)
+
 #if !defined(FLAGS_HUGE_PAGES)
 #if defined(MAP_HUGETLB) && defined(MAP_HUGE_2MB)
 #define FLAGS_HUGE_PAGES MAP_HUGETLB | MAP_HUGE_2MB
@@ -308,6 +344,8 @@ memmem(void *haystack, size_t hay_len, void *needle, size_t needle_len) {
 #define X64(func) \
   INLINE void \
       CAT(func, 64)(void *dest, void *source, int64 size) { \
+      if (size == 0) \
+          return; \
       assert(size > 0); \
       assert((uint64)size <= SIZE_MAX); \
       func(dest, source, (size_t)size); \
@@ -320,7 +358,10 @@ X64(memmove)
 
 INLINE void
 memset64(void *buffer, int value, int64 size) {
-    assert(size >= 0);
+    if (size == 0) {
+        return;
+    }
+    assert(size > 0);
     assert((uint64)size <= SIZE_MAX);
     memset(buffer, value, (size_t)size);
     return;
@@ -383,29 +424,31 @@ memcmp64(void *left, void *right, int64 size) {
     return result;
 }
 
-#define X64(func, TYPE_MAX, TYPE) \
+#define X64(func, TYPE) \
     INLINE int64 \
 CAT(func, 64)(int fd, void *buffer, int64 size) { \
+    TYPE instance; \
     ssize_t w; \
+    (void)instance; \
     assert(size >= 0); \
-    assert((uint64)size <= TYPE_MAX); \
+    assert((uint64)size <= MAXOF(instance)); \
     w = func(fd, buffer, (TYPE)size); \
     return (int64)w; \
 }
 
 #if OS_WINDOWS
-X64(write, UINT_MAX, uint)
-X64(read, UINT_MAX, uint)
+X64(write, uint)
+X64(read, uint)
 #else
-X64(write, SIZE_MAX, size_t)
-X64(read, SIZE_MAX, size_t)
+X64(write, size_t)
+X64(read, size_t)
 #endif
 
 #undef X64
 
 #define X64(func) \
     INLINE int64 \
-CAT(func, 64)(void *buffer, int64 size, int64 n, FILE *file) {\
+CAT(func, 64)(void *buffer, int64 size, int64 n, FILE *file) { \
     size_t rw; \
     assert(size >= 0); \
     assert(n >= 0); \
@@ -500,7 +543,7 @@ xmmap_commit(int64 *size) {
         *size = UTIL_ALIGN(*size, util_page_size);
     } while (0);
     if (p == MAP_FAILED) {
-        error("Error in mmap(%zu): %s.\n", *size, strerror(errno));
+        error("Error in mmap(%lld): %s.\n", (llong)*size, strerror(errno));
         fatal(EXIT_FAILURE);
     }
     return p;
@@ -519,9 +562,9 @@ xmmap_commit(int64 *size) {
     void *p;
 
     if (util_page_size == 0) {
-        SYSTEM_INFO si;
-        GetSystemInfo(&si);
-        util_page_size = si.dwPageSize;
+        SYSTEM_INFO system_info;
+        GetSystemInfo(&system_info);
+        util_page_size = system_info.dwPageSize;
         if (util_page_size <= 0) {
             fprintf(stderr, "Error getting page size.\n");
             fatal(EXIT_FAILURE);
@@ -1127,6 +1170,8 @@ main(void) {
     char *p3;
     char *string = __FILE__;
 
+    int int_max;
+    int int_min;
     bool var_bool = true;
     char var_char = 'c';
     char *var_string = "a nice string";
@@ -1144,7 +1189,6 @@ main(void) {
     uint32 var_uint32 = UINT32_MAX;
     uint var_uint = UINT_MAX;
     uint64 var_uint64 = UINT64_MAX;
-
     char *paths[] = {
         "/aaaa/bbbb/cccc", "/aa/bb/cc", "/a/b/c",    "a/b/c",
         "a/b/cccc",        "a/bb/cccc", "aaaa/cccc",
@@ -1171,6 +1215,11 @@ main(void) {
     PRINT_VAR(var_float);
     PRINT_VAR(var_double);
     PRINT_VAR(var_longdouble);
+
+    int_max = MAXOF(var_int);
+    int_min = MINOF(var_int);
+    PRINT_VAR(int_max);
+    PRINT_VAR(int_min);
 
     memset64(p1, 0, SIZEMB(1));
     memcpy64(p1, string, strlen64(string));
