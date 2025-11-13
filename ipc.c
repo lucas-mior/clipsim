@@ -39,12 +39,11 @@ static void ipc_client_ask_id(int32);
 static void ipc_make_fifos(void);
 static void ipc_clean_fifo(char *);
 static void ipc_create_fifo(char *);
-static void sig_abrt_handler(int32) __attribute__((noreturn));
 
 static void *ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
 static void ipc_client_speak_fifo(int32, int32);
 
-void
+static void
 sig_abrt_handler(int32 unused) {
     (void)unused;
     error("Received SIGABRT signal, something is wrong with history file.\n");
