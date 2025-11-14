@@ -652,7 +652,7 @@ history_free_entry(const Entry *e, int32 index) {
     if (is_image[index]) {
         unlink(e->content);
     }
-    assert(arena_pop(arena, e->content) == 0);
+    assert(arena_pop(arena, e->content));
 
     return;
 }
