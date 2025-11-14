@@ -109,80 +109,6 @@ static char *program;
     string_from_strings(BUFFER, sizeof(BUFFER), SEP, ARRAY, LENGTH)
 #endif
 
-#if DEBUGGING || TESTING_util
-#if defined(__clang__)
-#pragma clang diagnostic ignored "-Wc11-extensions"
-#pragma clang diagnostic ignored "-Wformat"
-#pragma clang diagnostic ignored "-Wdouble-promotion"
-#endif
-
-// clang-format off
-enum FloatTypes {
-    FLOAT_FLOAT,
-    FLOAT_DOUBLE,
-    FLOAT_LONG_DOUBLE,
-};
-
-static void
-print_float(char *name, char *variable, enum FloatTypes type) {
-    float value_f;
-    double value_d;
-    long double value_ld;
-
-    switch (type) {
-    case FLOAT_FLOAT:
-        memcpy(&value_f, variable, sizeof(float));
-        printf("[float]%s = %e = %f\n", name, (double)value_f, (double)value_f);
-        break;
-    case FLOAT_DOUBLE:
-        memcpy(&value_d, variable, sizeof(double));
-        printf("[double]%s = %e = %f\n", name, value_d, value_d);
-        break;
-    case FLOAT_LONG_DOUBLE:
-        memcpy(&value_ld, variable, sizeof(long double));
-        printf("[long double]%s = %Le = %Lf\n", name, value_ld, value_ld);
-        break;
-    default:
-        fprintf(stderr, "Invalid type.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    return;
-}
-
-// clang-format off
-#define PRINT_SIGNED(TYPE, VARIABLE) \
-    printf("%s%s = %lld \n", TYPE, #VARIABLE, (llong)VARIABLE)
-
-#define PRINT_UNSIGNED(TYPE, VARIABLE) \
-    printf("%s%s = %llu \n", TYPE, #VARIABLE, (ullong)VARIABLE)
-
-#define PRINT_OTHER(TYPE, FORMAT, VARIABLE) \
-    printf("%s%s = " FORMAT " \n", TYPE, #VARIABLE, VARIABLE)
-
-#define PRINT_VAR(VARIABLE)            \
-_Generic((VARIABLE),                   \
-  int8:        PRINT_SIGNED("[int8]", VARIABLE), \
-  int16:       PRINT_SIGNED("[int16]", VARIABLE), \
-  int32:       PRINT_SIGNED("[int32]", VARIABLE), \
-  int64:       PRINT_SIGNED("[int64]", VARIABLE), \
-  uint8:       PRINT_UNSIGNED("[uint8]", VARIABLE),  \
-  uint16:      PRINT_UNSIGNED("[uint16]", VARIABLE), \
-  uint32:      PRINT_UNSIGNED("[uint32]", VARIABLE), \
-  uint64:      PRINT_UNSIGNED("[uint64]", VARIABLE), \
-  char:        PRINT_OTHER("[char]", "%c", VARIABLE),                        \
-  bool:        PRINT_OTHER("[bool]", "%b", VARIABLE),                        \
-  char *:      PRINT_OTHER("[char *]", "%s", VARIABLE),                      \
-  void *:      PRINT_OTHER("[void *]", "%p", VARIABLE),                        \
-  float:       print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_FLOAT),       \
-  double:      print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_DOUBLE),      \
-  long double: print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_LONG_DOUBLE), \
-  default:     printf("%s = ?\n", #VARIABLE) \
-)
-
-#endif
-// clang-format on
-
 #if !defined(DEBUGGING)
 #define DEBUGGING 0
 #endif
@@ -262,6 +188,85 @@ typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 #endif
+
+#if DEBUGGING || TESTING_util
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wc11-extensions"
+#pragma clang diagnostic ignored "-Wformat"
+#pragma clang diagnostic ignored "-Wdouble-promotion"
+#endif
+
+// clang-format off
+enum FloatTypes {
+    FLOAT_FLOAT,
+    FLOAT_DOUBLE,
+    FLOAT_LONG_DOUBLE,
+};
+
+static void
+print_float(char *name, char *variable, enum FloatTypes type) {
+    float value_f;
+    double value_d;
+    long double value_ld;
+
+    switch (type) {
+    case FLOAT_FLOAT:
+        memcpy(&value_f, variable, sizeof(float));
+        printf("[float]%zu %s = %e = %f\n",
+               sizeof(float)*CHAR_BIT, name, (double)value_f, (double)value_f);
+        break;
+    case FLOAT_DOUBLE:
+        memcpy(&value_d, variable, sizeof(double));
+        printf("[double]%zu %s = %e = %f\n",
+               sizeof(double)*CHAR_BIT, name, value_d, value_d);
+        break;
+    case FLOAT_LONG_DOUBLE:
+        memcpy(&value_ld, variable, sizeof(long double));
+        printf("[long double]%zu %s = %Le = %Lf\n",
+               sizeof(long double)*CHAR_BIT, name, value_ld, value_ld);
+        break;
+    default:
+        fprintf(stderr, "Invalid type.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return;
+}
+
+// clang-format off
+#define PRINT_SIGNED(TYPE, VARIABLE) \
+    printf(TYPE "%zu %s = %lld\n", sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, (llong)VARIABLE)
+
+#define PRINT_UNSIGNED(TYPE, VARIABLE) \
+    printf(TYPE "%zu %s = %llu\n", sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, (ullong)VARIABLE)
+
+#define PRINT_OTHER(TYPE, FORMAT, VARIABLE) \
+    printf(TYPE "%zu %s = " FORMAT "\n", sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, VARIABLE)
+
+#define PRINT_VAR(VARIABLE) \
+_Generic((VARIABLE), \
+  signed char: PRINT_SIGNED("[schar]", VARIABLE), \
+  short:       PRINT_SIGNED("[short]", VARIABLE), \
+  int:         PRINT_SIGNED("[int]", VARIABLE), \
+  long:        PRINT_SIGNED("[long]", VARIABLE), \
+  llong:       PRINT_SIGNED("[llong]", VARIABLE), \
+  uchar:       PRINT_UNSIGNED("[uchar]", VARIABLE), \
+  ushort:      PRINT_UNSIGNED("[ushort]", VARIABLE), \
+  uint:        PRINT_UNSIGNED("[uint]", VARIABLE), \
+  ulong:       PRINT_UNSIGNED("[ulong]", VARIABLE), \
+  ullong:      PRINT_UNSIGNED("[ullong]", VARIABLE), \
+  char:        PRINT_OTHER("[char]", "%c", VARIABLE), \
+  bool:        PRINT_OTHER("[bool]", "%d", VARIABLE), \
+  char *:      PRINT_OTHER("[char *]", "%s", VARIABLE), \
+  void *:      PRINT_OTHER("[void *]", "%p", VARIABLE), \
+  float:       print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_FLOAT), \
+  double:      print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_DOUBLE), \
+  long double: print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_LONG_DOUBLE), \
+  default:     printf("%s = ?\n", #VARIABLE) \
+)
+
+#endif
+// clang-format on
 
 // clang-format off
 #define UTIL_ALIGN_UINT(S, A) (int64)(((S) + ((A) - 1)) & ~((A) - 1))
@@ -1215,6 +1220,7 @@ main(void) {
     PRINT_VAR(var_float);
     PRINT_VAR(var_double);
     PRINT_VAR(var_longdouble);
+    PRINT_VAR(var_uint - (uint)var_int);
 
     int_max = MAXOF(var_int);
     int_min = MINOF(var_int);

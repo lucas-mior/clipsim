@@ -368,10 +368,12 @@ arena_push_index32(Arena *arena, uint32 size) {
 
 static Arena *
 arena_of(Arena *arena, void *p) {
-    char *pchar = p;
+    uintptr_t pointer_num = (uintptr_t)p;
+
     while (arena) {
-        if ((arena->begin <= pchar)
-            && (pchar < ((char *)arena + arena->size))) {
+        uintptr_t begin = (uintptr_t)arena->begin;
+        uintptr_t end = (uintptr_t)((char *)arena + arena->size);
+        if ((begin <= pointer_num) && (pointer_num < end)) {
             return arena;
         }
 
