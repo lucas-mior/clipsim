@@ -127,47 +127,6 @@ static void __attribute__((format(printf, 1, 2))) error(char *format, ...);
 
 #include "assert.c"
 
-#if !defined(MINOF)
-#define MINOF(VARIABLE)            \
-_Generic((VARIABLE),                   \
-  signed char: SCHAR_MIN, \
-  short:     SHRT_MIN, \
-  int:       INT_MIN, \
-  long:       LONG_MIN, \
-  uchar:      0, \
-  ushort:     0, \
-  uint:      0u, \
-  ulong:      0ul, \
-  ullong:      0ull, \
-  char:        CHAR_MIN, \
-  bool:        1, \
-  float:       FLT_MIN, \
-  double:      DBL_MIN, \
-  long double: LDBL_MIN \
-)
-#endif
-
-#if !defined(MAXOF)
-
-#define MAXOF(VARIABLE)            \
-_Generic((VARIABLE),                   \
-  signed char: SCHAR_MAX, \
-  short:     SHRT_MAX, \
-  int:       INT_MAX, \
-  long:       LONG_MAX, \
-  uchar:      UCHAR_MAX, \
-  ushort:     USHRT_MAX, \
-  uint:      UINT_MAX, \
-  ulong:      ULONG_MAX, \
-  ullong:      ULLONG_MAX, \
-  char:        CHAR_MAX, \
-  bool:        1, \
-  float:       FLT_MAX, \
-  double:      DBL_MAX, \
-  long double: LDBL_MAX \
-)
-#endif
-
 #if !defined(FLAGS_HUGE_PAGES)
 #if defined(MAP_HUGETLB) && defined(MAP_HUGE_2MB)
 #define FLAGS_HUGE_PAGES MAP_HUGETLB | MAP_HUGE_2MB
@@ -206,6 +165,50 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
+#endif
+
+#if !defined(MINOF)
+
+#define MINOF(VARIABLE) \
+_Generic((VARIABLE), \
+  schar:       SCHAR_MIN, \
+  short:       SHRT_MIN,  \
+  int:         INT_MIN,   \
+  long:        LONG_MIN,  \
+  uchar:       0,         \
+  ushort:      0,         \
+  uint:        0u,        \
+  ulong:       0ul,       \
+  ullong:      0ull,      \
+  char:        CHAR_MIN,  \
+  bool:        0,         \
+  float:       -FLT_MAX,  \
+  double:      -DBL_MAX,  \
+  long double: -LDBL_MAX  \
+)
+
+#endif
+
+#if !defined(MAXOF)
+
+#define MAXOF(VARIABLE) \
+_Generic((VARIABLE), \
+  schar:       SCHAR_MAX,  \
+  short:       SHRT_MAX,   \
+  int:         INT_MAX,    \
+  long:        LONG_MAX,   \
+  uchar:       UCHAR_MAX,  \
+  ushort:      USHRT_MAX,  \
+  uint:        UINT_MAX,   \
+  ulong:       ULONG_MAX,  \
+  ullong:      ULLONG_MAX, \
+  char:        CHAR_MAX,   \
+  bool:        1,          \
+  float:       FLT_MAX,    \
+  double:      DBL_MAX,    \
+  long double: LDBL_MAX    \
+)
+
 #endif
 
 #if DEBUGGING || TESTING_util
@@ -254,13 +257,16 @@ print_float(char *name, char *variable, enum FloatTypes type) {
 
 // clang-format off
 #define PRINT_SIGNED(TYPE, VARIABLE) \
-    printf(TYPE "%zu %s = %lld\n", sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, (llong)VARIABLE)
+    printf(TYPE "%zu %s = %lld\n", \
+           sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, (llong)VARIABLE)
 
 #define PRINT_UNSIGNED(TYPE, VARIABLE) \
-    printf(TYPE "%zu %s = %llu\n", sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, (ullong)VARIABLE)
+    printf(TYPE "%zu %s = %llu\n", \
+           sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, (ullong)VARIABLE)
 
 #define PRINT_OTHER(TYPE, FORMAT, NAME, VARIABLE) \
-    printf(TYPE "%zu %s = " FORMAT "\n", sizeof(VARIABLE)*CHAR_BIT, NAME, VARIABLE)
+    printf(TYPE "%zu %s = " FORMAT "\n", \
+           sizeof(VARIABLE)*CHAR_BIT, NAME, VARIABLE)
 
 #define PRINT_VAR(VARIABLE) \
 _Generic((VARIABLE), \
@@ -281,7 +287,17 @@ _Generic((VARIABLE), \
   float:       print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_FLOAT), \
   double:      print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_DOUBLE), \
   long double: print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_LONG_DOUBLE), \
-  default:     printf("%s = ?\n", #VARIABLE) \
+  default: _Generic((VARIABLE), \
+    int8:      PRINT_SIGNED("[int8]", VARIABLE), \
+    int16:     PRINT_SIGNED("[int16]", VARIABLE), \
+    int32:     PRINT_SIGNED("[int32]", VARIABLE), \
+    int64:     PRINT_SIGNED("[int64]", VARIABLE), \
+    uint8:     PRINT_UNSIGNED("[uint8]", VARIABLE), \
+    uint16:    PRINT_UNSIGNED("[uint16]", VARIABLE), \
+    uint32:    PRINT_UNSIGNED("[uint32]", VARIABLE), \
+    uint64:    PRINT_UNSIGNED("[uint64]", VARIABLE), \
+    default:   assert(false) \
+  ) \
 )
 
 #endif

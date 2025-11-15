@@ -360,7 +360,9 @@ arena_push_index32(Arena *arena, uint32 size) {
 
     before = arena->pos;
     arena->pos = (char *)arena->pos + size;
-    assert(arena->size < UINT32_MAX);
+    if (arena->size >= UINT32_MAX) {
+        return UINT32_MAX;
+    }
     arena->npushed += 1;
 
     return (uint32)((char *)before - (char *)arena->begin);
@@ -403,8 +405,11 @@ arena_pop(Arena *arena, void *p) {
     }
 
     arena->npushed -= 1;
-    assert(arena->npushed >= 0);
-    if (arena->npushed == 0) {
+    if (arena->npushed < 0) {
+        error2("Warning: inconsistent arena state (npushed = %lld)\n",
+               (llong)arena->npushed);
+    }
+    if (arena->npushed <= 0) {
         arena->pos = arena->begin;
     }
     return true;
@@ -449,13 +454,16 @@ arenas_destroy(Arena **arenas, int64 number) {
 }
 
 #if TESTING_arena
-#include "assert.h"
+#include "assert.c"
 #include <stdio.h>
 
 INLINE void
 memset64(void *buffer, int value, int64 size) {
-    assert(size >= 0);
-    assert((uint64)size <= SIZE_MAX);
+    if (size == 0) {
+        return;
+    }
+    ASSERT(size >= 0);
+    ASSERT_LESS(size, SIZE_MAX);
     memset(buffer, value, (size_t)size);
     return;
 }
@@ -468,13 +476,13 @@ main(void) {
     char *objs[1000];
     uint32 arena_size;
 
-    assert((arena = arena_create(SIZEMB(3))));
-    assert(arena->pos == arena->begin);
+    ASSERT((arena = arena_create(SIZEMB(3))));
+    ASSERT(arena->pos == arena->begin);
     arena_size = (uint32)arena_data_size(arena);
 
     srand((uint32)time(NULL));
 
-    assert(arena_narenas(arena) == 1);
+    ASSERT_EQUAL(arena_narenas(arena), 1);
 
     {
         int64 total_size = 0;
@@ -482,23 +490,23 @@ main(void) {
 
         for (uint32 i = 0; i < LENGTH(objs); i += 1) {
             int64 size = 10 + (rand() % 10000);
-            assert((objs[i] = arena_push(arena, size)));
+            ASSERT((objs[i] = arena_push(arena, size)));
 
             total_size += size;
             memset64(objs[i], 0xCD, size);
 
             if (total_size < arena_data_size(arena)) {
-                assert(arena_narenas(arena) == 1);
-                assert((char *)objs[i] >= arena->begin);
-                assert((char *)arena->pos >= (char *)objs[i]);
+                ASSERT_EQUAL(arena_narenas(arena), 1);
+                ASSERT((char *)objs[i] >= arena->begin);
+                ASSERT((char *)arena->pos >= (char *)objs[i]);
             }
         }
 
         for (Arena *a = arena; a; a = a->next) {
-            assert(a->npushed > 0);
+            ASSERT_MORE(a->npushed, 0);
             total_pushed += a->npushed;
         }
-        assert(total_pushed == LENGTH(objs));
+        ASSERT_EQUAL(total_pushed, LENGTH(objs));
     }
 
     {
@@ -509,20 +517,20 @@ main(void) {
             uint32 j = (uint32)rand() % LENGTH(objs);
             uint32 k = (uint32)rand() % LENGTH(objs);
             if (objs[j]) {
-                assert(arena_pop(arena, objs[j]));
+                ASSERT(arena_pop(arena, objs[j]));
                 objs[j] = NULL;
                 nallocated -= 1;
             }
             if ((k + 1) < (nallocated / 2)) {
-                assert((objs[j] = arena_push(arena, ALIGNMENT)));
+                ASSERT((objs[j] = arena_push(arena, ALIGNMENT)));
                 nallocated += 1;
             }
         }
         for (Arena *a = arena; a; a = a->next) {
-            assert(a->npushed == 0);
+            ASSERT_EQUAL(a->npushed, 0);
         }
 
-        assert(!arena_pop(arena, &aux));
+        ASSERT(!arena_pop(arena, &aux));
     }
 
     arena_reset(arena);
@@ -530,57 +538,58 @@ main(void) {
         void *p1;
         void *p2;
 
-        assert((p1 = arena_push(arena, arena_size)));
-        assert(arena->npushed == 1);
-        assert((p2 = arena_push(arena, arena_size)));
-        assert(arena->npushed == 1);
-        assert(arena_narenas(arena) == 2);
-        assert(arena->next != NULL);
-        assert(arena_of(arena, p1) != arena_of(arena, p2));
+        ASSERT((p1 = arena_push(arena, arena_size)));
+        ASSERT_EQUAL(arena->npushed, 1);
+        ASSERT((p2 = arena_push(arena, arena_size)));
+        ASSERT_EQUAL(arena->npushed, 1);
+        ASSERT_EQUAL(arena_narenas(arena), 2);
+        ASSERT(arena->next);
+        ASSERT(arena_of(arena, p1) != arena_of(arena, p2));
 
-        assert(arena_pop(arena, p1));
-        assert(arena_pop(arena, p2));
-        assert(arena->npushed == 0);
+        ASSERT(arena_pop(arena, p1));
+        ASSERT(arena_pop(arena, p2));
+        ASSERT_EQUAL(arena->npushed, 0);
     }
 
     arena_reset(arena);
 
-    assert(arena_push(arena, arena_size + 1) == NULL);
-    error2("Error in arena_push: %s.\n", arena_strerror(errno));
+    ASSERT(arena_push(arena, arena_size + 1) == NULL);
+    error2("Expected error in arena_push: %s.\n", arena_strerror(errno));
 
     {
         void *p3;
         void *p4;
 
-        assert((p3 = arena_push(arena, arena_size / 2)));
-        assert(arena->npushed == 1);
-        assert((p4 = arena_push(arena, arena_size / 2)));
-        assert(arena->npushed == 2);
-        assert(arena_of(arena, p3) == arena_of(arena, p4));
+        ASSERT((p3 = arena_push(arena, arena_size / 2)));
+        ASSERT_EQUAL(arena->npushed, 1);
+        ASSERT((p4 = arena_push(arena, arena_size / 2)));
+        ASSERT_EQUAL(arena->npushed, 2);
+        ASSERT(arena_of(arena, p3) == arena_of(arena, p4));
 
-        assert(arena_pop(arena, p3));
-        assert(arena->npushed == 1);
-        assert(arena_pop(arena, p4));
-        assert(arena->npushed == 0);
+        ASSERT(arena_pop(arena, p3));
+        ASSERT_EQUAL(arena->npushed, 1);
+        ASSERT(arena_pop(arena, p4));
+        ASSERT_EQUAL(arena->npushed, 0);
     }
 
     arena_reset(arena);
-    assert(arena->pos == arena->begin);
-    assert(arena->npushed == 0);
+    ASSERT(arena->pos == arena->begin);
+    ASSERT_EQUAL(arena->npushed, 0);
 
-    assert(arena->next->pos == arena->next->begin);
-    assert(arena->next->npushed == 0);
-    assert(arena->pos == arena->begin && arena->npushed == 0);
+    ASSERT(arena->next->pos == arena->next->begin);
+    ASSERT_EQUAL(arena->next->npushed, 0);
+    ASSERT(arena->pos == arena->begin);
+    ASSERT_EQUAL(arena->npushed, 0);
 
     arena_reset(arena);
     {
         uint32 index = arena_push_index32(arena, 32);
-        assert(index != UINT32_MAX);
-        assert(arena->begin + index == (char *)arena->begin);
+        ASSERT_NOT_EQUAL(index, UINT32_MAX);
+        ASSERT(arena->begin + index == arena->begin);
 
         index = arena_push_index32(arena, 32);
-        assert(index != UINT32_MAX);
-        assert(arena->begin + index == (char *)arena->begin + 32);
+        ASSERT_NOT_EQUAL(index, UINT32_MAX);
+        ASSERT(arena->begin + index == arena->begin + 32);
     }
 
     arena_print(arena);
