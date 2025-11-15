@@ -73,8 +73,18 @@
 #include <pthread.h>
 #endif
 
-#ifndef DEBUGGING
+#if !defined(DEBUGGING)
 #define DEBUGGING 0
+#endif
+
+#if defined(__has_include)
+#if __has_include(<valgrind/valgrind.h>)
+#include <valgrind/valgrind.h>
+#else
+#define RUNNING_ON_VALGRIND 0
+#endif
+#else
+#define RUNNING_ON_VALGRIND 0
 #endif
 
 #if defined(__INCLUDE_LEVEL__) && __INCLUDE_LEVEL__ == 0
@@ -88,6 +98,8 @@ static char *program = __FILE__;
 #else
 static char *program;
 #endif
+
+static void __attribute__((format(printf, 1, 2))) error(char *format, ...);
 
 #define SIZEOF(X) (int64)sizeof(X)
 
@@ -113,41 +125,48 @@ static char *program;
 #define DEBUGGING 0
 #endif
 
+#include "assert.c"
+
+#if !defined(MINOF)
 #define MINOF(VARIABLE)            \
 _Generic((VARIABLE),                   \
-  int8:        INT8_MIN, \
-  int16:       INT16_MIN, \
-  int32:       INT32_MIN, \
-  int64:       INT64_MIN, \
-  uint8:       0, \
-  uint16:      0, \
-  uint32:      0, \
-  uint64:      0, \
+  signed char: SCHAR_MIN, \
+  short:     SHRT_MIN, \
+  int:       INT_MIN, \
+  long:       LONG_MIN, \
+  uchar:      0, \
+  ushort:     0, \
+  uint:      0u, \
+  ulong:      0ul, \
+  ullong:      0ull, \
   char:        CHAR_MIN, \
-  bool:        0, \
+  bool:        1, \
   float:       FLT_MIN, \
   double:      DBL_MIN, \
-  long double: LDBL_MIN, \
-  default:     0 \
+  long double: LDBL_MIN \
 )
+#endif
+
+#if !defined(MAXOF)
 
 #define MAXOF(VARIABLE)            \
 _Generic((VARIABLE),                   \
-  int8:        (int64)INT8_MAX, \
-  int16:       (int64)INT16_MAX, \
-  int32:       (int64)INT32_MAX, \
-  int64:       (int64)INT64_MAX, \
-  uint8:       (int64)UINT8_MAX, \
-  uint16:      (int64)UINT16_MAX, \
-  uint32:      (int64)UINT32_MAX, \
-  uint64:      (uint64)UINT64_MAX, \
-  char:        (int64)CHAR_MAX, \
+  signed char: SCHAR_MAX, \
+  short:     SHRT_MAX, \
+  int:       INT_MAX, \
+  long:       LONG_MAX, \
+  uchar:      UCHAR_MAX, \
+  ushort:     USHRT_MAX, \
+  uint:      UINT_MAX, \
+  ulong:      ULONG_MAX, \
+  ullong:      ULLONG_MAX, \
+  char:        CHAR_MAX, \
   bool:        1, \
   float:       FLT_MAX, \
   double:      DBL_MAX, \
-  long double: LDBL_MAX, \
-  default:     0 \
+  long double: LDBL_MAX \
 )
+#endif
 
 #if !defined(FLAGS_HUGE_PAGES)
 #if defined(MAP_HUGETLB) && defined(MAP_HUGE_2MB)
@@ -240,8 +259,8 @@ print_float(char *name, char *variable, enum FloatTypes type) {
 #define PRINT_UNSIGNED(TYPE, VARIABLE) \
     printf(TYPE "%zu %s = %llu\n", sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, (ullong)VARIABLE)
 
-#define PRINT_OTHER(TYPE, FORMAT, VARIABLE) \
-    printf(TYPE "%zu %s = " FORMAT "\n", sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, VARIABLE)
+#define PRINT_OTHER(TYPE, FORMAT, NAME, VARIABLE) \
+    printf(TYPE "%zu %s = " FORMAT "\n", sizeof(VARIABLE)*CHAR_BIT, NAME, VARIABLE)
 
 #define PRINT_VAR(VARIABLE) \
 _Generic((VARIABLE), \
@@ -255,10 +274,10 @@ _Generic((VARIABLE), \
   uint:        PRINT_UNSIGNED("[uint]", VARIABLE), \
   ulong:       PRINT_UNSIGNED("[ulong]", VARIABLE), \
   ullong:      PRINT_UNSIGNED("[ullong]", VARIABLE), \
-  char:        PRINT_OTHER("[char]", "%c", VARIABLE), \
-  bool:        PRINT_OTHER("[bool]", "%d", VARIABLE), \
-  char *:      PRINT_OTHER("[char *]", "%s", VARIABLE), \
-  void *:      PRINT_OTHER("[void *]", "%p", VARIABLE), \
+  char:        PRINT_OTHER("[char]", "%c", #VARIABLE, VARIABLE), \
+  bool:        PRINT_OTHER("[bool]", "%d", #VARIABLE, VARIABLE), \
+  char *:      PRINT_OTHER("[char *]", "%s", #VARIABLE, (char *)(uintptr_t)(VARIABLE)), \
+  void *:      PRINT_OTHER("[void *]", "%p", #VARIABLE, (void *)(uintptr_t)(VARIABLE)), \
   float:       print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_FLOAT), \
   double:      print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_DOUBLE), \
   long double: print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_LONG_DOUBLE), \
@@ -266,6 +285,7 @@ _Generic((VARIABLE), \
 )
 
 #endif
+
 // clang-format on
 
 // clang-format off
@@ -351,8 +371,8 @@ memmem(void *haystack, size_t hay_len, void *needle, size_t needle_len) {
       CAT(func, 64)(void *dest, void *source, int64 size) { \
       if (size == 0) \
           return; \
-      assert(size > 0); \
-      assert((uint64)size <= SIZE_MAX); \
+      ASSERT_LESS(0, size); \
+      ASSERT_LESS_EQUAL(size, SIZE_MAX); \
       func(dest, source, (size_t)size); \
       return; \
   }
@@ -366,8 +386,8 @@ memset64(void *buffer, int value, int64 size) {
     if (size == 0) {
         return;
     }
-    assert(size > 0);
-    assert((uint64)size <= SIZE_MAX);
+    ASSERT_LESS(0, size);
+    ASSERT_LESS_EQUAL(size, SIZE_MAX);
     memset(buffer, value, (size_t)size);
     return;
 }
@@ -389,7 +409,7 @@ memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
 
 INLINE void *
 memchr64(void *pointer, int32 value, int64 size) {
-    assert(size >= 0);
+    ASSERT_LESS_EQUAL(0, size);
     return memchr(pointer, value, (size_t)size);
 }
 
@@ -402,7 +422,7 @@ strlen64(char *string) {
 INLINE int64
 strnlen64(char *string, int64 size) {
     size_t len;
-    assert((uint64)size <= SIZE_MAX);
+    ASSERT_LESS_EQUAL(size, SIZE_MAX);
     len = strnlen(string, (size_t)size);
     return (int64)len;
 }
@@ -413,7 +433,7 @@ strncmp64(char *left, char *right, int64 size) {
     if (size == 0) {
         return 0;
     }
-    assert((uint64)size <= SIZE_MAX);
+    ASSERT_LESS_EQUAL(size, SIZE_MAX);
     result = strncmp(left, right, (size_t)size);
     return result;
 }
@@ -424,7 +444,7 @@ memcmp64(void *left, void *right, int64 size) {
     if (size == 0) {
         return 0;
     }
-    assert((uint64)size <= SIZE_MAX);
+    ASSERT_LESS_EQUAL(size, SIZE_MAX);
     result = memcmp(left, right, (size_t)size);
     return result;
 }
@@ -435,8 +455,8 @@ CAT(func, 64)(int fd, void *buffer, int64 size) { \
     TYPE instance; \
     ssize_t w; \
     (void)instance; \
-    assert(size >= 0); \
-    assert((uint64)size <= MAXOF(instance)); \
+    ASSERT_LESS_EQUAL(0, size); \
+    ASSERT_LESS_EQUAL(size, MAXOF(instance)); \
     w = func(fd, buffer, (TYPE)size); \
     return (int64)w; \
 }
@@ -455,10 +475,10 @@ X64(read, size_t)
     INLINE int64 \
 CAT(func, 64)(void *buffer, int64 size, int64 n, FILE *file) { \
     size_t rw; \
-    assert(size >= 0); \
-    assert(n >= 0); \
-    assert((uint64)size <= SIZE_MAX); \
-    assert((uint64)n <= SIZE_MAX); \
+    ASSERT_LESS_EQUAL(0, size); \
+    ASSERT_LESS_EQUAL(0, n); \
+    ASSERT_LESS_EQUAL(size, SIZE_MAX); \
+    ASSERT_LESS_EQUAL(n, SIZE_MAX); \
     rw = func(buffer, (size_t)size, (size_t)n, file); \
     return (int64)rw; \
 }
@@ -518,11 +538,79 @@ basename2(char *path) {
     return path;
 }
 
+INLINE void *
+xmalloc(int64 size) {
+    void *p;
+
+    if (size <= 0) {
+        error("Error in xmalloc: invalid size = %lld.\n", (llong)size);
+        fatal(EXIT_FAILURE);
+    }
+    ASSERT_LESS_EQUAL(size, SIZE_MAX);
+
+    if ((p = malloc((size_t)size)) == NULL) {
+        error("Failed to allocate %lld bytes.\n", (llong)size);
+        fatal(EXIT_FAILURE);
+    }
+    return p;
+}
+
+INLINE void *
+xrealloc(void *old, const int64 size) {
+    void *p;
+    uint64 old_save = (uint64)old;
+
+    if (size <= 0) {
+        error("Error in xrealloc: invalid size = %lld.\n", (long long)size);
+        fatal(EXIT_FAILURE);
+    }
+    ASSERT_LESS_EQUAL(size, SIZE_MAX);
+
+    if ((p = realloc(old, (size_t)size)) == NULL) {
+        error("Failed to reallocate %lld bytes from %llx.\n", (llong)size,
+              (ullong)old_save);
+        fatal(EXIT_FAILURE);
+    }
+
+    return p;
+}
+
+static void *
+xcalloc(const size_t nmemb, const size_t size) {
+    void *p;
+    if ((p = calloc(nmemb, size)) == NULL) {
+        error("Error allocating %zu members of %zu bytes each.\n", nmemb, size);
+        fatal(EXIT_FAILURE);
+    }
+    return p;
+}
+
+static char *
+xstrdup(char *string) {
+    char *p;
+    int64 length;
+
+    length = strlen64(string) + 1;
+    if ((p = malloc((size_t)length)) == NULL) {
+        error("Error allocating %lld bytes to duplicate '%s': %s\n",
+              (llong)length, string, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+
+    memcpy64(p, string, length);
+    return p;
+}
+
 #if OS_UNIX
 static void *
 xmmap_commit(int64 *size) {
     void *p;
 
+    if (RUNNING_ON_VALGRIND) {
+        p = xmalloc(*size);
+        memset64(p, 0, *size);
+        return p;
+    }
     if (util_page_size == 0) {
         long aux;
         if ((aux = sysconf(_SC_PAGESIZE)) <= 0) {
@@ -555,6 +643,10 @@ xmmap_commit(int64 *size) {
 }
 static void
 xmunmap(void *p, int64 size) {
+    if (RUNNING_ON_VALGRIND) {
+        free(p);
+        return;
+    }
     if (munmap(p, (size_t)size) < 0) {
         error("Error in munmap(%p, %lld): %s.\n", p, (llong)size,
               strerror(errno));
@@ -566,6 +658,11 @@ static void *
 xmmap_commit(int64 *size) {
     void *p;
 
+    if (RUNNING_ON_VALGRIND) {
+        p = xmalloc(*size);
+        memset64(p, 0, *size);
+        return p;
+    }
     if (util_page_size == 0) {
         SYSTEM_INFO system_info;
         GetSystemInfo(&system_info);
@@ -588,74 +685,16 @@ xmmap_commit(int64 *size) {
 static void
 xmunmap(void *p, size_t size) {
     (void)size;
+    if (RUNNING_ON_VALGRIND) {
+        free(p);
+        return;
+    }
     if (!VirtualFree(p, 0, MEM_RELEASE)) {
         fprintf(stderr, "Error in VirtualFree(%p): %lu.\n", p, GetLastError());
     }
     return;
 }
 #endif
-
-INLINE void *
-xmalloc(int64 size) {
-    void *p;
-
-    if (size <= 0) {
-        error("Error in xmalloc: invalid size = %lld.\n", (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-    assert((uint64)size <= SIZE_MAX);
-
-    if ((p = malloc((size_t)size)) == NULL) {
-        error("Failed to allocate %lld bytes.\n", (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-    return p;
-}
-
-INLINE void *
-xrealloc(void *old, const int64 size) {
-    void *p;
-    uint64 old_save = (uint64)old;
-
-    if (size <= 0) {
-        error("Error in xrealloc: invalid size = %lld.\n", (long long)size);
-        fatal(EXIT_FAILURE);
-    }
-    assert((uint64)size <= SIZE_MAX);
-
-    if ((p = realloc(old, (size_t)size)) == NULL) {
-        error("Failed to reallocate %zu bytes from %x.\n", size, old_save);
-        fatal(EXIT_FAILURE);
-    }
-
-    return p;
-}
-
-static void *
-xcalloc(const size_t nmemb, const size_t size) {
-    void *p;
-    if ((p = calloc(nmemb, size)) == NULL) {
-        error("Error allocating %zu members of %zu bytes each.\n", nmemb, size);
-        fatal(EXIT_FAILURE);
-    }
-    return p;
-}
-
-static char *
-xstrdup(char *string) {
-    char *p;
-    int64 length;
-
-    length = strlen64(string) + 1;
-    if ((p = malloc((size_t)length)) == NULL) {
-        error("Error allocating %zu bytes to duplicate '%s': %s\n", length,
-              string, strerror(errno));
-        fatal(EXIT_FAILURE);
-    }
-
-    memcpy64(p, string, length);
-    return p;
-}
 
 static void
 xpthread_mutex_lock(pthread_mutex_t *mutex) {
@@ -718,11 +757,11 @@ snprintf2(char *buffer, int size, char *format, ...) {
     va_end(args);
 
     if (n <= 0) {
-        error("Error in snprintf.\n");
+        error("Error in snprintf %s.\n", format);
         fatal(EXIT_FAILURE);
     }
     if (n >= size) {
-        error("Error in snprintf: Buffer is too small.\n");
+        error("Error in snprintf %s: Buffer is too small.\n", format);
         fatal(EXIT_FAILURE);
     }
     return n;
@@ -732,41 +771,45 @@ snprintf2(char *buffer, int size, char *format, ...) {
 static int
 util_command(const int argc, char **argv) {
     char cmdline[1024] = {0};
-    int64 j = 0;
     FILE *tty;
     PROCESS_INFORMATION proc_info = {0};
     DWORD exit_code = 0;
     int64 len = strlen64(argv[0]);
-    char *argv0_windows;
-    char *exe = ".exe";
-    int64 exe_len = (int64)(strlen64(exe));
 
     if (argc == 0 || argv == NULL) {
         error("Invalid arguments.\n");
         fatal(EXIT_FAILURE);
     }
 
-    if (memmem64(argv[0], len + 1, exe, exe_len + 1) == NULL) {
-        argv0_windows = xmalloc(len + exe_len + 1);
-        memcpy64(argv0_windows, argv[0], len);
-        memcpy64(argv0_windows + len, exe, exe_len + 1);
-        argv[0] = argv0_windows;
-    }
-
-    for (int i = 0; i < argc - 1; i += 1) {
-        int64 len2 = strlen64(argv[i]);
-        if ((j + len2) >= (int64)sizeof(cmdline)) {
-            error("Command line is too long.\n");
-            fatal(EXIT_FAILURE);
+    {
+        char *exe = ".exe";
+        int64 exe_len = (int64)(strlen64(exe));
+        char *argv0_windows;
+        if (memmem64(argv[0], len + 1, exe, exe_len + 1) == NULL) {
+            argv0_windows = xmalloc(len + exe_len + 1);
+            memcpy64(argv0_windows, argv[0], len);
+            memcpy64(argv0_windows + len, exe, exe_len + 1);
+            argv[0] = argv0_windows;
         }
-
-        cmdline[j] = '"';
-        memcpy64(&cmdline[j + 1], argv[i], len2);
-        cmdline[j + len2 + 1] = '"';
-        cmdline[j + len2 + 2] = ' ';
-        j += len2 + 3;
     }
-    cmdline[j - 1] = '\0';
+
+    {
+        int64 j = 0;
+        for (int i = 0; i < argc - 1; i += 1) {
+            int64 len2 = strlen64(argv[i]);
+            if ((j + len2) >= (int64)sizeof(cmdline)) {
+                error("Command line is too long.\n");
+                fatal(EXIT_FAILURE);
+            }
+
+            cmdline[j] = '"';
+            memcpy64(&cmdline[j + 1], argv[i], len2);
+            cmdline[j + len2 + 1] = '"';
+            cmdline[j + len2 + 2] = ' ';
+            j += len2 + 3;
+        }
+        cmdline[j - 1] = '\0';
+    }
 
     if ((tty = freopen("CONIN$", "r", stdin)) == NULL) {
         error("Error reopening stdin: %s.\n", strerror(errno));
@@ -781,7 +824,7 @@ util_command(const int argc, char **argv) {
                                  &startup_info, &proc_info);
         if (!success) {
             DWORD err = GetLastError();
-            error("Error running '%s': %d.\n", cmdline, err);
+            error("Error running '%s': %llu.\n", cmdline, (ullong)err);
             if (err == ERROR_PATH_NOT_FOUND) {
                 error("Path not found.\n");
             }
@@ -881,8 +924,10 @@ error(char *format, ...) {
     }
 
     buffer[n] = '\0';
-    write64(STDERR_FILENO, buffer, (uint32)n);
-#if OS_UNIX
+#if OS_WINDOWS
+    write(STDERR_FILENO, buffer, (uint)n);
+#else
+    write(STDERR_FILENO, buffer, (size_t)n);
     fsync(STDERR_FILENO);
     fsync(STDOUT_FILENO);
 #endif
@@ -1237,7 +1282,7 @@ main(void) {
     srand((uint)time(NULL));
     for (int i = 0; i < 10; i += 1) {
         int n = rand() - RAND_MAX / 2;
-        assert(atoi2(itoa2(n, buffer)) == n);
+        ASSERT_EQUAL(atoi2(itoa2(n, buffer)), n);
     }
 
     for (int64 i = 0; i < LENGTH(paths); i += 1) {
