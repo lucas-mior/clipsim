@@ -85,6 +85,7 @@ _Generic((VARIABLE), \
   double:      DBL_MAX,    \
   long double: LDBL_MAX    \
 )
+
 #endif
 
 // clang-format on
