@@ -77,7 +77,7 @@ STRING_COMPARE(more_equal, >=)
 
 #define INTEGER_SAME_SIGN_COMPARE(TYPE, FORMAT, SYMBOL, MODE) \
 static void \
-assert_##TYPE##_##MODE(char *file, uint32 line, \
+assert_##TYPE##_##MODE(char *file, uint line, \
                        char *name1, char *name2, \
                        TYPE long long var1, TYPE long long var2) { \
     if (!(var1 SYMBOL var2)) { \
