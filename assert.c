@@ -4,10 +4,13 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <limits.h>
 #include <float.h>
+#include <assert.h>
+
+#define error2(...) fprintf(stderr, __VA_ARGS__)
 
 #if defined(__GNUC__) || defined(__clang__)
 #define trap(...) __builtin_trap()
@@ -17,7 +20,12 @@
 #define trap(...) *(volatile int *)0 = 0
 #endif
 
-#define ASSERT(c) if (!(c)) trap()
+#define ASSERT(C) do { \
+    if (!(C)) { \
+        error2("Assertion '%s' failed at %s:%d\n", #C, __FILE__, __LINE__); \
+        trap(); \
+    } \
+} while (0)
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_assert 1
@@ -31,6 +39,7 @@ typedef unsigned int uint;
 typedef unsigned long ulong;
 typedef unsigned long long ullong;
 
+typedef signed char schar;
 typedef long long llong;
 
 typedef int8_t int8;
@@ -44,11 +53,206 @@ typedef uint64_t uint64;
 
 // clang-format off
 
+#define STRING_COMPARE(MODE, SYMBOL) \
+static void \
+assert_strings_##MODE(char *file, uint line, \
+                      char *name1, char *name2, \
+                      char *var1, char *var2) { \
+    if (!(strcmp(var1, var2) SYMBOL 0)) { \
+        error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
+        error2("%s = %s " #SYMBOL " %s = %s\n", \
+               name1, var1, var2, name2); \
+        trap(); \
+    } \
+}
+
+STRING_COMPARE(less,       <)
+STRING_COMPARE(less_equal, <=)
+STRING_COMPARE(equal,      ==)
+STRING_COMPARE(not_equal,  !=)
+STRING_COMPARE(more,       >)
+STRING_COMPARE(more_equal, >=)
+
+#undef STRING_COMPARE
+
+#define INTEGER_SAME_SIGN_COMPARE(TYPE, FORMAT, SYMBOL, MODE) \
+static void \
+assert_##TYPE##_##MODE(char *file, uint32 line, \
+                       char *name1, char *name2, \
+                       TYPE long long var1, TYPE long long var2) { \
+    if (!(var1 SYMBOL var2)) { \
+        error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
+        error2("%s = "FORMAT" " #SYMBOL " "FORMAT" = %s\n", \
+               name1, var1, var2, name2); \
+        trap(); \
+    } \
+}
+
+INTEGER_SAME_SIGN_COMPARE(signed,   "%lld", <,  less)
+INTEGER_SAME_SIGN_COMPARE(unsigned, "%llu", <,  less)
+INTEGER_SAME_SIGN_COMPARE(signed,   "%lld", <=, less_equal)
+INTEGER_SAME_SIGN_COMPARE(unsigned, "%llu", <=, less_equal)
+INTEGER_SAME_SIGN_COMPARE(signed,   "%lld", ==, equal)
+INTEGER_SAME_SIGN_COMPARE(unsigned, "%llu", ==, equal)
+INTEGER_SAME_SIGN_COMPARE(signed,   "%lld", !=, not_equal)
+INTEGER_SAME_SIGN_COMPARE(unsigned, "%llu", !=, not_equal)
+INTEGER_SAME_SIGN_COMPARE(signed,   "%lld", >,  more)
+INTEGER_SAME_SIGN_COMPARE(unsigned, "%llu", >,  more)
+INTEGER_SAME_SIGN_COMPARE(signed,   "%lld", >=, more_equal)
+INTEGER_SAME_SIGN_COMPARE(unsigned, "%llu", >=, more_equal)
+
+#undef INTEGER_SAME_SIGN_COMPARE
+
+// clang-format on
+
+static int
+compare_unsign_with_sign(ullong u, llong s) {
+    ullong saux;
+    if (s < 0) {
+        return 1;
+    }
+    saux = (ullong)s;
+    if (saux < u) {
+        return 1;
+    } else if (saux == u) {
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
+// clang-format off
+#define COMPARE_SIGN_UNSIGN(MODE, SYMBOL) \
+static void \
+assert_si_un_##MODE(char *file, uint line, \
+                    char *name1, char *name2, \
+                    llong var1, ullong var2) { \
+    if (!(compare_unsign_with_sign(var2, var1) SYMBOL 0)) { \
+        error2("\n%s Assertion failed at %s:%u\n", __func__, file, line); \
+        error2("%s = %lld " #SYMBOL " %llu = %s\n", name1, var1, var2, name2); \
+        trap(); \
+    } \
+}
+
+COMPARE_SIGN_UNSIGN(equal, ==)
+COMPARE_SIGN_UNSIGN(not_equal, !=)
+COMPARE_SIGN_UNSIGN(less, >)
+COMPARE_SIGN_UNSIGN(less_equal, >=)
+COMPARE_SIGN_UNSIGN(more, <)
+COMPARE_SIGN_UNSIGN(more_equal, <=)
+
+#undef COMPARE_SIGN_UNSIGN
+
+#define COMPARE_UNSIGN_SIGN(MODE, SYMBOL) \
+static void \
+assert_un_si_##MODE(char *file, uint line, \
+                    char *name1, char *name2, \
+                    ullong var1, llong var2) { \
+    if (!(compare_unsign_with_sign(var1, var2) SYMBOL 0)) { \
+        error2("\n%s Assertion failed at %s:%u\n", __func__, file, line); \
+        error2("%s = %llu " #SYMBOL " %lld = %s\n", name1, var1, var2, name2); \
+        trap(); \
+    } \
+}
+
+COMPARE_UNSIGN_SIGN(equal, ==)
+COMPARE_UNSIGN_SIGN(not_equal, !=)
+COMPARE_UNSIGN_SIGN(less, <)
+COMPARE_UNSIGN_SIGN(less_equal, <=)
+COMPARE_UNSIGN_SIGN(more, >)
+COMPARE_UNSIGN_SIGN(more_equal, >=)
+
+#undef COMPARE_UNSIGN_SIGN
+
+// clang-format on
+
+// clang-format off
+#define COMPARE_BOTH_SIGNED(MODE, VAR1, VAR2) \
+  assert_signed_##MODE(__FILE__, __LINE__, \
+                       #VAR1, #VAR2, \
+                       (llong)(VAR1), (llong)(VAR2))
+
+#define COMPARE_SI_UN(MODE, VAR1, VAR2) \
+  assert_si_un_##MODE(__FILE__, __LINE__, \
+                      #VAR1, #VAR2, \
+                      (llong)(VAR1), (ullong)(VAR2))
+
+#define COMPARE_FIRST_IS_SIGNED(MODE, VAR1, VAR2) \
+_Generic((VAR2), \
+  schar:  COMPARE_BOTH_SIGNED(MODE, VAR1, VAR2), \
+  short:  COMPARE_BOTH_SIGNED(MODE, VAR1, VAR2), \
+  int:    COMPARE_BOTH_SIGNED(MODE, VAR1, VAR2), \
+  long:   COMPARE_BOTH_SIGNED(MODE, VAR1, VAR2), \
+  llong:  COMPARE_BOTH_SIGNED(MODE, VAR1, VAR2), \
+  uchar:  COMPARE_SI_UN(MODE, VAR1, VAR2), \
+  ushort: COMPARE_SI_UN(MODE, VAR1, VAR2), \
+  uint:   COMPARE_SI_UN(MODE, VAR1, VAR2), \
+  ulong:  COMPARE_SI_UN(MODE, VAR1, VAR2), \
+  ullong: COMPARE_SI_UN(MODE, VAR1, VAR2), \
+  default: assert(false) \
+)
+
+#define COMPARE_BOTH_UNSIGNED(MODE, VAR1, VAR2) \
+  assert_unsigned_##MODE(__FILE__, __LINE__, \
+                         #VAR1, #VAR2, \
+                         (ullong)(VAR1), (ullong)(VAR2))
+
+#define COMPARE_UN_SI(MODE, VAR1, VAR2) \
+  assert_un_si_##MODE(__FILE__, __LINE__, \
+                      #VAR1, #VAR2, \
+                      (ullong)(VAR1), (llong)(VAR2))
+
+#define COMPARE_FIRST_IS_UNSIGNED(MODE, VAR1, VAR2) \
+_Generic((VAR2), \
+  uchar:  COMPARE_BOTH_UNSIGNED(MODE, VAR1, VAR2), \
+  ushort: COMPARE_BOTH_UNSIGNED(MODE, VAR1, VAR2), \
+  uint:   COMPARE_BOTH_UNSIGNED(MODE, VAR1, VAR2), \
+  ulong:  COMPARE_BOTH_UNSIGNED(MODE, VAR1, VAR2), \
+  ullong: COMPARE_BOTH_UNSIGNED(MODE, VAR1, VAR2), \
+  schar:  COMPARE_UN_SI(MODE, VAR1, VAR2), \
+  short:  COMPARE_UN_SI(MODE, VAR1, VAR2), \
+  int:    COMPARE_UN_SI(MODE, VAR1, VAR2), \
+  long:   COMPARE_UN_SI(MODE, VAR1, VAR2), \
+  llong:  COMPARE_UN_SI(MODE, VAR1, VAR2), \
+  default: assert(false) \
+)
+
+#define ASSERT_COMPARE(MODE, VAR1, VAR2) \
+_Generic((VAR1), \
+  char *: _Generic((VAR2), \
+    char *: assert_strings_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
+                                 (char *)(uintptr_t)(VAR1), \
+                                 (char *)(uintptr_t)(VAR2)), \
+    default: assert(false) \
+  ), \
+  schar:  COMPARE_FIRST_IS_SIGNED(MODE, VAR1, VAR2), \
+  short:  COMPARE_FIRST_IS_SIGNED(MODE, VAR1, VAR2), \
+  int:    COMPARE_FIRST_IS_SIGNED(MODE, VAR1, VAR2), \
+  long:   COMPARE_FIRST_IS_SIGNED(MODE, VAR1, VAR2), \
+  llong:  COMPARE_FIRST_IS_SIGNED(MODE, VAR1, VAR2), \
+  uchar:  COMPARE_FIRST_IS_UNSIGNED(MODE, VAR1, VAR2), \
+  ushort: COMPARE_FIRST_IS_UNSIGNED(MODE, VAR1, VAR2), \
+  uint:   COMPARE_FIRST_IS_UNSIGNED(MODE, VAR1, VAR2), \
+  ulong:  COMPARE_FIRST_IS_UNSIGNED(MODE, VAR1, VAR2), \
+  ullong: COMPARE_FIRST_IS_UNSIGNED(MODE, VAR1, VAR2) \
+)
+
+#define ASSERT_EQUAL(VAR1, VAR2)      ASSERT_COMPARE(equal, VAR1, VAR2)
+#define ASSERT_NOT_EQUAL(VAR1, VAR2)  ASSERT_COMPARE(not_equal, VAR1, VAR2)
+#define ASSERT_LESS(VAR1, VAR2)       ASSERT_COMPARE(less, VAR1, VAR2)
+#define ASSERT_LESS_EQUAL(VAR1, VAR2) ASSERT_COMPARE(less_equal, VAR1, VAR2)
+#define ASSERT_MORE(VAR1, VAR2)       ASSERT_COMPARE(more, VAR1, VAR2)
+#define ASSERT_MORE_EQUAL(VAR1, VAR2) ASSERT_COMPARE(more_equal, VAR1, VAR2)
+
+// clang-format on
+
+#if TESTING_assert
+
 #if !defined(MINOF)
 
 #define MINOF(VARIABLE) \
 _Generic((VARIABLE), \
-  signed char: SCHAR_MIN, \
+  schar:       SCHAR_MIN, \
   short:       SHRT_MIN,  \
   int:         INT_MIN,   \
   long:        LONG_MIN,  \
@@ -58,10 +262,10 @@ _Generic((VARIABLE), \
   ulong:       0ul,       \
   ullong:      0ull,      \
   char:        CHAR_MIN,  \
-  bool:        1,         \
-  float:       FLT_MIN,   \
-  double:      DBL_MIN,   \
-  long double: LDBL_MIN   \
+  bool:        0,         \
+  float:       -FLT_MAX,  \
+  double:      -DBL_MAX,  \
+  long double: -LDBL_MAX  \
 )
 
 #endif
@@ -70,7 +274,7 @@ _Generic((VARIABLE), \
 
 #define MAXOF(VARIABLE) \
 _Generic((VARIABLE), \
-  signed char: SCHAR_MAX,  \
+  schar:       SCHAR_MAX,  \
   short:       SHRT_MAX,   \
   int:         INT_MAX,    \
   long:        LONG_MAX,   \
@@ -88,317 +292,93 @@ _Generic((VARIABLE), \
 
 #endif
 
-// clang-format on
-
-#define error2(...) fprintf(stderr, __VA_ARGS__)
-
-static void
-assert_strings_equal(char *file, uint32 line, char *name1, char *name2,
-                     char *var1, char *var2) {
-    if (strcmp(var1, var2)) {
-        error2("Assertion failed at %s:%u\n", file, line);
-        error2("%s = %s != %s = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-}
-
-static void
-assert_strings_not_equal(char *file, uint32 line, char *name1, char *name2,
-                         char *var1, char *var2) {
-    if (!strcmp(var1, var2)) {
-        error2("Assertion failed at %s:%u\n", file, line);
-        error2("%s = %s == %s = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-}
-
-static void
-assert_strings_less(char *file, uint32 line, char *name1, char *name2,
-                    char *var1, char *var2) {
-    if (strcmp(var1, var2) >= 0) {
-        error2("Assertion failed at %s:%u\n", file, line);
-        error2("%s = %s >= %s = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-}
-
-static void
-assert_strings_less_equal(char *file, uint32 line, char *name1, char *name2,
-                          char *var1, char *var2) {
-    if (strcmp(var1, var2) > 0) {
-        error2("Assertion failed at %s:%u\n", file, line);
-        error2("%s = %s > %s = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-}
-
-#define INTEGER_LESS(TYPE, FORMAT) \
-    static void \
-    assert_##TYPE##_less(char *file, uint32 line, \
-                               char *name1, char *name2, \
-                               TYPE long long var1, TYPE long long var2) { \
-    if (var1 >= var2) { \
-        error2("Assertion failed at %s:%u\n", file, line); \
-        error2("%s = "FORMAT" >= "FORMAT" = %s\n", name1, var1, var2, name2); \
-        trap(); \
-    } \
-}
-
-#define INTEGER_LESS_EQUAL(TYPE, FORMAT) \
-    static void \
-    assert_##TYPE##_less_equal(char *file, uint32 line, \
-                               char *name1, char *name2, \
-                               TYPE long long var1, TYPE long long var2) { \
-    if (var1 > var2) { \
-        error2("Assertion failed at %s:%u\n", file, line); \
-        error2("%s = "FORMAT" > "FORMAT" = %s\n", name1, var1, var2, name2); \
-        trap(); \
-    } \
-}
-
-#define INTEGER_EQUAL(TYPE, FORMAT) \
-    static void \
-    assert_##TYPE##_equal(char *file, uint32 line, \
-                             char *name1, char *name2, \
-                             TYPE long long var1, TYPE long long var2) { \
-    if (var1 != var2) { \
-        error2("Assertion failed at %s:%u\n", file, line); \
-        error2("%s = "FORMAT" != "FORMAT" = %s\n", name1, var1, var2, name2); \
-        trap(); \
-    } \
-}
-
-#define INTEGER_NOT_EQUAL(TYPE, FORMAT) \
-    static void \
-    assert_##TYPE##_not_equal(char *file, uint32 line, \
-                              char *name1, char *name2, \
-                              TYPE long long var1, TYPE long long var2) { \
-    if (var1 == var2) { \
-        error2("Assertion failed at %s:%u\n", file, line); \
-        error2("%s = "FORMAT" == "FORMAT" = %s\n", name1, var1, var2, name2); \
-        trap(); \
-    } \
-}
-
-INTEGER_LESS(signed, "%lld")
-INTEGER_LESS(unsigned, "%llu")
-INTEGER_LESS_EQUAL(signed, "%lld")
-INTEGER_LESS_EQUAL(unsigned, "%llu")
-INTEGER_EQUAL(signed, "%lld")
-INTEGER_EQUAL(unsigned, "%llu")
-INTEGER_NOT_EQUAL(signed, "%lld")
-INTEGER_NOT_EQUAL(unsigned, "%llu")
-
-static int
-integer_un_si(ullong u, llong s) {
-    ullong saux;
-    if (s < 0) {
-        return 1;
-    }
-    saux = (ullong)s;
-    if (saux < u) {
-        return 1;
-    } else if (saux == u) {
-        return 0;
-    } else {
-        return -1;
-    }
-}
-
-static void
-assert_un_si_equal(char *file, uint line, char *name1, char *name2, ullong var1,
-                   llong var2) {
-    if (integer_un_si(var1, var2) != 0) {
-        error2("%s Assertion failed at %s:%u\n", __func__, file, line);
-        error2("%s = %llu != %lld = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-    return;
-}
-
-static void
-assert_si_un_equal(char *file, uint line, char *name1, char *name2, llong var1,
-                   ullong var2) {
-    if (integer_un_si(var2, var1) != 0) {
-        error2("%s Assertion failed at %s:%u\n", __func__, file, line);
-        error2("%s = %lld != %llu = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-    return;
-}
-
-static void
-assert_un_si_not_equal(char *file, uint line, char *name1, char *name2,
-                       ullong var1, llong var2) {
-    if (integer_un_si(var1, var2) == 0) {
-        error2("%s Assertion failed at %s:%u\n", __func__, file, line);
-        error2("%s = %llu == %lld = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-    return;
-}
-
-static void
-assert_si_un_not_equal(char *file, uint line, char *name1, char *name2,
-                       llong var1, ullong var2) {
-    if (integer_un_si(var2, var1) == 0) {
-        error2("%s Assertion failed at %s:%u\n", __func__, file, line);
-        error2("%s = %lld == %llu = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-    return;
-}
-
-static void
-assert_un_si_less(char *file, uint line, char *name1, char *name2, ullong var1,
-                  llong var2) {
-    if (integer_un_si(var1, var2) >= 0) {
-        error2("%s Assertion failed at %s:%u\n", __func__, file, line);
-        error2("%s = %llu <= %lld = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-    return;
-}
-
-static void
-assert_un_si_less_equal(char *file, uint line, char *name1, char *name2,
-                        ullong var1, llong var2) {
-    if (integer_un_si(var1, var2) > 0) {
-        error2("Assertion failed at %s:%u\n", file, line);
-        error2("%s = %llu < %lld = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-    return;
-}
-
-static void
-assert_si_un_less(char *file, uint line, char *name1, char *name2, llong var1,
-                  ullong var2) {
-    if (integer_un_si(var2, var1) <= 0) {
-        error2("%s Assertion failed at %s:%u\n", __func__, file, line);
-        error2("%s = %lld >= %llu = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-    return;
-}
-
-static void
-assert_si_un_less_equal(char *file, uint line, char *name1, char *name2,
-                        llong var1, ullong var2) {
-    if (integer_un_si(var2, var1) < 0) {
-        error2("%s Assertion failed at %s:%u\n", __func__, file, line);
-        error2("%s = %lld > %llu = %s\n", name1, var1, var2, name2);
-        trap();
-    }
-    return;
-}
-
-#define COMPARE_SIGNED(VAR1, VAR2, MODE) \
-_Generic((VAR2), \
-  char: assert_signed_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                             (llong)(VAR1), (llong)(VAR2)), \
-  short: assert_signed_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                             (llong)(VAR1), (llong)(VAR2)), \
-  int: assert_signed_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                           (llong)(VAR1), (llong)(VAR2)), \
-  long: assert_signed_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                            (llong)(VAR1), (llong)(VAR2)), \
-  llong: assert_signed_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                            (llong)(VAR1), (llong)(VAR2)), \
-  ushort: assert_si_un_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                              (llong)(VAR1), (ullong)(VAR2)), \
-  uint: assert_si_un_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                            (llong)(VAR1), (ullong)(VAR2)), \
-  ulong: assert_si_un_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                             (llong)(VAR1), (ullong)(VAR2)), \
-  ullong: assert_si_un_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                              (llong)(VAR1), (ullong)(VAR2)), \
-  default: assert(false) \
-)
-
-#define COMPARE_UNSIGNED(VAR1, VAR2, MODE) \
-_Generic((VAR2), \
-  ushort: assert_unsigned_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                                (ullong)(VAR1), (ullong)(VAR2)), \
-  uint: assert_unsigned_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                              (ullong)(VAR1), (ullong)(VAR2)), \
-  ulong: assert_unsigned_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                               (ullong)(VAR1), (ullong)(VAR2)), \
-  ullong: assert_unsigned_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                                (ullong)(VAR1), (ullong)(VAR2)), \
-  short: assert_un_si_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                             (ullong)(VAR1), (llong)(VAR2)), \
-  int: assert_un_si_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                           (ullong)(VAR1), (llong)(VAR2)), \
-  long: assert_un_si_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                            (ullong)(VAR1), (llong)(VAR2)), \
-  llong: assert_un_si_##MODE(__FILE__, __LINE__, #VAR1, #VAR2, \
-                             (ullong)(VAR1), (llong)(VAR2)), \
-  default: assert(false) \
-)
-
-#define ASSERT_COMPARE(WHAT, VAR1, VAR2) \
-_Generic((VAR1), \
-  char *: _Generic((VAR2), \
-    char *: assert_strings_##WHAT(__FILE__, __LINE__, #VAR1, #VAR2, \
-                                 (char *)(uintptr_t)(VAR1), \
-                                 (char *)(uintptr_t)(VAR2)), \
-    default: assert(false) \
-  ), \
-  short: COMPARE_SIGNED(VAR1, VAR2, WHAT), \
-  int: COMPARE_SIGNED(VAR1, VAR2, WHAT), \
-  long: COMPARE_SIGNED(VAR1, VAR2, WHAT), \
-  llong: COMPARE_SIGNED(VAR1, VAR2, WHAT), \
-  ushort: COMPARE_UNSIGNED(VAR1, VAR2, WHAT), \
-  uint: COMPARE_UNSIGNED(VAR1, VAR2, WHAT), \
-  ulong: COMPARE_UNSIGNED(VAR1, VAR2, WHAT), \
-  ullong: COMPARE_UNSIGNED(VAR1, VAR2, WHAT) \
-)
-
-#define ASSERT_EQUAL(VAR1, VAR2) ASSERT_COMPARE(equal, VAR1, VAR2)
-#define ASSERT_NOT_EQUAL(VAR1, VAR2) ASSERT_COMPARE(not_equal, VAR1, VAR2)
-#define ASSERT_LESS(VAR1, VAR2) ASSERT_COMPARE(less, VAR1, VAR2)
-#define ASSERT_LESS_EQUAL(VAR1, VAR2) ASSERT_COMPARE(less_equal, VAR1, VAR2)
-
-#if TESTING_assert
 int
 main(void) {
-    int a = 0;
-    int b = 1;
-    int c = 2;
-    uint d = 2;
-    uint e = 3;
-    int f = -1;
-    long g = -10;
-    long h = 10;
-    long g4 = MINOF(g4);
-    long g2 = MAXOF(g2);
-    ulong g3 = MAXOF(g3);
-    ulong g8 = 0;
-    char *s1 = "aaa";
-    char *s2 = "aaa";
-    char *s3 = "BBB";
-
-    ASSERT_EQUAL(a, a);
-    ASSERT_LESS(b, c);
-    ASSERT_LESS_EQUAL(a, b);
-
-    ASSERT_EQUAL(c, d);
-    ASSERT_LESS_EQUAL(c, d);
-    ASSERT_LESS(f, e);
-    ASSERT_LESS(f, g8);
-    ASSERT_LESS_EQUAL(f, e);
-    ASSERT_LESS_EQUAL(d, c);
-    ASSERT_LESS(g, h);
-    ASSERT_LESS_EQUAL(g, h);
-    ASSERT_LESS(g2, g3);
-    ASSERT_LESS(g4, g3);
-    ASSERT_LESS(g4, g2);
-    ASSERT_LESS(g4, g8);
-    ASSERT_LESS(g8, g2);
-    ASSERT_EQUAL(s1, s2);
-    ASSERT_NOT_EQUAL(a, b);
-    ASSERT_NOT_EQUAL(s1, s3);
+    {
+        int a = 1;
+        int b = 1;
+        ASSERT_EQUAL(a, b);
+        ASSERT_LESS_EQUAL(a, b);
+        ASSERT_MORE_EQUAL(a, b);
+    }
+    {
+        int a = 1;
+        uint b = 1;
+        ASSERT_EQUAL(a, b);
+        ASSERT_LESS_EQUAL(a, b);
+        ASSERT_MORE_EQUAL(a, b);
+    }
+    {
+        int a = 1;
+        uint b = 2;
+        ASSERT_NOT_EQUAL(a, b);
+        ASSERT_LESS(a, b);
+        ASSERT_LESS_EQUAL(a, b);
+        ASSERT_MORE(b, a);
+        ASSERT_MORE_EQUAL(b, a);
+    }
+    {
+        long a = -1;
+        ulong b = 0;
+        ASSERT_NOT_EQUAL(a, b);
+        ASSERT_LESS(a, b);
+        ASSERT_LESS_EQUAL(a, b);
+        ASSERT_MORE(b, a);
+        ASSERT_MORE_EQUAL(b, a);
+    }
+    {
+        long a = MINOF(a);
+        ulong b = MAXOF(b);
+        ASSERT_NOT_EQUAL(a, b);
+        ASSERT_LESS(a, b);
+        ASSERT_LESS_EQUAL(a, b);
+        ASSERT_MORE(b, a);
+        ASSERT_MORE_EQUAL(b, a);
+    }
+    {
+        ulong a = MINOF(a);
+        long b = MAXOF(b);
+        ASSERT_NOT_EQUAL(a, b);
+        ASSERT_LESS(a, b);
+        ASSERT_LESS_EQUAL(a, b);
+        ASSERT_MORE(b, a);
+        ASSERT_MORE_EQUAL(b, a);
+    }
+    {
+        long a = -2;
+        long b = -1;
+        ASSERT_NOT_EQUAL(a, b);
+        ASSERT_LESS(a, b);
+        ASSERT_LESS_EQUAL(a, b);
+        ASSERT_MORE(b, a);
+        ASSERT_MORE_EQUAL(b, a);
+    }
+    {
+        char *a = "aaa";
+        char *b = "aaa";
+        ASSERT_EQUAL(a, b);
+        ASSERT_LESS_EQUAL(a, b);
+        ASSERT_MORE_EQUAL(b, a);
+    }
+    {
+        char *a = "aaa";
+        char *b = "bbb";
+        ASSERT_NOT_EQUAL(a, b);
+        ASSERT_LESS(a, b);
+        ASSERT_LESS_EQUAL(a, b);
+        ASSERT_MORE(b, a);
+        ASSERT_MORE_EQUAL(b, a);
+    }
+    {
+        long a = -1;
+        ASSERT_NOT_EQUAL(a, 0);
+        ASSERT_LESS(a, 0);
+        ASSERT_LESS_EQUAL(a, 0);
+        ASSERT_MORE(0, a);
+        ASSERT_MORE_EQUAL(0, a);
+    }
+    ASSERT(true);
+    exit(EXIT_SUCCESS);
 }
 #endif
 
