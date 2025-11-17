@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
+
+#if !defined(error2)
+#define error2(...) fprintf(stderr, __VA_ARGS__)
+#endif
 
 typedef unsigned char uchar;
 typedef unsigned short ushort;
@@ -133,6 +138,130 @@ static ldouble ldouble_from_voidp(void *x)     { (void)x; return 0.0l; }
 static ldouble ldouble_from_bool(bool x)       { (void)x; return 0.0l; }
 static ldouble ldouble_from_char(char x)       { (void)x; return 0.0l; }
 
+typedef enum Type {
+    TYPE_LDOUBLE,
+    TYPE_DOUBLE,
+    TYPE_FLOAT,
+    TYPE_SCHAR,
+    TYPE_SHORT,
+    TYPE_INT,
+    TYPE_LONG,
+    TYPE_LLONG,
+    TYPE_UCHAR,
+    TYPE_USHORT,
+    TYPE_UINT,
+    TYPE_ULONG,
+    TYPE_ULLONG,
+    TYPE_CHARP,
+    TYPE_VOIDP,
+    TYPE_BOOL,
+    TYPE_CHAR,
+} Type;
+
+typedef union LongDoubleUnion {
+  ldouble aldouble;
+  double adouble;
+  float afloat;
+  schar aschar;
+  short ashort;
+  int aint;
+  long along;
+  llong allong;
+  uchar auchar;
+  ushort aushort;
+  uint auint;
+  ulong aulong;
+  ullong aullong;
+  char *aucharp;
+  void *avoidp;
+  bool abool;
+  char achar;
+} LongDoubleUnion;
+
+static char *
+typename(Type type) {
+    switch (type) {
+    case TYPE_LDOUBLE:
+        return "ldouble";
+    case TYPE_DOUBLE:
+        return "double";
+    case TYPE_FLOAT:
+        return "float";
+    case TYPE_SCHAR:
+        return "schar";
+    case TYPE_SHORT:
+        return "short";
+    case TYPE_INT:
+        return "int";
+    case TYPE_LONG:
+        return "long";
+    case TYPE_LLONG:
+        return "llong";
+    case TYPE_UCHAR:
+        return "uchar";
+    case TYPE_USHORT:
+        return "ushort";
+    case TYPE_UINT:
+        return "uint";
+    case TYPE_ULONG:
+        return "ulong";
+    case TYPE_ULLONG:
+        return "ullong";
+    case TYPE_CHARP:
+        return "char*";
+    case TYPE_VOIDP:
+        return "void*";
+    case TYPE_BOOL:
+        return "bool";
+    case TYPE_CHAR:
+        return "char";
+    default:
+        return "unknown type";
+    }
+}
+
+static ldouble
+ldouble_get(LongDoubleUnion var, Type type) {
+    switch (type) {
+    case TYPE_LDOUBLE:
+        return var.aldouble;
+    case TYPE_DOUBLE:
+        return (ldouble)var.adouble;
+    case TYPE_FLOAT:
+        return (ldouble)var.afloat;
+    case TYPE_SCHAR:
+        return (ldouble)var.aschar;
+    case TYPE_SHORT:
+        return (ldouble)var.ashort;
+    case TYPE_INT:
+        return (ldouble)var.aint;
+    case TYPE_LONG:
+        return (ldouble)var.along;
+    case TYPE_LLONG:
+        return (ldouble)var.allong;
+    case TYPE_UCHAR:
+        return (ldouble)var.auchar;
+    case TYPE_USHORT:
+        return (ldouble)var.aushort;
+    case TYPE_UINT:
+        return (ldouble)var.auint;
+    case TYPE_ULONG:
+        return (ldouble)var.aulong;
+    case TYPE_ULLONG:
+        return (ldouble)var.aullong;
+    case TYPE_CHARP:
+        return (ldouble)0.0l;
+    case TYPE_VOIDP:
+        return (ldouble)0.0l;
+    case TYPE_BOOL:
+        return (ldouble)0.0l;
+    case TYPE_CHAR:
+        return (ldouble)0.0l;
+    default:
+        return 0.0l;
+    }
+}
+
 #define LDOUBLE_GET(x) \
 _Generic((x), \
   ldouble: ldouble_from_ldouble, \
@@ -153,5 +282,11 @@ _Generic((x), \
   bool:    ldouble_from_bool, \
   char:    ldouble_from_char \
 )(x)
+
+#if defined(__GNUC__) || defined(__clang__)
+#define LDOUBLE_GET2(VAR, TYPE) ldouble_get((LongDoubleUnion)(VAR), TYPE)
+#else
+#define LDOUBLE_GET2(VAR, TYPE) LDOUBLE_GET(VAR)
+#endif
 
 #endif
