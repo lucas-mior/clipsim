@@ -109,11 +109,12 @@ static void \
 a_both_##TYPE##_##MODE(char *file, uint line, \
                        char *name1, char *name2, \
                        char *type1, char *type2, \
+                       uint bits1, uint bits2, \
                        TYPE long long var1, TYPE long long var2) { \
     if (!(var1 SYMBOL var2)) { \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
-        error2("[%s]%s = "FORMAT" " #SYMBOL " "FORMAT" = %s[%s]\n", \
-               type1, name1, var1, var2, name2, type2); \
+        error2("[%s%u]%s = "FORMAT" " #SYMBOL " "FORMAT" = %s[%s%u]\n", \
+               type1, bits1, name1, var1, var2, name2, type2, bits2); \
         trap(); \
     } \
 }
@@ -158,11 +159,12 @@ static void \
 a_signed_unsigned##MODE(char *file, uint line, \
                         char *name1, char *name2, \
                         char *type1, char *type2, \
+                        uint bits1, uint bits2, \
                         llong var1, ullong var2) { \
     if (!(compare_sign_with_unsign(var1, var2) SYMBOL 0)) { \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
-        error2("[%s]%s = %lld " #SYMBOL " %llu = %s[%s]\n", \
-               type1, name1, var1, var2, name2, type2); \
+        error2("[%s%u]%s = %lld " #SYMBOL " %llu = %s[%s%u]\n", \
+               type1, bits1, name1, var1, var2, name2, type2, bits2); \
         trap(); \
     } \
 }
@@ -181,11 +183,12 @@ static void \
 a_unsigned_signed_##MODE(char *file, uint line, \
                          char *name1, char *name2, \
                          char *type1, char *type2, \
+                         uint bits1, uint bits2, \
                          ullong var1, llong var2) { \
     if (!((-compare_sign_with_unsign(var2, var1)) SYMBOL 0)) { \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
-        error2("[%s]%s = %llu " #SYMBOL " %lld = %s[%s]\n", \
-                type1, name1, var1, var2, name2, type2); \
+        error2("[%s%u]%s = %llu " #SYMBOL " %lld = %s[%s%u]\n", \
+               type1, bits1, name1, var1, var2, name2, type2, bits2); \
         trap(); \
     } \
 }
@@ -204,11 +207,12 @@ static void \
 a_ldouble_##MODE(char *file, uint line, \
                  char *name1, char *name2, \
                  char *type1, char *type2, \
+                 uint bits1, uint bits2, \
                  ldouble var1, ldouble var2) { \
     if (!(var1 SYMBOL var2)) { \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
-        error2("[%s]%s = %Lf " #SYMBOL " %Lf = %s[%s]\n", \
-               type1, name1, var1, var2, name2, type2); \
+        error2("[%s%u]%s = %Lf " #SYMBOL " %Lf = %s[%s%u]\n", \
+               type1, bits1, name1, var1, var2, name2, type2, bits2); \
         trap(); \
     } \
 }
@@ -226,12 +230,14 @@ GENERATE_ASSERT_LDOUBLE(more_equal, >=)
   a_both_signed_##MODE(__FILE__, __LINE__, \
                        #VAR1, #VAR2, \
                        typename(TYPE1), typename(TYPE2), \
+                       typebits(TYPE1), typebits(TYPE2), \
                        (llong)(VAR1), (llong)(VAR2)) \
 
 #define A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
   a_signed_unsigned##MODE(__FILE__, __LINE__, \
                           #VAR1, #VAR2, \
                           typename(TYPE1), typename(TYPE2), \
+                          typebits(TYPE1), typebits(TYPE2), \
                           (llong)(VAR1), (ullong)(VAR2))
 
 #define A_FIRST_SIGNED(MODE, VAR1, VAR2, TYPE1) \
@@ -249,19 +255,21 @@ _Generic((VAR2), \
   float:   A_BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_FLOAT  ), \
   double:  A_BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
   ldouble: A_BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_LDOUBLE), \
-  default: unsupported_type_for_generic() \
+  default: UNSUPPORTED_TYPE_FOR_GENERIC() \
 )
 
 #define A_BOTH_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
   a_both_unsigned_##MODE(__FILE__, __LINE__, \
                          #VAR1, #VAR2, \
                          typename(TYPE1), typename(TYPE2), \
+                         typebits(TYPE1), typebits(TYPE2), \
                          (ullong)(VAR1), (ullong)(VAR2))
 
 #define A_UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
   a_unsigned_signed_##MODE(__FILE__, __LINE__, \
                            #VAR1, #VAR2, \
                            typename(TYPE1), typename(TYPE2), \
+                           typebits(TYPE1), typebits(TYPE2), \
                            (ullong)(VAR1), (llong)(VAR2))
 
 #define A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE1) \
@@ -279,13 +287,14 @@ _Generic((VAR2), \
   float:   A_BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_FLOAT  ), \
   double:  A_BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
   ldouble: A_BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_LDOUBLE), \
-  default: unsupported_type_for_generic() \
+  default: UNSUPPORTED_TYPE_FOR_GENERIC() \
 )
 
 #define A_BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE2) \
     a_ldouble_##MODE(__FILE__, __LINE__, \
                      #VAR1, #VAR2, \
                      typename(TYPE1), typename(TYPE2), \
+                     typebits(TYPE1), typebits(TYPE2), \
                      LDOUBLE_GET2(VAR1, TYPE1), LDOUBLE_GET2(VAR2, TYPE2))
 
 #define A_FIRST_LDOUBLE(MODE, VAR1, VAR2, TYPE1) \
@@ -303,7 +312,7 @@ _Generic((VAR2), \
   float:   A_BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_FLOAT  ), \
   double:  A_BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
   ldouble: A_BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_LDOUBLE), \
-  default: unsupported_type_for_generic() \
+  default: UNSUPPORTED_TYPE_FOR_GENERIC() \
 )
 
 #define A_POINTERS(MODE, VAR1, VAR2) \
@@ -319,12 +328,12 @@ _Generic((VAR1), \
                              #VAR1, #VAR2, \
                              (char *)(uintptr_t)(VAR1), \
                              (char *)(uintptr_t)(VAR2)), \
-    default: unsupported_type_for_generic() \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC() \
   ), \
   void *: _Generic((VAR2), \
     char *: A_POINTERS(MODE, VAR1, VAR2), \
     void *: A_POINTERS(MODE, VAR1, VAR2), \
-    default: unsupported_type_for_generic() \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC() \
   ), \
   schar:   A_FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_SCHAR  ), \
   short:   A_FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_SHORT  ), \
