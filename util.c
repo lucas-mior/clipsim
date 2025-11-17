@@ -125,6 +125,7 @@ static void __attribute__((format(printf, 1, 2))) error(char *format, ...);
 #define DEBUGGING 0
 #endif
 
+#include "generic.h"
 #include "assert.c"
 
 #if !defined(FLAGS_HUGE_PAGES)
@@ -167,93 +168,12 @@ typedef uint32_t uint32;
 typedef uint64_t uint64;
 #endif
 
-#if !defined(MINOF)
-
-#define MINOF(VARIABLE) \
-_Generic((VARIABLE), \
-  schar:       SCHAR_MIN, \
-  short:       SHRT_MIN,  \
-  int:         INT_MIN,   \
-  long:        LONG_MIN,  \
-  uchar:       0,         \
-  ushort:      0,         \
-  uint:        0u,        \
-  ulong:       0ul,       \
-  ullong:      0ull,      \
-  char:        CHAR_MIN,  \
-  bool:        0,         \
-  float:       -FLT_MAX,  \
-  double:      -DBL_MAX,  \
-  long double: -LDBL_MAX  \
-)
-
-#endif
-
-#if !defined(MAXOF)
-
-#define MAXOF(VARIABLE) \
-_Generic((VARIABLE), \
-  schar:       SCHAR_MAX,  \
-  short:       SHRT_MAX,   \
-  int:         INT_MAX,    \
-  long:        LONG_MAX,   \
-  uchar:       UCHAR_MAX,  \
-  ushort:      USHRT_MAX,  \
-  uint:        UINT_MAX,   \
-  ulong:       ULONG_MAX,  \
-  ullong:      ULLONG_MAX, \
-  char:        CHAR_MAX,   \
-  bool:        1,          \
-  float:       FLT_MAX,    \
-  double:      DBL_MAX,    \
-  long double: LDBL_MAX    \
-)
-
-#endif
-
 #if DEBUGGING || TESTING_util
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wc11-extensions"
 #pragma clang diagnostic ignored "-Wformat"
 #pragma clang diagnostic ignored "-Wdouble-promotion"
 #endif
-
-// clang-format off
-enum FloatTypes {
-    FLOAT_FLOAT,
-    FLOAT_DOUBLE,
-    FLOAT_LONG_DOUBLE,
-};
-
-static void
-print_float(char *name, char *variable, enum FloatTypes type) {
-    float value_f;
-    double value_d;
-    long double value_ld;
-
-    switch (type) {
-    case FLOAT_FLOAT:
-        memcpy(&value_f, variable, sizeof(float));
-        printf("[float]%zu %s = %e = %f\n",
-               sizeof(float)*CHAR_BIT, name, (double)value_f, (double)value_f);
-        break;
-    case FLOAT_DOUBLE:
-        memcpy(&value_d, variable, sizeof(double));
-        printf("[double]%zu %s = %e = %f\n",
-               sizeof(double)*CHAR_BIT, name, value_d, value_d);
-        break;
-    case FLOAT_LONG_DOUBLE:
-        memcpy(&value_ld, variable, sizeof(long double));
-        printf("[long double]%zu %s = %Le = %Lf\n",
-               sizeof(long double)*CHAR_BIT, name, value_ld, value_ld);
-        break;
-    default:
-        fprintf(stderr, "Invalid type.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    return;
-}
 
 // clang-format off
 #define PRINT_SIGNED(TYPE, VARIABLE) \
@@ -268,59 +188,60 @@ print_float(char *name, char *variable, enum FloatTypes type) {
     printf(TYPE "%zu %s = " FORMAT "\n", \
            sizeof(VARIABLE)*CHAR_BIT, NAME, VARIABLE)
 
+#define PRINT_FLOAT(TYPE, VARIABLE) \
+    printf(TYPE "%zu %s = %Lf\n", \
+           sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, LDOUBLE_GET(VARIABLE))
+
 #define PRINT_VAR(VARIABLE) \
 _Generic((VARIABLE), \
-  signed char: PRINT_SIGNED("[schar]", VARIABLE), \
-  short:       PRINT_SIGNED("[short]", VARIABLE), \
-  int:         PRINT_SIGNED("[int]", VARIABLE), \
-  long:        PRINT_SIGNED("[long]", VARIABLE), \
-  llong:       PRINT_SIGNED("[llong]", VARIABLE), \
-  uchar:       PRINT_UNSIGNED("[uchar]", VARIABLE), \
+  signed char: PRINT_SIGNED("[schar]",    VARIABLE), \
+  short:       PRINT_SIGNED("[short]",    VARIABLE), \
+  int:         PRINT_SIGNED("[int]",      VARIABLE), \
+  long:        PRINT_SIGNED("[long]",     VARIABLE), \
+  llong:       PRINT_SIGNED("[llong]",    VARIABLE), \
+  uchar:       PRINT_UNSIGNED("[uchar]",  VARIABLE), \
   ushort:      PRINT_UNSIGNED("[ushort]", VARIABLE), \
-  uint:        PRINT_UNSIGNED("[uint]", VARIABLE), \
-  ulong:       PRINT_UNSIGNED("[ulong]", VARIABLE), \
+  uint:        PRINT_UNSIGNED("[uint]",   VARIABLE), \
+  ulong:       PRINT_UNSIGNED("[ulong]",  VARIABLE), \
   ullong:      PRINT_UNSIGNED("[ullong]", VARIABLE), \
-  char:        PRINT_OTHER("[char]", "%c", #VARIABLE, VARIABLE), \
-  bool:        PRINT_OTHER("[bool]", "%d", #VARIABLE, VARIABLE), \
+  char:        PRINT_OTHER("[char]",   "%c", #VARIABLE, VARIABLE), \
+  bool:        PRINT_OTHER("[bool]",   "%d", #VARIABLE, VARIABLE), \
   char *:      PRINT_OTHER("[char *]", "%s", #VARIABLE, (char *)(uintptr_t)(VARIABLE)), \
   void *:      PRINT_OTHER("[void *]", "%p", #VARIABLE, (void *)(uintptr_t)(VARIABLE)), \
-  float:       print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_FLOAT), \
-  double:      print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_DOUBLE), \
-  long double: print_float(#VARIABLE, (char *)&VARIABLE, FLOAT_LONG_DOUBLE), \
+  float:       PRINT_FLOAT("[float]",   VARIABLE), \
+  double:      PRINT_FLOAT("[double]",  VARIABLE), \
+  long double: PRINT_FLOAT("[ldouble]", VARIABLE), \
   default: _Generic((VARIABLE), \
-    int8:      PRINT_SIGNED("[int8]", VARIABLE), \
-    int16:     PRINT_SIGNED("[int16]", VARIABLE), \
-    int32:     PRINT_SIGNED("[int32]", VARIABLE), \
-    int64:     PRINT_SIGNED("[int64]", VARIABLE), \
-    uint8:     PRINT_UNSIGNED("[uint8]", VARIABLE), \
+    int8:      PRINT_SIGNED("[int8]",     VARIABLE), \
+    int16:     PRINT_SIGNED("[int16]",    VARIABLE), \
+    int32:     PRINT_SIGNED("[int32]",    VARIABLE), \
+    int64:     PRINT_SIGNED("[int64]",    VARIABLE), \
+    uint8:     PRINT_UNSIGNED("[uint8]",  VARIABLE), \
     uint16:    PRINT_UNSIGNED("[uint16]", VARIABLE), \
     uint32:    PRINT_UNSIGNED("[uint32]", VARIABLE), \
     uint64:    PRINT_UNSIGNED("[uint64]", VARIABLE), \
-    default:   assert(false) \
+    default:   unsupported_type_for_generic() \
   ) \
 )
 
 #endif
 
-// clang-format on
-
-// clang-format off
 #define UTIL_ALIGN_UINT(S, A) (int64)(((S) + ((A) - 1)) & ~((A) - 1))
 #define COMPILE_STOP "aaaaa"
 
 #if __STDC__== 1 && __STDC_VERSION__ >= 201112L
 #define UTIL_ALIGN(S, A) \
 _Generic((S), \
-    unsigned long long: UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    unsigned long:      UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    unsigned int:       UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    long long:          UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    long:               UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    int:                UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A), \
-    default:            COMPILE_STOP \
+  ullong:  UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
+  ulong:   UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
+  uint:    UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
+  llong:   UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
+  long:    UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
+  int:     UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
+  default: COMPILE_STOP \
 )
 #else
-#define UTIL_ALIGN(S, A) UTIL_ALIGN_UINT((uint64_t)S, (uint64_t)A)
+#define UTIL_ALIGN(S, A) UTIL_ALIGN_UINT((uint64)S, (uint64)A)
 #endif
 
 
