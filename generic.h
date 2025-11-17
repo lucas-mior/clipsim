@@ -46,18 +46,7 @@ _Generic((VAR), \
   ullong:  "ullong",  \
   ldouble: "ldouble", \
   double:  "double",  \
-  float:   "float",   \
-  default: _Generic((VAR), \
-    int8:    "int8",   \
-    int16:   "int16",  \
-    int32:   "int32",  \
-    int64:   "int64",  \
-    uint8:   "uint8",  \
-    uint16:  "uint16", \
-    uint32:  "uint32", \
-    uint64:  "uint64", \
-    default: unsupported_type_for_generic() \
-  ) \
+  float:   "float"   \
 )
 
 #define MINOF(VARIABLE) \
@@ -76,18 +65,7 @@ _Generic((VARIABLE), \
   bool:        0,         \
   float:       -FLT_MAX,  \
   double:      -DBL_MAX,  \
-  long double: -LDBL_MAX, \
-  default: _Generic((VARIABLE), \
-    int8:      INT8_MIN,  \
-    int16:     INT16_MIN, \
-    int32:     INT32_MIN, \
-    int64:     INT64_MIN, \
-    uint8:     (uint8)0,  \
-    uint16:    (uint16)0, \
-    uint32:    (uint32)0, \
-    uint64:    (uint64)0, \
-    default:   unsupported_type_for_generic() \
-  ) \
+  long double: -LDBL_MAX \
 )
 
 #define MAXOF(VARIABLE) \
@@ -106,18 +84,7 @@ _Generic((VARIABLE), \
   bool:        1,          \
   float:       FLT_MAX,    \
   double:      DBL_MAX,    \
-  long double: LDBL_MAX,    \
-  default: _Generic((VARIABLE), \
-    int8:      INT8_MAX,   \
-    int16:     INT16_MAX,  \
-    int32:     INT32_MAX,  \
-    int64:     INT64_MAX,  \
-    uint8:     UINT8_MAX,  \
-    uint16:    UINT16_MAX, \
-    uint32:    UINT32_MAX, \
-    uint64:    UINT64_MAX, \
-    default:   unsupported_type_for_generic() \
-  ) \
+  long double: LDBL_MAX    \
 )
 
 static ldouble ldouble_from_ldouble(ldouble x) { return x;             }
