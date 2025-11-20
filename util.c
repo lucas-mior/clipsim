@@ -35,7 +35,7 @@
 #include <assert.h>
 #include <float.h>
 
-#include "generic.h"
+#include "generic.c"
 
 #if defined(__linux__)
 #define OS_LINUX 1
@@ -161,42 +161,6 @@ static void __attribute__((format(printf, 1, 2))) error(char *format, ...);
 #endif
 
 // clang-format off
-#define PRINT_SIGNED(TYPE, VARIABLE) \
-    printf(TYPE "%zu %s = %lld\n", \
-           sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, (llong)VARIABLE)
-
-#define PRINT_UNSIGNED(TYPE, VARIABLE) \
-    printf(TYPE "%zu %s = %llu\n", \
-           sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, (ullong)VARIABLE)
-
-#define PRINT_OTHER(TYPE, FORMAT, NAME, VARIABLE) \
-    printf(TYPE "%zu %s = " FORMAT "\n", \
-           sizeof(VARIABLE)*CHAR_BIT, NAME, VARIABLE)
-
-#define PRINT_FLOAT(TYPE, VARIABLE) \
-    printf(TYPE "%zu %s = %Lf\n", \
-           sizeof(VARIABLE)*CHAR_BIT, #VARIABLE, LDOUBLE_GET(VARIABLE))
-
-#define PRINT_VAR(VARIABLE) \
-_Generic((VARIABLE), \
-  schar:   PRINT_SIGNED("[schar]",    VARIABLE), \
-  short:   PRINT_SIGNED("[short]",    VARIABLE), \
-  int:     PRINT_SIGNED("[int]",      VARIABLE), \
-  long:    PRINT_SIGNED("[long]",     VARIABLE), \
-  llong:   PRINT_SIGNED("[llong]",    VARIABLE), \
-  uchar:   PRINT_UNSIGNED("[uchar]",  VARIABLE), \
-  ushort:  PRINT_UNSIGNED("[ushort]", VARIABLE), \
-  uint:    PRINT_UNSIGNED("[uint]",   VARIABLE), \
-  ulong:   PRINT_UNSIGNED("[ulong]",  VARIABLE), \
-  ullong:  PRINT_UNSIGNED("[ullong]", VARIABLE), \
-  char:    PRINT_OTHER("[char]",   "%c", #VARIABLE, VARIABLE), \
-  bool:    PRINT_OTHER("[bool]",   "%d", #VARIABLE, VARIABLE), \
-  char *:  PRINT_OTHER("[char *]", "%s", #VARIABLE, (char *)(uintptr_t)(VARIABLE)), \
-  void *:  PRINT_OTHER("[void *]", "%p", #VARIABLE, (void *)(uintptr_t)(VARIABLE)), \
-  float:   PRINT_FLOAT("[float]",   VARIABLE), \
-  double:  PRINT_FLOAT("[double]",  VARIABLE), \
-  ldouble: PRINT_FLOAT("[ldouble]", VARIABLE) \
-)
 
 #endif
 
@@ -1213,25 +1177,6 @@ main(void) {
     char *p3;
     char *string = __FILE__;
 
-    int int_max;
-    int int_min;
-    bool var_bool = true;
-    char var_char = 'c';
-    char *var_string = "a nice string";
-    void *var_voidptr = NULL;
-    float var_float = FLT_MAX;
-    double var_double = DBL_MAX;
-    long double var_longdouble = DBL_MAX;
-    int8 var_int8 = INT8_MAX;
-    int16 var_int16 = INT16_MAX;
-    int32 var_int32 = INT32_MAX;
-    int var_int = INT_MAX;
-    int64 var_int64 = INT64_MAX;
-    uint8 var_uint8 = UINT8_MAX;
-    uint16 var_uint16 = UINT16_MAX;
-    uint32 var_uint32 = UINT32_MAX;
-    uint var_uint = UINT_MAX;
-    uint64 var_uint64 = UINT64_MAX;
     char *paths[] = {
         "/aaaa/bbbb/cccc", "/aa/bb/cc", "/a/b/c",    "a/b/c",
         "a/b/cccc",        "a/bb/cccc", "aaaa/cccc",
@@ -1239,31 +1184,6 @@ main(void) {
     char *bases[] = {
         "cccc", "cc", "c", "c", "cccc", "cccc", "cccc",
     };
-
-    PRINT_VAR(var_int8);
-    PRINT_VAR(var_int16);
-    PRINT_VAR(var_int32);
-    PRINT_VAR(var_int);
-    PRINT_VAR(var_int64);
-    PRINT_VAR(var_uint8);
-    PRINT_VAR(var_uint16);
-    PRINT_VAR(var_uint32);
-    PRINT_VAR(var_uint);
-    PRINT_VAR(var_uint64);
-    PRINT_VAR(var_voidptr);
-    PRINT_VAR(var_bool);
-    PRINT_VAR(var_char);
-    PRINT_VAR(var_string);
-    PRINT_VAR(*var_string);
-    PRINT_VAR(var_float);
-    PRINT_VAR(var_double);
-    PRINT_VAR(var_longdouble);
-    PRINT_VAR(var_uint - (uint)var_int);
-
-    int_max = MAXOF(var_int);
-    int_min = MINOF(var_int);
-    PRINT_VAR(int_max);
-    PRINT_VAR(int_min);
 
     memset64(p1, 0, SIZEMB(1));
     memcpy64(p1, string, strlen64(string));
