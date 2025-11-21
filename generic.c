@@ -386,13 +386,10 @@ main(void) {
     }
 
     {
+        void *var_voidptr = NULL;
+        char *var_string = "a nice string";
         bool var_bool = true;
         char var_char = 'c';
-        char *var_string = "a nice string";
-        void *var_voidptr = NULL;
-        float var_float = FLT_MAX;
-        double var_double = DBL_MAX;
-        long double var_longdouble = (ldouble)DBL_MAX;
         int8 var_int8 = INT8_MAX;
         int16 var_int16 = INT16_MAX;
         int32 var_int32 = INT32_MAX;
@@ -403,7 +400,14 @@ main(void) {
         uint32 var_uint32 = UINT32_MAX;
         uint var_uint = UINT_MAX;
         uint64 var_uint64 = UINT64_MAX;
+        float var_float = FLT_MAX;
+        double var_double = DBL_MAX;
+        long double var_longdouble = (ldouble)DBL_MAX;
 
+        PRINT(var_voidptr);
+        PRINT(var_string);
+        PRINT(var_bool);
+        PRINT(var_char);
         PRINT(var_int8);
         PRINT(var_int16);
         PRINT(var_int32);
@@ -414,14 +418,11 @@ main(void) {
         PRINT(var_uint32);
         PRINT(var_uint);
         PRINT(var_uint64);
-        PRINT(var_voidptr);
-        PRINT(var_bool);
-        PRINT(var_char);
-        PRINT(var_string);
-        PRINT(*var_string);
         PRINT(var_float);
         PRINT(var_double);
         PRINT(var_longdouble);
+
+        PRINT(*var_string);
         PRINT(var_uint - (uint)var_int);
         PRINT((void*)main);
     }
