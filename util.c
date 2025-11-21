@@ -83,12 +83,8 @@
 #define ERROR_NOTIFY 0
 #endif
 
-#if defined(__has_include)
-#if __has_include(<valgrind/valgrind.h>)
+#if defined(__has_include) && __has_include(<valgrind/valgrind.h>)
 #include <valgrind/valgrind.h>
-#else
-#define RUNNING_ON_VALGRIND 0
-#endif
 #else
 #define RUNNING_ON_VALGRIND 0
 #endif
@@ -107,7 +103,7 @@ static char *program;
 
 static void __attribute__((format(printf, 1, 2))) error(char *format, ...);
 
-#define SIZEOF(X) (int64)sizeof(X)
+#define SIZEOF(X) ((int64)sizeof(X))
 
 #if !defined(SIZEKB)
 #define SIZEKB(X) ((int64)(X)*1024ll)
@@ -481,7 +477,7 @@ xmalloc(int64 size) {
 }
 
 INLINE void *
-xrealloc(void *old, const int64 size) {
+xrealloc(void *old, int64 size) {
     void *p;
     uint64 old_save = (uint64)old;
 
@@ -505,7 +501,7 @@ xrealloc(void *old, const int64 size) {
 }
 
 static void *
-xcalloc(const size_t nmemb, const size_t size) {
+xcalloc(size_t nmemb, size_t size) {
     void *p;
     if ((p = calloc(nmemb, size)) == NULL) {
         error("Error allocating %zu members of %zu bytes each.\n", nmemb, size);
@@ -698,12 +694,13 @@ snprintf2(char *buffer, int size, char *format, ...) {
 
 #if OS_WINDOWS
 static int
-util_command(const int argc, char **argv) {
+util_command(int argc, char **argv) {
     char cmdline[1024] = {0};
     FILE *tty;
     PROCESS_INFORMATION proc_info = {0};
     DWORD exit_code = 0;
     int64 len = strlen64(argv[0]);
+    bool malloced_argv0 = false;
 
     if (argc == 0 || argv == NULL) {
         error("Invalid arguments.\n");
@@ -719,6 +716,7 @@ util_command(const int argc, char **argv) {
             memcpy64(argv0_windows, argv[0], len);
             memcpy64(argv0_windows + len, exe, exe_len + 1);
             argv[0] = argv0_windows;
+            malloced_argv0 = true;
         }
     }
 
@@ -738,6 +736,10 @@ util_command(const int argc, char **argv) {
             j += len2 + 3;
         }
         cmdline[j - 1] = '\0';
+    }
+
+    if (malloced_argv0) {
+        free(argv[0]);
     }
 
     if ((tty = freopen("CONIN$", "r", stdin)) == NULL) {
@@ -786,7 +788,7 @@ util_command(const int argc, char **argv) {
 }
 #else
 static int
-util_command(const int argc, char **argv) {
+util_command(int argc, char **argv) {
     pid_t child;
     int status;
 
@@ -847,8 +849,12 @@ error(char *format, ...) {
     n = vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
 
-    if (n <= 0 || n >= (int32)sizeof(buffer)) {
-        fprintf(stderr, "Error in vsnprintf()\n");
+    if (n <= 0) {
+        fprintf(stderr, "Error in vsnprintf(%s)\n", format);
+        fatal(EXIT_FAILURE);
+    }
+    if (n >= SIZEOF(buffer)) {
+        fprintf(stderr, "Error in vsnprintf(%s): Buffer too small.\n", format);
         fatal(EXIT_FAILURE);
     }
 
@@ -894,6 +900,7 @@ fatal(int status) {
     }
 }
 
+// clang-format off
 void
 util_segv_handler(int32 unused) {
     char *message = "Memory error. Please send a bug report.\n";
@@ -901,14 +908,15 @@ util_segv_handler(int32 unused) {
 
     write64(STDERR_FILENO, message, (uint32)strlen64(message));
     for (uint32 i = 0; i < LENGTH(notifiers); i += 1) {
-        execlp(notifiers[i], notifiers[i], "-u", "critical", program, message,
-               NULL);
+        execlp(notifiers[i],
+               notifiers[i], "-u", "critical", program, message, NULL);
     }
     _exit(EXIT_FAILURE);
 }
+// clang-format on
 
 static int32
-util_string_int32(int32 *number, const char *string) {
+util_string_int32(int32 *number, char *string) {
     char *endptr;
     long x;
     errno = 0;
@@ -924,7 +932,7 @@ util_string_int32(int32 *number, const char *string) {
 }
 
 static void __attribute__((noreturn))
-util_die_notify(char *program_name, const char *format, ...) {
+util_die_notify(char *program_name, char *format, ...) {
     int32 n;
     va_list args;
     char buffer[BUFSIZ];
@@ -959,7 +967,7 @@ util_memdup(void *source, int64 size) {
 
 #if OS_UNIX
 static int32
-util_copy_file_sync(const char *destination, const char *source) {
+util_copy_file_sync(char *destination, char *source) {
     int32 source_fd;
     int32 destination_fd;
     char buffer[BUFSIZ];
@@ -1009,8 +1017,7 @@ util_copy_file_sync(const char *destination, const char *source) {
 }
 
 static int32
-util_copy_file_async(const char *destination, const char *source,
-                     int *dest_fd) {
+util_copy_file_async(char *destination, char *source, int *dest_fd) {
     int32 source_fd;
 
     if ((source_fd = open(source, O_RDONLY)) < 0) {
@@ -1034,7 +1041,7 @@ util_copy_file_async(const char *destination, const char *source,
 #if OS_LINUX
 #include <dirent.h>
 static void
-send_signal(char *executable, const int32 signal_number) {
+send_signal(char *executable, int32 signal_number) {
     DIR *processes;
     struct dirent *process;
     int64 len = strlen64(executable);

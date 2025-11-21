@@ -230,14 +230,14 @@ GENERATE_ASSERT_LDOUBLE(more_equal, >=)
     a_both_signed_##MODE(__FILE__, __LINE__,               \
                          #VAR1, #VAR2,                     \
                          typename(TYPE1), typename(TYPE2), \
-                         TYPEBITS(TYPE1), TYPEBITS(TYPE2), \
-                         (llong)(VAR1), (llong)(VAR2))     \
+                         TYPEBITS(VAR1), TYPEBITS(VAR2),   \
+                         (llong)(VAR1), (llong)(VAR2))
 
 #define A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
     a_signed_unsigned##MODE(__FILE__, __LINE__,               \
                             #VAR1, #VAR2,                     \
                             typename(TYPE1), typename(TYPE2), \
-                            TYPEBITS(TYPE1), TYPEBITS(TYPE2), \
+                            TYPEBITS(VAR1), TYPEBITS(VAR2),   \
                             (llong)(VAR1), (ullong)(VAR2))
 
 #define A_FIRST_SIGNED(MODE, VAR1, VAR2, TYPE1) \
@@ -263,14 +263,14 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGNED(void);
     a_both_unsigned_##MODE(__FILE__, __LINE__,               \
                            #VAR1, #VAR2,                     \
                            typename(TYPE1), typename(TYPE2), \
-                           TYPEBITS(TYPE1), TYPEBITS(TYPE2), \
+                           TYPEBITS(VAR1), TYPEBITS(VAR2),   \
                            (ullong)(VAR1), (ullong)(VAR2))
 
 #define A_UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
     a_unsigned_signed_##MODE(__FILE__, __LINE__,               \
                              #VAR1, #VAR2,                     \
                              typename(TYPE1), typename(TYPE2), \
-                             TYPEBITS(TYPE1), TYPEBITS(TYPE2), \
+                             TYPEBITS(VAR1), TYPEBITS(VAR2),   \
                              (ullong)(VAR1), (llong)(VAR2))
 
 #define A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE1) \
@@ -293,10 +293,10 @@ _Generic((VAR2), \
 void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_UNSIGNED(void);
 
 #define A_BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE2) \
-    a_ldouble_##MODE(__FILE__, __LINE__, \
-                     #VAR1, #VAR2, \
+    a_ldouble_##MODE(__FILE__, __LINE__,               \
+                     #VAR1, #VAR2,                     \
                      typename(TYPE1), typename(TYPE2), \
-                     TYPEBITS(TYPE1), TYPEBITS(TYPE2), \
+                     TYPEBITS(VAR1), TYPEBITS(VAR2),   \
                      LDOUBLE_GET2(VAR1, TYPE1), LDOUBLE_GET2(VAR2, TYPE2))
 
 #define A_FIRST_LDOUBLE(MODE, VAR1, VAR2, TYPE1) \
