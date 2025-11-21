@@ -37,22 +37,22 @@ typedef uint64_t uint64;
 
 #define TYPENAME(VAR) \
 _Generic((VAR), \
-    void *:  "void*",   \
-    char *:  "char*",   \
-    bool:    "bool",    \
-    char:    "char",    \
-    schar:   "schar",   \
-    short:   "short",   \
-    int:     "int",     \
-    long:    "long",    \
-    llong:   "llong",   \
-    uchar:   "uchar",   \
-    ushort:  "ushort",  \
-    uint:    "uint",    \
-    ulong:   "ulong",   \
-    ullong:  "ullong",  \
-    float:   "float",   \
-    double:  "double",  \
+    void *:  "void*",  \
+    char *:  "char*",  \
+    bool:    "bool",   \
+    char:    "char",   \
+    schar:   "schar",  \
+    short:   "short",  \
+    int:     "int",    \
+    long:    "long",   \
+    llong:   "llong",  \
+    uchar:   "uchar",  \
+    ushort:  "ushort", \
+    uint:    "uint",   \
+    ulong:   "ulong",  \
+    ullong:  "ullong", \
+    float:   "float",  \
+    double:  "double", \
     ldouble: "ldouble" \
 )
 
@@ -74,7 +74,7 @@ _Generic((VARIABLE), \
     bool:    0,         \
     float:   -FLT_MAX,  \
     double:  -DBL_MAX,  \
-    ldouble: -LDBL_MAX \
+    ldouble: -LDBL_MAX  \
 )
 
 #define MAXOF(VARIABLE) \
@@ -259,11 +259,11 @@ _Generic((x), \
 
 #define PRINT_SIGNED(VAR, TYPE) \
   fprintf(stderr, "[%s%zu]%s = %lld\n", \
-                  typename(TYPE), TYPEBITS(VAR), #VAR, (llong)VAR)
+                  typename(TYPE), TYPEBITS(VAR), #VAR, (llong)(VAR))
 
 #define PRINT_UNSIGNED(VAR, TYPE) \
   fprintf(stderr, "[%s%zu]%s = %llu\n", \
-                  typename(TYPE), TYPEBITS(VAR), #VAR, (ullong)VAR)
+                  typename(TYPE), TYPEBITS(VAR), #VAR, (ullong)(VAR))
 
 #define PRINT_LDOUBLE(VAR, TYPE) \
   fprintf(stderr, "[%s%zu]%s = %Lf\n", \
@@ -275,28 +275,27 @@ _Generic((x), \
 
 #define PRINT(VAR) \
 _Generic((VAR), \
-    void *:  PRINT_OTHER(VAR,    TYPE_VOIDP, "%p", void *), \
-    char *:  PRINT_OTHER(VAR,    TYPE_CHARP, "%s", char *), \
-    bool:    PRINT_OTHER(VAR,    TYPE_BOOL,  "%u", bool),   \
-    char:    PRINT_OTHER(VAR,    TYPE_CHAR,  "%c", char),   \
-    schar:   PRINT_SIGNED(VAR,   TYPE_SCHAR),               \
-    short:   PRINT_SIGNED(VAR,   TYPE_SHORT),               \
-    int:     PRINT_SIGNED(VAR,   TYPE_INT),                 \
-    long:    PRINT_SIGNED(VAR,   TYPE_LONG),                \
-    llong:   PRINT_SIGNED(VAR,   TYPE_LLONG),               \
-    uchar:   PRINT_UNSIGNED(VAR, TYPE_UCHAR),               \
-    ushort:  PRINT_UNSIGNED(VAR, TYPE_USHORT),              \
-    uint:    PRINT_UNSIGNED(VAR, TYPE_UINT),                \
-    ulong:   PRINT_UNSIGNED(VAR, TYPE_ULONG),               \
-    ullong:  PRINT_UNSIGNED(VAR, TYPE_ULLONG),              \
-    float:   PRINT_LDOUBLE(VAR,  TYPE_FLOAT),               \
-    double:  PRINT_LDOUBLE(VAR,  TYPE_DOUBLE),              \
-    ldouble: PRINT_LDOUBLE(VAR,  TYPE_LDOUBLE)              \
+    void *:  PRINT_OTHER(VAR,    TYPE_VOIDP, "%p",   void *), \
+    char *:  PRINT_OTHER(VAR,    TYPE_CHARP, "%s",   char *), \
+    bool:    PRINT_OTHER(VAR,    TYPE_BOOL,  "%u",   bool),   \
+    char:    PRINT_OTHER(VAR,    TYPE_CHAR,  "'%c'", char),   \
+    schar:   PRINT_SIGNED(VAR,   TYPE_SCHAR),                 \
+    short:   PRINT_SIGNED(VAR,   TYPE_SHORT),                 \
+    int:     PRINT_SIGNED(VAR,   TYPE_INT),                   \
+    long:    PRINT_SIGNED(VAR,   TYPE_LONG),                  \
+    llong:   PRINT_SIGNED(VAR,   TYPE_LLONG),                 \
+    uchar:   PRINT_UNSIGNED(VAR, TYPE_UCHAR),                 \
+    ushort:  PRINT_UNSIGNED(VAR, TYPE_USHORT),                \
+    uint:    PRINT_UNSIGNED(VAR, TYPE_UINT),                  \
+    ulong:   PRINT_UNSIGNED(VAR, TYPE_ULONG),                 \
+    ullong:  PRINT_UNSIGNED(VAR, TYPE_ULLONG),                \
+    float:   PRINT_LDOUBLE(VAR,  TYPE_FLOAT),                 \
+    double:  PRINT_LDOUBLE(VAR,  TYPE_DOUBLE),                \
+    ldouble: PRINT_LDOUBLE(VAR,  TYPE_LDOUBLE)                \
 )
 
 #if TESTING_generic
 #include <assert.h>
-#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -336,12 +335,12 @@ main(void) {
     assert(MAXOF(primitive.aullong)  == ULLONG_MAX);
     assert(MAXOF(primitive.abool)    == 1);
 
-    assert(!strcmp(TYPENAME(primitive.aldouble),
-                   typename(TYPEID(primitive.aldouble))));
-    assert(!strcmp(TYPENAME(primitive.adouble),
-                   typename(TYPEID(primitive.adouble))));
-    assert(!strcmp(TYPENAME(primitive.afloat),
-                   typename(TYPEID(primitive.afloat))));
+    assert(!strcmp(TYPENAME(primitive.avoidp),
+                   typename(TYPEID(primitive.avoidp))));
+    assert(!strcmp(TYPENAME(primitive.acharp),
+                   typename(TYPEID(primitive.acharp))));
+    assert(!strcmp(TYPENAME(primitive.abool),
+                   typename(TYPEID(primitive.abool))));
     assert(!strcmp(TYPENAME(primitive.aschar),
                    typename(TYPEID(primitive.aschar))));
     assert(!strcmp(TYPENAME(primitive.ashort),
@@ -362,8 +361,12 @@ main(void) {
                    typename(TYPEID(primitive.aulong))));
     assert(!strcmp(TYPENAME(primitive.aullong),
                    typename(TYPEID(primitive.aullong))));
-    assert(!strcmp(TYPENAME(primitive.abool),
-                   typename(TYPEID(primitive.abool))));
+    assert(!strcmp(TYPENAME(primitive.afloat),
+                   typename(TYPEID(primitive.afloat))));
+    assert(!strcmp(TYPENAME(primitive.adouble),
+                   typename(TYPEID(primitive.adouble))));
+    assert(!strcmp(TYPENAME(primitive.aldouble),
+                   typename(TYPEID(primitive.aldouble))));
 
     {
         int32 var_int32;
@@ -372,13 +375,13 @@ main(void) {
         uint64 var_uint64;
 
         assert(MAXOF(var_int32) == INT32_MAX);
-        assert(MAXOF(var_uint32) == UINT32_MAX);
         assert(MAXOF(var_int64) == INT64_MAX);
+        assert(MAXOF(var_uint32) == UINT32_MAX);
         assert(MAXOF(var_uint64) == UINT64_MAX);
 
         assert(MINOF(var_int32) == INT32_MIN);
-        assert(MINOF(var_uint32) == 0u);
         assert(MINOF(var_int64) == INT64_MIN);
+        assert(MINOF(var_uint32) == 0u);
         assert(MINOF(var_uint64) == 0ull);
     }
 
