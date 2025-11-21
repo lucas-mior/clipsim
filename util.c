@@ -110,9 +110,9 @@ static void __attribute__((format(printf, 1, 2))) error(char *format, ...);
 #define SIZEOF(X) (int64)sizeof(X)
 
 #if !defined(SIZEKB)
-#define SIZEKB(X) ((int64)(X)*1024l)
-#define SIZEMB(X) ((int64)(X)*1024l*1024l)
-#define SIZEGB(X) ((int64)(X)*1024l*1024l*1024l)
+#define SIZEKB(X) ((int64)(X)*1024ll)
+#define SIZEMB(X) ((int64)(X)*1024ll*1024ll)
+#define SIZEGB(X) ((int64)(X)*1024ll*1024ll*1024ll)
 #endif
 
 #if !defined(LENGTH)
@@ -164,24 +164,17 @@ static void __attribute__((format(printf, 1, 2))) error(char *format, ...);
 
 #endif
 
-#define UTIL_ALIGN_UINT(S, A) (int64)(((S) + ((A) - 1)) & ~((A) - 1))
-#define COMPILE_STOP "aaaaa"
+#define UTIL_ALIGN_UINT(SIZE, A) (int64)(((SIZE) + ((A) - 1)) & ~((A) - 1))
 
-#if __STDC__== 1 && __STDC_VERSION__ >= 201112L
-#define UTIL_ALIGN(S, A) \
-_Generic((S), \
-  ullong:  UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
-  ulong:   UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
-  uint:    UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
-  llong:   UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
-  long:    UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
-  int:     UTIL_ALIGN_UINT((uint64)S, (uint64)A), \
-  default: COMPILE_STOP \
+#define UTIL_ALIGN(SIZE, A) \
+_Generic((SIZE), \
+    ullong: UTIL_ALIGN_UINT((ullong)SIZE, (ullong)A), \
+    ulong:  UTIL_ALIGN_UINT((ulong)SIZE,  (ulong)A),  \
+    uint:   UTIL_ALIGN_UINT((uint)SIZE,   (uint)A),   \
+    llong:  UTIL_ALIGN_UINT((ullong)SIZE, (ullong)A), \
+    long:   UTIL_ALIGN_UINT((ulong)SIZE,  (ulong)A),  \
+    int:    UTIL_ALIGN_UINT((uint)SIZE,   (uint)A)   \
 )
-#else
-#define UTIL_ALIGN(S, A) UTIL_ALIGN_UINT((uint64)S, (uint64)A)
-#endif
-
 
 #if !defined(ALIGNMENT)
 #define ALIGNMENT 16ul
@@ -242,22 +235,22 @@ memmem(void *haystack, size_t hay_len, void *needle, size_t needle_len) {
 #endif
 
 #define X64(func) \
-  INLINE void \
-      CAT(func, 64)(void *dest, void *source, int64 size) { \
-      if (size == 0) \
-          return; \
-      if (size < 0) { \
-          error("Error in %s: Invalid size = %lld\n", __func__, (llong)size); \
-          fatal(EXIT_FAILURE); \
-      } \
-      if ((ullong)size >= (ullong)SIZE_MAX) { \
-          error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", \
-                 __func__, (llong)size); \
-          fatal(EXIT_FAILURE); \
-      } \
-      func(dest, source, (size_t)size); \
-      return; \
-  }
+INLINE void \
+CAT(func, 64)(void *dest, void *source, int64 size) { \
+    if (size == 0) \
+        return; \
+    if (size < 0) { \
+        error("Error in %s: Invalid size = %lld\n", __func__, (llong)size); \
+        fatal(EXIT_FAILURE); \
+    } \
+    if ((ullong)size >= (ullong)SIZE_MAX) { \
+        error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", \
+               __func__, (llong)size); \
+        fatal(EXIT_FAILURE); \
+    } \
+    func(dest, source, (size_t)size); \
+    return; \
+}
 
 X64(memcpy)
 X64(memmove)
@@ -358,7 +351,7 @@ memcmp64(void *left, void *right, int64 size) {
 }
 
 #define X64(func, TYPE) \
-    INLINE int64 \
+INLINE int64 \
 CAT(func, 64)(int fd, void *buffer, int64 size) { \
     TYPE instance; \
     ssize_t w; \
@@ -389,7 +382,7 @@ X64(read, size_t)
 #undef X64
 
 #define X64(func) \
-    INLINE int64 \
+INLINE int64 \
 CAT(func, 64)(void *buffer, int64 size, int64 n, FILE *file) { \
     size_t rw; \
     if ((size <= 0) || (n <= 0)) { \
