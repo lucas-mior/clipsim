@@ -121,8 +121,8 @@ history_save(void) {
                          basename(e->content));
 
             if (strcmp(image_save, e->content)) {
-                if (rename(e->content, image_save) < 0) {
-                    error("Error renaming %s to %s: %s\n", e->content,
+                if (util_copy_file_sync(image_save, e->content) < 0) {
+                    error("Error copying %s to %s: %s.\n", e->content,
                           image_save, strerror(errno));
                     history_remove(i);
                     continue;
