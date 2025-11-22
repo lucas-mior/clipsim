@@ -998,8 +998,12 @@ util_copy_file_sync(char *destination, char *source) {
             }
             fprintf(stderr, ".\n");
 
-            close(source_fd);
-            close(destination_fd);
+            if (close(source_fd) < 0) {
+                error("Error closing %s: %s.\n", source, strerror(errno));
+            }
+            if (close(destination_fd) < 0) {
+                error("Error closing %s: %s.\n", destination, strerror(errno));
+            }
             return -1;
         }
     }
