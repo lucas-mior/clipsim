@@ -91,16 +91,7 @@ history_backup(void) {
 
 bool
 history_save(void) {
-    FileCopy file_copies[HISTORY_BUFFER_SIZE];
-    struct pollfd files[HISTORY_BUFFER_SIZE] = {0};
-    nfds_t nfiles = 0;
-    int polled;
     DEBUG_PRINT("void")
-
-    for (int32 i = 0; i < LENGTH(files); i += 1) {
-        files[i].events = POLLIN;
-        files[i].fd = -1;
-    }
 
     error("Saving history...\n");
     if (history_length <= 0) {
@@ -124,28 +115,18 @@ history_save(void) {
 
         if (is_image[i]) {
             char image_save[PATH_MAX];
-            char *image_save2 = NULL;
             int32 n;
 
             n = SNPRINTF(image_save, "%s/clipsim/%s", XDG_CACHE_HOME,
                          basename(e->content));
 
             if (strcmp(image_save, e->content)) {
-                image_save2 = xmalloc(n + 1);
-                memcpy64(image_save2, image_save, n);
-                image_save2[n] = '\0';
-
-                file_copies[i].source = e->content;
-                file_copies[i].dest = image_save2;
-                if (util_copy_file_async(&file_copies[i]) < 0) {
+                if (util_copy_file_sync(image_save, e->content) < 0) {
                     error("Error copying %s to %s: %s.\n", e->content,
                           image_save, strerror(errno));
                     history_remove(i);
                     continue;
                 }
-
-                files[i].fd = file_copies[i].source_fd;
-                nfiles += 1;
             }
             if (write64(history.fd, image_save, n) < n) {
                 error("Error writing %s: %s\n", image_save, strerror(errno));
@@ -190,49 +171,6 @@ history_save(void) {
                 continue;
             }
         }
-    }
-
-    switch (polled = poll(files, nfiles, 1000)) {
-    case -1:
-        error("Error polling: %s.\n", strerror(errno));
-        break;
-    case 0:
-        error("No images to copy.\n");
-        break;
-    default: {
-        int64 r;
-        int64 w;
-        char buffer[BUFSIZ];
-        error("Polled %d files.\n", polled);
-        for (int32 i = 0; i < LENGTH(files); i += 1) {
-            if (files[i].revents & (POLLIN | POLLHUP)) {
-                error("POLLIN %d\n", i);
-                while ((r = read64(file_copies[i].source_fd, buffer,
-                                   sizeof(buffer)))
-                       > 0) {
-                    w = write64(file_copies[i].dest_fd, buffer, r);
-                    if (w != r) {
-                        fprintf(stderr, "Error writing data to %s",
-                                file_copies[i].dest);
-                        if (errno) {
-                            fprintf(stderr, ": %s", strerror(errno));
-                        }
-                        fprintf(stderr, ".\n");
-
-                        close(file_copies[i].source_fd);
-                        close(file_copies[i].dest_fd);
-                        return -1;
-                    }
-                }
-                if (r < 0) {
-                    error("Error reading data from %s: %s.\n",
-                          file_copies[i].source, strerror(errno));
-                }
-                close(file_copies[i].source_fd);
-                close(file_copies[i].dest_fd);
-            }
-        }
-    }
     }
 
     util_close(&history);
