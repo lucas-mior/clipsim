@@ -1016,25 +1016,33 @@ util_copy_file_sync(char *destination, char *source) {
     return 0;
 }
 
+typedef struct FileCopy {
+    char *source;
+    char *dest;
+    int source_fd;
+    int dest_fd;
+} FileCopy;
+
 static int32
-util_copy_file_async(char *destination, char *source, int *dest_fd) {
-    int32 source_fd;
+util_copy_file_async(FileCopy *file_copy) {
 
-    if ((source_fd = open(source, O_RDONLY)) < 0) {
-        error("Error opening %s for reading: %s.\n", source, strerror(errno));
-        return -1;
-    }
-
-    if ((*dest_fd
-         = open(destination, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
-        < 0) {
-        error("Error opening %s for writing: %s.\n", destination,
+    if ((file_copy->source_fd = open(file_copy->source, O_RDONLY)) < 0) {
+        error("Error opening %s for reading: %s.\n", file_copy->source,
               strerror(errno));
-        close(source_fd);
         return -1;
     }
 
-    return source_fd;
+    if ((file_copy->dest_fd = open(
+             file_copy->dest, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
+        < 0) {
+        error("Error opening %s for writing: %s.\n", file_copy->dest,
+              strerror(errno));
+        close(file_copy->source_fd);
+        file_copy->source_fd = -1;
+        return -1;
+    }
+
+    return 0;
 }
 #endif
 
