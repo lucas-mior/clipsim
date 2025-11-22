@@ -207,7 +207,8 @@ static char *signal_names[] = {
     XSIGNAL(SIGUSR1)
     XSIGNAL(SIGUSR2)
     XSIGNAL(SIGXCPU)
-    XSIGNAL(SIGXFSZ)};
+    XSIGNAL(SIGXFSZ)
+};
 #undef XSIGNAL
 // clang-format on
 
