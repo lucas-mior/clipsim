@@ -133,6 +133,8 @@ static int64 arena_page_size = 0;
 
 #define error2(...) fprintf(stderr, __VA_ARGS__)
 
+void memset64(void *buffer, int value, int64 size);
+
 static void
 arena_print(Arena *arena) {
     while (arena) {
@@ -334,6 +336,9 @@ arena_push(Arena *arena, int64 size) {
     }
 
     before = arena->pos;
+    if (DEBUGGING) {
+        memset64(before, 0xCD, size);
+    }
     arena->pos = (char *)arena->pos + size;
     arena->npushed += 1;
     return before;
@@ -457,7 +462,7 @@ arenas_destroy(Arena **arenas, int64 number) {
 #include "assert.c"
 #include <stdio.h>
 
-INLINE void
+void
 memset64(void *buffer, int value, int64 size) {
     if (size == 0) {
         return;

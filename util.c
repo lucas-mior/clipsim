@@ -235,14 +235,16 @@ INLINE void \
 CAT(func, 64)(void *dest, void *source, int64 size) { \
     if (size == 0) \
         return; \
-    if (size < 0) { \
-        error("Error in %s: Invalid size = %lld\n", __func__, (llong)size); \
-        fatal(EXIT_FAILURE); \
-    } \
-    if ((ullong)size >= (ullong)SIZE_MAX) { \
-        error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", \
-               __func__, (llong)size); \
-        fatal(EXIT_FAILURE); \
+    if (DEBUGGING) { \
+        if (size < 0) { \
+            error("Error in %s: Invalid size = %lld\n", __func__, (llong)size); \
+            fatal(EXIT_FAILURE); \
+        } \
+        if ((ullong)size >= (ullong)SIZE_MAX) { \
+            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", \
+                   __func__, (llong)size); \
+            fatal(EXIT_FAILURE); \
+        } \
     } \
     func(dest, source, (size_t)size); \
     return; \
@@ -257,14 +259,16 @@ memset64(void *buffer, int value, int64 size) {
     if (size == 0) {
         return;
     }
-    if (size < 0) {
-        error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-    if ((ullong)size >= (ullong)SIZE_MAX) {
-        error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
-              (llong)size);
-        fatal(EXIT_FAILURE);
+    if (DEBUGGING) {
+        if (size < 0) {
+            error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
+            fatal(EXIT_FAILURE);
+        }
+        if ((ullong)size >= (ullong)SIZE_MAX) {
+            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
+                  (llong)size);
+            fatal(EXIT_FAILURE);
+        }
     }
     memset(buffer, value, (size_t)size);
     return;
@@ -287,9 +291,11 @@ memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
 
 INLINE void *
 memchr64(void *pointer, int32 value, int64 size) {
-    if (size <= 0) {
-        error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
-        fatal(EXIT_FAILURE);
+    if (DEBUGGING) {
+        if (size <= 0) {
+            error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
+            fatal(EXIT_FAILURE);
+        }
     }
     return memchr(pointer, value, (size_t)size);
 }
@@ -303,14 +309,16 @@ strlen64(char *string) {
 INLINE int64
 strnlen64(char *string, int64 size) {
     size_t len;
-    if (size <= 0) {
-        error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-    if ((ullong)size >= (ullong)SIZE_MAX) {
-        error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
-              (llong)size);
-        fatal(EXIT_FAILURE);
+    if (DEBUGGING) {
+        if (size <= 0) {
+            error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
+            fatal(EXIT_FAILURE);
+        }
+        if ((ullong)size >= (ullong)SIZE_MAX) {
+            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
+                  (llong)size);
+            fatal(EXIT_FAILURE);
+        }
     }
     len = strnlen(string, (size_t)size);
     return (int64)len;
@@ -322,10 +330,12 @@ strncmp64(char *left, char *right, int64 size) {
     if (size == 0) {
         return 0;
     }
-    if ((ullong)size >= (ullong)SIZE_MAX) {
-        error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
-              (llong)size);
-        fatal(EXIT_FAILURE);
+    if (DEBUGGING) {
+        if ((ullong)size >= (ullong)SIZE_MAX) {
+            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
+                  (llong)size);
+            fatal(EXIT_FAILURE);
+        }
     }
     result = strncmp(left, right, (size_t)size);
     return result;
@@ -337,10 +347,12 @@ memcmp64(void *left, void *right, int64 size) {
     if (size == 0) {
         return 0;
     }
-    if ((ullong)size >= (ullong)SIZE_MAX) {
-        error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
-              (llong)size);
-        fatal(EXIT_FAILURE);
+    if (DEBUGGING) {
+        if ((ullong)size >= (ullong)SIZE_MAX) {
+            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
+                  (llong)size);
+            fatal(EXIT_FAILURE);
+        }
     }
     result = memcmp(left, right, (size_t)size);
     return result;
@@ -381,6 +393,11 @@ X64(read, size_t)
 INLINE int64 \
 CAT(func, 64)(void *buffer, int64 size, int64 n, FILE *file) { \
     size_t rw; \
+    if ((size_t)size >= (SIZE_MAX/(size_t)n)) { \
+        error("Error in %s: Overflow (%lld*%lld)\n", \
+              __func__, (llong)size, (llong)n); \
+        fatal(EXIT_FAILURE); \
+    } \
     if ((size <= 0) || (n <= 0)) { \
         error("Error in %s: Invalid size(%lld) or n(%lld)\n", \
               __func__, (llong)size, (llong)n); \
@@ -459,14 +476,16 @@ INLINE void *
 xmalloc(int64 size) {
     void *p;
 
-    if (size <= 0) {
-        error("Error in xmalloc: invalid size = %lld.\n", (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-    if ((ullong)size >= (ullong)SIZE_MAX) {
-        error("Error in xmalloc: Number (%lld) is bigger than SIZEMAX\n",
-              (llong)size);
-        fatal(EXIT_FAILURE);
+    if (DEBUGGING) {
+        if (size <= 0) {
+            error("Error in xmalloc: invalid size = %lld.\n", (llong)size);
+            fatal(EXIT_FAILURE);
+        }
+        if ((ullong)size >= (ullong)SIZE_MAX) {
+            error("Error in xmalloc: Number (%lld) is bigger than SIZEMAX\n",
+                  (llong)size);
+            fatal(EXIT_FAILURE);
+        }
     }
 
     if ((p = malloc((size_t)size)) == NULL) {
@@ -481,14 +500,16 @@ xrealloc(void *old, int64 size) {
     void *p;
     uint64 old_save = (uint64)old;
 
-    if (size <= 0) {
-        error("Error in xrealloc: invalid size = %lld.\n", (long long)size);
-        fatal(EXIT_FAILURE);
-    }
-    if ((ullong)size >= (ullong)SIZE_MAX) {
-        error("Error in xrealloc: Number (%lld) is bigger than SIZEMAX\n",
-              (llong)size);
-        fatal(EXIT_FAILURE);
+    if (DEBUGGING) {
+        if (size <= 0) {
+            error("Error in xrealloc: invalid size = %lld.\n", (long long)size);
+            fatal(EXIT_FAILURE);
+        }
+        if ((ullong)size >= (ullong)SIZE_MAX) {
+            error("Error in xrealloc: Number (%lld) is bigger than SIZEMAX\n",
+                  (llong)size);
+            fatal(EXIT_FAILURE);
+        }
     }
 
     if ((p = realloc(old, (size_t)size)) == NULL) {
@@ -667,6 +688,16 @@ xpthread_create(pthread_t *thread, pthread_attr_t *attr,
     int err;
     if ((err = pthread_create(thread, attr, function, arg))) {
         error("Error creating thread: %s.\n", strerror(err));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+static void
+xpthread_join(pthread_t thread, void **thread_return) {
+    int err;
+    if ((err = pthread_join(thread, thread_return))) {
+        error("Error joining thread: %s.\n", strerror(err));
         fatal(EXIT_FAILURE);
     }
     return;
@@ -894,7 +925,7 @@ void
 fatal(int status) {
     if (DEBUGGING) {
         (void)status;
-        abort();
+        trap();
     } else {
         exit(status);
     }
@@ -944,7 +975,6 @@ util_die_notify(char *program_name, char *format, ...) {
     if (n < 0) {
         fatal(EXIT_FAILURE);
     }
-
     if (n >= SIZEOF(buffer)) {
         fatal(EXIT_FAILURE);
     }
