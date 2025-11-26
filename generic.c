@@ -37,8 +37,8 @@ typedef uint64_t uint64;
 
 #define TYPENAME(VAR) \
 _Generic((VAR), \
-    void *:  "void*",  \
-    char *:  "char*",  \
+    void*:   "void*",  \
+    char*:   "char*",  \
     bool:    "bool",   \
     char:    "char",   \
     schar:   "schar",  \
@@ -55,8 +55,6 @@ _Generic((VAR), \
     double:  "double", \
     ldouble: "ldouble" \
 )
-
-#define TYPEBITS(VAR) (sizeof(VAR)*CHAR_BIT)
 
 #define MINOF(VARIABLE) \
 _Generic((VARIABLE), \
@@ -97,23 +95,40 @@ _Generic((VARIABLE), \
 )
 
 // clang-format off
-static ldouble ldouble_from_voidp(void *x)     { (void)x; return 0.0l; }
-static ldouble ldouble_from_charp(char *x)     { (void)x; return 0.0l; }
-static ldouble ldouble_from_bool(bool x)       { (void)x; return 0.0l; }
-static ldouble ldouble_from_char(char x)       { (void)x; return 0.0l; }
-static ldouble ldouble_from_schar(schar x)     { return (ldouble)x;    }
-static ldouble ldouble_from_short(short x)     { return (ldouble)x;    }
-static ldouble ldouble_from_int(int x)         { return (ldouble)x;    }
-static ldouble ldouble_from_long(long x)       { return (ldouble)x;    }
-static ldouble ldouble_from_llong(llong x)     { return (ldouble)x;    }
-static ldouble ldouble_from_uchar(uchar x)     { return (ldouble)x;    }
-static ldouble ldouble_from_ushort(ushort x)   { return (ldouble)x;    }
-static ldouble ldouble_from_uint(uint x)       { return (ldouble)x;    }
-static ldouble ldouble_from_ulong(ulong x)     { return (ldouble)x;    }
-static ldouble ldouble_from_ullong(ullong x)   { return (ldouble)x;    }
-static ldouble ldouble_from_float(float x)     { return (ldouble)x;    }
-static ldouble ldouble_from_double(double x)   { return (ldouble)x;    }
-static ldouble ldouble_from_ldouble(ldouble x) { return x;             }
+static ldouble ldouble_from_voidp(void* x) {
+    (void)x;
+    *(volatile int *)0 = 0;
+    return 0.0l;
+}
+static ldouble ldouble_from_charp(char* x) {
+    (void)x;
+    *(volatile int *)0 = 0;
+    return 0.0l;
+}
+static ldouble ldouble_from_bool(bool x) {
+    (void)x;
+    *(volatile int *)0 = 0;
+    return 0.0l;
+}
+static ldouble ldouble_from_char(char x) {
+    (void)x;
+    *(volatile int *)0 = 0;
+    return 0.0l;
+}
+static ldouble ldouble_from_schar(schar x)     { return (ldouble)x; }
+static ldouble ldouble_from_short(short x)     { return (ldouble)x; }
+static ldouble ldouble_from_int(int x)         { return (ldouble)x; }
+static ldouble ldouble_from_long(long x)       { return (ldouble)x; }
+static ldouble ldouble_from_llong(llong x)     { return (ldouble)x; }
+static ldouble ldouble_from_uchar(uchar x)     { return (ldouble)x; }
+static ldouble ldouble_from_ushort(ushort x)   { return (ldouble)x; }
+static ldouble ldouble_from_uint(uint x)       { return (ldouble)x; }
+static ldouble ldouble_from_ulong(ulong x)     { return (ldouble)x; }
+static ldouble ldouble_from_ullong(ullong x)   { return (ldouble)x; }
+static ldouble ldouble_from_float(float x)     { return (ldouble)x; }
+static ldouble ldouble_from_double(double x)   { return (ldouble)x; }
+static ldouble ldouble_from_ldouble(ldouble x) { return x;          }
+
 // clang-format on
 
 enum Type {
@@ -136,10 +151,12 @@ enum Type {
     TYPE_LDOUBLE,
 };
 
+// clang-format off
+
 #define TYPEID(VAR) \
 _Generic((VAR), \
-    void *:  TYPE_VOIDP,  \
-    char *:  TYPE_CHARP,  \
+    void*:   TYPE_VOIDP,  \
+    char*:   TYPE_CHARP,  \
     bool:    TYPE_BOOL,   \
     char:    TYPE_CHAR,   \
     schar:   TYPE_SCHAR,  \
@@ -158,26 +175,62 @@ _Generic((VAR), \
 )
 
 union Primitive {
-    void *avoidp;
-    char *acharp;
-    bool abool;
-    char achar;
-    schar aschar;
-    short ashort;
-    int aint;
-    long along;
-    llong allong;
-    uchar auchar;
-    ushort aushort;
-    uint auint;
-    ulong aulong;
-    ullong aullong;
-    float afloat;
-    double adouble;
+    void*   avoidp;
+    char*   acharp;
+    bool    abool;
+    char    achar;
+    schar   aschar;
+    short   ashort;
+    int     aint;
+    long    along;
+    llong   allong;
+    uchar   auchar;
+    ushort  aushort;
+    uint    auint;
+    ulong   aulong;
+    ullong  aullong;
+    float   afloat;
+    double  adouble;
     ldouble aldouble;
 };
 
-// clang-format off
+static llong
+typebits(enum Type type) {
+    llong size;
+    union Primitive primitive;
+    void **pointer;
+
+    switch (type) {
+    case TYPE_VOIDP:
+        pointer = &(primitive.avoidp);
+        size = ((char*)(pointer + 1)) - (char*)pointer;
+        break;
+    case TYPE_CHARP:
+        pointer = (void*)&(primitive.acharp);
+        size = ((char*)(pointer + 1)) - (char*)pointer;
+        break;
+    case TYPE_BOOL:    size = sizeof(bool);    break;
+    case TYPE_CHAR:    size = sizeof(char);    break;
+    case TYPE_SCHAR:   size = sizeof(schar);   break;
+    case TYPE_SHORT:   size = sizeof(short);   break;
+    case TYPE_INT:     size = sizeof(int);     break;
+    case TYPE_LONG:    size = sizeof(long);    break;
+    case TYPE_LLONG:   size = sizeof(llong);   break;
+    case TYPE_UCHAR:   size = sizeof(uchar);   break;
+    case TYPE_USHORT:  size = sizeof(ushort);  break;
+    case TYPE_UINT:    size = sizeof(uint);    break;
+    case TYPE_ULONG:   size = sizeof(ulong);   break;
+    case TYPE_ULLONG:  size = sizeof(ullong);  break;
+    case TYPE_FLOAT:   size = sizeof(float);   break;
+    case TYPE_DOUBLE:  size = sizeof(double);  break;
+    case TYPE_LDOUBLE: size = sizeof(ldouble); break;
+    default: *(volatile int *)0 = 0; return 0ll;
+    }
+    return size*CHAR_BIT;
+}
+
+#define TYPEBITS(VAR) (sizeof(VAR)*CHAR_BIT)
+
 static char *
 typename(enum Type type) {
     switch (type) {
@@ -230,8 +283,8 @@ ldouble_get(union Primitive var, enum Type type) {
 
 #define LDOUBLE_GET(x) \
 _Generic((x), \
-    void *:  ldouble_from_voidp,  \
-    char *:  ldouble_from_charp,  \
+    void*:   ldouble_from_voidp,  \
+    char*:   ldouble_from_charp,  \
     bool:    ldouble_from_char,   \
     char:    ldouble_from_bool,   \
     schar:   ldouble_from_schar,  \
@@ -258,41 +311,43 @@ _Generic((x), \
 // clang-format off
 
 #define PRINT_SIGNED(VAR, TYPE) \
-  fprintf(stderr, "[%s%zu]%s = %lld\n", \
-                  typename(TYPE), TYPEBITS(VAR), #VAR, (llong)(VAR))
+  fprintf(stderr, "[%s%lld]%s = %lld ", \
+                  typename(TYPE), typebits(TYPE), #VAR, (llong)(VAR))
 
 #define PRINT_UNSIGNED(VAR, TYPE) \
-  fprintf(stderr, "[%s%zu]%s = %llu\n", \
-                  typename(TYPE), TYPEBITS(VAR), #VAR, (ullong)(VAR))
+  fprintf(stderr, "[%s%lld]%s = %llu ", \
+                  typename(TYPE), typebits(TYPE), #VAR, (ullong)(VAR))
 
 #define PRINT_LDOUBLE(VAR, TYPE) \
-  fprintf(stderr, "[%s%zu]%s = %Lf\n", \
-                  typename(TYPE), TYPEBITS(VAR), #VAR, LDOUBLE_GET2(VAR, TYPE))
+  fprintf(stderr, "[%s%lld]%s = %Lf ", \
+                  typename(TYPE), typebits(TYPE), #VAR, LDOUBLE_GET2(VAR, TYPE))
 
 #define PRINT_OTHER(VAR, TYPE, FORMAT, CAST) \
-  fprintf(stderr, "[%s%zu]%s = "FORMAT"\n", \
-                  typename(TYPE), TYPEBITS(VAR), #VAR, (CAST)(uintptr_t)(VAR))
+  fprintf(stderr, "[%s%lld]%s = "FORMAT" ", \
+                  typename(TYPE), typebits(TYPE), #VAR, (CAST)(uintptr_t)(VAR))
 
 #define PRINT(VAR) \
 _Generic((VAR), \
-    void *:  PRINT_OTHER(VAR,    TYPE_VOIDP, "%p",   void *), \
-    char *:  PRINT_OTHER(VAR,    TYPE_CHARP, "%s",   char *), \
-    bool:    PRINT_OTHER(VAR,    TYPE_BOOL,  "%u",   bool),   \
-    char:    PRINT_OTHER(VAR,    TYPE_CHAR,  "'%c'", char),   \
-    schar:   PRINT_SIGNED(VAR,   TYPE_SCHAR),                 \
-    short:   PRINT_SIGNED(VAR,   TYPE_SHORT),                 \
-    int:     PRINT_SIGNED(VAR,   TYPE_INT),                   \
-    long:    PRINT_SIGNED(VAR,   TYPE_LONG),                  \
-    llong:   PRINT_SIGNED(VAR,   TYPE_LLONG),                 \
-    uchar:   PRINT_UNSIGNED(VAR, TYPE_UCHAR),                 \
-    ushort:  PRINT_UNSIGNED(VAR, TYPE_USHORT),                \
-    uint:    PRINT_UNSIGNED(VAR, TYPE_UINT),                  \
-    ulong:   PRINT_UNSIGNED(VAR, TYPE_ULONG),                 \
-    ullong:  PRINT_UNSIGNED(VAR, TYPE_ULLONG),                \
-    float:   PRINT_LDOUBLE(VAR,  TYPE_FLOAT),                 \
-    double:  PRINT_LDOUBLE(VAR,  TYPE_DOUBLE),                \
-    ldouble: PRINT_LDOUBLE(VAR,  TYPE_LDOUBLE)                \
+    void*:   PRINT_OTHER(VAR,    TYPE_VOIDP, "%p",     void*), \
+    char*:   PRINT_OTHER(VAR,    TYPE_CHARP, "\"%s\"", char*), \
+    bool:    PRINT_OTHER(VAR,    TYPE_BOOL,  "%u",     bool),  \
+    char:    PRINT_OTHER(VAR,    TYPE_CHAR,  "'%c'",   char),  \
+    schar:   PRINT_SIGNED(VAR,   TYPE_SCHAR),                  \
+    short:   PRINT_SIGNED(VAR,   TYPE_SHORT),                  \
+    int:     PRINT_SIGNED(VAR,   TYPE_INT),                    \
+    long:    PRINT_SIGNED(VAR,   TYPE_LONG),                   \
+    llong:   PRINT_SIGNED(VAR,   TYPE_LLONG),                  \
+    uchar:   PRINT_UNSIGNED(VAR, TYPE_UCHAR),                  \
+    ushort:  PRINT_UNSIGNED(VAR, TYPE_USHORT),                 \
+    uint:    PRINT_UNSIGNED(VAR, TYPE_UINT),                   \
+    ulong:   PRINT_UNSIGNED(VAR, TYPE_ULONG),                  \
+    ullong:  PRINT_UNSIGNED(VAR, TYPE_ULLONG),                 \
+    float:   PRINT_LDOUBLE(VAR,  TYPE_FLOAT),                  \
+    double:  PRINT_LDOUBLE(VAR,  TYPE_DOUBLE),                 \
+    ldouble: PRINT_LDOUBLE(VAR,  TYPE_LDOUBLE)                 \
 )
+
+#define PRINTLN(VAR) do { PRINT(VAR); fprintf(stderr, "\n"); } while (0)
 
 #if TESTING_generic
 #include <assert.h>
@@ -386,8 +441,9 @@ main(void) {
     }
 
     {
-        void *var_voidptr = NULL;
-        char *var_string = "a nice string";
+        void* var_voidptr = NULL;
+        char* var_string = "a nice string";
+        char var_buffer[128] = "a nice buffer";
         bool var_bool = true;
         char var_char = 'c';
         int8 var_int8 = INT8_MAX;
@@ -404,27 +460,28 @@ main(void) {
         double var_double = DBL_MAX;
         long double var_longdouble = (ldouble)DBL_MAX;
 
-        PRINT(var_voidptr);
-        PRINT(var_string);
-        PRINT(var_bool);
-        PRINT(var_char);
-        PRINT(var_int8);
-        PRINT(var_int16);
+        PRINTLN(var_voidptr);
+        PRINTLN(var_string);
+        PRINTLN(var_buffer);
+        PRINTLN(var_bool);
+        PRINTLN(var_char);
+        PRINTLN(var_int8);
+        PRINTLN(var_int16);
         PRINT(var_int32);
-        PRINT(var_int);
-        PRINT(var_int64);
-        PRINT(var_uint8);
-        PRINT(var_uint16);
-        PRINT(var_uint32);
-        PRINT(var_uint);
-        PRINT(var_uint64);
-        PRINT(var_float);
-        PRINT(var_double);
-        PRINT(var_longdouble);
+        PRINTLN(var_int);
+        PRINTLN(var_int64);
+        PRINTLN(var_uint8);
+        PRINTLN(var_uint16);
+        PRINTLN(var_uint32);
+        PRINTLN(var_uint);
+        PRINTLN(var_uint64);
+        PRINTLN(var_float);
+        PRINTLN(var_double);
+        PRINTLN(var_longdouble);
 
-        PRINT(*var_string);
-        PRINT(var_uint - (uint)var_int);
-        PRINT((void*)main);
+        PRINTLN(*var_string);
+        PRINTLN(var_uint - (uint)var_int);
+        PRINTLN((void*)main);
     }
 }
 

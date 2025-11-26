@@ -109,11 +109,11 @@ static void \
 a_both_##TYPE##_##MODE(char *file, uint line, \
                        char *name1, char *name2, \
                        char *type1, char *type2, \
-                       uint bits1, uint bits2, \
+                       llong bits1, llong bits2, \
                        TYPE long long var1, TYPE long long var2) { \
     if (!(var1 SYMBOL var2)) { \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
-        error2("[%s%u]%s = "FORMAT" " #SYMBOL " "FORMAT" = %s[%s%u]\n", \
+        error2("[%s%lld]%s = "FORMAT" " #SYMBOL " "FORMAT" = %s[%s%lld]\n", \
                type1, bits1, name1, var1, var2, name2, type2, bits2); \
         trap(); \
     } \
@@ -159,11 +159,11 @@ static void \
 a_signed_unsigned##MODE(char *file, uint line, \
                         char *name1, char *name2, \
                         char *type1, char *type2, \
-                        uint bits1, uint bits2, \
+                        llong bits1, llong bits2, \
                         llong var1, ullong var2) { \
     if (!(compare_sign_with_unsign(var1, var2) SYMBOL 0)) { \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
-        error2("[%s%u]%s = %lld " #SYMBOL " %llu = %s[%s%u]\n", \
+        error2("[%s%lld]%s = %lld " #SYMBOL " %llu = %s[%s%lld]\n", \
                type1, bits1, name1, var1, var2, name2, type2, bits2); \
         trap(); \
     } \
@@ -183,11 +183,11 @@ static void \
 a_unsigned_signed_##MODE(char *file, uint line, \
                          char *name1, char *name2, \
                          char *type1, char *type2, \
-                         uint bits1, uint bits2, \
+                         llong bits1, llong bits2, \
                          ullong var1, llong var2) { \
     if (!((-compare_sign_with_unsign(var2, var1)) SYMBOL 0)) { \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
-        error2("[%s%u]%s = %llu " #SYMBOL " %lld = %s[%s%u]\n", \
+        error2("[%s%lld]%s = %llu " #SYMBOL " %lld = %s[%s%lld]\n", \
                type1, bits1, name1, var1, var2, name2, type2, bits2); \
         trap(); \
     } \
@@ -207,11 +207,11 @@ static void \
 a_ldouble_##MODE(char *file, uint line, \
                  char *name1, char *name2, \
                  char *type1, char *type2, \
-                 uint bits1, uint bits2, \
+                 llong bits1, llong bits2, \
                  ldouble var1, ldouble var2) { \
     if (!(var1 SYMBOL var2)) { \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
-        error2("[%s%u]%s = %Lf " #SYMBOL " %Lf = %s[%s%u]\n", \
+        error2("[%s%lld]%s = %Lf " #SYMBOL " %Lf = %s[%s%lld]\n", \
                type1, bits1, name1, var1, var2, name2, type2, bits2); \
         trap(); \
     } \
@@ -230,14 +230,14 @@ GENERATE_ASSERT_LDOUBLE(more_equal, >=)
     a_both_signed_##MODE(__FILE__, __LINE__,               \
                          #VAR1, #VAR2,                     \
                          typename(TYPE1), typename(TYPE2), \
-                         TYPEBITS(VAR1), TYPEBITS(VAR2),   \
+                         typebits(TYPE1), typebits(TYPE1), \
                          (llong)(VAR1), (llong)(VAR2))
 
 #define A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
     a_signed_unsigned##MODE(__FILE__, __LINE__,               \
                             #VAR1, #VAR2,                     \
                             typename(TYPE1), typename(TYPE2), \
-                            TYPEBITS(VAR1), TYPEBITS(VAR2),   \
+                            typebits(TYPE1), typebits(TYPE1), \
                             (llong)(VAR1), (ullong)(VAR2))
 
 #define A_FIRST_SIGNED(MODE, VAR1, VAR2, TYPE1) \
@@ -263,14 +263,14 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGNED(void);
     a_both_unsigned_##MODE(__FILE__, __LINE__,               \
                            #VAR1, #VAR2,                     \
                            typename(TYPE1), typename(TYPE2), \
-                           TYPEBITS(VAR1), TYPEBITS(VAR2),   \
+                           typebits(TYPE1), typebits(TYPE1), \
                            (ullong)(VAR1), (ullong)(VAR2))
 
 #define A_UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
     a_unsigned_signed_##MODE(__FILE__, __LINE__,               \
                              #VAR1, #VAR2,                     \
                              typename(TYPE1), typename(TYPE2), \
-                             TYPEBITS(VAR1), TYPEBITS(VAR2),   \
+                             typebits(TYPE1), typebits(TYPE1), \
                              (ullong)(VAR1), (llong)(VAR2))
 
 #define A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE1) \
@@ -296,7 +296,7 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_UNSIGNED(void);
     a_ldouble_##MODE(__FILE__, __LINE__,               \
                      #VAR1, #VAR2,                     \
                      typename(TYPE1), typename(TYPE2), \
-                     TYPEBITS(VAR1), TYPEBITS(VAR2),   \
+                     typebits(TYPE1), typebits(TYPE1), \
                      LDOUBLE_GET2(VAR1, TYPE1), LDOUBLE_GET2(VAR2, TYPE2))
 
 #define A_FIRST_LDOUBLE(MODE, VAR1, VAR2, TYPE1) \
@@ -512,6 +512,7 @@ main(void) {
     }{
         int a = 0;
         double b = 1;
+        float array[10] = {0};
         struct sigaction signal_action;
         signal_action.sa_handler = handler_failed_assertion;
         sigemptyset(&signal_action.sa_mask);
@@ -551,6 +552,12 @@ main(void) {
 
         if (sigsetjmp(assert_env, 1) == 0) {
             ASSERT_LESS_EQUAL(b, a);
+        }
+        ASSERT(assertion_failed);
+        assertion_failed = false;
+
+        if (sigsetjmp(assert_env, 1) == 0) {
+            ASSERT_LESS((void *)&array[1], (void *)&array[0]);
         }
         ASSERT(assertion_failed);
         assertion_failed = false;
