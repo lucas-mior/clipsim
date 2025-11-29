@@ -107,6 +107,7 @@ typedef unsigned long ulong;
 typedef unsigned long long ullong;
 
 typedef long long llong;
+typedef uintptr_t uintptr;
 
 typedef int8_t int8;
 typedef int16_t int16;
@@ -377,11 +378,11 @@ arena_push_index32(Arena *arena, uint32 size) {
 
 static Arena *
 arena_of(Arena *arena, void *p) {
-    uintptr_t pointer_num = (uintptr_t)p;
+    uintptr pointer_num = (uintptr)p;
 
     while (arena) {
-        uintptr_t begin = (uintptr_t)arena->begin;
-        uintptr_t end = (uintptr_t)((char *)arena + arena->size);
+        uintptr begin = (uintptr)arena->begin;
+        uintptr end = (uintptr)((char *)arena + arena->size);
         if ((begin <= pointer_num) && (pointer_num < end)) {
             return arena;
         }
