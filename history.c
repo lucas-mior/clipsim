@@ -43,9 +43,9 @@ static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 static char *tmp_directory = "/tmp/clipsim";
 static Arena *arena;
 
-static int32 history_repeated_index(char *, const int32);
-static void history_free_entry(const Entry *, int32);
-static void history_reorder(const int32);
+static int32 history_repeated_index(char *, int32);
+static void history_free_entry(Entry *, int32);
+static void history_reorder(int32);
 static int32 history_save_image(char **, int32 *);
 
 static void history_append(char *, int);
@@ -370,7 +370,7 @@ history_read(void) {
 }
 
 int32
-history_repeated_index(char *content, const int32 length) {
+history_repeated_index(char *content, int32 length) {
     DEBUG_PRINT("%s, %d", content, length)
     int32 candidates = length_counts[length];
     if (candidates == 0) {
@@ -633,7 +633,7 @@ history_remove(int32 id) {
 }
 
 void
-history_reorder(const int32 oldindex) {
+history_reorder(int32 oldindex) {
     DEBUG_PRINT("%d", oldindex)
     Entry aux = entries[oldindex];
     bool aux2 = is_image[oldindex];
@@ -649,7 +649,7 @@ history_reorder(const int32 oldindex) {
 }
 
 void
-history_free_entry(const Entry *e, int32 index) {
+history_free_entry(Entry *e, int32 index) {
     DEBUG_PRINT("{\n    %s,\n    %d\n}", e->content, e->content_length)
     length_counts[e->content_length] -= 1;
 
