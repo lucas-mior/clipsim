@@ -96,13 +96,11 @@
 #endif
 #endif
 
-#if !defined(INTEGERS)
-#define INTEGERS
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
 typedef unsigned long ulong;
-typedef unsigned long long ulonglong;
+typedef unsigned long long ullong;
 
 typedef long long llong;
 
@@ -114,7 +112,6 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
-#endif
 
 typedef struct Arena {
     char *name;
