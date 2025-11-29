@@ -128,6 +128,7 @@ typedef struct Arena {
 static void *arena_allocate(int64 *);
 static bool arena_free(Arena *);
 static bool arena_pop(Arena *arena, void *p);
+static int64 arena_narenas(Arena *arena);
 
 static int64 arena_page_size = 0;
 
