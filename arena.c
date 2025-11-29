@@ -88,6 +88,10 @@
 #define FLAGS_HUGE_PAGES 0
 #endif
 
+#if !defined(DEBUGGING)
+#define DEBUGGING 0
+#endif
+
 #if !defined(INLINE)
 #if defined(__GNUC__)
 #define INLINE static inline __attribute__((always_inline))
