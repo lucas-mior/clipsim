@@ -52,7 +52,6 @@ static void history_append(char *, int);
 static bool history_save(void);
 static void history_recover(int32);
 static void history_remove(int32);
-static void history_backup(void);
 static void history_exit(int) __attribute__((noreturn));
 
 static int32
@@ -76,17 +75,6 @@ history_callback_delete(const char *path, const struct stat *stat,
     }
 
     return 0;
-}
-
-void
-history_backup(void) {
-    char buffer[PATH_MAX];
-    SNPRINTF(buffer, "%s.bak", history.name);
-    if (rename(history.name, buffer) < 0) {
-        error("Error creating backup history file: %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-    return;
 }
 
 bool
