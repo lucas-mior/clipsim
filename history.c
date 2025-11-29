@@ -620,10 +620,10 @@ history_remove(int32 id) {
     history_free_entry(&entries[id], id);
 
     if (id < history_length) {
-        memmove64(&entries[id], &(entries[id + 1]),
+        memmove64(&entries[id], &entries[id + 1],
                   (history_length - id)*SIZEOF(*entries));
         memset64(&entries[history_length - 1], 0, sizeof(*entries));
-        memmove64(&is_image[id], &(is_image[id + 1]),
+        memmove64(&is_image[id], &is_image[id + 1],
                   (history_length - id)*SIZEOF(*is_image));
         memset64(&is_image[history_length - 1], 0, sizeof(*is_image));
     }
