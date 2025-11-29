@@ -257,7 +257,7 @@ history_read(void) {
         exit(EXIT_FAILURE);
     }
 
-    arena = arena_create(SIZEGB(1));
+    arena = arena_create(SIZEMB(2));
 
     {
         char *clipsim_dir;
