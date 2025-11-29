@@ -298,9 +298,9 @@ history_read(void) {
             util_close(&history);
             return;
         }
-        if (history_size >= INT32_MAX) {
+        if (history_size >= MAXOF(left)) {
             error("History file is too big.\n");
-            error("Max size is %d bytes.", INT32_MAX);
+            error("Max size is %d bytes.", MAXOF(left));
             return;
         }
     }
