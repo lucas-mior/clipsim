@@ -654,7 +654,9 @@ history_free_entry(const Entry *e, int32 index) {
     length_counts[e->content_length] -= 1;
 
     if (is_image[index]) {
-        unlink(e->content);
+        if (unlink(e->content) < 0) {
+            error("Error deleting %s: %s.\n", e->content, strerror(errno));
+        }
     }
     assert(arena_pop(arena, e->content));
 
