@@ -246,7 +246,7 @@ arena_allocate(int64 *size) {
     } while (0);
 
     if (p == MAP_FAILED) {
-        error2("Error in mmap(%lld): %s.\n", (long long)*size, strerror(errno));
+        error2("Error in mmap(%lld): %s.\n", (llong)*size, strerror(errno));
         return NULL;
     }
     return p;
@@ -278,7 +278,7 @@ arena_allocate(int64 *size) {
     if ((p
          = VirtualAlloc(NULL, *size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE))
         == NULL) {
-        error2("Error in VirtualAlloc(%lld): %lu.\n", (long long)*size,
+        error2("Error in VirtualAlloc(%lld): %lu.\n", (llong)*size,
                GetLastError());
         return NULL;
     }
