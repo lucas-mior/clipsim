@@ -731,7 +731,13 @@ util_command(int argc, char **argv) {
     PROCESS_INFORMATION proc_info = {0};
     DWORD exit_code = 0;
     int64 len = strlen64(argv[0]);
-    bool malloced_argv0 = false;
+    char argv0_windows[BUFSIZ];
+    char *argv0 = argv[0];
+
+    if (len >= BUFSIZ) {
+        error("Invalid arguments.\n");
+        fatal(EXIT_FAILURE);
+    }
 
     if (argc == 0 || argv == NULL) {
         error("Invalid arguments.\n");
@@ -741,13 +747,10 @@ util_command(int argc, char **argv) {
     {
         char *exe = ".exe";
         int64 exe_len = (int64)(strlen64(exe));
-        char *argv0_windows;
         if (memmem64(argv[0], len + 1, exe, exe_len + 1) == NULL) {
-            argv0_windows = xmalloc(len + exe_len + 1);
             memcpy64(argv0_windows, argv[0], len);
             memcpy64(argv0_windows + len, exe, exe_len + 1);
             argv[0] = argv0_windows;
-            malloced_argv0 = true;
         }
     }
 
@@ -769,9 +772,7 @@ util_command(int argc, char **argv) {
         cmdline[j - 1] = '\0';
     }
 
-    if (malloced_argv0) {
-        free(argv[0]);
-    }
+    argv[0] = argv0;
 
     if ((tty = freopen("CONIN$", "r", stdin)) == NULL) {
         error("Error reopening stdin: %s.\n", strerror(errno));
@@ -822,6 +823,7 @@ static int
 util_command(int argc, char **argv) {
     pid_t child;
     int status;
+    (void)argc;
 
     switch (child = fork()) {
     case 0:
@@ -829,12 +831,12 @@ util_command(int argc, char **argv) {
             error("Error reopening stdin: %s.\n", strerror(errno));
         }
         execvp(argv[0], argv);
-        error("Error running '%s", argv[0]);
-        for (int i = 1; i < argc; i += 1) {
-            error(" %s", argv[i]);
+        error("\nError executing '%s", argv[0]);
+        for (int j = 1; j < argc; j += 1) {
+            error(" %s", argv[j]);
         }
         error("': %s.\n", strerror(errno));
-        fatal(EXIT_FAILURE);
+        exit(2);
     case -1:
         error("Error forking: %s.\n", strerror(errno));
         fatal(EXIT_FAILURE);
@@ -1209,7 +1211,123 @@ atoi2(char *str) {
     return atoi(str);
 }
 
+static bool
+util_equal_files(char *filename_a, char *filename_b) {
+    int fd_a;
+    int fd_b = -1;
+    char buffer_a[BUFSIZ];
+    char buffer_b[BUFSIZ];
+    int64 total_r = 0;
+    int64 ra;
+    int64 rb;
+    struct stat stat_a;
+    struct stat stat_b;
+    bool equal = false;
+
+    if ((fd_a = open(filename_a, O_RDONLY)) < 0) {
+        error("Error opening %s: %s.\n", filename_a, strerror(errno));
+        equal = false;
+        goto out;
+    }
+    if ((fd_b = open(filename_b, O_RDONLY)) < 0) {
+        error("Error opening %s: %s.\n", filename_b, strerror(errno));
+        equal = false;
+        goto out;
+    }
+
+    if (fstat(fd_a, &stat_a) < 0) {
+        error("Error in stat(%s): %s.\n", filename_a, strerror(errno));
+        equal = false;
+        goto out;
+    }
+    if (fstat(fd_b, &stat_b) < 0) {
+        error("Error in stat(%s): %s.\n", filename_b, strerror(errno));
+        equal = false;
+        goto out;
+    }
+    if (stat_a.st_size != stat_b.st_size) {
+        equal = false;
+        goto out;
+    }
+    if (stat_a.st_dev == stat_b.st_dev && stat_a.st_ino == stat_b.st_ino) {
+        equal = true;
+        goto out;
+    }
+
+#if OS_UNIX
+    do {
+        if (stat_a.st_size > 0) {
+            void *map_a;
+            void *map_b;
+
+            // clang-format off
+            map_a = mmap(NULL, (size_t)stat_a.st_size,
+                         PROT_READ, MAP_PRIVATE, fd_a, 0);
+            if (map_a == MAP_FAILED) {
+                error("Error in mmap(%s): %s\n", filename_a, strerror(errno));
+                break;
+            }
+            map_b = mmap(NULL, (size_t)stat_a.st_size,
+                         PROT_READ, MAP_PRIVATE, fd_b, 0);
+            // clang-format on
+            if (map_b == MAP_FAILED) {
+                error("Error in mmap(%s): %s\n", filename_b, strerror(errno));
+                xmunmap(map_a, stat_a.st_size);
+                break;
+            }
+
+            if (memcmp64(map_a, map_b, stat_a.st_size)) {
+                equal = false;
+            } else {
+                equal = true;
+            }
+
+            xmunmap(map_a, stat_a.st_size);
+            xmunmap(map_b, stat_b.st_size);
+            goto out;
+        } else {
+            equal = true;
+            goto out;
+        }
+    } while (0);
+#endif
+    while ((ra = read64(fd_a, buffer_a, sizeof(buffer_a))) > 0) {
+        if ((rb = read64(fd_b, buffer_b, sizeof(buffer_b))) != ra) {
+            if (rb < 0) {
+                error("Error reading from %s: %s", filename_b, strerror(errno));
+            }
+            equal = false;
+            goto out;
+        }
+        if (memcmp64(buffer_a, buffer_b, ra)) {
+            equal = false;
+            goto out;
+        }
+        total_r += ra;
+    }
+    if (ra < 0) {
+        error("Error reading from %s: %s", filename_a, strerror(errno));
+    }
+    if (total_r == stat_a.st_size) {
+        equal = true;
+        goto out;
+    }
+out:
+    close(fd_a);
+    close(fd_b);
+    return equal;
+}
+
 #if TESTING_util
+
+static void
+write_file(const char *path, const void *data, size_t len) {
+    int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    assert(fd >= 0);
+    assert(write(fd, data, len) == (ssize_t)len);
+    close(fd);
+    return;
+}
 
 int
 main(void) {
@@ -1248,6 +1366,34 @@ main(void) {
     if (OS_WINDOWS) {
         char *path2 = "aa\\cc";
         assert(!strcmp(basename2(path2), "cc"));
+    }
+
+    {
+#define USESTR(STR) STR, strlen(STR)
+        char *a = "/tmp/afile";
+        char *b = "/tmp/bfile";
+
+        write_file(a, USESTR("hello world"));
+        write_file(b, USESTR("hello world"));
+        assert(util_equal_files(a, b));
+
+        write_file(a, USESTR("hello world"));
+        write_file(b, USESTR("hello worlx"));
+        assert(!util_equal_files(a, b));
+
+        write_file(a, USESTR("short"));
+        write_file(b, USESTR("shorter"));
+        assert(!util_equal_files(a, b));
+
+        write_file(a, USESTR(""));
+        write_file(b, USESTR(""));
+        assert(util_equal_files(a, b));
+
+        write_file(a, USESTR("data"));
+        unlink(b);
+        error("Expected error below:\n");
+        assert(!util_equal_files(a, b));
+#undef USESTR
     }
 
     free(p1);
