@@ -54,6 +54,19 @@ static void history_recover(int32);
 static void history_remove(int32);
 static void history_exit(int) __attribute__((noreturn));
 
+static void *
+xarena_push(Arena *thearena, int64 size) {
+    void *p;
+
+    if ((p = arena_push(thearena, size)) == NULL) {
+        error("Error pushing %lld bytes to arena %p: %s.\n", (llong)size,
+              thearena, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+
+    return p;
+}
+
 static int32
 history_callback_delete(const char *path, const struct stat *stat,
                         int32 typeflag, struct FTW *ftwbuf) {
@@ -347,7 +360,7 @@ history_read(void) {
             e->trimmed = 0;
             e->trimmed_length = (int16)e->content_length;
             is_image[history_length] = true;
-            e->content = arena_push(arena, (e->content_length + 1));
+            e->content = xarena_push(arena, (e->content_length + 1));
             memcpy64(e->content, begin, e->content_length + 1);
         } else {
             int32 size;
@@ -356,7 +369,7 @@ history_read(void) {
             } else {
                 size = (e->content_length + 1)*2;
             }
-            e->content = arena_push(arena, size);
+            e->content = xarena_push(arena, size);
             memcpy64(e->content, begin, e->content_length + 1);
 
             content_trim_spaces(&e->trimmed, &e->trimmed_length, e->content,
@@ -500,7 +513,7 @@ history_append(char *content, int32 length) {
         } else {
             size = (e->content_length + 1)*2;
         }
-        e->content = arena_push(arena, size);
+        e->content = xarena_push(arena, size);
         memcpy64(e->content, content, e->content_length + 1);
 
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length), e->content,
@@ -510,7 +523,7 @@ history_append(char *content, int32 length) {
     case CLIPBOARD_IMAGE:
         e->trimmed = 0;
         e->trimmed_length = (int16)e->content_length;
-        e->content = arena_push(arena, length + 1);
+        e->content = xarena_push(arena, length + 1);
         memcpy64(e->content, content, length + 1);
         is_image[history_length] = true;
         break;
