@@ -80,15 +80,19 @@ history_callback_delete(const char *path, const struct stat *stat,
 pthread_t *
 history_save(void) {
     DEBUG_PRINT("void")
-    static int32 nfds = 0;
-    static struct pollfd pipes[HISTORY_BUFFER_SIZE] = {0};
+    static int32 nfds;
+    static struct pollfd pipes[HISTORY_BUFFER_SIZE];
     static int dests[HISTORY_BUFFER_SIZE];
     static pthread_t thread;
     static UtilCopyFilesAsync pipe_thread;
 
+    nfds = 0;
     for (int32 i = 0; i < LENGTH(pipes); i += 1) {
         pipes[i].fd = -1;
         pipes[i].events = POLLIN;
+        pipes[i].revents = 0;
+
+        dests[i] = 0;
     }
 
     error("Saving history...\n");
