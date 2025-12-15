@@ -494,7 +494,6 @@ history_append(char *content, int32 length) {
     }
 
     if ((oldindex = history_repeated_index(content, length)) >= 0) {
-        error("Entry is equal to previous entry. Reordering...\n");
         if (oldindex != (history_length - 1)) {
             history_reorder(oldindex);
         }
