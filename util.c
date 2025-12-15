@@ -1118,6 +1118,9 @@ util_copy_file_async_thread(void *arg) {
             if (pipes[i].revents & POLL_IN) {
                 while ((r = read64(pipes[i].fd, buffer, sizeof(buffer))) > 0) {
                     if ((w = write64(dests[i], buffer, r)) != r) {
+                        if (w < 0) {
+                            error("Error writing: %s.\n", strerror(errno));
+                        }
                         close(dests[i]);
                         close(pipes[i].fd);
 
