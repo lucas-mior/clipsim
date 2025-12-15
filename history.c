@@ -128,12 +128,7 @@ history_save(void) {
                     history_remove(i);
                     continue;
                 }
-                error("IN MAIN THREAD:\n");
-                PRINTLN(image_save);
-                PRINTLN(pipes[nfds].fd);
-                PRINTLN(dests[nfds]);
                 nfds += 1;
-                PRINTLN(nfds);
             }
             if (write64(history.fd, image_save, n) < n) {
                 error("Error writing %s: %s\n", image_save, strerror(errno));
