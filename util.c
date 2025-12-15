@@ -1190,12 +1190,12 @@ send_signal(char *executable, int32 signal_number) {
             close(cmdline);
             continue;
         }
+        close(cmdline);
 
         if (memmem64(command, r, executable, len)) {
             if ((last = memchr64(command, '\0', r))) {
                 r = last - command;
                 if (!memmem64(command, r, executable, len)) {
-                    close(cmdline);
                     continue;
                 }
             }
@@ -1209,8 +1209,6 @@ send_signal(char *executable, int32 signal_number) {
                 }
             }
         }
-
-        close(cmdline);
     }
 
     closedir(processes);
