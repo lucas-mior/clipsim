@@ -224,20 +224,22 @@ static char *signal_names[] = {
 
 void
 history_exit(int32 signum) {
+    pthread_t *thread_copying_images;
     if (signum < LENGTH(signal_names)) {
         error("Received signal %s.\n", signal_names[signum]);
     } else {
         error("Received signal %d.\n", signum);
     }
-    pthread_t *thread_copying_images = history_save();
+
+    thread_copying_images = history_save();
+    if (thread_copying_images) {
+        xpthread_join(*thread_copying_images, NULL);
+    }
 
     error("Deleting images...\n");
     nftw(tmp_directory, history_callback_delete, MAX_OPEN_FD,
          FTW_DEPTH | FTW_PHYS);
 
-    if (thread_copying_images) {
-        xpthread_join(*thread_copying_images, NULL);
-    }
     _exit(EXIT_SUCCESS);
 }
 
