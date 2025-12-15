@@ -1097,6 +1097,9 @@ util_copy_file_async_thread(void *arg) {
     int *dests = pipe_thread->dests;
     int32 left = nfds;
 
+    error("IN SEPARATE THREAD:\n");
+    PRINTLN(nfds);
+
     while (left > 0) {
         char buffer[BUFSIZ];
         int64 r;
@@ -1112,6 +1115,10 @@ util_copy_file_async_thread(void *arg) {
             break;
         }
         for (int32 i = 0; i < nfds; i += 1) {
+            PRINTLN(i);
+            PRINTLN(pipes[i].fd);
+            PRINTLN(dests[i]);
+
             if (pipes[i].revents & POLL_IN) {
                 while ((r = read64(pipes[i].fd, buffer, sizeof(buffer))) > 0) {
                     if ((w = write64(dests[i], buffer, r)) != r) {
