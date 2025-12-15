@@ -49,7 +49,7 @@ static void history_reorder(int32);
 static int32 history_save_image(char **, int32 *);
 
 static void history_append(char *, int);
-static bool history_save(void);
+static pthread_t *history_save(void);
 static void history_recover(int32);
 static void history_remove(int32);
 static void history_exit(int) __attribute__((noreturn));
@@ -77,7 +77,7 @@ history_callback_delete(const char *path, const struct stat *stat,
     return 0;
 }
 
-bool
+pthread_t *
 history_save(void) {
     DEBUG_PRINT("void")
     static int32 nfds = 0;
@@ -87,6 +87,7 @@ history_save(void) {
     static UtilCopyFilesAsync pipe_thread;
 
     for (int32 i = 0; i < LENGTH(pipes); i += 1) {
+        error("Resetting pipes...\n");
         pipes[i].fd = -1;
         pipes[i].events = POLL_IN;
     }
@@ -94,17 +95,17 @@ history_save(void) {
     error("Saving history...\n");
     if (history_length <= 0) {
         error("History is empty. Not saving.\n");
-        return false;
+        return NULL;
     }
     if (history.name == NULL) {
         error("History file name unresolved, can't save history.");
-        return false;
+        return NULL;
     }
     if ((history.fd
          = open(history.name, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
         < 0) {
         error("Error opening history file for saving: %s\n", strerror(errno));
-        return false;
+        return NULL;
     }
 
     for (int32 i = 0; i < history_length; i += 1) {
@@ -127,7 +128,12 @@ history_save(void) {
                     history_remove(i);
                     continue;
                 }
+                error("IN MAIN THREAD:\n");
+                PRINTLN(image_save);
+                PRINTLN(pipes[nfds].fd);
+                PRINTLN(dests[nfds]);
                 nfds += 1;
+                PRINTLN(nfds);
             }
             if (write64(history.fd, image_save, n) < n) {
                 error("Error writing %s: %s\n", image_save, strerror(errno));
@@ -180,7 +186,7 @@ history_save(void) {
     xpthread_create(&thread, NULL, util_copy_file_async_thread, &pipe_thread);
 
     util_close(&history);
-    return true;
+    return &thread;
 }
 
 // clang-format off
@@ -225,12 +231,15 @@ history_exit(int32 signum) {
     } else {
         error("Received signal %d.\n", signum);
     }
-    history_save();
+    pthread_t *thread_copying_images = history_save();
 
     error("Deleting images...\n");
     nftw(tmp_directory, history_callback_delete, MAX_OPEN_FD,
          FTW_DEPTH | FTW_PHYS);
 
+    if (thread_copying_images) {
+        xpthread_join(*thread_copying_images, NULL);
+    }
     _exit(EXIT_SUCCESS);
 }
 
