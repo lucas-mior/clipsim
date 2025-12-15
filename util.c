@@ -1127,6 +1127,7 @@ util_copy_file_async_thread(void *arg) {
                         dests[i] = -1;
                         pipes[i].fd = -1;
                         left -= 1;
+                        pipes[i].revents = 0;
                         continue;
                     }
                 }
