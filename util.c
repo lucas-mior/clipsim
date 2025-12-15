@@ -1145,7 +1145,7 @@ util_copy_file_async_thread(void *arg) {
             }
         }
     }
-    return NULL;
+    pthread_exit(NULL);
 }
 
 #endif
