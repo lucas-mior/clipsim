@@ -1139,6 +1139,7 @@ util_copy_file_async_thread(void *arg) {
 
                 error("Finished saving file %d.\n", i);
             }
+            pipes[i].revents = 0;
         }
     }
     pthread_exit(NULL);

@@ -89,7 +89,7 @@ history_save(void) {
     for (int32 i = 0; i < LENGTH(pipes); i += 1) {
         error("Resetting pipes...\n");
         pipes[i].fd = -1;
-        pipes[i].events = POLL_IN;
+        pipes[i].events = POLLIN;
     }
 
     error("Saving history...\n");
