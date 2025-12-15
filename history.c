@@ -80,6 +80,16 @@ history_callback_delete(const char *path, const struct stat *stat,
 bool
 history_save(void) {
     DEBUG_PRINT("void")
+    static int32 nfds = 0;
+    static struct pollfd pipes[HISTORY_BUFFER_SIZE] = {0};
+    static int dests[HISTORY_BUFFER_SIZE];
+    static pthread_t thread;
+    static UtilCopyFilesAsync pipe_thread;
+
+    for (int32 i = 0; i < LENGTH(pipes); i += 1) {
+        pipes[i].fd = -1;
+        pipes[i].events = POLL_IN;
+    }
 
     error("Saving history...\n");
     if (history_length <= 0) {
@@ -109,12 +119,15 @@ history_save(void) {
                          basename(e->content));
 
             if (strcmp(image_save, e->content)) {
-                if (util_copy_file_sync(image_save, e->content) < 0) {
+                if ((pipes[nfds].fd = util_copy_file_async(
+                         image_save, e->content, &(dests[nfds])))
+                    < 0) {
                     error("Error copying %s to %s: %s.\n", e->content,
                           image_save, strerror(errno));
                     history_remove(i);
                     continue;
                 }
+                nfds += 1;
             }
             if (write64(history.fd, image_save, n) < n) {
                 error("Error writing %s: %s\n", image_save, strerror(errno));
@@ -160,6 +173,11 @@ history_save(void) {
             }
         }
     }
+
+    pipe_thread.nfds = nfds;
+    pipe_thread.pipes = pipes;
+    pipe_thread.dests = dests;
+    xpthread_create(&thread, NULL, util_copy_file_async_thread, &pipe_thread);
 
     util_close(&history);
     return true;

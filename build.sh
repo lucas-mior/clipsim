@@ -52,6 +52,7 @@ case "$target" in
 "debug")
     CFLAGS="$CFLAGS -Wno-declaration-after-statement -g -fsanitize=undefined"
     CPPFLAGS="$CPPFLAGS $GNUSOURCE -DDEBUGGING=1"
+    exe="${exe}_debug"
     ;;
 "valgrind") 
     CFLAGS="$CFLAGS -g -O0 -ftree-vectorize"
