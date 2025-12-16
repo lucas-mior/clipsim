@@ -1138,9 +1138,13 @@ util_copy_file_sync(char *destination, char *source) {
     return 0;
 }
 
+#if !defined(MAX_FILES_COPY)
+#define MAX_FILES_COPY 256
+#endif
+
 typedef struct UtilCopyFilesAsync {
-    struct pollfd pipes[HISTORY_BUFFER_SIZE];
-    int dests[HISTORY_BUFFER_SIZE];
+    struct pollfd pipes[MAX_FILES_COPY];
+    int dests[MAX_FILES_COPY];
     int32 nfds;
     int32 unused;
 } UtilCopyFilesAsync;
