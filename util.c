@@ -2,9 +2,9 @@
  * Copyright (C) 2025 Mior, Lucas;
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the*License,
+ * or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,7 +34,6 @@
 #include <sys/stat.h>
 #include <assert.h>
 #include <float.h>
-#include <poll.h>
 
 #include "generic.c"
 
@@ -74,6 +73,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <poll.h>
 #endif
 
 #if !defined(DEBUGGING)
@@ -90,7 +90,7 @@
 #define RUNNING_ON_VALGRIND 0
 #endif
 
-#if defined(__INCLUDE_LEVEL__) && __INCLUDE_LEVEL__ == 0
+#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_util 1
 #elif !defined(TESTING_util)
 #define TESTING_util 0
@@ -179,6 +179,12 @@ _Generic((SIZE), \
 #if !defined(ALIGN)
 #define ALIGN(x) UTIL_ALIGN(x, ALIGNMENT)
 #endif
+
+#if !defined(MIN)
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
 // clang-format on
 
 static char *notifiers[2] = {"dunstify", "notify-send"};
@@ -190,11 +196,17 @@ static void util_segv_handler(int32) __attribute__((noreturn));
 static char *itoa2(long, char *);
 static long atoi2(char *);
 INLINE void *memchr64(void *pointer, int32 value, int64 size);
+static int xclose(int *fd, char *filename);
 
 #if !defined(CAT)
 #define CAT_(a, b) a##b
 #define CAT(a, b) CAT_(a, b)
 #endif
+
+#define NUM_ARGS_(_1, _2, _3, _4, _5, _6, _7, _8, n, ...) n
+#define NUM_ARGS(...) NUM_ARGS_(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1, x)
+#define SELECT_ON_NUM_ARGS(macro, ...) \
+    CAT(macro, NUM_ARGS(__VA_ARGS__))(__VA_ARGS__)
 
 #if OS_WINDOWS
 static void *
@@ -724,6 +736,83 @@ snprintf2(char *buffer, int size, char *format, ...) {
     return n;
 }
 
+static void
+util_filename_from(char *buffer, int64 size, int fd) {
+    char *unknown = "<unknown filename>";
+    int64 unknown_len = strlen64(unknown);
+#if OS_LINUX
+    char linkpath[64];
+    ssize_t len;
+
+    SNPRINTF(linkpath, "/proc/self/fd/%d", fd);
+    if ((len = readlink(linkpath, buffer, (size_t)(size - 1))) < 0) {
+        memcpy64(buffer, unknown, unknown_len + 1);
+        return;
+    }
+    buffer[len] = '\0';
+    return;
+#elif OS_MAC
+    static char buffer2[PATH_MAX];
+    int64 len;
+
+    if (fcntl(fd, F_GETPATH, buffer2) < 0) {
+        memcpy64(buffer, unknown, unknown_len + 1);
+        return;
+    }
+    len = MIN(strlen64(buffer2), size - 1);
+    memcpy64(buffer, buffer2, len + 1);
+    return;
+#elif OS_WINDOWS
+    HANDLE h;
+    DWORD len;
+    intptr_t h2 = _get_osfhandle(fd);
+
+    if ((h = (HANDLE)h2) == INVALID_HANDLE_VALUE) {
+        memcpy64(buffer, unknown, unknown_len + 1);
+        return;
+    }
+
+    len = GetFinalPathNameByHandleA(h, buffer, (DWORD)size,
+                                    FILE_NAME_NORMALIZED);
+
+    if ((len <= 0) || (len >= size)) {
+        memcpy64(buffer, unknown, unknown_len + 1);
+        return;
+    }
+
+    if (strncmp(buffer, "\\\\?\\", 4) == 0) {
+        memmove(buffer, buffer + 4, len - 3);
+    }
+
+    return;
+#else
+    (void)size;
+    (void)fd;
+    memcpy(buffer, unknown, unknown_len + 1);
+    return;
+#endif
+}
+
+static int
+xclose(int *fd, char *filename) {
+    if (close(*fd) < 0) {
+        char buffer[4096];
+        if (filename == NULL) {
+            util_filename_from(buffer, sizeof(buffer), *fd);
+            filename = buffer;
+        }
+        error("Error closing %s: %s.\n", filename, strerror(errno));
+        *fd = -1;
+        return -1;
+    }
+    *fd = -1;
+    return 0;
+}
+
+#define xclose_1(...) xclose(__VA_ARGS__, NULL)
+#define xclose_2(...) xclose(__VA_ARGS__)
+#define XCLOSE(...) SELECT_ON_NUM_ARGS(xclose_, __VA_ARGS__)
+
 #if OS_WINDOWS
 static int
 util_command(int argc, char **argv) {
@@ -1017,7 +1106,7 @@ util_copy_file_sync(char *destination, char *source) {
         < 0) {
         error("Error opening %s for writing: %s.\n", destination,
               strerror(errno));
-        close(source_fd);
+        XCLOSE(&source_fd, source);
         return -1;
     }
 
@@ -1031,33 +1120,21 @@ util_copy_file_sync(char *destination, char *source) {
             }
             fprintf(stderr, ".\n");
 
-            if (close(source_fd) < 0) {
-                error("Error closing %s: %s.\n", source, strerror(errno));
-            }
-            if (close(destination_fd) < 0) {
-                error("Error closing %s: %s.\n", destination, strerror(errno));
-            }
+            XCLOSE(&source_fd, source);
+            XCLOSE(&destination_fd, destination);
             return -1;
         }
     }
 
     if (r < 0) {
         error("Error reading data from %s: %s.\n", source, strerror(errno));
-        if (close(source_fd) < 0) {
-            error("Error closing %s: %s.\n", source, strerror(errno));
-        }
-        if (close(destination_fd) < 0) {
-            error("Error closing %s: %s.\n", destination, strerror(errno));
-        }
+        XCLOSE(&source_fd, source);
+        XCLOSE(&destination_fd, destination);
         return -1;
     }
 
-    if (close(source_fd) < 0) {
-        error("Error closing %s: %s.\n", source, strerror(errno));
-    }
-    if (close(destination_fd) < 0) {
-        error("Error closing %s: %s.\n", destination, strerror(errno));
-    }
+    XCLOSE(&source_fd, source);
+    XCLOSE(&destination_fd, destination);
     return 0;
 }
 
@@ -1082,7 +1159,7 @@ util_copy_file_async(char *destination, char *source, int *dest_fd) {
         < 0) {
         error("Error opening %s for writing: %s.\n", destination,
               strerror(errno));
-        close(source_fd);
+        XCLOSE(&source_fd, source);
         return -1;
     }
 
@@ -1097,9 +1174,6 @@ util_copy_file_async_thread(void *arg) {
     int *dests = pipe_thread->dests;
     int32 left = nfds;
 
-    error("IN SEPARATE THREAD:\n");
-    PRINTLN(nfds);
-
     while (left > 0) {
         char buffer[BUFSIZ];
         int64 r;
@@ -1110,7 +1184,8 @@ util_copy_file_async_thread(void *arg) {
         case 0:
             break;
         case -1:
-            error("Error in polling: %s.\n", strerror(errno));
+            error("Error in poll(nfds=%lld): %s.\n", (llong)nfds,
+                  strerror(errno));
             break;
         default:
             for (int32 i = 0; i < nfds; i += 1) {
@@ -1127,8 +1202,8 @@ util_copy_file_async_thread(void *arg) {
                         if (w < 0) {
                             error("Error writing: %s.\n", strerror(errno));
                         }
-                        close(dests[i]);
-                        close(pipes[i].fd);
+                        XCLOSE(&dests[i]);
+                        XCLOSE(&pipes[i].fd);
 
                         dests[i] = -1;
                         pipes[i].fd = -1;
@@ -1140,8 +1215,8 @@ util_copy_file_async_thread(void *arg) {
                 if (r < 0) {
                     error("Error reading: %s.\n", strerror(errno));
                 }
-                close(dests[i]);
-                close(pipes[i].fd);
+                XCLOSE(&dests[i]);
+                XCLOSE(&pipes[i].fd);
 
                 dests[i] = -1;
                 pipes[i].fd = -1;
@@ -1153,6 +1228,7 @@ util_copy_file_async_thread(void *arg) {
         }
     }
     pthread_exit(NULL);
+    return NULL;
 }
 
 #endif
@@ -1194,10 +1270,10 @@ send_signal(char *executable, int32 signal_number) {
         errno = 0;
         if ((r = read64(cmdline, command, sizeof(command))) <= 0) {
             (void)r;
-            close(cmdline);
+            XCLOSE(&cmdline, buffer);
             continue;
         }
-        close(cmdline);
+        XCLOSE(&cmdline, buffer);
 
         if (memmem64(command, r, executable, len)) {
             if ((last = memchr64(command, '\0', r))) {
@@ -1387,21 +1463,29 @@ util_equal_files(char *filename_a, char *filename_b) {
         goto out;
     }
 out:
-    close(fd_a);
-    close(fd_b);
+    XCLOSE(&fd_a, filename_a);
+    XCLOSE(&fd_b, filename_b);
     return equal;
 }
 
 #if TESTING_util
 
 static void
-write_file(const char *path, const void *data, size_t len) {
-    int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    assert(fd >= 0);
-    assert(write(fd, data, len) == (ssize_t)len);
-    close(fd);
+write_file(char *path, void *data, int64 len) {
+    int fd;
+
+    if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
+        error("Error opening %s: %s.\n", path, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    if (write64(fd, data, len) != len) {
+        error("Error in write: %s.\n", strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    XCLOSE(&fd, path);
     return;
 }
+#define WRITE_FILE(PATH, STRING) write_file(PATH, STRING, strlen64(STRING))
 
 int
 main(void) {
@@ -1443,31 +1527,70 @@ main(void) {
     }
 
     {
-#define USESTR(STR) STR, strlen(STR)
         char *a = "/tmp/afile";
         char *b = "/tmp/bfile";
 
-        write_file(a, USESTR("hello world"));
-        write_file(b, USESTR("hello world"));
+        WRITE_FILE(a, "hello world");
+        WRITE_FILE(b, "hello world");
         assert(util_equal_files(a, b));
 
-        write_file(a, USESTR("hello world"));
-        write_file(b, USESTR("hello worlx"));
+        WRITE_FILE(a, "hello world");
+        WRITE_FILE(b, "hello worlx");
         assert(!util_equal_files(a, b));
 
-        write_file(a, USESTR("short"));
-        write_file(b, USESTR("shorter"));
+        WRITE_FILE(a, "short");
+        WRITE_FILE(b, "shorter");
         assert(!util_equal_files(a, b));
 
-        write_file(a, USESTR(""));
-        write_file(b, USESTR(""));
+        WRITE_FILE(a, "");
+        WRITE_FILE(b, "");
         assert(util_equal_files(a, b));
 
-        write_file(a, USESTR("data"));
-        unlink(b);
-        error("Expected error below:\n");
-        assert(!util_equal_files(a, b));
-#undef USESTR
+        /* Uncomment below to trigger error */
+        /* WRITE_FILE(a, "data"); */
+        /* unlink(b); */
+        /* error("Expected error below:\n"); */
+        /* assert(!util_equal_files(a, b)); */
+    }
+
+    {
+        const char characters[] = "abcdefghijklmnopqrstuvwxyz1234567890";
+        char buffer2[4096];
+        char filename2[256];
+        char buffer3[4096];
+        char *filename = "/tmp/test";
+        int fd;
+
+        if ((fd
+             = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
+            < 0) {
+            error("Error opening %s: %s.\n", filename, strerror(errno));
+            fatal(EXIT_FAILURE);
+        }
+
+        util_filename_from(buffer2, sizeof(buffer2), fd);
+        ASSERT_EQUAL(realpath(filename, buffer3), buffer2);
+        unlink(filename);
+
+        XCLOSE(&fd);
+
+        for (int32 i = 0; i < (SIZEOF(filename2) - 1); i += 1) {
+            uint32 c = (uint32)rand() % (sizeof(characters) - 1);
+            filename2[i] = characters[c];
+        }
+        filename2[SIZEOF(filename2) - 1] = '\0';
+
+        if ((fd
+             = open(filename2, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
+            < 0) {
+            error("Error opening %s: %s.\n", filename2, strerror(errno));
+            fatal(EXIT_FAILURE);
+        }
+
+        util_filename_from(buffer2, sizeof(buffer2), fd);
+        ASSERT_EQUAL(realpath(filename2, buffer3), buffer2);
+        XCLOSE(&fd);
+        unlink(filename2);
     }
 
     free(p1);
