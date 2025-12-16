@@ -492,6 +492,7 @@ history_append(char *content, int32 length) {
         break;
     case CLIPBOARD_IMAGE:
         if (history_save_image(&content, &length) < 0) {
+            XFree(content);
             return;
         }
         break;
