@@ -1177,6 +1177,13 @@ util_copy_file_async_thread(void *arg) {
     int *dests = copy_files->dests;
     int32 left = copy_files->nfds;
 
+    if (copy_files->nfds >= LENGTH(copy_files->pipes)) {
+        error("Error in %s:"
+              " too many files for UtilCopyFilesAsync definition.\n",
+              __func__);
+        fatal(EXIT_FAILURE);
+    }
+
     while (left > 0) {
         char buffer[BUFSIZ];
         int64 r;
