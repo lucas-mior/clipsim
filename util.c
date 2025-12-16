@@ -1203,41 +1203,40 @@ util_copy_file_async_thread(void *arg) {
         int64 w;
         int64 n;
 
-        switch (n = poll(pipes, (nfds_t)copy_files->nfds, 1000)) {
-        case 0:
+        n = poll(pipes, (nfds_t)copy_files->nfds, 1000);
+        if (n == 0) {
             break;
-        case -1:
+        }
+        if (n < 0) {
             error("Error in poll(nfds=%lld): %s.\n", (llong)copy_files->nfds,
                   strerror(errno));
             break;
-        default:
-            for (int32 i = 0; i < copy_files->nfds; i += 1) {
-                if (n <= 0) {
+        }
+        for (int32 i = 0; i < copy_files->nfds; i += 1) {
+            if (n <= 0) {
+                break;
+            }
+            if (!(pipes[i].revents & POLL_IN)) {
+                pipes[i].revents = 0;
+                continue;
+            }
+            n -= 1;
+            while ((r = read64(pipes[i].fd, buffer, sizeof(buffer))) > 0) {
+                if ((w = write64(dests[i], buffer, r)) != r) {
+                    if (w < 0) {
+                        error("Error writing: %s.\n", strerror(errno));
+                    }
                     break;
                 }
-                if (!(pipes[i].revents & POLL_IN)) {
-                    pipes[i].revents = 0;
-                    continue;
-                }
-                n -= 1;
-                while ((r = read64(pipes[i].fd, buffer, sizeof(buffer))) > 0) {
-                    if ((w = write64(dests[i], buffer, r)) != r) {
-                        if (w < 0) {
-                            error("Error writing: %s.\n", strerror(errno));
-                        }
-                        goto next_file;
-                    }
-                }
-                if (r < 0) {
-                    error("Error reading: %s.\n", strerror(errno));
-                }
-            next_file:
-                XCLOSE(&dests[i]);
-                XCLOSE(&pipes[i].fd);
-
-                left -= 1;
-                pipes[i].revents = 0;
             }
+            if (r < 0) {
+                error("Error reading: %s.\n", strerror(errno));
+            }
+            XCLOSE(&dests[i]);
+            XCLOSE(&pipes[i].fd);
+
+            left -= 1;
+            pipes[i].revents = 0;
         }
     }
     free(copy_files);
