@@ -105,7 +105,7 @@ history_save(void) {
         pipes[i].events = POLLIN;
         pipes[i].revents = 0;
 
-        dests[i] = 0;
+        dests[i] = -1;
     }
 
     error("Saving history...\n");
