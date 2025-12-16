@@ -68,6 +68,7 @@ do { \
 #define ENTRY_MAX_LENGTH BUFSIZ
 #define PRINT_DIGITS 3
 #define TRIMMED_SIZE 255
+#define MAX_FILES_COPY HISTORY_BUFFER_SIZE
 
 #if !defined(INTEGERS)
 #define INTEGERS
