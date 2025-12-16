@@ -1107,10 +1107,10 @@ util_copy_file_async_thread(void *arg) {
 
         switch (poll(pipes, (nfds_t)nfds, 1000)) {
         case 0:
-            continue;
+            break;
         case -1:
             error("Error in polling: %s.\n", strerror(errno));
-            continue;
+            break;
         default:
             break;
         }
