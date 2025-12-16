@@ -2,9 +2,9 @@
  * Copyright (C) 2025 Mior, Lucas;
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the*License,
+ * or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -53,7 +53,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(__INCLUDE_LEVEL__) && __INCLUDE_LEVEL__ == 0
+#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_arena 1
 #elif !defined(TESTING_arena)
 #define TESTING_arena 0
