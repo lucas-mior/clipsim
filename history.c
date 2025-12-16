@@ -194,10 +194,10 @@ history_save(void) {
         }
     }
 
-    pipe_thread.nfds = nfds;
-    pipe_thread.pipes = pipes;
-    pipe_thread.dests = dests;
     if (nfds > 0) {
+        pipe_thread.nfds = nfds;
+        pipe_thread.pipes = pipes;
+        pipe_thread.dests = dests;
         xpthread_create(&thread, NULL, util_copy_file_async_thread,
                         &pipe_thread);
     }
