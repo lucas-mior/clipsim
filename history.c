@@ -93,20 +93,18 @@ history_callback_delete(const char *path, const struct stat *stat,
 pthread_t
 history_save(void) {
     DEBUG_PRINT("void")
-    static int32 nfds;
-    static struct pollfd pipes[HISTORY_BUFFER_SIZE];
-    static int dests[HISTORY_BUFFER_SIZE];
-    static pthread_t thread;
-    static UtilCopyFilesAsync pipe_thread;
+    int32 nfds = 0;
+    pthread_t thread = 0;
+    UtilCopyFilesAsync *copy_files = xmalloc(sizeof(*copy_files));
 
     nfds = 0;
     thread = 0;
-    for (int32 i = 0; i < LENGTH(pipes); i += 1) {
-        pipes[i].fd = -1;
-        pipes[i].events = POLLIN;
-        pipes[i].revents = 0;
+    for (int32 i = 0; i < LENGTH(copy_files->pipes); i += 1) {
+        copy_files->pipes[i].fd = -1;
+        copy_files->pipes[i].events = POLLIN;
+        copy_files->pipes[i].revents = 0;
 
-        dests[i] = -1;
+        copy_files->dests[i] = -1;
     }
 
     error("Saving history...\n");
@@ -138,9 +136,9 @@ history_save(void) {
                                      XDG_CACHE_HOME, basename(e->content));
 
             if (strcmp(image_save, e->content)) {
-                if ((pipes[nfds].fd
+                if ((copy_files->pipes[nfds].fd
                         = util_copy_file_async(image_save, e->content,
-                                               &(dests[nfds]))) < 0) {
+                                               &(copy_files->dests[nfds]))) < 0) {
                     error("Error copying %s to %s: %s.\n",
                           e->content, image_save, strerror(errno));
                     history_remove(i);
@@ -195,11 +193,9 @@ history_save(void) {
     }
 
     if (nfds > 0) {
-        pipe_thread.nfds = nfds;
-        pipe_thread.pipes = pipes;
-        pipe_thread.dests = dests;
+        copy_files->nfds = nfds;
         xpthread_create(&thread, NULL, util_copy_file_async_thread,
-                        &pipe_thread);
+                        copy_files);
     }
 
     util_close(&history);
