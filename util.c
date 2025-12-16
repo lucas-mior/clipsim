@@ -1565,43 +1565,43 @@ main(void) {
     }
 
     {
+        // clang-format off
         const char characters[] = "abcdefghijklmnopqrstuvwxyz1234567890";
         char buffer2[4096];
-        char filename2[256];
+        char name2[256];
         char buffer3[4096];
-        char *filename = "/tmp/test";
+        char *name = "/tmp/test";
         int fd;
 
-        if ((fd
-             = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
-            < 0) {
-            error("Error opening %s: %s.\n", filename, strerror(errno));
+        if ((fd = open(name,
+                       O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
+            error("Error opening %s: %s.\n", name, strerror(errno));
             fatal(EXIT_FAILURE);
         }
 
         util_filename_from(buffer2, sizeof(buffer2), fd);
-        ASSERT_EQUAL(realpath(filename, buffer3), buffer2);
-        unlink(filename);
+        ASSERT_EQUAL(realpath(name, buffer3), buffer2);
+        unlink(name);
 
         XCLOSE(&fd);
 
-        for (int32 i = 0; i < (SIZEOF(filename2) - 1); i += 1) {
+        for (int32 i = 0; i < (SIZEOF(name2) - 1); i += 1) {
             uint32 c = (uint32)rand() % (sizeof(characters) - 1);
-            filename2[i] = characters[c];
+            name2[i] = characters[c];
         }
-        filename2[SIZEOF(filename2) - 1] = '\0';
+        name2[SIZEOF(name2) - 1] = '\0';
 
-        if ((fd
-             = open(filename2, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
-            < 0) {
-            error("Error opening %s: %s.\n", filename2, strerror(errno));
+        if ((fd = open(name2,
+                       O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
+            error("Error opening %s: %s.\n", name2, strerror(errno));
             fatal(EXIT_FAILURE);
         }
 
         util_filename_from(buffer2, sizeof(buffer2), fd);
-        ASSERT_EQUAL(realpath(filename2, buffer3), buffer2);
+        ASSERT_EQUAL(realpath(name2, buffer3), buffer2);
         XCLOSE(&fd);
-        unlink(filename2);
+        unlink(name2);
+        // clang-format on
     }
 
     free(p1);
