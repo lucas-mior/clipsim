@@ -1096,6 +1096,8 @@ util_memdup(void *source, int64 size) {
     return p;
 }
 
+// clang-format off
+
 #if OS_UNIX
 static int32
 util_copy_file_sync(char *destination, char *source) {
@@ -1111,8 +1113,8 @@ util_copy_file_sync(char *destination, char *source) {
     }
 
     if ((destination_fd
-         = open(destination, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
-        < 0) {
+             = open(destination,
+                    O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
         error("Error opening %s for writing: %s.\n", destination,
               strerror(errno));
         XCLOSE(&source_fd, source);
@@ -1146,6 +1148,8 @@ util_copy_file_sync(char *destination, char *source) {
     XCLOSE(&destination_fd, destination);
     return 0;
 }
+
+// clang-format on
 
 #if !defined(MAX_FILES_COPY)
 #define MAX_FILES_COPY 256
