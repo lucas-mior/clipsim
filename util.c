@@ -1113,35 +1113,36 @@ util_copy_file_async_thread(void *arg) {
             break;
         default:
             for (int32 i = 0; i < nfds; i += 1) {
-                if (pipes[i].revents & POLL_IN) {
-                    while ((r = read64(pipes[i].fd, buffer, sizeof(buffer)))
-                           > 0) {
-                        if ((w = write64(dests[i], buffer, r)) != r) {
-                            if (w < 0) {
-                                error("Error writing: %s.\n", strerror(errno));
-                            }
-                            close(dests[i]);
-                            close(pipes[i].fd);
-
-                            dests[i] = -1;
-                            pipes[i].fd = -1;
-                            left -= 1;
-                            pipes[i].revents = 0;
-                            continue;
-                        }
-                    }
-                    if (r < 0) {
-                        error("Error reading: %s.\n", strerror(errno));
-                    }
-                    close(dests[i]);
-                    close(pipes[i].fd);
-
-                    dests[i] = -1;
-                    pipes[i].fd = -1;
-                    left -= 1;
-
-                    error("Finished saving file %d.\n", i);
+                if (!(pipes[i].revents & POLL_IN)) {
+                    pipes[i].revents = 0;
+                    continue;
                 }
+                while ((r = read64(pipes[i].fd, buffer, sizeof(buffer))) > 0) {
+                    if ((w = write64(dests[i], buffer, r)) != r) {
+                        if (w < 0) {
+                            error("Error writing: %s.\n", strerror(errno));
+                        }
+                        close(dests[i]);
+                        close(pipes[i].fd);
+
+                        dests[i] = -1;
+                        pipes[i].fd = -1;
+                        left -= 1;
+                        pipes[i].revents = 0;
+                        continue;
+                    }
+                }
+                if (r < 0) {
+                    error("Error reading: %s.\n", strerror(errno));
+                }
+                close(dests[i]);
+                close(pipes[i].fd);
+
+                dests[i] = -1;
+                pipes[i].fd = -1;
+                left -= 1;
+
+                error("Finished saving file %d.\n", i);
                 pipes[i].revents = 0;
             }
         }
