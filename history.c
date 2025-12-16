@@ -49,7 +49,7 @@ static void history_reorder(int32);
 static int32 history_save_image(char **, int32 *);
 
 static void history_append(char *, int);
-static pthread_t *history_save(void);
+static pthread_t history_save(void);
 static void history_recover(int32);
 static void history_remove(int32);
 static void history_exit(int) __attribute__((noreturn));
@@ -90,7 +90,7 @@ history_callback_delete(const char *path, const struct stat *stat,
     return 0;
 }
 
-pthread_t *
+pthread_t
 history_save(void) {
     DEBUG_PRINT("void")
     static int32 nfds;
@@ -100,6 +100,7 @@ history_save(void) {
     static UtilCopyFilesAsync pipe_thread;
 
     nfds = 0;
+    thread = 0;
     for (int32 i = 0; i < LENGTH(pipes); i += 1) {
         pipes[i].fd = -1;
         pipes[i].events = POLLIN;
@@ -111,17 +112,17 @@ history_save(void) {
     error("Saving history...\n");
     if (history_length <= 0) {
         error("History is empty. Not saving.\n");
-        return NULL;
+        return 0;
     }
     if (history.name == NULL) {
         error("History file name unresolved, can't save history.");
-        return NULL;
+        return 0;
     }
     if ((history.fd
          = open(history.name, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
         < 0) {
         error("Error opening history file for saving: %s\n", strerror(errno));
-        return NULL;
+        return 0;
     }
 
     for (int32 i = 0; i < history_length; i += 1) {
@@ -196,10 +197,13 @@ history_save(void) {
     pipe_thread.nfds = nfds;
     pipe_thread.pipes = pipes;
     pipe_thread.dests = dests;
-    xpthread_create(&thread, NULL, util_copy_file_async_thread, &pipe_thread);
+    if (nfds > 0) {
+        xpthread_create(&thread, NULL, util_copy_file_async_thread,
+                        &pipe_thread);
+    }
 
     util_close(&history);
-    return &thread;
+    return thread;
 }
 
 // clang-format off
@@ -239,7 +243,7 @@ static char *signal_names[] = {
 
 void
 history_exit(int32 signum) {
-    pthread_t *thread_copying_images;
+    pthread_t thread_copying_images;
     if (signum < LENGTH(signal_names)) {
         error("Received signal %s.\n", signal_names[signum]);
     } else {
@@ -248,7 +252,7 @@ history_exit(int32 signum) {
 
     thread_copying_images = history_save();
     if (thread_copying_images) {
-        xpthread_join(*thread_copying_images, NULL);
+        xpthread_join(thread_copying_images, NULL);
     }
 
     error("Deleting images...\n");
