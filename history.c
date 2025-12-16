@@ -193,8 +193,8 @@ history_save(void) {
 
     if (nfds > 0) {
         UtilCopyFilesAsync *copy_files = xmalloc(sizeof(*copy_files));
-        memcpy(copy_files->pipes, pipes, sizeof(copy_files->pipes));
-        memcpy(copy_files->dests, dests, sizeof(copy_files->dests));
+        memcpy64(copy_files->pipes, pipes, sizeof(copy_files->pipes));
+        memcpy64(copy_files->dests, dests, sizeof(copy_files->dests));
         copy_files->nfds = nfds;
         xpthread_create(&thread, NULL, util_copy_file_async_thread, copy_files);
     }
