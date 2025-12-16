@@ -813,6 +813,15 @@ xclose(int *fd, char *filename) {
 #define xclose_2(...) xclose(__VA_ARGS__)
 #define XCLOSE(...) SELECT_ON_NUM_ARGS(xclose_, __VA_ARGS__)
 
+static int
+xunlink(char *filename) {
+    if (unlink(filename) < 0) {
+        error("Error in unlink(%s): %s.\n", filename, strerror(errno));
+        return -1;
+    }
+    return 0;
+}
+
 #if OS_WINDOWS
 static int
 util_command(int argc, char **argv) {
@@ -1559,7 +1568,7 @@ main(void) {
 
         /* Uncomment below to trigger error */
         /* WRITE_FILE(a, "data"); */
-        /* unlink(b); */
+        /* xunlink(b); */
         /* error("Expected error below:\n"); */
         /* assert(!util_equal_files(a, b)); */
     }
@@ -1581,7 +1590,7 @@ main(void) {
 
         util_filename_from(buffer2, sizeof(buffer2), fd);
         ASSERT_EQUAL(realpath(name, buffer3), buffer2);
-        unlink(name);
+        xunlink(name);
 
         XCLOSE(&fd);
 
@@ -1600,7 +1609,7 @@ main(void) {
         util_filename_from(buffer2, sizeof(buffer2), fd);
         ASSERT_EQUAL(realpath(name2, buffer3), buffer2);
         XCLOSE(&fd);
-        unlink(name2);
+        xunlink(name2);
         // clang-format on
     }
 
