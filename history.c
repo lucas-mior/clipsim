@@ -137,11 +137,11 @@ history_save(void) {
                                      XDG_CACHE_HOME, basename(e->content));
 
             if (strcmp(image_save, e->content)) {
-                if ((pipes[nfds].fd = util_copy_file_async(
-                         image_save, e->content, &(dests[nfds])))
-                    < 0) {
-                    error("Error copying %s to %s: %s.\n", e->content,
-                          image_save, strerror(errno));
+                if ((pipes[nfds].fd
+                        = util_copy_file_async(image_save, e->content,
+                                               &(dests[nfds]))) < 0) {
+                    error("Error copying %s to %s: %s.\n",
+                          e->content, image_save, strerror(errno));
                     history_remove(i);
                     continue;
                 }
