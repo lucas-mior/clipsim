@@ -1139,8 +1139,8 @@ util_copy_file_sync(char *destination, char *source) {
 }
 
 typedef struct UtilCopyFilesAsync {
-    struct pollfd *pipes;
-    int *dests;
+    struct pollfd pipes[HISTORY_BUFFER_SIZE];
+    int dests[HISTORY_BUFFER_SIZE];
     int32 nfds;
     int32 unused;
 } UtilCopyFilesAsync;
@@ -1168,11 +1168,10 @@ util_copy_file_async(char *destination, char *source, int *dest_fd) {
 
 static void *
 util_copy_file_async_thread(void *arg) {
-    UtilCopyFilesAsync *pipe_thread = arg;
-    int32 nfds = pipe_thread->nfds;
-    struct pollfd *pipes = pipe_thread->pipes;
-    int *dests = pipe_thread->dests;
-    int32 left = nfds;
+    UtilCopyFilesAsync *copy_files = arg;
+    struct pollfd *pipes = copy_files->pipes;
+    int *dests = copy_files->dests;
+    int32 left = copy_files->nfds;
 
     while (left > 0) {
         char buffer[BUFSIZ];
@@ -1180,15 +1179,15 @@ util_copy_file_async_thread(void *arg) {
         int64 w;
         int64 n;
 
-        switch (n = poll(pipes, (nfds_t)nfds, 1000)) {
+        switch (n = poll(pipes, (nfds_t)copy_files->nfds, 1000)) {
         case 0:
             break;
         case -1:
-            error("Error in poll(nfds=%lld): %s.\n", (llong)nfds,
+            error("Error in poll(nfds=%lld): %s.\n", (llong)copy_files->nfds,
                   strerror(errno));
             break;
         default:
-            for (int32 i = 0; i < nfds; i += 1) {
+            for (int32 i = 0; i < copy_files->nfds; i += 1) {
                 if (n <= 0) {
                     break;
                 }
@@ -1227,6 +1226,7 @@ util_copy_file_async_thread(void *arg) {
             }
         }
     }
+    free(copy_files);
     pthread_exit(NULL);
     return NULL;
 }
