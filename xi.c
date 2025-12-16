@@ -35,7 +35,6 @@
 #include <X11/Xatom.h>
 #include <X11/extensions/XInput2.h>
 
-#include "clipsim.h"
 #include "util.c"
 
 #define BUTTON_MIDDLE_CODE 2
