@@ -1221,17 +1221,13 @@ util_copy_file_async_thread(void *arg) {
                         if (w < 0) {
                             error("Error writing: %s.\n", strerror(errno));
                         }
-                        XCLOSE(&dests[i]);
-                        XCLOSE(&pipes[i].fd);
-
-                        left -= 1;
-                        pipes[i].revents = 0;
-                        continue;
+                        goto next_file;
                     }
                 }
                 if (r < 0) {
                     error("Error reading: %s.\n", strerror(errno));
                 }
+            next_file:
                 XCLOSE(&dests[i]);
                 XCLOSE(&pipes[i].fd);
 
