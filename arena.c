@@ -437,6 +437,10 @@ static void *
 arena_reset(Arena *arena) {
     Arena *first = arena;
 
+    if (first == NULL) {
+        return NULL;
+    }
+
     do {
         arena->pos = arena->begin;
         arena->npushed = 0;
