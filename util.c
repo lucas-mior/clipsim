@@ -1104,8 +1104,9 @@ util_copy_file_async_thread(void *arg) {
         char buffer[BUFSIZ];
         int64 r;
         int64 w;
+        int64 n;
 
-        switch (poll(pipes, (nfds_t)nfds, 1000)) {
+        switch (n = poll(pipes, (nfds_t)nfds, 1000)) {
         case 0:
             break;
         case -1:
@@ -1113,10 +1114,14 @@ util_copy_file_async_thread(void *arg) {
             break;
         default:
             for (int32 i = 0; i < nfds; i += 1) {
+                if (n <= 0) {
+                    break;
+                }
                 if (!(pipes[i].revents & POLL_IN)) {
                     pipes[i].revents = 0;
                     continue;
                 }
+                n -= 1;
                 while ((r = read64(pipes[i].fd, buffer, sizeof(buffer))) > 0) {
                     if ((w = write64(dests[i], buffer, r)) != r) {
                         if (w < 0) {
