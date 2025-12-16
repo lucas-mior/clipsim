@@ -252,7 +252,7 @@ history_exit(int32 signum) {
         xpthread_join(thread_copying_images, NULL);
     }
 
-    error("Deleting images...\n");
+    error("Deleting temporary images...\n");
     nftw(tmp_directory, history_callback_delete, MAX_OPEN_FD,
          FTW_DEPTH | FTW_PHYS);
 
