@@ -1061,6 +1061,13 @@ util_copy_file_sync(char *destination, char *source) {
     return 0;
 }
 
+typedef struct UtilCopyFilesAsync {
+    struct pollfd *pipes;
+    int *dests;
+    int32 nfds;
+    int32 unused;
+} UtilCopyFilesAsync;
+
 static int32
 util_copy_file_async(char *destination, char *source, int *dest_fd) {
     int32 source_fd;
@@ -1081,13 +1088,6 @@ util_copy_file_async(char *destination, char *source, int *dest_fd) {
 
     return source_fd;
 }
-
-typedef struct UtilCopyFilesAsync {
-    struct pollfd *pipes;
-    int *dests;
-    int32 nfds;
-    int32 unused;
-} UtilCopyFilesAsync;
 
 static void *
 util_copy_file_async_thread(void *arg) {
