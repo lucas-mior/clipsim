@@ -194,8 +194,7 @@ history_save(void) {
 
     if (nfds > 0) {
         copy_files->nfds = nfds;
-        xpthread_create(&thread, NULL, util_copy_file_async_thread,
-                        copy_files);
+        xpthread_create(&thread, NULL, util_copy_file_async_thread, copy_files);
     }
 
     util_close(&history);
