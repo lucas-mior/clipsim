@@ -134,7 +134,9 @@ static int64 arena_narenas(Arena *arena);
 
 static int64 arena_page_size = 0;
 
+#if !defined(error2)
 #define error2(...) fprintf(stderr, __VA_ARGS__)
+#endif
 
 void memset64(void *buffer, int value, int64 size);
 
