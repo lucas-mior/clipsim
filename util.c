@@ -119,10 +119,12 @@ static void __attribute__((format(printf, 1, 2))) error(char *format, ...);
 #define SNPRINTF(BUFFER, FORMAT, ...)                                          \
     snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
 #endif
-#if !defined(STRING_FROM_STRINGS)
-#define STRING_FROM_STRINGS(BUFFER, SEP, ARRAY, LENGTH)                        \
-    string_from_strings(BUFFER, sizeof(BUFFER), SEP, ARRAY, LENGTH)
-#endif
+
+#define STRING_FROM_ARRAY(BUFFER, SEP, ARRAY, LENGTH) \
+_Generic((ARRAY), \
+    double *: string_from_doubles, \
+    char **: string_from_strings \
+)(BUFFER, sizeof(BUFFER), SEP, ARRAY, LENGTH)
 
 #if !defined(DEBUGGING)
 #define DEBUGGING 0
@@ -505,6 +507,10 @@ xmalloc(int64 size) {
         error("Failed to allocate %lld bytes.\n", (llong)size);
         fatal(EXIT_FAILURE);
     }
+
+    if (DEBUGGING && !RUNNING_ON_VALGRIND) {
+        memset64(p, 0xCD, size);
+    }
     return p;
 }
 
@@ -717,7 +723,7 @@ xpthread_join(pthread_t thread, void **thread_return) {
 }
 
 static int32 __attribute__((format(printf, 3, 4)))
-snprintf2(char *buffer, int size, char *format, ...) {
+snprintf2(char *buffer, int64 size, char *format, ...) {
     int n;
     va_list args;
 
@@ -953,23 +959,26 @@ util_command(int argc, char **argv) {
 }
 #endif
 
-static void
-string_from_strings(char *buffer, int32 size, char *sep, char **array,
-                    int32 array_length) {
-    int32 n = 0;
-
-    for (int32 i = 0; i < (array_length - 1); i += 1) {
-        int32 space = size - n;
-        int32 m = snprintf2(buffer + n, space, "%s%s", array[i], sep);
-        n += m;
-    }
-    {
-        int32 i = array_length - 1;
-        int32 space = size - n;
-        snprintf2(buffer + n, space, "%s", array[i]);
-    }
-    return;
+#define GENERATE_STRING_FROM_ARRAY(NAME, TYPE, FORMAT) \
+static void \
+string_from_##NAME(char *buffer, int32 size, \
+                   char *sep, TYPE array, int32 array_length) { \
+    int32 n = 0; \
+    for (int32 i = 0; i < (array_length - 1); i += 1) { \
+        int32 space = size - n; \
+        int32 m = snprintf2(buffer + n, space, FORMAT"%s", array[i], sep); \
+        n += m; \
+    } \
+    { \
+        int32 i = array_length - 1; \
+        int32 space = size - n; \
+        snprintf2(buffer + n, space, FORMAT, array[i]); \
+    } \
+    return; \
 }
+
+GENERATE_STRING_FROM_ARRAY(strings, char **, "%s")
+GENERATE_STRING_FROM_ARRAY(doubles, double *, "%f")
 
 void __attribute__((format(printf, 1, 2)))
 error(char *format, ...) {
@@ -1481,6 +1490,18 @@ out:
     return equal;
 }
 
+INLINE double
+rad2deg(double radians) {
+    const double RAD2DEG = 180.0 / 3.141592653589793;
+    return radians*RAD2DEG;
+}
+
+INLINE double
+deg2rad(double degrees) {
+    const double DEG2RAD = 3.141592653589793 / 180.0;
+    return degrees*DEG2RAD;
+}
+
 #if TESTING_util
 
 static void
@@ -1500,8 +1521,16 @@ write_file(char *path, void *data, int64 len) {
 }
 #define WRITE_FILE(PATH, STRING) write_file(PATH, STRING, strlen64(STRING))
 
+static volatile sig_atomic_t received_signal = false;
+static void
+signal_handler(int signal_number) {
+    (void)signal_number;
+    received_signal = true;
+    return;
+}
+
 int
-main(void) {
+main(int argc, char **argv) {
     char buffer[32];
     void *p1 = xmalloc(SIZEMB(1));
     void *p2 = xcalloc(10, SIZEMB(1));
@@ -1515,6 +1544,20 @@ main(void) {
     char *bases[] = {
         "cccc", "cc", "c", "c", "cccc", "cccc", "cccc",
     };
+    (void)argc;
+
+    if (OS_LINUX) {
+        struct sigaction signal_action;
+        signal_action.sa_handler = signal_handler;
+        sigemptyset(&signal_action.sa_mask);
+        signal_action.sa_flags = SA_RESTART;
+        if (sigaction(SIGUSR1, &signal_action, NULL) != 0) {
+            error2("Error in sigaction: %s.\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+        send_signal(argv[0], SIGUSR1);
+        ASSERT(received_signal);
+    }
 
     memset64(p1, 0, SIZEMB(1));
     memcpy64(p1, string, strlen64(string));
@@ -1609,6 +1652,10 @@ main(void) {
     free(p1);
     free(p2);
     free(p3);
+
+    ASSERT_EQUAL(deg2rad(180.0), 3.141592653589793);
+    ASSERT_EQUAL(rad2deg(3.141592653589793), 180.0);
+
     exit(EXIT_SUCCESS);
 }
 

@@ -29,7 +29,9 @@
 #include <assert.h>
 #include <signal.h>
 
+#if !defined(error2)
 #define error2(...) fprintf(stderr, __VA_ARGS__)
+#endif
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_assert 1
