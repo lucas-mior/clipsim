@@ -8,3 +8,6 @@ compile_commands.json
 *.data
 AUR
 *.orig
+clipsim-git
+*.git/
+.SRCINFO
