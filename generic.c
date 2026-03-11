@@ -124,6 +124,7 @@ _Generic((VARIABLE), \
     ldouble: LDBL_MAX    \
 )
 
+// Note: NEVER delete lines with // clang-format
 // clang-format off
 static ldouble
 ldouble_from_voidp(void* x) {
@@ -185,6 +186,7 @@ enum Type {
     TYPE_LDOUBLE,
 };
 
+// Note: NEVER delete lines with // clang-format
 // clang-format off
 
 #define TYPEID(VAR) \
@@ -343,6 +345,7 @@ _Generic((x), \
 #define LDOUBLE_GET2(VAR, TYPE) LDOUBLE_GET(VAR)
 #endif
 
+// Note: NEVER delete lines with // clang-format
 // clang-format off
 
 #define PRINT_SIGNED(VAR, TYPE) \
@@ -389,6 +392,7 @@ _Generic((VAR), \
 #include <string.h>
 #include <stdio.h>
 
+// Note: NEVER delete lines with // clang-format
 // clang-format off
 
 int
