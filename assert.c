@@ -79,6 +79,7 @@ typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 
+// Note: NEVER delete lines with // clang-format
 // clang-format off
 
 #define GENERATE_ASSERT_STRINGS(MODE, SYMBOL) \
@@ -171,6 +172,7 @@ compare_sign_with_unsign(llong s, ullong u) {
     }
 }
 
+// Note: NEVER delete lines with // clang-format
 // clang-format off
 
 #define GENERATE_ASSERT_SIGNED_UNSIGNED(MODE, SYMBOL) \
@@ -398,6 +400,7 @@ handler_failed_assertion(int unused) {
     siglongjmp(assert_env, 1);
 }
 
+// Note: NEVER delete lines with // clang-format
 // clang-format off
 int
 main(void) {
