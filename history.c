@@ -268,8 +268,8 @@ history_read(void) {
         XDG_CACHE_HOME = xdg_cache_home_buffer;
     }
 
-    length = strlen64(XDG_CACHE_HOME);
-    length += 1 + strlen64(clipsim);
+    length = strlen32(XDG_CACHE_HOME);
+    length += 1 + strlen32(clipsim);
     if (length > (PATH_MAX - 1)) {
         error("XDG_CACHE_HOME is too long.\n");
         exit(EXIT_FAILURE);

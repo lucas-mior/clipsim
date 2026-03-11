@@ -237,19 +237,15 @@ arena_allocate(int64 *size) {
 
     do {
         if ((*size >= SIZEMB(2)) && FLAGS_HUGE_PAGES) {
-            p = mmap(NULL, (size_t)*size,
-                     PROT_READ | PROT_WRITE,
-                     MAP_ANON | MAP_PRIVATE | FLAGS_HUGE_PAGES,
-                     -1, 0);
+            p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
+                     MAP_ANON | MAP_PRIVATE | FLAGS_HUGE_PAGES, -1, 0);
             if (p != MAP_FAILED) {
                 *size = ARENA_ALIGN(*size, SIZEMB(2));
                 break;
             }
         }
-        p = mmap(NULL, (size_t)*size,
-                 PROT_READ | PROT_WRITE,
-                 MAP_ANON | MAP_PRIVATE,
-                 -1, 0);
+        p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
+                 MAP_ANON | MAP_PRIVATE, -1, 0);
         *size = ARENA_ALIGN(*size, arena_page_size);
     } while (0);
 
