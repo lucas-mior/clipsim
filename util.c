@@ -34,8 +34,6 @@
 #include <sys/stat.h>
 #include <float.h>
 
-#include "generic.c"
-
 #if defined(__linux__)
 #define OS_LINUX 1
 #define OS_MAC 0
@@ -77,7 +75,12 @@
 
 #if OS_MAC
 #include <sys/param.h>
+#undef MIN
+#undef MAX
 #endif
+
+#include "generic.c"
+#include "minmax.c"
 
 #if !defined(DEBUGGING)
 #define DEBUGGING 0
@@ -99,13 +102,17 @@
 #define TESTING_util 0
 #endif
 
+#define error(...) error_impl(__FILE__, __LINE__, __VA_ARGS__)
+
 #if !TESTING_util
 static char *program;
 #else
 static char *program = __FILE__;
 #endif
+static int32 program_len __attribute__((unused));
 
-static void __attribute__((format(printf, 1, 2))) error(char *format, ...);
+static void __attribute__((format(printf, 3, 4))) 
+    error_impl(char *file, int32 line, char *format, ...);
 
 #define SIZEOF(X) ((int64)sizeof(X))
 
@@ -128,7 +135,7 @@ static void __attribute__((format(printf, 1, 2))) error(char *format, ...);
 #endif
 
 #define STRUCT_ARRAY_SIZE(struct_object, ArrayType, array_length) \
-    (int64)(SIZEOF(*(struct_object)) + (array_length*SIZEOF(ArrayType)))
+    (int64)(SIZEOF(*(struct_object)) + ((array_length)*SIZEOF(ArrayType)))
 
 #define SWAP(x, y) do { __typeof__(x) SWAP = x; x = y; y = SWAP; } while (0)
 
@@ -199,34 +206,34 @@ _Generic((SIZE), \
 #define ALIGN(x) UTIL_ALIGN(x, ALIGNMENT)
 #endif
 
-#if !defined(MIN)
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
-#endif
-
 // clang-format on
 
 static char *notifiers[2] = {"dunstify", "notify-send"};
 static int64 util_page_size = 0;
 
-static void error(char *, ...);
+static void error_impl(char *file, int32 line, char *, ...);
+static void error_async_safe(char *message);
 static void fatal(int) __attribute__((noreturn));
 static void util_segv_handler(int32) __attribute__((noreturn));
 static char *itoa2(long, char *);
 static long atoi2(char *);
 INLINE void *memchr64(void *pointer, int32 value, int64 size);
-static int xclose(char *file, int line, int *fd, char *fd_var_name,
-                  char *filename);
+static int xclose(char *file, int line,
+                  int *fd, char *fd_var_name, char *filename);
 
-#if !defined(CAT)
-#define CAT_(a, b) a##b
-#define CAT(a, b) CAT_(a, b)
+#if !defined(CAT) || !defined(CAT3)
+  #define CAT_(a, b)     a##b
+  #define CAT3_(a, b, c) a##b##c
+  #define CAT(a, b)      CAT_(a, b)
+  #define CAT3(a, b, c)  CAT3_(a, b, c)
 #endif
 
-#define NUM_ARGS_(_1, _2, _3, _4, _5, _6, _7, _8, n, ...) n
-#define NUM_ARGS(...) NUM_ARGS_(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1, x)
-#define SELECT_ON_NUM_ARGS(macro, ...) \
-    CAT(macro, NUM_ARGS(__VA_ARGS__))(__VA_ARGS__)
+#if !defined(SELECT_ON_NUM_ARGS)
+  #define NUM_ARGS_(_1, _2, _3, _4, _5, _6, _7, _8, n, ...) n
+  #define NUM_ARGS(...) NUM_ARGS_(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1, x)
+  #define SELECT_ON_NUM_ARGS(macro, ...) \
+      CAT(macro, NUM_ARGS(__VA_ARGS__))(__VA_ARGS__)
+#endif
 
 #if OS_WINDOWS
 static void *
@@ -263,23 +270,39 @@ memmem(void *haystack, size_t hay_len, void *needle, size_t needle_len) {
 }
 #endif
 
+extern void *memrchr(const void *pointer, int32 character_to_find,
+                     size_t size);
+void *
+memrchr(const void *pointer, int32 character_to_find, size_t size) {
+    uchar *buffer = (uchar *)pointer;
+    uchar target_byte = (uchar)character_to_find;
+
+    for (long i = (long)(size - 1); i >= 0; i -= 1) {
+        if (buffer[i] == target_byte) {
+            return (void *)(buffer + i);
+        }
+    }
+
+    return NULL;
+}
+
 #define X64(func) \
 INLINE void \
-CAT(func, 64)(void *dest, void *source, int64 size) { \
-    if (size == 0) \
+CAT(func, 64)(void *dest, void *source, int64 n) { \
+    if (n == 0) \
         return; \
     if (DEBUGGING) { \
-        if (size < 0) { \
-            error("Error in %s: Invalid size = %lld\n", __func__, (llong)size); \
+        if (n < 0) { \
+            error("Error in %s: Invalid n = %lld\n", __func__, (llong)n); \
             fatal(EXIT_FAILURE); \
         } \
-        if ((ullong)size >= (ullong)SIZE_MAX) { \
-            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", \
-                   __func__, (llong)size); \
+        if ((ullong)n >= (ullong)SIZE_MAX) { \
+            error("Error in %s: n (%lld) is bigger than SIZEMAX\n", \
+                   __func__, (llong)n); \
             fatal(EXIT_FAILURE); \
         } \
     } \
-    func(dest, source, (size_t)size); \
+    func(dest, source, (size_t)n); \
     return; \
 }
 
@@ -325,12 +348,29 @@ memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
 INLINE void *
 memchr64(void *pointer, int32 value, int64 size) {
     if (DEBUGGING) {
-        if (size <= 0) {
+        if (size < 0) {
             error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
             fatal(EXIT_FAILURE);
         }
     }
+    if (size == 0) {
+        return 0;
+    }
     return memchr(pointer, value, (size_t)size);
+}
+
+INLINE void *
+memrchr64(void *pointer, int32 value, int64 size) {
+    if (DEBUGGING) {
+        if (size < 0) {
+            error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
+            fatal(EXIT_FAILURE);
+        }
+    }
+    if (size == 0) {
+        return 0;
+    }
+    return memrchr(pointer, value, (size_t)size);
 }
 
 INLINE int32
@@ -349,26 +389,8 @@ strlen32(char *string) {
     return length;
 }
 
-INLINE int64
-strnlen64(char *string, int64 size) {
-    size_t len;
-    if (DEBUGGING) {
-        if (size <= 0) {
-            error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
-            fatal(EXIT_FAILURE);
-        }
-        if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
-                  (llong)size);
-            fatal(EXIT_FAILURE);
-        }
-    }
-    len = strnlen(string, (size_t)size);
-    return (int64)len;
-}
-
 INLINE int
-strncmp64(char *left, char *right, int64 size) {
+strncmp32(char *left, char *right, int64 size) {
     int result;
     if (size == 0) {
         return 0;
@@ -382,6 +404,16 @@ strncmp64(char *left, char *right, int64 size) {
     }
     result = strncmp(left, right, (size_t)size);
     return result;
+}
+
+INLINE char *
+begins_with(char *string, char *literal) {
+    int32 n = strlen32(literal);
+    if (strncmp32(literal, string, n) == 0) {
+        return string + n;
+    } else {
+        return NULL;
+    }
 }
 
 INLINE int
@@ -511,37 +543,6 @@ util_nthreads(void) {
 #define basename basename2
 #endif
 
-static char *
-basename2(char *path) {
-    int64 left = strlen32(path);
-    char *fslash = NULL;
-    char *bslash = NULL;
-    char *p = path;
-
-    while (left > 0) {
-        int64 length;
-
-        fslash = memchr64(p, '/', left);
-        if (OS_WINDOWS) {
-            bslash = memchr64(p, '\\', left);
-        }
-
-        if ((fslash == NULL) && (bslash == NULL)) {
-            return p;
-        }
-        if (fslash > bslash) {
-            length = fslash - p + 1;
-            p = fslash + 1;
-        } else {
-            length = bslash - p + 1;
-            p = bslash + 1;
-        }
-
-        left -= length;
-    }
-    return path;
-}
-
 INLINE void *
 xmalloc(int64 size) {
     void *p;
@@ -621,6 +622,17 @@ xstrdup(char *string) {
     return p;
 }
 
+static void
+xfree(char *file, int32 line, void *pointer) {
+    if (DEBUGGING) {
+        error_impl(file, line, "Freeing pointer %p\n", pointer);
+    }
+    free(pointer);
+    return;
+}
+
+#define XFREE(P) xfree(__FILE__, __LINE__, P)
+
 #if OS_UNIX
 static void *
 xmmap_commit(int64 *size) {
@@ -664,7 +676,7 @@ xmmap_commit(int64 *size) {
 static void
 xmunmap(void *p, int64 size) {
     if (RUNNING_ON_VALGRIND) {
-        free(p);
+        XFREE(p);
         return;
     }
     if (munmap(p, (size_t)size) < 0) {
@@ -706,7 +718,7 @@ static void
 xmunmap(void *p, size_t size) {
     (void)size;
     if (RUNNING_ON_VALGRIND) {
-        free(p);
+        XFREE(p);
         return;
     }
     if (!VirtualFree(p, 0, MEM_RELEASE)) {
@@ -856,10 +868,22 @@ util_filename_from(char *buffer, int64 size, int fd) {
 #endif
 }
 
+#if OS_WINDOWS
+static int
+strerror_r(int errnum, char *buffer, size_t size) {
+    char *error_message = strerror(errnum);
+    int32 len = strlen32(error_message);
+    memcpy64(buffer, error_message, (llong)MIN(len + 1, size - 1));
+    buffer[size] = '\0';
+    return 0;
+}
+#endif
+
 static int
 xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
 #if DEBUGGING
     char buffer[4096];
+
     if (filename == NULL) {
         if (util_filename_from(buffer, sizeof(buffer), *fd) < 0) {
             filename = fd_var_name;
@@ -872,9 +896,22 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
         filename = fd_var_name;
     }
 #endif
+
     if (close(*fd) < 0) {
-        error("%s:%d Error closing %s: %s.\n", file, line, filename,
-              strerror(errno));
+        char error_buffer[4096];
+        char itoa_buffer[32];
+
+        strerror_r(errno, error_buffer, sizeof(error_buffer));
+
+        error_async_safe(file);
+        error_async_safe(":");
+        error_async_safe(itoa2(line, itoa_buffer));
+        error_async_safe(" Error closing ");
+        error_async_safe(filename);
+        error_async_safe(": ");
+        error_async_safe(error_buffer);
+        error_async_safe(".\n");
+
         *fd = -1;
         return -1;
     }
@@ -1071,19 +1108,21 @@ string_from_##NAME(char *buffer, int32 size, \
 GENERATE_STRING_FROM_ARRAY(strings, char **, "%s")
 GENERATE_STRING_FROM_ARRAY(doubles, double *, "%f")
 
-void __attribute__((format(printf, 1, 2)))
-error(char *format, ...) {
+void __attribute__((format(printf, 3, 4)))
+error_impl(char *file, int32 line, char *format, ...) {
     char buffer[BUFSIZ];
     char *big_buffer = NULL;
     char *pbuffer = buffer;
     va_list args;
-    int64 n;
-    int64 m = SIZEOF(buffer);
+    int32 n;
+    int32 m = SIZEOF(buffer);
+    int32 p;
+    char fileline[64];
 
     va_start(args, format);
     n = vsnprintf(buffer, (size_t)m, format, args);
 
-    if (n >= SIZEOF(buffer)) {
+    if (n >= m) {
         if (RELEASING) {
             m = n + 1;
             big_buffer = xmalloc(m);
@@ -1104,9 +1143,21 @@ error(char *format, ...) {
         fatal(EXIT_FAILURE);
     }
 
+    if (!RELEASING) {
+        p = SNPRINTF(fileline, "%s:%d: ", file, line);
+    } else {
+        p = 0;
+    }
+
 #if OS_WINDOWS
+    if (p) {
+        write(STDERR_FILENO, fileline, (uint)p);
+    }
     write(STDERR_FILENO, pbuffer, (uint)n);
 #else
+    if (p) {
+        write(STDERR_FILENO, fileline, (uint)p);
+    }
     write(STDERR_FILENO, pbuffer, (size_t)n);
     fsync(STDERR_FILENO);
     fsync(STDOUT_FILENO);
@@ -1133,8 +1184,15 @@ error(char *format, ...) {
 #endif
 
     if (big_buffer) {
-        free(big_buffer);
+        XFREE(big_buffer);
     }
+    return;
+}
+
+static void
+error_async_safe(char *message) {
+    int32 len = strlen32(message);
+    write(STDERR_FILENO, message, (size_t)len);
     return;
 }
 
@@ -1354,7 +1412,7 @@ util_copy_file_async_thread(void *arg) {
             pipes[i].revents = 0;
         }
     }
-    free(copy_files);
+    XFREE(copy_files);
     pthread_exit(NULL);
     return NULL;
 }
@@ -1672,7 +1730,218 @@ shell_escape(char *path) {
     return escaped;
 }
 
+static void
+normalize(char *path, int32 *length) {
+    char *p = path;
+    int64 off = 0;
+
+    if (*length < 0) {
+        *length = strlen32(path);
+    }
+
+    while ((p = memmem64(path + off, *length - off, "//", 2))) {
+        off = p - path;
+
+        memmove64(&p[0], &p[1], *length - off);
+        *length -= 1;
+    }
+
+    while ((path[0] == '.') && (path[1] == '/') && (*length > 2)) {
+        memmove64(&path[0], &path[2], *length - 1);
+        *length -= 2;
+    }
+
+    off = 0;
+    while ((p = memmem64(path + off, *length - off, "/./", 3))) {
+        off = p - path;
+
+        memmove64(&p[1], &p[3], *length - off - 2);
+        *length -= 2;
+    }
+
+    return;
+}
+
+static char *
+basename2(char *path, int32 *full_length, int32 *base_len) {
+    int32 left;
+    char *end;
+    char *fslash = NULL;
+    char *bslash = NULL;
+    char *p = path;
+
+    normalize(path, full_length);
+
+    left = *full_length;
+    end = path + left - 1;
+
+    if (left == 1) {
+        if (base_len) {
+            *base_len = 1;
+        }
+        return p;
+    }
+
+    while (left > 0) {
+        int64 length;
+
+        fslash = memchr64(p, '/', left);
+        if (OS_WINDOWS) {
+            bslash = memchr64(p, '\\', left);
+        }
+
+        if ((fslash == NULL) && (bslash == NULL)) {
+            if (base_len) {
+                *base_len = *full_length - (int32)(p - path);
+            }
+            return p;
+        }
+        if ((fslash == end) || (bslash == end)) {
+            if (base_len) {
+                *base_len = *full_length - (int32)(p - path);
+            }
+            return p;
+        }
+        if (fslash > bslash) {
+            length = fslash - p + 1;
+            p = fslash + 1;
+        } else {
+            length = bslash - p + 1;
+            p = bslash + 1;
+        }
+
+        left -= length;
+    }
+
+    if (base_len) {
+        *base_len = *full_length;
+    }
+    return path;
+}
+
+static int32
+dirname2(char *buffer, char *path, int32 *path_len) {
+    char *last_slash;
+    int32 dir_length;
+    if (*path_len < 0) {
+        *path_len = strlen32(path);
+    }
+
+    normalize(path, path_len);
+
+    if (*path_len == 1) {
+        if (*path == '/') {
+            sprintf(buffer, "/");
+        } else {
+            sprintf(buffer, ".");
+        }
+        return 1;
+    }
+
+    if ((last_slash = memrchr64(path, '/', *path_len - 1)) == NULL) {
+        sprintf(buffer, ".");
+        return 1;
+    }
+
+    dir_length = (int32)(last_slash - path);
+    if (dir_length == 0) {
+        dir_length = 1;
+    }
+
+    if (buffer != path) {
+        memcpy64(buffer, path, dir_length);
+    }
+
+    buffer[dir_length] = '\0';
+    return dir_length;
+}
+
+static void
+print_timings(char *file, int32 line, int32 n,
+              char *name, struct timespec t0, struct timespec t1) {
+    long seconds = t1.tv_sec - t0.tv_sec;
+    long nanos = t1.tv_nsec - t0.tv_nsec;
+
+    double total_seconds = (double)seconds + (double)nanos / 1.0e9;
+    double micros_per = 1e6*(total_seconds / (double)n);
+
+    printf("\ntime elapsed %s:%d:%s\n", file, line, name);
+    printf("%gs = %gus per item.\n\n", total_seconds, micros_per);
+    return;
+}
+
+#define PRINT_TIMINGS(N, NAME, T0, T1) \
+    print_timings(__FILE__, __LINE__, N, NAME, T0, T1)
+
+#if OS_UNIX
+static void
+xpipe(int array[2]) {
+    if (pipe(array) < 0) {
+        error("Error creating pipe: %s.\n", strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+static void
+xdup2(int fd1, int fd2) {
+    if (dup2(fd1, fd2) < 0) {
+        error("Error in dup2: %s.\n", strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+#endif
+
+static volatile ullong here_counter = 0; \
+
+#define HERE do { \
+    fprintf(stderr, "\n===== HERE(%llu): %s:%d (%s)\n", \
+                    here_counter++, __FILE__, __LINE__, __func__); \
+} while (0)
+
 #if TESTING_util
+
+#define DAYS_ENUM_LIST                \
+  BEGIN_ENUM(WEEK_DAY)                \
+    XENUM(SUNDAY, 0, "Sunday string") \
+    XENUM(MONDAY)                     \
+    XENUM(TUESDAY, 10)                \
+    XENUM(WEDNESDAY)                  \
+    XENUM(THURSDAY)                   \
+    XENUM(FRIDAY, 5, "Friday string") \
+    XENUM(SATURDAY, 20)               \
+  END_ENUM(WEEK_DAY)
+
+#define ENUM_NAME_LOCAL WEEK_DAY
+#include "enums.h"
+DAYS_ENUM_LIST
+
+#define ENUM_NAME_LOCAL WEEK_DAY
+#include "enums.h"
+DAYS_ENUM_LIST
+#undef DAYS_ENUM_LIST
+#undef ENUM_NAME_LOCAL
+
+#define POWERS_OF_TWO_LIST     \
+  BEGIN_ENUM(POWER_OF_TWO)    \
+    XENUM(ONE,     1 << 0)     \
+    XENUM(TWO,     1 << 1)     \
+    XENUM(FOUR,    1 << 2)     \
+    XENUM(EIGHT,   1 << 3)     \
+    XENUM(SIXTEEN, 1 << 4)     \
+    XENUM(THIRTY2, 1 << 5)     \
+    XENUM(SIXTY4,  1 << 6)     \
+  END_ENUM(POWER_OF_TWO)
+
+#define ENUM_NAME_LOCAL POWER_OF_TWO
+#include "enums.h"
+POWERS_OF_TWO_LIST
+
+#define ENUM_NAME_LOCAL POWER_OF_TWO
+#include "enums.h"
+POWERS_OF_TWO_LIST
+#undef ENUM_NAME_LOCAL
 
 static void
 write_file(char *path, void *data, int64 len) {
@@ -1707,16 +1976,23 @@ main(int argc, char **argv) {
     char *p3;
     char *string = __FILE__;
 
-    char *paths[] = {
-        "/aaaa/bbbb/cccc", "/aa/bb/cc", "/a/b/c",    "a/b/c",
-        "a/b/cccc",        "a/bb/cccc", "aaaa/cccc",
-    };
-    char *bases[] = {
-        "cccc", "cc", "c", "c", "cccc", "cccc", "cccc",
-    };
     (void)argc;
+    (void)argv;
 
-    if (OS_LINUX) {
+    for (int32 i = 0; i < WEEK_DAY_LAST; i += 1) {
+        printf("enum[%d] = %s\n", i, WEEK_DAY_string(i));
+    }
+
+    printf("\n");
+
+    for (int32 i = 0; i < POWER_OF_TWO_LAST; i += 1) {
+        char *value_name = POWER_OF_TWO_string(i);
+        if (!begins_with(value_name, "Unknown")) {
+            printf("enum[%d] = %s\n", i, value_name);
+        }
+    }
+
+    if (OS_LINUX && !DEBUGGING) {
         struct sigaction signal_action;
         signal_action.sa_handler = signal_handler;
         sigemptyset(&signal_action.sa_mask);
@@ -1742,14 +2018,67 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(atoi2(itoa2(n, buffer)), n);
     }
 
-    for (int64 i = 0; i < LENGTH(paths); i += 1) {
-        char *path = paths[i];
-        ASSERT_EQUAL(basename2(path), bases[i]);
+    {
+        // Note: NEVER delete lines with // clang-format
+        // clang-format off
+        char paths[][30] = {
+            "/aaaa/bbbb/cccc", "/aa/bb/cc",  "/a/b/c",    "a/b//c",
+            "a/b/cccc",        "a/bb/cccc", "aaaa//cccc", "/aaaa",
+            "/",               "//",          "//a/",       "/a/b///",
+            "./",              "..",          "././",      "./a/",
+        };
+        char *bases[20] = {
+            "cccc",            "cc",          "c",         "c",
+            "cccc",            "cccc",        "cccc",      "aaaa",
+            "/",               "/",           "a/",        "b/",
+            "./",              "..",          "./",        "a/",
+        };
+        char *dirs[20] = {
+            "/aaaa/bbbb",      "/aa/bb",      "/a/b",      "a/b",
+            "a/b",             "a/bb",        "aaaa",      "/",
+            "/",               "/",           "/",         "/a",
+            ".",               ".",           ".",         ".",
+        };
+        char *normalized[20] = {
+            "/aaaa/bbbb/cccc", "/aa/bb/cc",   "/a/b/c",    "a/b/c",
+            "a/b/cccc",        "a/bb/cccc",   "aaaa/cccc", "/aaaa",
+            "/",               "/",           "/a/",       "/a/b/",
+            "./",              "..",          "./",        "a/",
+        };
+        // clang-format on
+        for (int64 i = 0; i < LENGTH(paths); i += 1) {
+            char *path = xstrdup(paths[i]);
+            char *base = bases[i];
+            int32 path_len = strlen32(path);
+            ASSERT_EQUAL(basename2(path, &path_len, NULL), base);
+            XFREE(path);
+        }
+        for (int64 i = 0; i < LENGTH(paths); i += 1) {
+            char *copy = xstrdup(paths[i]);
+            int len = strlen32(copy);
+            normalize(copy, &len);
+            ASSERT_EQUAL(copy, normalized[i]);
+            XFREE(copy);
+        }
+
+        for (int64 i = 0; i < LENGTH(paths); i += 1) {
+            char dir_buffer[4096];
+            int32 path_len = strlen32(paths[i]);
+            dirname2(dir_buffer, paths[i], &path_len);
+            ASSERT_EQUAL(dir_buffer, dirs[i]);
+        }
+        {
+            char dir_buffer[128] = "a/b/c";
+            int32 path_len = strlen32(dir_buffer);
+            dirname2(dir_buffer, dir_buffer, &path_len);
+            ASSERT_EQUAL(dir_buffer, "a/b");
+        }
     }
 
     if (OS_WINDOWS) {
         char *path2 = "aa\\cc";
-        ASSERT_EQUAL(basename2(path2), "cc");
+        int32 path_len;
+        ASSERT_EQUAL(basename2(path2, &path_len, NULL), "cc");
     }
 
     {
@@ -1820,9 +2149,9 @@ main(int argc, char **argv) {
         // clang-format on
     }
 
-    free(p1);
-    free(p2);
-    free(p3);
+    XFREE(p1);
+    XFREE(p2);
+    XFREE(p3);
 
     ASSERT_EQUAL(deg2rad(180.0), 3.141592653589793);
     ASSERT_EQUAL(rad2deg(3.141592653589793), 180.0);

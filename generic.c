@@ -322,8 +322,8 @@ ldouble_get(union Primitive var, enum Type type) {
 _Generic((x), \
     void*:   ldouble_from_voidp,  \
     char*:   ldouble_from_charp,  \
-    bool:    ldouble_from_char,   \
-    char:    ldouble_from_bool,   \
+    bool:    ldouble_from_bool,   \
+    char:    ldouble_from_char,   \
     schar:   ldouble_from_schar,  \
     short:   ldouble_from_short,  \
     int:     ldouble_from_int,    \
