@@ -74,12 +74,12 @@
 #define SIZEGB(X) ((int64)(X)*1024l*1024l*1024l)
 #endif
 
-#define ARENA_ALIGN(S, A) (((S) + ((A) - 1)) & ~((A) - 1))
+#define ARENA_ALIGN(S, A) (int64)(((S) + ((A) - 1)) & ~((A) - 1))
 #if !defined(ALIGNMENT)
 #define ALIGNMENT 16ul
 #endif
 #if !defined(ALIGN)
-#define ALIGN(x) ARENA_ALIGN(x, ALIGNMENT)
+#define ALIGN(x) ARENA_ALIGN((ulong)x, ALIGNMENT)
 #endif
 
 #if OS_LINUX && defined(MAP_HUGE_2MB)
@@ -130,7 +130,6 @@ typedef struct Arena {
 static void *arena_allocate(int64 *);
 static bool arena_free(Arena *);
 static bool arena_pop(Arena *arena, void *p);
-static int64 arena_narenas(Arena *arena);
 
 static int64 arena_page_size = 0;
 
@@ -337,6 +336,7 @@ arena_with_space(Arena *arena, int64 size) {
 static void *__attribute__((malloc))
 arena_push(Arena *arena, int64 size) {
     void *before;
+    size = ALIGN(size);
 
     if ((arena = arena_with_space(arena, size)) == NULL) {
         return NULL;
@@ -432,6 +432,8 @@ arenas_pop(Arena **arenas, int32 narenas, void *p) {
     return false;
 }
 
+// Note that arena_pop
+// does NOT have to happen in reverse order of arena_push
 static bool
 arena_pop(Arena *arena, void *p) {
     if ((arena = arena_of(arena, p)) == NULL) {
@@ -445,6 +447,9 @@ arena_pop(Arena *arena, void *p) {
     }
     if (arena->npushed <= 0) {
         arena->pos = arena->begin;
+        if (DEBUGGING) {
+            memset64(arena->pos, 0xDC, arena_data_size(arena));
+        }
     }
     return true;
 }
@@ -520,6 +525,13 @@ main(void) {
     ASSERT(arena->pos == arena->begin);
     arena_size = (uint32)arena_data_size(arena);
 
+    ASSERT_EQUAL(ARENA_ALIGN(1, 16), 16);
+    ASSERT_EQUAL(ARENA_ALIGN(2, 16), 16);
+    ASSERT_EQUAL(ARENA_ALIGN(10, 16), 16);
+    ASSERT_EQUAL(ARENA_ALIGN(16, 16), 16);
+    ASSERT_EQUAL(ARENA_ALIGN(17, 16), 32);
+    ASSERT_EQUAL(ARENA_ALIGN(18, 16), 32);
+
     srand((uint32)time(NULL));
 
     ASSERT_EQUAL(arena_narenas(arena), 1);
@@ -529,7 +541,7 @@ main(void) {
         int64 total_pushed = 0;
 
         for (uint32 i = 0; i < LENGTH(objs); i += 1) {
-            int64 size = 10 + (rand() % 10000);
+            int64 size = ALIGN(1ul + (ulong)(rand() % 10000));
             ASSERT((objs[i] = arena_push(arena, size)));
 
             total_size += size;
@@ -537,8 +549,8 @@ main(void) {
 
             if (total_size < arena_data_size(arena)) {
                 ASSERT_EQUAL(arena_narenas(arena), 1);
-                ASSERT((char *)objs[i] >= arena->begin);
-                ASSERT((char *)arena->pos >= (char *)objs[i]);
+                ASSERT_MORE_EQUAL((void *)objs[i], (void *)arena->begin);
+                ASSERT_MORE_EQUAL((void *)arena->pos, (void *)objs[i]);
             }
         }
 
@@ -600,9 +612,9 @@ main(void) {
         void *p3;
         void *p4;
 
-        ASSERT((p3 = arena_push(arena, arena_size / 2)));
+        ASSERT((p3 = arena_push(arena, ALIGN(arena_size / 2))));
         ASSERT_EQUAL(arena->npushed, 1);
-        ASSERT((p4 = arena_push(arena, arena_size / 2)));
+        ASSERT((p4 = arena_push(arena, ALIGN(arena_size / 3))));
         ASSERT_EQUAL(arena->npushed, 2);
         ASSERT(arena_of(arena, p3) == arena_of(arena, p4));
 
