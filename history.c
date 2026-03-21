@@ -281,7 +281,7 @@ history_read(void) {
         char *clipsim_dir;
         char buffer[PATH_MAX];
         int n = SNPRINTF(buffer, "%s/%s", XDG_CACHE_HOME, clipsim);
-        history.name = util_memdup(buffer, n + 1);
+        history.name = xmemdup(buffer, n + 1);
 
         clipsim_dir = dirname(buffer);
         if (mkdir(clipsim_dir, 0770) < 0) {
