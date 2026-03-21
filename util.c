@@ -82,14 +82,6 @@
 #include "generic.c"
 #include "minmax.c"
 
-#if !defined(DEBUGGING)
-#define DEBUGGING 0
-#endif
-
-#if !defined(ERROR_NOTIFY)
-#define ERROR_NOTIFY 0
-#endif
-
 #if defined(__has_include) && __has_include(<valgrind/valgrind.h>)
 #include <valgrind/valgrind.h>
 #else
@@ -102,6 +94,8 @@
 #define TESTING_util 0
 #endif
 
+static void __attribute__((format(printf, 3, 4))) 
+    error_impl(char *file, int32 line, char *format, ...);
 #define error(...) error_impl(__FILE__, __LINE__, __VA_ARGS__)
 
 #if !TESTING_util
@@ -110,9 +104,6 @@ static char *program;
 static char *program = __FILE__;
 #endif
 static int32 program_len __attribute__((unused));
-
-static void __attribute__((format(printf, 3, 4))) 
-    error_impl(char *file, int32 line, char *format, ...);
 
 #define SIZEOF(X) ((int64)sizeof(X))
 
@@ -126,7 +117,7 @@ static void __attribute__((format(printf, 3, 4)))
 #define LENGTH(x) (int64)((sizeof(x) / sizeof(*x)))
 #endif
 #if !defined(SNPRINTF)
-#define SNPRINTF(BUFFER, FORMAT, ...)                                          \
+#define SNPRINTF(BUFFER, FORMAT, ...) \
     snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
 #endif
 #if !defined(STRFTIME)
@@ -151,6 +142,10 @@ _Generic((ARRAY), \
 
 #ifndef RELEASING
 #define RELEASING 0
+#endif
+
+#if !defined(ERROR_NOTIFY)
+#define ERROR_NOTIFY 0
 #endif
 
 #include "assert.c"
@@ -211,7 +206,6 @@ _Generic((SIZE), \
 static char *notifiers[2] = {"dunstify", "notify-send"};
 static int64 util_page_size = 0;
 
-static void error_impl(char *file, int32 line, char *, ...);
 static void error_async_safe(char *message);
 static void fatal(int) __attribute__((noreturn));
 static void util_segv_handler(int32) __attribute__((noreturn));
@@ -407,14 +401,19 @@ strncmp32(char *left, char *right, int64 size) {
 }
 
 INLINE char *
-begins_with(char *string, char *literal) {
-    int32 n = strlen32(literal);
-    if (strncmp32(literal, string, n) == 0) {
-        return string + n;
+begins_with(char *string, char *literal, int32 length) {
+    if (strncmp32(literal, string, length) == 0) {
+        return string + length;
     } else {
         return NULL;
     }
 }
+
+#define BEGINS_WITH_2(LONG, SHORT) \
+        begins_with(LONG, SHORT, strlen32(SHORT))
+#define BEGINS_WITH_3(LONG, SHORT, LEN) \
+        begins_with(LONG, SHORT, LEN)
+#define BEGINS_WITH(...) SELECT_ON_NUM_ARGS(BEGINS_WITH_, __VA_ARGS__)
 
 INLINE int
 memcmp64(void *left, void *right, int64 size) {
@@ -919,9 +918,9 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
     return 0;
 }
 
-#define xclose_1(FD)       xclose(__FILE__, __LINE__, FD, #FD, NULL)
-#define xclose_2(FD, NAME) xclose(__FILE__, __LINE__, FD, #FD, NAME)
-#define XCLOSE(...) SELECT_ON_NUM_ARGS(xclose_, __VA_ARGS__)
+#define XCLOSE_1(FD)       xclose(__FILE__, __LINE__, FD, #FD, NULL)
+#define XCLOSE_2(FD, NAME) xclose(__FILE__, __LINE__, FD, #FD, NAME)
+#define XCLOSE(...) SELECT_ON_NUM_ARGS(XCLOSE_, __VA_ARGS__)
 
 static int
 xunlink(char *filename) {
@@ -1262,7 +1261,7 @@ util_die_notify(char *program_name, char *format, ...) {
 }
 
 static void *
-util_memdup(void *source, int64 size) {
+xmemdup(void *source, int64 size) {
     void *p = xmalloc(size);
     memcpy64(p, source, size);
     return p;
@@ -1902,46 +1901,50 @@ static volatile ullong here_counter = 0; \
 
 #if TESTING_util
 
-#define DAYS_ENUM_LIST                \
-  BEGIN_ENUM(WEEK_DAY)                \
-    XENUM(SUNDAY, 0, "Sunday string") \
-    XENUM(MONDAY)                     \
-    XENUM(TUESDAY, 10)                \
-    XENUM(WEDNESDAY)                  \
-    XENUM(THURSDAY)                   \
-    XENUM(FRIDAY, 5, "Friday string") \
-    XENUM(SATURDAY, 20)               \
-  END_ENUM(WEEK_DAY)
+#define DAYS_ENUM_LIST                 \
+  BEGIN_ENUM(WeekDay)                  \
+    XENUM(SUNDAY, 0)                   \
+    XENUM(MONDAY)                      \
+    XENUM(TUESDAY, 10)                 \
+    XENUM(WEDNESDAY)                   \
+    XENUM(THURSDAY)                    \
+    XENUM(FRIDAY, 5)                   \
+    XENUM(SATURDAY, 20)                \
+  END_ENUM(WeekDay)
 
-#define ENUM_NAME_LOCAL WEEK_DAY
+#define ENUM_PREFIX_ WEEK_DAY_
 #include "enums.h"
 DAYS_ENUM_LIST
+#undef ENUM_PREFIX_
 
-#define ENUM_NAME_LOCAL WEEK_DAY
+#define ENUM_PREFIX_ WEEK_DAY_
 #include "enums.h"
 DAYS_ENUM_LIST
 #undef DAYS_ENUM_LIST
-#undef ENUM_NAME_LOCAL
+#undef ENUM_PREFIX_
 
-#define POWERS_OF_TWO_LIST     \
-  BEGIN_ENUM(POWER_OF_TWO)    \
-    XENUM(ONE,     1 << 0)     \
-    XENUM(TWO,     1 << 1)     \
-    XENUM(FOUR,    1 << 2)     \
-    XENUM(EIGHT,   1 << 3)     \
-    XENUM(SIXTEEN, 1 << 4)     \
-    XENUM(THIRTY2, 1 << 5)     \
-    XENUM(SIXTY4,  1 << 6)     \
-  END_ENUM(POWER_OF_TWO)
+#define POWERS_OF_TWO_LIST             \
+  BEGIN_ENUM(PowerOfTwo)               \
+    XENUM(ONE,     1 << 0)             \
+    XENUM(TWO,     1 << 1)             \
+    XENUM(FOUR,    1 << 2)             \
+    XENUM(EIGHT,   1 << 3)             \
+    XENUM(SIXTEEN, 1 << 4)             \
+    XENUM(THIRTY2, 1 << 5)             \
+    XENUM(SIXTY4,  1 << 6)             \
+  END_ENUM(PowerOfTwo)
 
-#define ENUM_NAME_LOCAL POWER_OF_TWO
+#define ENUM_PREFIX_ POWER_OF2_
 #include "enums.h"
 POWERS_OF_TWO_LIST
+#undef ENUM_PREFIX_
 
-#define ENUM_NAME_LOCAL POWER_OF_TWO
+#define ENUM_PREFIX_ POWER_OF2_
+#define ENUM_IS_FLAGS
 #include "enums.h"
 POWERS_OF_TWO_LIST
-#undef ENUM_NAME_LOCAL
+#undef ENUM_PREFIX_
+#undef POWERS_OF_TWO_LIST
 
 static void
 write_file(char *path, void *data, int64 len) {
@@ -1979,17 +1982,15 @@ main(int argc, char **argv) {
     (void)argc;
     (void)argv;
 
-    for (int32 i = 0; i < WEEK_DAY_LAST; i += 1) {
-        printf("enum[%d] = %s\n", i, WEEK_DAY_string(i));
+    for (enum WeekDay day = WEEK_DAY_MONDAY; day <= WEEK_DAY_LAST; day += 1) {
+        printf("enum[%d] = %s\n", day, WEEK_DAY_str(day));
     }
 
     printf("\n");
 
-    for (int32 i = 0; i < POWER_OF_TWO_LAST; i += 1) {
-        char *value_name = POWER_OF_TWO_string(i);
-        if (!begins_with(value_name, "Unknown")) {
-            printf("enum[%d] = %s\n", i, value_name);
-        }
+    for (enum PowerOfTwo x = 0; x < POWER_OF2_LAST; x += 1) {
+        char *value_name = POWER_OF2_str(x);
+        printf("enum[%d] = %s\n", x, value_name);
     }
 
     if (OS_LINUX && !DEBUGGING) {
