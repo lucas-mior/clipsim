@@ -40,14 +40,14 @@
 #endif
 
 #if TESTING_assert
-#define trap(...) raise(SIGILL)
-#elif !defined(trap)
+#define TRAP(...) raise(SIGILL)
+#elif !defined(TRAP)
 #if defined(__GNUC__) || defined(__clang__)
-#define trap(...) __builtin_trap()
+#define TRAP(...) __builtin_trap()
 #elif defined(_MSC_VER)
-#define trap(...) __debugbreak()
+#define TRAP(...) __debugbreak()
 #else
-#define trap(...) *(volatile int *)0 = 0
+#define TRAP(...) *(volatile int *)0 = 0
 #endif
 #endif
 
@@ -56,7 +56,7 @@
 #define ASSERT(C) do { \
     if (!(C)) { \
         error2("Assertion '%s' failed at %s:%d\n", #C, __FILE__, __LINE__); \
-        trap(); \
+        TRAP(); \
     } \
 } while (0)
 
@@ -87,12 +87,23 @@ static void \
 a_strings_##MODE(char *file, uint line, \
                  char *name1, char *name2, \
                  char *var1, char *var2) { \
+    if (var1 == NULL) { \
+        error2("\n%s: Error in assertion at %s:%u\n", __func__, file, line); \
+        error2("%s is NULL\n", name1); \
+        TRAP(); \
+    } \
+    if (var2 == NULL) { \
+        error2("\n%s: Error in assertion at %s:%u\n", __func__, file, line); \
+        error2("%s is NULL\n", name2); \
+        TRAP(); \
+    } \
     if (!(strcmp(var1, var2) SYMBOL 0)) { \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
         error2("%s = %s " #SYMBOL " %s = %s\n", \
                name1, var1, var2, name2); \
-        trap(); \
+        TRAP(); \
     } \
+    return; \
 }
 
 GENERATE_ASSERT_STRINGS(less,       <)
@@ -113,8 +124,9 @@ a_pointers_##MODE(char *file, uint line, \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
         error2("%s = %p " #SYMBOL " %p = %s\n", \
                name1, var1, var2, name2); \
-        trap(); \
+        TRAP(); \
     } \
+    return; \
 }
 
 GENERATE_ASSERT_POINTERS(less,       <)
@@ -135,8 +147,9 @@ a_both_##TYPE##_##MODE(char *file, uint line, \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
         error2("[%s%lld]%s = "FORMAT" " #SYMBOL " "FORMAT" = %s[%s%lld]\n", \
                type1, bits1, name1, var1, var2, name2, type2, bits2); \
-        trap(); \
+        TRAP(); \
     } \
+    return; \
 }
 
 GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", ==, equal)
@@ -186,8 +199,9 @@ a_signed_unsigned##MODE(char *file, uint line, \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
         error2("[%s%lld]%s = %lld " #SYMBOL " %llu = %s[%s%lld]\n", \
                type1, bits1, name1, var1, var2, name2, type2, bits2); \
-        trap(); \
+        TRAP(); \
     } \
+    return; \
 }
 
 GENERATE_ASSERT_SIGNED_UNSIGNED(equal,      ==)
@@ -210,8 +224,9 @@ a_unsigned_signed_##MODE(char *file, uint line, \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
         error2("[%s%lld]%s = %llu " #SYMBOL " %lld = %s[%s%lld]\n", \
                type1, bits1, name1, var1, var2, name2, type2, bits2); \
-        trap(); \
+        TRAP(); \
     } \
+    return; \
 }
 
 GENERATE_ASSERT_UNSIGNED_SIGNED(equal,      ==)
@@ -234,8 +249,9 @@ a_ldouble_##MODE(char *file, uint line, \
         error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
         error2("[%s%lld]%s = %Lf " #SYMBOL " %Lf = %s[%s%lld]\n", \
                type1, bits1, name1, var1, var2, name2, type2, bits2); \
-        trap(); \
+        TRAP(); \
     } \
+    return; \
 }
 
 GENERATE_ASSERT_LDOUBLE(equal,      ==)
@@ -261,8 +277,29 @@ GENERATE_ASSERT_LDOUBLE(more_equal, >=)
                             typebits(TYPE1), typebits(TYPE2), \
                             (llong)(VAR1), (ullong)(VAR2))
 
+#if CHAR_MIN < 0
+#define A_CHAR_SECOND_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1) \
+    A_BOTH_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+
+#define A_CHAR_SECOND_FOR_UNSIGNED(MODE, VAR1, VAR2, TYPE1) \
+    A_UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+
+#define A_FIRST_CHAR(MODE, VAR1, VAR2) \
+    A_FIRST_SIGNED(MODE, VAR1, VAR2, TYPE_CHAR)
+#else
+#define A_CHAR_SECOND_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1) \
+    A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+
+#define A_CHAR_SECOND_FOR_UNSIGNED(MODE, VAR1, VAR2, TYPE1) \
+    A_BOTH_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+
+#define A_FIRST_CHAR(MODE, VAR1, VAR2) \
+    A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_CHAR)
+#endif
+
 #define A_FIRST_SIGNED(MODE, VAR1, VAR2, TYPE1) \
 _Generic((VAR2), \
+    char:    A_CHAR_SECOND_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1), \
     schar:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_SCHAR  ), \
     short:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_SHORT  ), \
     int:     A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_INT    ), \
@@ -296,6 +333,7 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGNED(void);
 
 #define A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE1) \
 _Generic((VAR2), \
+    char:    A_CHAR_SECOND_FOR_UNSIGNED(MODE, VAR1, VAR2, TYPE1), \
     schar:   A_UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_SCHAR  ), \
     short:   A_UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_SHORT  ), \
     int:     A_UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_INT    ), \
@@ -322,6 +360,7 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_UNSIGNED(void);
 
 #define A_FIRST_LDOUBLE(MODE, VAR1, VAR2, TYPE1) \
 _Generic((VAR2), \
+    char:    A_BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR  ), \
     schar:   A_BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_SCHAR  ), \
     short:   A_BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_SHORT  ), \
     int:     A_BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_INT    ), \
@@ -359,8 +398,10 @@ _Generic((VAR1), \
                                  #VAR1, #VAR2, \
                                  (char *)(uintptr_t)(VAR1), \
                                  (char *)(uintptr_t)(VAR2)), \
+        void *: A_POINTERS(MODE, VAR1, VAR2), \
         default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CHARP() \
     ), \
+    char:    A_FIRST_CHAR(MODE,     VAR1, VAR2),               \
     schar:   A_FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_SCHAR  ), \
     short:   A_FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_SHORT  ), \
     int:     A_FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_INT    ), \
@@ -383,6 +424,14 @@ _Generic((VAR1), \
 #define ASSERT_MORE(VAR1, VAR2)       ASSERT_COMPARE(more,       VAR1, VAR2)
 #define ASSERT_MORE_EQUAL(VAR1, VAR2) ASSERT_COMPARE(more_equal, VAR1, VAR2)
 
+#define ASSERT_NULL(VAR1) do { \
+    if ((void *)VAR1 != NULL) { \
+        error2("\n%s: Assertion failed at %s:%u\n", __func__, __FILE__, __LINE__); \
+        error2("%s = %p == NULL\n", #VAR1, (void *)VAR1); \
+        TRAP(); \
+    } \
+} while (0)
+
 // clang-format on
 
 #if TESTING_assert
@@ -404,6 +453,12 @@ handler_failed_assertion(int unused) {
 // clang-format off
 int
 main(void) {
+    {
+        char *string = NULL;
+        void *pointer = NULL;
+        ASSERT_EQUAL(string, pointer);
+        ASSERT_NULL(string);
+    }
     {
         int a = 1;
         int b = 1;
@@ -535,6 +590,9 @@ main(void) {
         int a = 0;
         double b = 1;
         float array[10] = {0};
+        char *string_null = NULL;
+        char *string_some = "some";
+
         struct sigaction signal_action;
         signal_action.sa_handler = handler_failed_assertion;
         sigemptyset(&signal_action.sa_mask);
@@ -550,6 +608,12 @@ main(void) {
 
         if (sigsetjmp(assert_env, 1) == 0) {
             ASSERT_EQUAL(a, b);
+        }
+        ASSERT(assertion_failed);
+        assertion_failed = false;
+
+        if (sigsetjmp(assert_env, 1) == 0) {
+            ASSERT_EQUAL(string_null, string_some);
         }
         ASSERT(assertion_failed);
         assertion_failed = false;

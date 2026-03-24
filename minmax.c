@@ -37,14 +37,14 @@
 #endif
 
 #if TESTING_minmax
-#define trap(...) raise(SIGILL)
-#elif !defined(trap)
+#define TRAP(...) raise(SIGILL)
+#elif !defined(TRAP)
 #if defined(__GNUC__) || defined(__clang__)
-#define trap(...) __builtin_trap()
+#define TRAP(...) __builtin_trap()
 #elif defined(_MSC_VER)
-#define trap(...) __debugbreak()
+#define TRAP(...) __debugbreak()
 #else
-#define trap(...) *(volatile int *)0 = 0
+#define TRAP(...) *(volatile int *)0 = 0
 #endif
 #endif
 

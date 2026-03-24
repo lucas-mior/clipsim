@@ -28,6 +28,13 @@
 #define error2(...) fprintf(stderr, __VA_ARGS__)
 #endif
 
+#if !defined(RED) || !defined(GREEN) || !defined(YELLOW) || !defined(RESET)
+#define RED   "\x1b[31m"
+#define GREEN "\x1b[32m"
+#define YELLOW "\x1b[33m"
+#define RESET "\x1b[0m"
+#endif
+
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_generic 1
 #elif !defined(TESTING_generic)
@@ -35,14 +42,14 @@
 #endif
 
 #if TESTING_generic
-#define trap(...) raise(SIGILL)
-#elif !defined(trap)
+#define TRAP(...) raise(SIGILL)
+#elif !defined(TRAP)
 #if defined(__GNUC__) || defined(__clang__)
-#define trap(...) __builtin_trap()
+#define TRAP(...) __builtin_trap()
 #elif defined(_MSC_VER)
-#define trap(...) __debugbreak()
+#define TRAP(...) __debugbreak()
 #else
-#define trap(...) *(volatile int *)0 = 0
+#define TRAP(...) *(volatile int *)0 = 0
 #endif
 #endif
 
@@ -124,30 +131,28 @@ _Generic((VARIABLE), \
     ldouble: LDBL_MAX    \
 )
 
-// Note: NEVER delete lines with // clang-format
-// clang-format off
 static ldouble
 ldouble_from_voidp(void* x) {
     (void)x;
-    trap();
+    TRAP();
     return 0.0l;
 }
 static ldouble
 ldouble_from_charp(char* x) {
     (void)x;
-    trap();
+    TRAP();
     return 0.0l;
 }
 static ldouble
 ldouble_from_bool(bool x) {
     (void)x;
-    trap();
+    TRAP();
     return 0.0l;
 }
 static ldouble
 ldouble_from_char(char x) {
     (void)x;
-    trap();
+    TRAP();
     return 0.0l;
 }
 static ldouble ldouble_from_schar(schar x)     { return (ldouble)x; }
@@ -163,8 +168,6 @@ static ldouble ldouble_from_ullong(ullong x)   { return (ldouble)x; }
 static ldouble ldouble_from_float(float x)     { return (ldouble)x; }
 static ldouble ldouble_from_double(double x)   { return (ldouble)x; }
 static ldouble ldouble_from_ldouble(ldouble x) { return x;          }
-
-// clang-format on
 
 enum Type {
     TYPE_VOIDP = 1,
@@ -184,10 +187,8 @@ enum Type {
     TYPE_FLOAT,
     TYPE_DOUBLE,
     TYPE_LDOUBLE,
+    TYPE_OTHER = 0,
 };
-
-// Note: NEVER delete lines with // clang-format
-// clang-format off
 
 #define TYPEID(VAR) \
 _Generic((VAR), \
@@ -207,7 +208,8 @@ _Generic((VAR), \
     ullong:  TYPE_ULLONG, \
     float:   TYPE_FLOAT,  \
     double:  TYPE_DOUBLE, \
-    ldouble: TYPE_LDOUBLE \
+    ldouble: TYPE_LDOUBLE, \
+    default: TYPE_OTHER \
 )
 
 union Primitive {
@@ -260,7 +262,8 @@ typebits(enum Type type) {
     case TYPE_FLOAT:   size = sizeof(float);   break;
     case TYPE_DOUBLE:  size = sizeof(double);  break;
     case TYPE_LDOUBLE: size = sizeof(ldouble); break;
-    default: trap();
+    case TYPE_OTHER:
+    default: TRAP();
     }
     return size*CHAR_BIT;
 }
@@ -287,6 +290,7 @@ typename(enum Type type) {
     case TYPE_FLOAT:   return "float";
     case TYPE_DOUBLE:  return "double";
     case TYPE_LDOUBLE: return "ldouble";
+    case TYPE_OTHER:
     default:           return "unknown type";
     }
 }
@@ -294,10 +298,10 @@ typename(enum Type type) {
 static ldouble
 ldouble_get(union Primitive var, enum Type type) {
     switch (type) {
-    case TYPE_VOIDP:   trap(); break;
-    case TYPE_CHARP:   trap(); break;
-    case TYPE_BOOL:    trap(); break;
-    case TYPE_CHAR:    trap(); break;
+    case TYPE_VOIDP:   TRAP(); break;
+    case TYPE_CHARP:   TRAP(); break;
+    case TYPE_BOOL:    TRAP(); break;
+    case TYPE_CHAR:    TRAP(); break;
     case TYPE_SCHAR:   return (ldouble)var.aschar;
     case TYPE_SHORT:   return (ldouble)var.ashort;
     case TYPE_INT:     return (ldouble)var.aint;
@@ -311,12 +315,11 @@ ldouble_get(union Primitive var, enum Type type) {
     case TYPE_FLOAT:   return (ldouble)var.afloat;
     case TYPE_DOUBLE:  return (ldouble)var.adouble;
     case TYPE_LDOUBLE: return var.aldouble;
-    default:           trap(); break;
+    case TYPE_OTHER:
+    default:           TRAP(); break;
     }
     return 0.0l;
 }
-
-// clang-format on
 
 #define LDOUBLE_GET(x) \
 _Generic((x), \
@@ -345,55 +348,54 @@ _Generic((x), \
 #define LDOUBLE_GET2(VAR, TYPE) LDOUBLE_GET(VAR)
 #endif
 
-// Note: NEVER delete lines with // clang-format
-// clang-format off
-
 #define PRINT_SIGNED(VAR, TYPE) \
-  fprintf(stderr, "[%s%lld]%s = %lld ", \
+  fprintf(stderr, "["GREEN"%s%lld"RESET"]%s = %lld ", \
                   typename(TYPE), typebits(TYPE), #VAR, (llong)(VAR))
 
 #define PRINT_UNSIGNED(VAR, TYPE) \
-  fprintf(stderr, "[%s%lld]%s = %llu ", \
+  fprintf(stderr, "["GREEN"%s%lld"RESET"]%s = %llu ", \
                   typename(TYPE), typebits(TYPE), #VAR, (ullong)(VAR))
 
 #define PRINT_LDOUBLE(VAR, TYPE) \
-  fprintf(stderr, "[%s%lld]%s = %Lf ", \
+  fprintf(stderr, "["GREEN"%s%lld"RESET"]%s = %Lf ", \
                   typename(TYPE), typebits(TYPE), #VAR, LDOUBLE_GET2(VAR, TYPE))
 
 #define PRINT_OTHER(VAR, TYPE, FORMAT, CAST) \
-  fprintf(stderr, "[%s%lld]%s = "FORMAT" ", \
+  fprintf(stderr, "["GREEN"%s%lld"RESET"]%s = "FORMAT" ", \
                   typename(TYPE), typebits(TYPE), #VAR, (CAST)(uintptr_t)(VAR))
 
 #define PRINT(VAR) \
 _Generic((VAR), \
-    void*:   PRINT_OTHER(VAR,    TYPE_VOIDP, "%p",     void*), \
-    char*:   PRINT_OTHER(VAR,    TYPE_CHARP, "\"%s\"", char*), \
-    bool:    PRINT_OTHER(VAR,    TYPE_BOOL,  "%u",     bool),  \
-    char:    PRINT_OTHER(VAR,    TYPE_CHAR,  "'%c'",   char),  \
-    schar:   PRINT_SIGNED(VAR,   TYPE_SCHAR),                  \
-    short:   PRINT_SIGNED(VAR,   TYPE_SHORT),                  \
-    int:     PRINT_SIGNED(VAR,   TYPE_INT),                    \
-    long:    PRINT_SIGNED(VAR,   TYPE_LONG),                   \
-    llong:   PRINT_SIGNED(VAR,   TYPE_LLONG),                  \
-    uchar:   PRINT_UNSIGNED(VAR, TYPE_UCHAR),                  \
-    ushort:  PRINT_UNSIGNED(VAR, TYPE_USHORT),                 \
-    uint:    PRINT_UNSIGNED(VAR, TYPE_UINT),                   \
-    ulong:   PRINT_UNSIGNED(VAR, TYPE_ULONG),                  \
-    ullong:  PRINT_UNSIGNED(VAR, TYPE_ULLONG),                 \
-    float:   PRINT_LDOUBLE(VAR,  TYPE_FLOAT),                  \
-    double:  PRINT_LDOUBLE(VAR,  TYPE_DOUBLE),                 \
-    ldouble: PRINT_LDOUBLE(VAR,  TYPE_LDOUBLE)                 \
+    void*:   PRINT_OTHER(VAR,    TYPE_VOIDP,   "%p",              void*), \
+    char*:   PRINT_OTHER(VAR,    TYPE_CHARP,   RED"\"%s\""RESET,  char*), \
+    bool:    PRINT_OTHER(VAR,    TYPE_BOOL,    "%u",              bool),  \
+    char:    PRINT_OTHER(VAR,    TYPE_CHAR,    YELLOW"'%c'"RESET, char),  \
+    schar:   PRINT_SIGNED(VAR,   TYPE_SCHAR),                             \
+    short:   PRINT_SIGNED(VAR,   TYPE_SHORT),                             \
+    int:     PRINT_SIGNED(VAR,   TYPE_INT),                               \
+    long:    PRINT_SIGNED(VAR,   TYPE_LONG),                              \
+    llong:   PRINT_SIGNED(VAR,   TYPE_LLONG),                             \
+    uchar:   PRINT_UNSIGNED(VAR, TYPE_UCHAR),                             \
+    ushort:  PRINT_UNSIGNED(VAR, TYPE_USHORT),                            \
+    uint:    PRINT_UNSIGNED(VAR, TYPE_UINT),                              \
+    ulong:   PRINT_UNSIGNED(VAR, TYPE_ULONG),                             \
+    ullong:  PRINT_UNSIGNED(VAR, TYPE_ULLONG),                            \
+    float:   PRINT_LDOUBLE(VAR,  TYPE_FLOAT),                             \
+    double:  PRINT_LDOUBLE(VAR,  TYPE_DOUBLE),                            \
+    ldouble: PRINT_LDOUBLE(VAR,  TYPE_LDOUBLE)                            \
 )
 
-#define PRINTLN(VAR) do { PRINT(VAR); fprintf(stderr, "\n"); } while (0)
+#define PRINTLN(VAR) do { \
+    fprintf(stderr, "%s:%d ", __FILE__, __LINE__); \
+    PRINT(VAR); \
+    fprintf(stderr, "\n"); \
+} while (0)
 
 #if TESTING_generic
+
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-
-// Note: NEVER delete lines with // clang-format
-// clang-format off
 
 int
 main(void) {
