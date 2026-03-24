@@ -190,41 +190,6 @@ history_save(void) {
     return thread;
 }
 
-// clang-format off
-#define XSIGNAL(NAME) [NAME] = #NAME
-static char *signal_names[] = {
-    XSIGNAL(SIGABRT),
-    XSIGNAL(SIGALRM),
-    XSIGNAL(SIGVTALRM),
-    XSIGNAL(SIGPROF),
-    XSIGNAL(SIGBUS),
-    XSIGNAL(SIGCHLD),
-    XSIGNAL(SIGCONT),
-    XSIGNAL(SIGFPE),
-    XSIGNAL(SIGHUP),
-    XSIGNAL(SIGILL),
-    XSIGNAL(SIGINT),
-    XSIGNAL(SIGKILL),
-    XSIGNAL(SIGPIPE),
-    XSIGNAL(SIGPOLL),
-    XSIGNAL(SIGQUIT),
-    XSIGNAL(SIGSEGV),
-    XSIGNAL(SIGSTOP),
-    XSIGNAL(SIGSYS),
-    XSIGNAL(SIGTERM),
-    XSIGNAL(SIGTSTP),
-    XSIGNAL(SIGTTIN),
-    XSIGNAL(SIGTTOU),
-    XSIGNAL(SIGTRAP),
-    XSIGNAL(SIGURG),
-    XSIGNAL(SIGUSR1),
-    XSIGNAL(SIGUSR2),
-    XSIGNAL(SIGXCPU),
-    XSIGNAL(SIGXFSZ),
-};
-#undef XSIGNAL
-// clang-format on
-
 void
 history_exit(int32 signum) {
     pthread_t thread_copying_images;

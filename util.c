@@ -1199,7 +1199,7 @@ void
 fatal(int status) {
     if (DEBUGGING) {
         (void)status;
-        trap();
+        TRAP();
     } else {
         exit(status);
     }
@@ -1873,6 +1873,42 @@ print_timings(char *file, int32 line, int32 n,
     print_timings(__FILE__, __LINE__, N, NAME, T0, T1)
 
 #if OS_UNIX
+
+// clang-format off
+#define XSIGNAL(NAME) [NAME] = #NAME
+static char *signal_names[] = {
+    XSIGNAL(SIGABRT),
+    XSIGNAL(SIGALRM),
+    XSIGNAL(SIGVTALRM),
+    XSIGNAL(SIGPROF),
+    XSIGNAL(SIGBUS),
+    XSIGNAL(SIGCHLD),
+    XSIGNAL(SIGCONT),
+    XSIGNAL(SIGFPE),
+    XSIGNAL(SIGHUP),
+    XSIGNAL(SIGILL),
+    XSIGNAL(SIGINT),
+    XSIGNAL(SIGKILL),
+    XSIGNAL(SIGPIPE),
+    XSIGNAL(SIGPOLL),
+    XSIGNAL(SIGQUIT),
+    XSIGNAL(SIGSEGV),
+    XSIGNAL(SIGSTOP),
+    XSIGNAL(SIGSYS),
+    XSIGNAL(SIGTERM),
+    XSIGNAL(SIGTSTP),
+    XSIGNAL(SIGTTIN),
+    XSIGNAL(SIGTTOU),
+    XSIGNAL(SIGTRAP),
+    XSIGNAL(SIGURG),
+    XSIGNAL(SIGUSR1),
+    XSIGNAL(SIGUSR2),
+    XSIGNAL(SIGXCPU),
+    XSIGNAL(SIGXFSZ),
+};
+#undef XSIGNAL
+// clang-format on
+
 static void
 xpipe(int array[2]) {
     if (pipe(array) < 0) {
@@ -1887,6 +1923,15 @@ xdup2(int fd1, int fd2) {
     if (dup2(fd1, fd2) < 0) {
         error("Error in dup2: %s.\n", strerror(errno));
         fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+static void
+xkill(pid_t pid, int signum) {
+    if (kill(pid, signum) < 0) {
+        error("Error sending signal %d=%s to %d: %s.\n",
+              signum, signal_names[signum], pid, strerror(errno));
     }
     return;
 }
