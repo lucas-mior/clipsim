@@ -41,7 +41,7 @@
 #define TESTING_generic 0
 #endif
 
-#if TESTING_generic
+#if 1 == TESTING_generic
 #define TRAP(...) raise(SIGILL)
 #elif !defined(TRAP)
 #if defined(__GNUC__) || defined(__clang__)
@@ -391,6 +391,35 @@ _Generic((VAR), \
     fprintf(stderr, "\n"); \
 } while (0)
 
+#if 0 == TESTING_generic
+static inline void
+generic_functions_sink(void) {
+    (void)ldouble_from_voidp;
+    (void)ldouble_from_charp;
+    (void)ldouble_from_bool;
+    (void)ldouble_from_char;
+    (void)ldouble_from_schar;
+    (void)ldouble_from_short;
+    (void)ldouble_from_int;   
+    (void)ldouble_from_long;  
+    (void)ldouble_from_llong; 
+    (void)ldouble_from_uchar; 
+    (void)ldouble_from_ushort;
+    (void)ldouble_from_uint;  
+    (void)ldouble_from_ulong; 
+    (void)ldouble_from_ullong;
+    (void)ldouble_from_float; 
+    (void)ldouble_from_double;
+    (void)ldouble_from_ldouble;
+
+    (void)typebits;
+    (void)typename;
+    (void)ldouble_get;
+    (void)generic_functions_sink;
+    return;
+}
+#endif
+
 #if TESTING_generic
 
 #include <assert.h>
@@ -500,6 +529,7 @@ main(void) {
         float var_float = FLT_MAX;
         double var_double = DBL_MAX;
         long double var_longdouble = (ldouble)DBL_MAX;
+        long double var_longdouble2 = LDOUBLE_GET(var_longdouble);
 
         PRINTLN(var_voidptr);
         PRINTLN(var_string);
@@ -519,6 +549,7 @@ main(void) {
         PRINTLN(var_float);
         PRINTLN(var_double);
         PRINTLN(var_longdouble);
+        PRINTLN(var_longdouble2);
 
         PRINTLN(*var_string);
         PRINTLN(var_uint - (uint)var_int);
@@ -528,4 +559,4 @@ main(void) {
 
 #endif
 
-#endif
+#endif /* GENERIC_C */

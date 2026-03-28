@@ -35,7 +35,7 @@
 #include <X11/Xatom.h>
 #include <X11/extensions/XInput2.h>
 
-#include "util.c"
+#include "cbase/util.c"
 
 #define BUTTON_MIDDLE_CODE 2
 

@@ -19,7 +19,7 @@
 #define CONTENT_C
 
 #include "clipsim.h"
-#include "util.c"
+#include "cbase/util.c"
 
 static void content_remove_newline(char *, int *);
 static void content_trim_spaces(int16 *, int16 *, char *, int32);

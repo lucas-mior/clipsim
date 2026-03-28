@@ -60,6 +60,17 @@
 
 #define OS_UNIX (OS_LINUX || OS_MAC || OS_BSD)
 
+#if defined(__GNUC__)
+#define COMPILER_GCC 1
+#define COMPILER_CLANG 0
+#elif defined(__clang__)
+#define COMPILER_GCC 0
+#define COMPILER_CLANG 1
+#else
+#define COMPILER_GCC 0
+#define COMPILER_CLANG 0
+#endif
+
 #if OS_WINDOWS
 #include <windows.h>
 #endif
@@ -82,10 +93,14 @@
 #include "generic.c"
 #include "minmax.c"
 
-#if defined(__has_include) && __has_include(<valgrind/valgrind.h>)
-#include <valgrind/valgrind.h>
+#if COMPILER_GCC || COMPILER_CLANG
+  #if defined(__has_include) && __has_include(<valgrind/valgrind.h>)
+    #include <valgrind/valgrind.h>
+  #else
+    #define RUNNING_ON_VALGRIND 0
+  #endif
 #else
-#define RUNNING_ON_VALGRIND 0
+    #define RUNNING_ON_VALGRIND 0
 #endif
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
@@ -94,7 +109,7 @@
 #define TESTING_util 0
 #endif
 
-static void __attribute__((format(printf, 3, 4))) 
+static void __attribute__((format(printf, 3, 4)))
     error_impl(char *file, int32 line, char *format, ...);
 #define error(...) error_impl(__FILE__, __LINE__, __VA_ARGS__)
 
@@ -104,6 +119,9 @@ static char *program;
 static char *program = __FILE__;
 #endif
 static int32 program_len __attribute__((unused));
+
+static bool timezone_initialized = false;
+static time_t timezone_offset = 0;
 
 #define SIZEOF(X) ((int64)sizeof(X))
 
@@ -183,6 +201,7 @@ _Generic((ARRAY), \
 #endif
 
 #define UTIL_ALIGN_UINT(SIZE, A) (int64)(((SIZE) + ((A) - 1)) & ~((A) - 1))
+#define ALIGN16(x) (((x) + 15) & ~15)
 
 #define UTIL_ALIGN(SIZE, A) \
 _Generic((SIZE), \
@@ -191,7 +210,7 @@ _Generic((SIZE), \
     uint:   UTIL_ALIGN_UINT((uint)SIZE,   (uint)A),   \
     llong:  UTIL_ALIGN_UINT((ullong)SIZE, (ullong)A), \
     long:   UTIL_ALIGN_UINT((ulong)SIZE,  (ulong)A),  \
-    int:    UTIL_ALIGN_UINT((uint)SIZE,   (uint)A)   \
+    int:    UTIL_ALIGN_UINT((uint)SIZE,   (uint)A)    \
 )
 
 #if !defined(ALIGNMENT)
@@ -209,7 +228,7 @@ static int64 util_page_size = 0;
 static void error_async_safe(char *message);
 static void fatal(int) __attribute__((noreturn));
 static void util_segv_handler(int32) __attribute__((noreturn));
-static char *itoa2(long, char *);
+static int32 itoa2(char *, int32, llong);
 static long atoi2(char *);
 INLINE void *memchr64(void *pointer, int32 value, int64 size);
 static int xclose(char *file, int line,
@@ -542,29 +561,49 @@ util_nthreads(void) {
 #define basename basename2
 #endif
 
+#define MEM_FREED 0xDC
+#define MEM_MALLOCED_UNINITIALIZED 0xCD
+
+#if !defined(DEBUGGING_MEMORY)
+#define DEBUGGING_MEMORY DEBUGGING
+#else
+#define DEBUGGING_MEMORY 0
+#endif
+
 INLINE void *
 xmalloc(int64 size) {
     void *p;
-
-    if (DEBUGGING) {
-        if (size <= 0) {
-            error("Error in xmalloc: invalid size = %lld.\n", (llong)size);
-            fatal(EXIT_FAILURE);
-        }
-        if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error in xmalloc: Number (%lld) is bigger than SIZEMAX\n",
-                  (llong)size);
-            fatal(EXIT_FAILURE);
-        }
-    }
-
     if ((p = malloc((size_t)size)) == NULL) {
         error("Failed to allocate %lld bytes.\n", (llong)size);
         fatal(EXIT_FAILURE);
     }
+    return p;
+}
 
-    if (DEBUGGING && !RUNNING_ON_VALGRIND) {
-        memset64(p, 0xCD, size);
+static void *
+malloc_debug(char *file, int32 line, int64 size) {
+    void *p;
+
+    if (size <= 0) {
+        error_impl(file, line,
+                   "Error in malloc: invalid size = %lld.\n", (llong)size);
+        fatal(EXIT_FAILURE);
+    }
+    if ((ullong)size >= (ullong)SIZE_MAX) {
+        error_impl(file, line,
+                   "Error in malloc: Number (%lld) is bigger than SIZEMAX\n",
+                   (llong)size);
+        fatal(EXIT_FAILURE);
+    }
+
+    if ((p = malloc((size_t)size)) == NULL) {
+        error_impl(file, line,
+                   "Failed to allocate %lld bytes.\n", (llong)size);
+        fatal(EXIT_FAILURE);
+    }
+
+    if (!RUNNING_ON_VALGRIND) {
+        memset64(p, MEM_MALLOCED_UNINITIALIZED, size);
     }
     return p;
 }
@@ -573,18 +612,6 @@ INLINE void *
 xrealloc(void *old, int64 size) {
     void *p;
     uint64 old_save = (uint64)old;
-
-    if (DEBUGGING) {
-        if (size <= 0) {
-            error("Error in xrealloc: invalid size = %lld.\n", (long long)size);
-            fatal(EXIT_FAILURE);
-        }
-        if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error in xrealloc: Number (%lld) is bigger than SIZEMAX\n",
-                  (llong)size);
-            fatal(EXIT_FAILURE);
-        }
-    }
 
     if ((p = realloc(old, (size_t)size)) == NULL) {
         error("Failed to reallocate %lld bytes from %llx.\n", (llong)size,
@@ -595,13 +622,79 @@ xrealloc(void *old, int64 size) {
     return p;
 }
 
+INLINE void *
+xrealloc2(void *old, int64 old_len, int64 new_len, int64 obj_size) {
+    int64 size = new_len*obj_size;
+    (void)old_len;
+    return xrealloc(old, size);
+}
+
 static void *
-xcalloc(size_t nmemb, size_t size) {
+realloc_debug(char *file, int32 line, void *old, int64 size) {
     void *p;
-    if ((p = calloc(nmemb, size)) == NULL) {
-        error("Error allocating %zu members of %zu bytes each.\n", nmemb, size);
+    uint64 old_save = (uint64)old;
+
+    if (size <= 0) {
+        error_impl(file, line,
+                   "Error in realloc: invalid size = %lld.\n", (llong)size);
         fatal(EXIT_FAILURE);
     }
+    if ((ullong)size >= (ullong)SIZE_MAX) {
+        error_impl(file, line,
+                   "Error in realloc: Number (%lld) is bigger than SIZEMAX\n",
+                   (llong)size);
+        fatal(EXIT_FAILURE);
+    }
+
+    if ((p = realloc(old, (size_t)size)) == NULL) {
+        error_impl(file, line,
+                   "Failed to reallocate %lld bytes from %llx.\n", (llong)size,
+                   (ullong)old_save);
+        fatal(EXIT_FAILURE);
+    }
+
+    return p;
+}
+
+static void
+free_debug(char *file, int32 line, void *pointer, int64 size) {
+    if (size < 0) {
+        error_impl(file, line,
+                   "Error: freeing allocation of negative size = %lld.\n",
+                   (llong)size);
+        fatal(EXIT_FAILURE);
+    }
+    if (pointer && size) {
+        error_impl(file, line,
+                   "Freeing pointer of size %lld [%p]\n", (llong)size, pointer);
+        if (!RUNNING_ON_VALGRIND) {
+            memset64(pointer, MEM_FREED, size);
+        }
+    }
+    free(pointer);
+    return;
+}
+
+INLINE void
+free2(void *pointer, int64 size) {
+    (void)size;
+    free(pointer);
+}
+
+#if DEBUGGING_MEMORY
+#define malloc(size)        malloc_debug(__FILE__, __LINE__, size)
+#define realloc(old, size)  realloc_debug(__FILE__, __LINE__, old, size)
+#define free(pointer, size) free_debug(__FILE__, __LINE__, pointer, size)
+#else
+#define malloc(size)        xmalloc(size)
+#define realloc(size, old)  xrealloc(size, old)
+#define free(pointer, size) free2(pointer, size)
+#endif
+
+static void *
+xmemdup(void *source, int64 size) {
+    void *p = xmalloc(size);
+    memcpy64(p, source, size);
     return p;
 }
 
@@ -611,7 +704,7 @@ xstrdup(char *string) {
     int64 length;
 
     length = strlen32(string) + 1;
-    if ((p = malloc((size_t)length)) == NULL) {
+    if ((p = malloc(length)) == NULL) {
         error("Error allocating %lld bytes to duplicate '%s': %s\n",
               (llong)length, string, strerror(errno));
         fatal(EXIT_FAILURE);
@@ -620,17 +713,6 @@ xstrdup(char *string) {
     memcpy64(p, string, length);
     return p;
 }
-
-static void
-xfree(char *file, int32 line, void *pointer) {
-    if (DEBUGGING) {
-        error_impl(file, line, "Freeing pointer %p\n", pointer);
-    }
-    free(pointer);
-    return;
-}
-
-#define XFREE(P) xfree(__FILE__, __LINE__, P)
 
 #if OS_UNIX
 static void *
@@ -675,7 +757,7 @@ xmmap_commit(int64 *size) {
 static void
 xmunmap(void *p, int64 size) {
     if (RUNNING_ON_VALGRIND) {
-        XFREE(p);
+        free(p, size);
         return;
     }
     if (munmap(p, (size_t)size) < 0) {
@@ -717,7 +799,7 @@ static void
 xmunmap(void *p, size_t size) {
     (void)size;
     if (RUNNING_ON_VALGRIND) {
-        XFREE(p);
+        free(p, (int64)size);
         return;
     }
     if (!VirtualFree(p, 0, MEM_RELEASE)) {
@@ -802,6 +884,49 @@ snprintf2(char *buffer, int64 size, char *format, ...) {
         fatal(EXIT_FAILURE);
     }
     return n;
+}
+
+int32
+itoa2(char *str, int32 size, llong num) {
+    int i = 0;
+    bool negative = false;
+
+    if (size < 22) {
+        error("Error in itoa2: buffer is too small.\n");
+        fatal(EXIT_FAILURE);
+    }
+
+    if (num < 0) {
+        negative = true;
+        num = -num;
+    }
+
+    do {
+        str[i] = num % 10 + '0';
+        i += 1;
+        num /= 10;
+    } while (num > 0);
+
+    if (negative) {
+        str[i] = '-';
+        i += 1;
+    }
+
+    str[i] = '\0';
+
+    for (long j = 0; j < i / 2; j += 1) {
+        char temp = str[j];
+        str[j] = str[i - j - 1];
+        str[i - j - 1] = temp;
+    }
+    return i;
+}
+
+#define ITOA(buffer, num) itoa2(buffer, sizeof(buffer), num)
+
+long
+atoi2(char *str) {
+    return atoi(str);
 }
 
 static int64
@@ -899,12 +1024,13 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
     if (close(*fd) < 0) {
         char error_buffer[4096];
         char itoa_buffer[32];
+        ITOA(itoa_buffer, line);
 
         strerror_r(errno, error_buffer, sizeof(error_buffer));
 
         error_async_safe(file);
         error_async_safe(":");
-        error_async_safe(itoa2(line, itoa_buffer));
+        error_async_safe(itoa_buffer);
         error_async_safe(" Error closing ");
         error_async_safe(filename);
         error_async_safe(": ");
@@ -1183,7 +1309,7 @@ error_impl(char *file, int32 line, char *format, ...) {
 #endif
 
     if (big_buffer) {
-        XFREE(big_buffer);
+        free(big_buffer, m);
     }
     return;
 }
@@ -1191,7 +1317,11 @@ error_impl(char *file, int32 line, char *format, ...) {
 static void
 error_async_safe(char *message) {
     int32 len = strlen32(message);
+#if OS_WINDOWS
+    write(STDERR_FILENO, message, (uint)len);
+#else
     write(STDERR_FILENO, message, (size_t)len);
+#endif
     return;
 }
 
@@ -1258,13 +1388,6 @@ util_die_notify(char *program_name, char *format, ...) {
                buffer, NULL);
     }
     fatal(EXIT_FAILURE);
-}
-
-static void *
-xmemdup(void *source, int64 size) {
-    void *p = xmalloc(size);
-    memcpy64(p, source, size);
-    return p;
 }
 
 // Note: NEVER delete lines with // clang-format
@@ -1411,7 +1534,7 @@ util_copy_file_async_thread(void *arg) {
             pipes[i].revents = 0;
         }
     }
-    XFREE(copy_files);
+    free(copy_files, sizeof(*copy_files));
     pthread_exit(NULL);
     return NULL;
 }
@@ -1509,42 +1632,6 @@ send_signal(char *executable, int32 signal_number) {
     return;
 }
 #endif
-
-char *
-itoa2(long num, char *str) {
-    int i = 0;
-    bool negative = false;
-
-    if (num < 0) {
-        negative = true;
-        num = -num;
-    }
-
-    do {
-        str[i] = num % 10 + '0';
-        i += 1;
-        num /= 10;
-    } while (num > 0);
-
-    if (negative) {
-        str[i] = '-';
-        i += 1;
-    }
-
-    str[i] = '\0';
-
-    for (int j = 0; j < i / 2; j += 1) {
-        char temp = str[j];
-        str[j] = str[i - j - 1];
-        str[i - j - 1] = temp;
-    }
-    return str;
-}
-
-long
-atoi2(char *str) {
-    return atoi(str);
-}
 
 static bool
 util_equal_files(char *filename_a, char *filename_b) {
@@ -1673,8 +1760,13 @@ bytes_pretty(char *buffer, int64 raw) {
     int64 i;
     int32 n;
 
+    if (raw < 0) {
+        *buffer = '\0';
+        return 0;
+    }
+
     if (raw <= 1023) {
-        n = snprintf2(buffer, 32, "%lldB", (llong)raw);
+        n = snprintf2(buffer, 16, "%lldB", (llong)raw);
         return n;
     }
 
@@ -1686,13 +1778,13 @@ bytes_pretty(char *buffer, int64 raw) {
     }
 
     if (aux_pretty >= 1000) {
-        n = snprintf2(buffer, 32, "%.1f%s", aux_pretty, suffixes[i]);
+        n = snprintf2(buffer, 16, "%.1f%s", aux_pretty, suffixes[i]);
     } else if (aux_pretty >= 100) {
-        n = snprintf2(buffer, 32, "%.2f%s", aux_pretty, suffixes[i]);
+        n = snprintf2(buffer, 16, "%.2f%s", aux_pretty, suffixes[i]);
     } else if (aux_pretty >= 10) {
-        n = snprintf2(buffer, 32, "%.3f%s", aux_pretty, suffixes[i]);
+        n = snprintf2(buffer, 16, "%.3f%s", aux_pretty, suffixes[i]);
     } else {
-        n = snprintf2(buffer, 32, "%.4f%s", aux_pretty, suffixes[i]);
+        n = snprintf2(buffer, 16, "%.4f%s", aux_pretty, suffixes[i]);
     }
 
     return n;
@@ -1856,21 +1948,23 @@ dirname2(char *buffer, char *path, int32 *path_len) {
 }
 
 static void
-print_timings(char *file, int32 line, int32 n,
-              char *name, struct timespec t0, struct timespec t1) {
-    long seconds = t1.tv_sec - t0.tv_sec;
-    long nanos = t1.tv_nsec - t0.tv_nsec;
+print_timings(char *file, int32 line, const char *func,
+              int64 n, struct timespec t0, struct timespec t1) {
+    llong seconds = t1.tv_sec - t0.tv_sec;
+    llong nanos = t1.tv_nsec - t0.tv_nsec;
 
     double total_seconds = (double)seconds + (double)nanos / 1.0e9;
     double micros_per = 1e6*(total_seconds / (double)n);
 
-    printf("\ntime elapsed %s:%d:%s\n", file, line, name);
+    printf("\ntime elapsed %s:%d:%s\n", file, line, func);
     printf("%gs = %gus per item.\n\n", total_seconds, micros_per);
     return;
 }
-
-#define PRINT_TIMINGS(N, NAME, T0, T1) \
-    print_timings(__FILE__, __LINE__, N, NAME, T0, T1)
+#define PRINT_TIMINGS_3(N, T0, T1) \
+        print_timings(__FILE__, __LINE__, __func__, N, T0, T1)
+#define PRINT_TIMINGS_4(N, T0, T1, NAME) \
+        print_timings(__FILE__, __LINE__, NAME, N, T0, T1)
+#define PRINT_TIMINGS(...) SELECT_ON_NUM_ARGS(PRINT_TIMINGS_, __VA_ARGS__)
 
 #if OS_UNIX
 
@@ -1890,7 +1984,9 @@ static char *signal_names[] = {
     XSIGNAL(SIGINT),
     XSIGNAL(SIGKILL),
     XSIGNAL(SIGPIPE),
+#if defined(SIGPOLL)
     XSIGNAL(SIGPOLL),
+#endif
     XSIGNAL(SIGQUIT),
     XSIGNAL(SIGSEGV),
     XSIGNAL(SIGSTOP),
@@ -1937,59 +2033,137 @@ xkill(pid_t pid, int signum) {
 }
 #endif
 
-static volatile ullong here_counter = 0; \
+#if OS_UNIX
+static void
+timezone_init(void) {
+    time_t current_time;
+    struct tm local_tm;
+    struct tm gm_tm;
+
+    current_time = time(NULL);
+    localtime_r(&current_time, &local_tm);
+    gmtime_r(&current_time, &gm_tm);
+
+    timezone_offset = (local_tm.tm_hour - gm_tm.tm_hour)*3600;
+    timezone_offset += (local_tm.tm_min - gm_tm.tm_min)*60;
+
+    if (local_tm.tm_year < gm_tm.tm_year) {
+        timezone_offset -= 24*3600;
+    } else if (local_tm.tm_year > gm_tm.tm_year) {
+        timezone_offset += 24*3600;
+    } else if (local_tm.tm_yday < gm_tm.tm_yday) {
+        timezone_offset -= 24*3600;
+    } else if (local_tm.tm_yday > gm_tm.tm_yday) {
+        timezone_offset += 24*3600;
+    }
+
+    timezone_initialized = true;
+    return;
+}
+#endif
+
+static volatile ullong here_counter = 0;
 
 #define HERE do { \
     fprintf(stderr, "\n===== HERE(%llu): %s:%d (%s)\n", \
                     here_counter++, __FILE__, __LINE__, __func__); \
 } while (0)
 
+#define NCALLS(INTERVAL) do { \
+    static int64 ncalls_ncalls = 1; \
+    if ((ncalls_ncalls % INTERVAL) == 0) { \
+        fprintf(stderr, "%s:%d:%s: called %lld times\n", \
+                        __FILE__, __LINE__, __func__, (llong)ncalls_ncalls); \
+    } \
+    ncalls_ncalls += 1; \
+} while (0)
+
+#if 0 == TESTING_util
+static inline void
+util_functions_sink(void) {
+    (void)here_counter;
+    (void)util_segv_handler;
+    (void)util_nthreads;
+    (void)util_filename_from;
+    (void)util_command;
+    (void)util_string_int32;
+    (void)util_die_notify;
+#if OS_UNIX
+    (void)util_copy_file_sync;
+    (void)util_copy_file_async;
+    (void)util_copy_file_async_thread;
+    (void)util_command_launch;
+#endif
+    (void)util_equal_files;
+
+    (void)malloc_debug;
+    (void)realloc_debug;
+    (void)free_debug;
+
+    (void)send_signal;
+    (void)shell_escape;
+    (void)atoi2;
+#if OS_UNIX
+    (void)timezone_init;
+#endif
+    (void)dirname2;
+    (void)basename2;
+    (void)string_from_doubles;
+    (void)string_from_strings;
+    (void)strftime2;
+    (void)bytes_pretty;
+    (void)qsort64;
+    (void)print_timings;
+
+    (void)xmmap_commit;
+    (void)xstrdup;
+#if OS_UNIX
+    (void)xkill;
+    (void)xdup2;
+    (void)xpipe;
+#endif
+    (void)xmemdup;
+    (void)xunlink;
+
+    (void)xpthread_mutex_lock;
+    (void)xpthread_mutex_unlock;
+    (void)xpthread_cond_destroy;
+    (void)xpthread_mutex_destroy;
+    (void)xpthread_create;
+    (void)xpthread_join;
+    return;
+}
+#endif
+
 #if TESTING_util
 
-#define DAYS_ENUM_LIST                 \
-  BEGIN_ENUM(WeekDay)                  \
-    XENUM(SUNDAY, 0)                   \
-    XENUM(MONDAY)                      \
-    XENUM(TUESDAY, 10)                 \
-    XENUM(WEDNESDAY)                   \
-    XENUM(THURSDAY)                    \
-    XENUM(FRIDAY, 5)                   \
-    XENUM(SATURDAY, 20)                \
-  END_ENUM(WeekDay)
-
+#define ENUM_NAME WeekDay
+#define ENUM_BITFLAGS 0
 #define ENUM_PREFIX_ WEEK_DAY_
-#include "enums.h"
-DAYS_ENUM_LIST
-#undef ENUM_PREFIX_
+#define ENUM_FIELDS \
+    X(SUNDAY, 0)                   \
+    X(MONDAY)                      \
+    X(TUESDAY, 10)                 \
+    X(WEDNESDAY)                   \
+    X(THURSDAY)                    \
+    X(FRIDAY, 5)                   \
+    X(SATURDAY, 20)
+#include "xenums.c"
 
-#define ENUM_PREFIX_ WEEK_DAY_
-#include "enums.h"
-DAYS_ENUM_LIST
-#undef DAYS_ENUM_LIST
-#undef ENUM_PREFIX_
 
-#define POWERS_OF_TWO_LIST             \
-  BEGIN_ENUM(PowerOfTwo)               \
-    XENUM(ONE,     1 << 0)             \
-    XENUM(TWO,     1 << 1)             \
-    XENUM(FOUR,    1 << 2)             \
-    XENUM(EIGHT,   1 << 3)             \
-    XENUM(SIXTEEN, 1 << 4)             \
-    XENUM(THIRTY2, 1 << 5)             \
-    XENUM(SIXTY4,  1 << 6)             \
-  END_ENUM(PowerOfTwo)
-
+#define ENUM_NAME PowerOfTwo
+#define ENUM_BITFLAGS 1
 #define ENUM_PREFIX_ POWER_OF2_
-#include "enums.h"
-POWERS_OF_TWO_LIST
-#undef ENUM_PREFIX_
+#define ENUM_FIELDS \
+    X(ONE,     1 << 0)             \
+    X(TWO,     1 << 1)             \
+    X(FOUR,    1 << 2)             \
+    X(EIGHT,   1 << 3)             \
+    X(SIXTEEN, 1 << 4)             \
+    X(THIRTY2, 1 << 5)             \
+    X(SIXTY4,  1 << 6)
+#include "xenums.c"
 
-#define ENUM_PREFIX_ POWER_OF2_
-#define ENUM_IS_FLAGS
-#include "enums.h"
-POWERS_OF_TWO_LIST
-#undef ENUM_PREFIX_
-#undef POWERS_OF_TWO_LIST
 
 static void
 write_file(char *path, void *data, int64 len) {
@@ -2016,16 +2190,54 @@ signal_handler(int signal_number) {
     return;
 }
 
+static int
+util_test_qsort_cmp(const void *a, const void *b) {
+    int32 va = *(int32 *)a;
+    int32 vb = *(int32 *)b;
+    if (va < vb) {
+        return -1;
+    }
+    if (va > vb) {
+        return 1;
+    }
+    return 0;
+}
+
 int
 main(int argc, char **argv) {
-    char buffer[32];
     void *p1 = xmalloc(SIZEMB(1));
-    void *p2 = xcalloc(10, SIZEMB(1));
+    void *p2 = malloc(SIZEMB(2));
     char *p3;
     char *string = __FILE__;
+    char *s1 = "aaaabbbb";
+    struct timespec t0;
+    struct timespec t1;
 
     (void)argc;
     (void)argv;
+
+    p2 = realloc(p2, SIZEMB(2));
+    ASSERT(BEGINS_WITH(s1, "aaaa"));
+    ASSERT(BEGINS_WITH(s1, "aaaabbbb"));
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
+#if OS_UNIX
+    timezone_init();
+#endif
+
+    {
+        int a = 10;
+        int b = 20;
+
+        SWAP(a, b);
+        ASSERT_EQUAL(a, 20);
+        ASSERT_EQUAL(b, 10);
+
+        ASSERT_EQUAL(UTIL_ALIGN(7, 16), 16);
+        ASSERT_EQUAL(UTIL_ALIGN(16, 16), 16);
+        ASSERT_EQUAL(UTIL_ALIGN(17, 16), 32);
+        ASSERT_EQUAL(ALIGN16(7), 16);
+    }
 
     for (enum WeekDay day = WEEK_DAY_MONDAY; day <= WEEK_DAY_LAST; day += 1) {
         printf("enum[%d] = %s\n", day, WEEK_DAY_str(day));
@@ -2033,8 +2245,8 @@ main(int argc, char **argv) {
 
     printf("\n");
 
-    for (enum PowerOfTwo x = 0; x < POWER_OF2_LAST; x += 1) {
-        char *value_name = POWER_OF2_str(x);
+    for (uint x = 0; x < POWER_OF2_LAST; x += 1) {
+        char *value_name = POWER_OF2_str((enum PowerOfTwo)x);
         printf("enum[%d] = %s\n", x, value_name);
     }
 
@@ -2053,15 +2265,84 @@ main(int argc, char **argv) {
 
     memset64(p1, 0, SIZEMB(1));
     memcpy64(p1, string, strlen32(string));
-    memset64(p2, 0, SIZEMB(1));
     p3 = xstrdup(p1);
 
     ASSERT_EQUAL(string, p3);
+    free(p3, strlen32(p3) + 1);
 
     srand((uint)time(NULL));
     for (int i = 0; i < 10; i += 1) {
         int n = rand() - RAND_MAX / 2;
-        ASSERT_EQUAL(atoi2(itoa2(n, buffer)), n);
+        char itoa_buffer[32];
+        ITOA(itoa_buffer, n);
+        ASSERT_EQUAL(atoi2(itoa_buffer), n);
+    }
+
+    {
+        int32 n;
+        ASSERT_EQUAL(util_string_int32(&n, "12345"), 0);
+        ASSERT_EQUAL(n, 12345);
+        ASSERT_EQUAL(util_string_int32(&n, "-54321"), 0);
+        ASSERT_EQUAL(n, -54321);
+        ASSERT_EQUAL(util_string_int32(&n, "2147483648"), -1);
+        ASSERT_EQUAL(util_string_int32(&n, "notanumber"), -1);
+    }
+
+    {
+        char b[32];
+        bytes_pretty(b, 512);
+        ASSERT_EQUAL(b, "512B");
+        bytes_pretty(b, 1024);
+        ASSERT_EQUAL(b, "1.0000kB");
+        bytes_pretty(b, SIZEMB(2));
+        ASSERT_EQUAL(b, "2.0000MB");
+    }
+
+    {
+        char *path = "path'with'quotes";
+        char *escaped = shell_escape(path);
+        ASSERT_EQUAL(escaped, "path'\\''with'\\''quotes");
+        free(escaped, strlen32(escaped) + 1);
+    }
+
+    {
+        int32 arr[] = {10, 5, 20, 1};
+        qsort64(arr, 4, sizeof(int32), util_test_qsort_cmp);
+        ASSERT_EQUAL(arr[0], 1);
+        ASSERT_EQUAL(arr[1], 5);
+        ASSERT_EQUAL(arr[2], 10);
+        ASSERT_EQUAL(arr[3], 20);
+    }
+
+    {
+        char b[64];
+        char *strs[] = {"one", "two", "three"};
+        double dbls[] = {1.1, 2.2};
+        string_from_strings(b, sizeof(b), "|", strs, 3);
+        ASSERT_EQUAL(b, "one|two|three");
+        string_from_doubles(b, sizeof(b), ",", dbls, 2);
+        ASSERT_NOT_EQUAL(strlen(b), 0);
+    }
+
+    {
+        char *src = "memdup_test";
+        char *dup = xmemdup(src, 12);
+        ASSERT_EQUAL(src, dup);
+        ASSERT_NOT_EQUAL((void *)src, (void *)dup);
+        free(dup, 12);
+    }
+
+    {
+        char b[128];
+        struct tm fixed_time;
+        fixed_time.tm_year = 126; // 2026
+        fixed_time.tm_mon = 2;   // March
+        fixed_time.tm_mday = 25;
+        fixed_time.tm_hour = 12;
+        fixed_time.tm_min = 0;
+        fixed_time.tm_sec = 0;
+        strftime2(b, sizeof(b), "%Y-%m-%d", &fixed_time);
+        ASSERT_EQUAL(b, "2026-03-25");
     }
 
     {
@@ -2070,7 +2351,7 @@ main(int argc, char **argv) {
         char paths[][30] = {
             "/aaaa/bbbb/cccc", "/aa/bb/cc",  "/a/b/c",    "a/b//c",
             "a/b/cccc",        "a/bb/cccc", "aaaa//cccc", "/aaaa",
-            "/",               "//",          "//a/",       "/a/b///",
+            "/",               "//",          "//a/",        "/a/b///",
             "./",              "..",          "././",      "./a/",
         };
         char *bases[20] = {
@@ -2081,14 +2362,14 @@ main(int argc, char **argv) {
         };
         char *dirs[20] = {
             "/aaaa/bbbb",      "/aa/bb",      "/a/b",      "a/b",
-            "a/b",             "a/bb",        "aaaa",      "/",
+            "a/b",              "a/bb",        "aaaa",      "/",
             "/",               "/",           "/",         "/a",
             ".",               ".",           ".",         ".",
         };
         char *normalized[20] = {
             "/aaaa/bbbb/cccc", "/aa/bb/cc",   "/a/b/c",    "a/b/c",
             "a/b/cccc",        "a/bb/cccc",   "aaaa/cccc", "/aaaa",
-            "/",               "/",           "/a/",       "/a/b/",
+            "/",               "/",           "/a/",        "/a/b/",
             "./",              "..",          "./",        "a/",
         };
         // clang-format on
@@ -2097,14 +2378,14 @@ main(int argc, char **argv) {
             char *base = bases[i];
             int32 path_len = strlen32(path);
             ASSERT_EQUAL(basename2(path, &path_len, NULL), base);
-            XFREE(path);
+            free(path, path_len + 1);
         }
         for (int64 i = 0; i < LENGTH(paths); i += 1) {
             char *copy = xstrdup(paths[i]);
             int len = strlen32(copy);
             normalize(copy, &len);
             ASSERT_EQUAL(copy, normalized[i]);
-            XFREE(copy);
+            free(copy, len + 1);
         }
 
         for (int64 i = 0; i < LENGTH(paths); i += 1) {
@@ -2146,12 +2427,6 @@ main(int argc, char **argv) {
         WRITE_FILE(a, "");
         WRITE_FILE(b, "");
         ASSERT(util_equal_files(a, b));
-
-        /* Uncomment below to trigger error */
-        /* WRITE_FILE(a, "data"); */
-        /* xunlink(b); */
-        /* error("Expected error below:\n"); */
-        /* assert(!util_equal_files(a, b)); */
     }
 
     {
@@ -2195,16 +2470,46 @@ main(int argc, char **argv) {
         // clang-format on
     }
 
-    XFREE(p1);
-    XFREE(p2);
-    XFREE(p3);
+    free(p1, SIZEMB(1));
 
     ASSERT_EQUAL(deg2rad(180.0), 3.141592653589793);
     ASSERT_EQUAL(rad2deg(3.141592653589793), 180.0);
+    ASSERT_MORE(util_nthreads(), 0);
 
+    NCALLS(1);
+
+    (void)util_segv_handler;
+    (void)util_command;
+    (void)util_die_notify;
+#if OS_UNIX
+    (void)util_copy_file_sync;
+    (void)util_copy_file_async;
+    (void)util_copy_file_async_thread;
+#endif
+    (void)util_command_launch;
+
+    (void)malloc_debug;
+    (void)realloc_debug;
+    (void)free_debug;
+
+    (void)xmmap_commit;
+    (void)xkill;
+    (void)xdup2;
+    (void)xpipe;
+    (void)xunlink;
+
+    (void)xpthread_mutex_lock;
+    (void)xpthread_mutex_unlock;
+    (void)xpthread_cond_destroy;
+    (void)xpthread_mutex_destroy;
+    (void)xpthread_create;
+    (void)xpthread_join;
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
+    PRINT_TIMINGS(1, t0, t1);
     exit(EXIT_SUCCESS);
 }
 
 #endif
 
-#endif
+#endif /* UTIL_C */

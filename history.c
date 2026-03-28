@@ -19,9 +19,9 @@
 #define HISTORY_C
 
 #include "clipsim.h"
-#include "util.c"
+#include "cbase/util.c"
 #include "content.c"
-#include "arena.c"
+#include "cbase/arena.c"
 
 #include <poll.h>
 #include <X11/X.h>
