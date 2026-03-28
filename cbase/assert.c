@@ -39,7 +39,7 @@
 #define TESTING_assert 0
 #endif
 
-#if TESTING_assert
+#if 1 == TESTING_assert
 #define TRAP(...) raise(SIGILL)
 #elif !defined(TRAP)
 #if defined(__GNUC__) || defined(__clang__)
@@ -426,13 +426,68 @@ _Generic((VAR1), \
 
 #define ASSERT_NULL(VAR1) do { \
     if ((void *)VAR1 != NULL) { \
-        error2("\n%s: Assertion failed at %s:%u\n", __func__, __FILE__, __LINE__); \
+        error2("\n%s: Assertion failed at %s:%d\n", __func__, __FILE__, __LINE__); \
         error2("%s = %p == NULL\n", #VAR1, (void *)VAR1); \
         TRAP(); \
     } \
 } while (0)
 
 // clang-format on
+
+#if 0 == TESTING_assert
+static inline void
+assert_functions_sink(void) {
+    (void)a_strings_less;
+    (void)a_strings_less_equal;
+    (void)a_strings_equal;
+    (void)a_strings_not_equal;
+    (void)a_strings_more;
+    (void)a_strings_more_equal;
+
+    (void)a_pointers_less;
+    (void)a_pointers_less_equal;
+    (void)a_pointers_equal;
+    (void)a_pointers_not_equal;
+    (void)a_pointers_more;
+    (void)a_pointers_more_equal;
+
+    (void)a_both_signed_less;
+    (void)a_both_signed_less_equal;
+    (void)a_both_signed_equal;
+    (void)a_both_signed_not_equal;
+    (void)a_both_signed_more;
+    (void)a_both_signed_more_equal;
+
+    (void)a_both_unsigned_less;
+    (void)a_both_unsigned_less_equal;
+    (void)a_both_unsigned_equal;
+    (void)a_both_unsigned_not_equal;
+    (void)a_both_unsigned_more;
+    (void)a_both_unsigned_more_equal;
+
+    (void)a_signed_unsignedless;
+    (void)a_signed_unsignedless_equal;
+    (void)a_signed_unsignedequal;
+    (void)a_signed_unsignednot_equal;
+    (void)a_signed_unsignedmore;
+    (void)a_signed_unsignedmore_equal;
+
+    (void)a_unsigned_signed_less;
+    (void)a_unsigned_signed_less_equal;
+    (void)a_unsigned_signed_equal;
+    (void)a_unsigned_signed_not_equal;
+    (void)a_unsigned_signed_more;
+    (void)a_unsigned_signed_more_equal;
+
+    (void)a_ldouble_less;
+    (void)a_ldouble_less_equal;
+    (void)a_ldouble_equal;
+    (void)a_ldouble_not_equal;
+    (void)a_ldouble_more;
+    (void)a_ldouble_more_equal;
+    return;
+}
+#endif
 
 #if TESTING_assert
 
@@ -654,4 +709,4 @@ main(void) {
 // clang-format on
 #endif
 
-#endif
+#endif /* ASSERT_C */

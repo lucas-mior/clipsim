@@ -44,6 +44,20 @@
 
 #define OS_UNIX (OS_LINUX || OS_MAC || OS_BSD)
 
+#if defined(__GNUC__)
+#define COMPILER_GCC 1
+#define COMPILER_CLANG 0
+#elif defined(__clang__)
+#define COMPILER_GCC 0
+#define COMPILER_CLANG 1
+#else
+#define COMPILER_GCC 0
+#define COMPILER_CLANG 0
+#endif
+
+#define BYTE_POPED 0xDC
+#define BYTE_PUSHED_UNINITIALIZED 0xCD
+
 #if OS_WINDOWS
 #include <windows.h>
 #endif
@@ -159,12 +173,14 @@ arena_print(Arena *arena) {
         }
         arena = arena->next;
     }
+    return;
 }
 
 enum ArenaErrors {
     EARENA_INVALID = 2000000,
     EARENA_INVALID_OBJECT,
     EARENA_OBJECT_SIZE,
+    EARENA_MORE_THAN_4GB,
     EARENA_SIZE,
 };
 
@@ -179,6 +195,8 @@ arena_strerror(int arena_errno) {
         return "Object is too big for arena";
     case EARENA_SIZE:
         return "Invalid size";
+    case EARENA_MORE_THAN_4GB:
+        return "Tryed to get 32 bit index on arena larger than 4GB of space";
     default:
         return strerror(arena_errno);
     }
@@ -231,7 +249,7 @@ arena_allocate(int64 *size) {
             error2("Error getting page size: %s.\n", strerror(errno));
             return NULL;
         }
-        arena_page_size = aux;
+        arena_page_size = (int64)aux;
     }
 
     do {
@@ -344,18 +362,21 @@ arena_push(Arena *arena, int64 size) {
 
     before = arena->pos;
     if (DEBUGGING) {
-        memset64(before, 0xCD, size);
+        memset64(before, BYTE_PUSHED_UNINITIALIZED, size);
     }
     arena->pos = (char *)arena->pos + size;
     arena->npushed += 1;
+#if COMPILER_GCC || COMPILER_CLANG
+    before = __builtin_assume_aligned(before, ALIGNMENT);
+#endif
     return before;
 }
 
 static void *
 arenas_push(Arena **arenas, int64 number, int64 size) {
     for (uint32 i = 0; i < number; i += 1) {
-        void *p = arena_push(arenas[i], size);
-        if (p) {
+        void *p;
+        if ((p = arena_push(arenas[i], size))) {
             return p;
         }
     }
@@ -366,7 +387,7 @@ static void *
 xarena_push(Arena *arena, int64 size) {
     void *p;
     if ((p = arena_push(arena, size)) == NULL) {
-        error2("Error allocating %lld bytes.\n", (llong)size);
+        error2("Error allocating %lld bytes: %s.\n", (llong)size, arena_strerror(errno));
         exit(EXIT_FAILURE);
     }
     return p;
@@ -395,6 +416,7 @@ arena_push_index32(Arena *arena, uint32 size) {
     before = arena->pos;
     arena->pos = (char *)arena->pos + size;
     if (arena->size >= UINT32_MAX) {
+        errno = EARENA_MORE_THAN_4GB;
         return UINT32_MAX;
     }
     arena->npushed += 1;
@@ -448,14 +470,14 @@ arena_pop(Arena *arena, void *p) {
     if (arena->npushed <= 0) {
         arena->pos = arena->begin;
         if (DEBUGGING) {
-            memset64(arena->pos, 0xDC, arena_data_size(arena));
+            memset64(arena->pos, BYTE_POPED, arena_data_size(arena));
         }
     }
     return true;
 }
 
 static int64
-arena_narenas(Arena *arena) {
+arena_nlinked(Arena *arena) {
     int64 n = 0;
     while (arena) {
         n += 1;
@@ -496,6 +518,21 @@ arenas_destroy(Arena **arenas, int64 number) {
     return;
 }
 
+#if 0 == TESTING_arena
+static inline void
+arena_functions_sink(void) {
+    (void)arena_print;
+    (void)xarenas_push;
+    (void)xarena_push;
+    (void)arena_push_index32;
+    (void)arenas_pop;
+    (void)arena_nlinked;
+    (void)arenas_reset;
+    (void)arenas_destroy;
+    return;
+}
+#endif
+
 #if TESTING_arena
 #include "assert.c"
 #include <stdio.h>
@@ -534,7 +571,7 @@ main(void) {
 
     srand((uint32)time(NULL));
 
-    ASSERT_EQUAL(arena_narenas(arena), 1);
+    ASSERT_EQUAL(arena_nlinked(arena), 1);
 
     {
         int64 total_size = 0;
@@ -548,7 +585,7 @@ main(void) {
             memset64(objs[i], 0xCD, size);
 
             if (total_size < arena_data_size(arena)) {
-                ASSERT_EQUAL(arena_narenas(arena), 1);
+                ASSERT_EQUAL(arena_nlinked(arena), 1);
                 ASSERT_MORE_EQUAL((void *)objs[i], (void *)arena->begin);
                 ASSERT_MORE_EQUAL((void *)arena->pos, (void *)objs[i]);
             }
@@ -594,7 +631,7 @@ main(void) {
         ASSERT_EQUAL(arena->npushed, 1);
         ASSERT((p2 = arena_push(arena, arena_size)));
         ASSERT_EQUAL(arena->npushed, 1);
-        ASSERT_EQUAL(arena_narenas(arena), 2);
+        ASSERT_EQUAL(arena_nlinked(arena), 2);
         ASSERT(arena->next);
         ASSERT(arena_of(arena, p1) != arena_of(arena, p2));
 
@@ -644,6 +681,40 @@ main(void) {
         ASSERT(arena->begin + index == arena->begin + 32);
     }
 
+    {
+        Arena *arenas[2];
+        void *first_pointer;
+        void *second_pointer;
+        void *third_pointer;
+        int64 arena_count;
+        int64 first_arena_capacity;
+        char *error_message;
+
+        arena_count = (int64)LENGTH(arenas);
+        ASSERT((arenas[0] = arena_create(SIZEMB(1))));
+        ASSERT((arenas[1] = arena_create(SIZEMB(1))));
+
+        first_arena_capacity = arena_data_size(arenas[0]);
+
+        ASSERT((first_pointer = xarena_push(arenas[0], first_arena_capacity)));
+        ASSERT((second_pointer = arenas_push(arenas, arena_count, 100)));
+
+        ASSERT((third_pointer = xarenas_push(arenas, (int32)arena_count, 100)));
+
+        ASSERT(arenas_pop(arenas, (int32)arena_count, first_pointer));
+        ASSERT(arenas_pop(arenas, (int32)arena_count, second_pointer));
+        ASSERT(arenas_pop(arenas, (int32)arena_count, third_pointer));
+
+        arenas_reset(arenas, arena_count);
+        ASSERT_EQUAL(arenas[0]->npushed, 0);
+        ASSERT_EQUAL(arenas[1]->npushed, 0);
+
+        error_message = arena_strerror(EARENA_INVALID);
+        ASSERT_EQUAL(error_message, "Invalid arena pointer");
+
+        arenas_destroy(arenas, arena_count);
+    }
+
     arena_print(arena);
 
     arena_destroy(arena);
@@ -651,4 +722,4 @@ main(void) {
 }
 #endif
 
-#endif
+#endif /* ARENA_C */

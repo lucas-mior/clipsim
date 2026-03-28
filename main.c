@@ -16,7 +16,7 @@
  */
 
 #include "clipsim.h"
-#include "util.c"
+#include "cbase/util.c"
 #include "history.c"
 #include "ipc.c"
 #include "clipboard.c"

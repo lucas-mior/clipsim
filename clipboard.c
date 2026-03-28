@@ -24,7 +24,7 @@
 #include <X11/extensions/Xfixes.h>
 
 #include "clipsim.h"
-#include "util.c"
+#include "cbase/util.c"
 #include "history.c"
 
 #define CHECK_TARGET_MAX_EVENTS 10

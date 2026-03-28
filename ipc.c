@@ -19,7 +19,7 @@
 #define IPC_C
 
 #include "clipsim.h"
-#include "util.c"
+#include "cbase/util.c"
 #include "history.c"
 
 static File command_fifo
