@@ -7,7 +7,9 @@ alias trace_off='{ set +x; } 2>/dev/null'
 
 . ./targets
 
-dir="$(realpath "$(dirname "$0")")"
+dir=$(dirname "$(readlink -f "$0")")
+cbase="cbase"
+CPPFLAGS="$CPPFLAGS -I "$dir/$cbase""
 
 target="${1:-build}"
 
