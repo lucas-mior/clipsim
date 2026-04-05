@@ -19,6 +19,12 @@ if ! grep -q "$target" ./targets; then
     exit 1
 fi
 
+optional_stuff_for_development() {
+    ctags -o tags --kinds-C=+l+d ./*.h ./*.c  2> /dev/null || true
+    vtags.sed tags | sort | uniq > .tags.vim  2> /dev/null || true
+    return
+}
+
 cross="$2"
 
 printf "\n${0} ${RED}${1} ${2}$RES\n"
@@ -48,30 +54,28 @@ LDFLAGS="$LDFLAGS $(pkg-config xfixes --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config xi --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config libmagic --libs)"
 
-OS=$(uname -a)
-
 CC=${CC:-cc}
 
 case "$target" in
 "fast_feedback")
     CC=clang
-    CFLAGS="$CFLAGS $GNUSOURCE -Werror"
+    CFLAGS="$CFLAGS -Werror"
     ;;
 "debug")
     CFLAGS="$CFLAGS -Wno-declaration-after-statement -g -fsanitize=undefined"
-    CPPFLAGS="$CPPFLAGS $GNUSOURCE -DDEBUGGING=1"
+    CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     exe="${exe}_debug"
     ;;
 "valgrind")
     CFLAGS="$CFLAGS -g -O0 -ftree-vectorize"
-    CPPFLAGS="$CPPFLAGS $GNUSOURCE -DDEBUGGING=1"
+    CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
 "check")
     CC=gcc
-    CFLAGS="$CFLAGS $GNUSOURCE -fanalyzer"
+    CFLAGS="$CFLAGS -fanalyzer"
     ;;
 "build")
-    CFLAGS="$CFLAGS $GNUSOURCE -O2 -flto -march=native -ftree-vectorize"
+    CFLAGS="$CFLAGS -O2 -flto -march=native -ftree-vectorize"
     ;;
 *)
     CFLAGS="$CFLAGS -O2"
@@ -148,8 +152,7 @@ case "$target" in
     ;;
 *)
     trace_on
-    ctags -o tags --kinds-C=+l+d ./*.h ./*.c  2> /dev/null || true
-    vtags.sed tags | sort | uniq > .tags.vim  2> /dev/null || true
+    optional_stuff_for_development
     $CC $CPPFLAGS $CFLAGS -o ${exe} "$main" $LDFLAGS
     trace_off
     ;;
