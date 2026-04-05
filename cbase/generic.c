@@ -29,10 +29,11 @@
 #endif
 
 #if !defined(RED) || !defined(GREEN) || !defined(YELLOW) || !defined(RESET)
-#define RED   "\x1b[31m"
-#define GREEN "\x1b[32m"
-#define YELLOW "\x1b[33m"
-#define RESET "\x1b[0m"
+#define RESET     "\x1b[0m"
+#define RED(S)    "\x1b[31m"   S RESET
+#define GREEN(S)  "\x1b[32m"   S RESET
+#define YELLOW(S) "\x1b[33m"   S RESET
+#define BLUE(S)   "\x1b[1;34m" S RESET
 #endif
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
@@ -349,40 +350,40 @@ _Generic((x), \
 #endif
 
 #define PRINT_SIGNED(VAR, TYPE) \
-  fprintf(stderr, "["GREEN"%s%lld"RESET"]%s = %lld ", \
+  fprintf(stderr, "["GREEN("%s%lld")"]%s = %lld ", \
                   typename(TYPE), typebits(TYPE), #VAR, (llong)(VAR))
 
 #define PRINT_UNSIGNED(VAR, TYPE) \
-  fprintf(stderr, "["GREEN"%s%lld"RESET"]%s = %llu ", \
+  fprintf(stderr, "["GREEN("%s%lld")"]%s = %llu ", \
                   typename(TYPE), typebits(TYPE), #VAR, (ullong)(VAR))
 
 #define PRINT_LDOUBLE(VAR, TYPE) \
-  fprintf(stderr, "["GREEN"%s%lld"RESET"]%s = %Lf ", \
+  fprintf(stderr, "["GREEN("%s%lld")"]%s = %Lf ", \
                   typename(TYPE), typebits(TYPE), #VAR, LDOUBLE_GET2(VAR, TYPE))
 
 #define PRINT_OTHER(VAR, TYPE, FORMAT, CAST) \
-  fprintf(stderr, "["GREEN"%s%lld"RESET"]%s = "FORMAT" ", \
+  fprintf(stderr, "["GREEN("%s%lld")"]%s = "FORMAT" ", \
                   typename(TYPE), typebits(TYPE), #VAR, (CAST)(uintptr_t)(VAR))
 
 #define PRINT(VAR) \
 _Generic((VAR), \
-    void*:   PRINT_OTHER(VAR,    TYPE_VOIDP,   "%p",              void*), \
-    char*:   PRINT_OTHER(VAR,    TYPE_CHARP,   RED"\"%s\""RESET,  char*), \
-    bool:    PRINT_OTHER(VAR,    TYPE_BOOL,    "%u",              bool),  \
-    char:    PRINT_OTHER(VAR,    TYPE_CHAR,    YELLOW"'%c'"RESET, char),  \
-    schar:   PRINT_SIGNED(VAR,   TYPE_SCHAR),                             \
-    short:   PRINT_SIGNED(VAR,   TYPE_SHORT),                             \
-    int:     PRINT_SIGNED(VAR,   TYPE_INT),                               \
-    long:    PRINT_SIGNED(VAR,   TYPE_LONG),                              \
-    llong:   PRINT_SIGNED(VAR,   TYPE_LLONG),                             \
-    uchar:   PRINT_UNSIGNED(VAR, TYPE_UCHAR),                             \
-    ushort:  PRINT_UNSIGNED(VAR, TYPE_USHORT),                            \
-    uint:    PRINT_UNSIGNED(VAR, TYPE_UINT),                              \
-    ulong:   PRINT_UNSIGNED(VAR, TYPE_ULONG),                             \
-    ullong:  PRINT_UNSIGNED(VAR, TYPE_ULLONG),                            \
-    float:   PRINT_LDOUBLE(VAR,  TYPE_FLOAT),                             \
-    double:  PRINT_LDOUBLE(VAR,  TYPE_DOUBLE),                            \
-    ldouble: PRINT_LDOUBLE(VAR,  TYPE_LDOUBLE)                            \
+    void*:   PRINT_OTHER(VAR,    TYPE_VOIDP,   "%p",           void*), \
+    char*:   PRINT_OTHER(VAR,    TYPE_CHARP,   RED("\"%s\""),  char*), \
+    bool:    PRINT_OTHER(VAR,    TYPE_BOOL,    "%u",           bool),  \
+    char:    PRINT_OTHER(VAR,    TYPE_CHAR,    YELLOW("'%c'"), char),  \
+    schar:   PRINT_SIGNED(VAR,   TYPE_SCHAR),                          \
+    short:   PRINT_SIGNED(VAR,   TYPE_SHORT),                          \
+    int:     PRINT_SIGNED(VAR,   TYPE_INT),                            \
+    long:    PRINT_SIGNED(VAR,   TYPE_LONG),                           \
+    llong:   PRINT_SIGNED(VAR,   TYPE_LLONG),                          \
+    uchar:   PRINT_UNSIGNED(VAR, TYPE_UCHAR),                          \
+    ushort:  PRINT_UNSIGNED(VAR, TYPE_USHORT),                         \
+    uint:    PRINT_UNSIGNED(VAR, TYPE_UINT),                           \
+    ulong:   PRINT_UNSIGNED(VAR, TYPE_ULONG),                          \
+    ullong:  PRINT_UNSIGNED(VAR, TYPE_ULLONG),                         \
+    float:   PRINT_LDOUBLE(VAR,  TYPE_FLOAT),                          \
+    double:  PRINT_LDOUBLE(VAR,  TYPE_DOUBLE),                         \
+    ldouble: PRINT_LDOUBLE(VAR,  TYPE_LDOUBLE)                         \
 )
 
 #define PRINTLN(VAR) do { \
