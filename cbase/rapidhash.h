@@ -33,6 +33,9 @@
  *   - rapidhash source repository: https://github.com/Nicoshev/rapidhash
  */
 
+#if !defined(RAPIDHASH_H)
+#define RAPIDHASH_H
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,7 +69,7 @@ typedef uint64_t uint64;
 #define NOEXCEPT
 #define RAPIDHASH_CONSTEXPR static const
 #if !defined(RAPIDHASH_INLINE)
-#if defined(__GNUC__) 
+#if defined(__GNUC__)
 #define RAPIDHASH_INLINE static inline __attribute__((always_inline))
 #else
 #define RAPIDHASH_INLINE static inline
@@ -379,3 +382,73 @@ RAPIDHASH_INLINE uint64
 rapidhash(const void *key, size_t len) {
     return rapidhash_withSeed(key, len, rapid_seed);
 }
+
+typedef struct {
+    uint64 lo;
+    uint64 hi;
+} rapidhash128_t;
+
+RAPIDHASH_INLINE rapidhash128_t
+rapidhash128_internal(const void *key, size_t len, uint64 seed, const uint64 *secret) {
+    const uint8 *p = (const uint8 *)key;
+    uint64 a;
+    uint64 b;
+    uint64 s0 = secret[0];
+    uint64 s1 = secret[1];
+    uint64 s2 = secret[2];
+
+    seed ^= rapid_mix(seed ^ s0, s1) ^ len;
+    if (LIKELY(len <= 16)) {
+        if (LIKELY(len >= 4)) {
+            const uint8 *plast = p + len - 4;
+            const uint64 delta = ((len & 24) >> (len >> 3));
+            a = (read32(p) << 32) | read32(plast);
+            b = ((read32(p + delta) << 32) | read32(plast - delta));
+        } else if (LIKELY(len > 0)) {
+            a = readSmall(p, len);
+            b = 0;
+        } else {
+            a = b = 0;
+        }
+    } else {
+        size_t i = len;
+        if (UNLIKELY(i > 48)) {
+            uint64 see1 = seed;
+            uint64 see2 = seed;
+            do {
+                seed = rapid_mix(rapid_read_64(p) ^ s0, rapid_read_64(p + 8) ^ seed);
+                see1 = rapid_mix(rapid_read_64(p + 16) ^ s1, rapid_read_64(p + 24) ^ see1);
+                see2 = rapid_mix(rapid_read_64(p + 32) ^ s2, rapid_read_64(p + 40) ^ see2);
+                p += 48;
+                i -= 48;
+            } while (LIKELY(i >= 48));
+            seed ^= see1 ^ see2;
+        }
+        if (i > 16) {
+            seed = rapid_mix(rapid_read_64(p) ^ s2, rapid_read_64(p + 8) ^ seed ^ s1);
+            if (i > 32) {
+                seed = rapid_mix(rapid_read_64(p + 16) ^ s2, rapid_read_64(p + 24) ^ seed);
+            }
+        }
+        a = rapid_read_64(p + i - 16);
+        b = rapid_read_64(p + i - 8);
+    }
+
+    a ^= s1;
+    b ^= seed;
+
+    rapid_mum(&a, &b);
+    {
+        rapidhash128_t res;
+        res.lo = rapid_mix(a ^ s0 ^ len, b ^ s1);
+        res.hi = rapid_mix(b ^ s0 ^ len, a ^ s1);
+        return res;
+    }
+}
+
+RAPIDHASH_INLINE rapidhash128_t
+rapidhash128(const void *key, size_t len) {
+    return rapidhash128_internal(key, len, rapid_seed, rapid_secret);
+}
+
+#endif /* RAPIDHASH_H */

@@ -39,6 +39,8 @@ CFLAGS="$CFLAGS -Wno-gnu-union-cast"
 CFLAGS="$CFLAGS -Wno-constant-logical-operand"
 CFLAGS="$CFLAGS -Wno-unknown-pragmas"
 CFLAGS="$CFLAGS -Wfatal-errors"
+CFLAGS="$CFLAGS -Wno-float-equal"
+CFLAGS="$CFLAGS -Wno-cast-qual"
 CPPFLAGS="$CPPFLAGS -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600"
 
 LDFLAGS="$LDFLAGS $(pkg-config x11 --libs)"
@@ -51,20 +53,24 @@ OS=$(uname -a)
 CC=${CC:-cc}
 
 case "$target" in
+"fast_feedback")
+    CC=clang
+    CFLAGS="$CFLAGS $GNUSOURCE -Werror"
+    ;;
 "debug")
     CFLAGS="$CFLAGS -Wno-declaration-after-statement -g -fsanitize=undefined"
     CPPFLAGS="$CPPFLAGS $GNUSOURCE -DDEBUGGING=1"
     exe="${exe}_debug"
     ;;
-"valgrind") 
+"valgrind")
     CFLAGS="$CFLAGS -g -O0 -ftree-vectorize"
     CPPFLAGS="$CPPFLAGS $GNUSOURCE -DDEBUGGING=1"
     ;;
-"check") 
+"check")
     CC=gcc
     CFLAGS="$CFLAGS $GNUSOURCE -fanalyzer"
     ;;
-"build") 
+"build")
     CFLAGS="$CFLAGS $GNUSOURCE -O2 -flto -march=native -ftree-vectorize"
     ;;
 *)
@@ -135,6 +141,11 @@ case "$target" in
     ;;
 "test_all")
     ;;
+"fast_feedback")
+    trace_on
+    $CC $CPPFLAGS $CFLAGS main.c -o "$exe" $LDFLAGS && "$exe"
+    trace_off
+    ;;
 *)
     trace_on
     ctags --kinds-C=+l+d ./*.h ./*.c 2> /dev/null || true
@@ -145,7 +156,7 @@ case "$target" in
 esac
 
 case "$target" in
-"valgrind") 
+"valgrind")
     vg_flags="--error-exitcode=1 --errors-for-leak-kinds=all"
     vg_flags="$vg_flags --leak-check=full --show-leak-kinds=all"
 

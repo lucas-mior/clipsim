@@ -1,6 +1,7 @@
 targets='
 build
 debug
+fast_feedback
 # install
 # uninstall
 # valgrind
