@@ -20,8 +20,13 @@ if ! grep -q "$target" ./targets; then
 fi
 
 optional_stuff_for_development() {
-    ctags -o tags --kinds-C=+l+d ./*.h ./*.c  2> /dev/null || true
-    vtags.sed tags | sort | uniq > .tags.vim  2> /dev/null || true
+    if command -v ctags; then
+        ctags -o tags --kinds-C=+l+d ./*.h ./*.c
+        if command -v vtags.sed; then
+            vtags.sed tags | sort | uniq > .tags.vim
+        fi
+    fi
+
     return
 }
 
