@@ -39,13 +39,16 @@
 #endif
 
 #if 1 == TESTING_hash
+#define HASH_KEY_TYPE char
+#define HASH_KEY_FORMATTER "%s"
 #define HASH_VALUE_TYPE int32
 #define HASH_VALUE_FORMATTER "%d"
 #define HASH_TYPE map
 #define HASH_AUTO_RESIZE 1
 #endif
 
-#define HASH_SLOT_FREE   0
+#define HASH_SLOT_USED     1
+#define HASH_SLOT_FREE     0
 #define HASH_SLOT_DELETED -1
 
 #if !defined(GREEN)
@@ -57,7 +60,7 @@
 #define ALIGNMENT 16
 #endif
 
-uint64 hash_function(char *key, int32 key_length);
+uint64 hash_function(void *key, int32 key_length);
 uint32 hash_normal(void *map, uint64 hash);
 uint32 hash_capacity(void *map);
 uint32 hash_length(void *map);
@@ -95,12 +98,7 @@ typedef uint64_t uint64;
 #define CAT(a, b) CAT_(a, b)
 #endif
 
-struct CommonBucket {
-    uint64 hash;
-    char *key;
-    int32 key_len;
-    int32 value;
-};
+struct CommonBucket;
 
 struct CommonMap {
     int64 size;
@@ -117,12 +115,20 @@ struct CommonMap {
 #error HASH_TYPE is undefined
 #endif
 
-#if !defined(HASH_AUTO_RESIZE)
-#error HASH_AUTO_RESIZE is undefined
+#if !defined(HASH_KEY_TYPE)
+#error HASH_KEY_TYPE is undefined
+#endif
+
+#if !defined(HASH_KEY_FIXED_LEN)
+#define HASH_KEY_FIXED_LEN 0
 #endif
 
 #if !defined(HASH_DUPLICATE_KEYS)
 #define HASH_DUPLICATE_KEYS 0
+#endif
+
+#if !defined(HASH_AUTO_RESIZE)
+#error HASH_AUTO_RESIZE is undefined
 #endif
 
 #define Bucket CAT(Bucket_, HASH_TYPE)
@@ -130,8 +136,13 @@ struct CommonMap {
 
 typedef struct Bucket {
     uint64 hash;
-    char *key;
+#if HASH_KEY_FIXED_LEN
+    HASH_KEY_TYPE key;
+    int8 slot_state;
+#else
+    HASH_KEY_TYPE *key;
     int32 key_len;
+#endif
 #if defined(HASH_VALUE_TYPE)
     HASH_VALUE_TYPE value;
 #endif
@@ -148,6 +159,16 @@ struct Map {
     uint32 occupied;
     Bucket *array;
 };
+
+#define CHECK_COMMON_MAP(FIELD) \
+    _Static_assert(offsetof(struct Map, FIELD) == offsetof(struct CommonMap, FIELD), \
+                   "CommonMap and new Map must have the same offset for " #FIELD)
+
+CHECK_COMMON_MAP(size);
+CHECK_COMMON_MAP(capacity);
+CHECK_COMMON_MAP(bitmask);
+CHECK_COMMON_MAP(length);
+CHECK_COMMON_MAP(occupied);
 
 static void
 CAT(hash_zero_, HASH_TYPE)(struct Map *map) {
@@ -192,7 +213,7 @@ CAT(hash_destroy_, HASH_TYPE)(struct Map *map) {
     if (map == NULL) {
         return;
     }
-#if HASH_DUPLICATE_KEYS
+#if !HASH_KEY_FIXED_LEN && HASH_DUPLICATE_KEYS
     for (uint32 i = 0; i < map->capacity; i += 1) {
         switch ((int64)map->array[i].key) {
         case HASH_SLOT_DELETED:
@@ -209,111 +230,130 @@ CAT(hash_destroy_, HASH_TYPE)(struct Map *map) {
     return;
 }
 
-static bool
-CAT(hash_insert_pre_calc_, HASH_TYPE)(struct Map *map,
-                                      char *key, int32 key_length,
-                                      uint64 hash, uint32 base_index
-#if defined(HASH_VALUE_TYPE)
-                                      , HASH_VALUE_TYPE value
-#endif
-) {
-    uint32 capacity;
-    uint32 i;
-    uint32 probe;
-    int32 first_tombstone;
+static void
+CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
+    uint32 new_capacity = map->capacity * 2;
+    uint32 new_bitmask = (new_capacity - 1);
+    int64 new_size = new_capacity * sizeof(Bucket);
+    Bucket *new_array = xmmap_commit(&new_size);
+    Bucket *old_array = map->array;
+    uint32 old_capacity = map->capacity;
 
-    if (HASH_AUTO_RESIZE && (map->occupied*100 >= map->capacity*75)) {
-        uint32 new_capacity = map->capacity*2;
-        uint32 new_bitmask = (new_capacity - 1);
-        int64 new_size = new_capacity*sizeof(Bucket);
-        Bucket *new_array = xmmap_commit(&new_size);
-        Bucket *old_array = map->array;
-        uint32 old_capacity = map->capacity;
-
-        for (uint32 j = 0; j < old_capacity; j += 1) {
-            Bucket *iterator = &old_array[j];
-            uint32 rehash_base = iterator->hash & new_bitmask;
-            uint32 rehash_probe = rehash_base;
-            uint32 rehash_step = 0;
-
-            if ((int64)iterator->key == HASH_SLOT_FREE) {
-                continue;
-            }
-
-            if ((int64)iterator->key == HASH_SLOT_DELETED) {
-                continue;
-            }
-
-            while (rehash_step < new_capacity) {
-                Bucket *target = &new_array[rehash_probe];
-
-                if (target->key == (char *)HASH_SLOT_FREE) {
-                    target->key = iterator->key;
-                    target->hash = iterator->hash;
-#if defined(HASH_VALUE_TYPE)
-                    target->value = iterator->value;
-#endif
-                    break;
-                }
-
-                rehash_step += 1;
-                rehash_probe = (uint32)(rehash_base
-                                + ((uint64)rehash_step
-                                   + (uint64)rehash_step*rehash_step) / 2) & new_bitmask;
-            }
-        }
-
-        xmunmap(old_array, map->size);
-        map->array = new_array;
-        map->capacity = new_capacity;
-        map->bitmask = new_bitmask;
-        map->size = new_size;
-        map->occupied = map->length;
-
-        base_index = hash & map->bitmask;
+    if (DEBUGGING) {
+        error("Resizing hash table... %u -> %u\n", old_capacity, new_capacity);
     }
 
-    capacity = map->capacity;
-    i = 0;
-    probe = base_index;
-    first_tombstone = -1;
+    for (uint32 j = 0; j < old_capacity; j += 1) {
+        Bucket *iterator = &old_array[j];
+        uint32 rehash_base;
+        uint32 rehash_probe;
+        uint32 rehash_step = 0;
+
+#if HASH_KEY_FIXED_LEN
+        if (iterator->slot_state == HASH_SLOT_FREE) {
+            continue;
+        }
+        if (iterator->slot_state == HASH_SLOT_DELETED) {
+            continue;
+        }
+#else
+        if ((int64)iterator->key == HASH_SLOT_FREE) {
+            continue;
+        }
+        if ((int64)iterator->key == HASH_SLOT_DELETED) {
+            continue;
+        }
+#endif
+
+        rehash_base = iterator->hash & new_bitmask;
+        rehash_probe = rehash_base;
+
+        while (rehash_step < new_capacity) {
+            Bucket *target = &new_array[rehash_probe];
+
+#if HASH_KEY_FIXED_LEN
+            if (target->slot_state == HASH_SLOT_FREE) {
+                memcpy64(&target->key, &iterator->key, sizeof(HASH_KEY_TYPE));
+                target->slot_state = HASH_SLOT_USED;
+                target->hash = iterator->hash;
+  #if defined(HASH_VALUE_TYPE)
+                target->value = iterator->value;
+  #endif
+                break;
+            }
+#else
+            if ((int64)target->key == HASH_SLOT_FREE) {
+                target->key = iterator->key;
+                target->key_len = iterator->key_len;
+                target->hash = iterator->hash;
+  #if defined(HASH_VALUE_TYPE)
+                target->value = iterator->value;
+  #endif
+                break;
+            }
+#endif
+
+            rehash_step += 1;
+            rehash_probe = (uint32)(rehash_base
+                            + ((uint64)rehash_step
+                               + (uint64)rehash_step*rehash_step) / 2) & new_bitmask;
+        }
+    }
+
+    xmunmap(old_array, map->size);
+    map->array = new_array;
+    map->capacity = new_capacity;
+    map->bitmask = new_bitmask;
+    map->size = new_size;
+    map->occupied = map->length;
+
+    if (DEBUGGING) {
+        error("Hash table resized.\n");
+    }
+
+    return;
+}
+
+#if HASH_KEY_FIXED_LEN
+static bool
+CAT(hash_probe_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key, uint64 hash, uint32 base_index, uint32 *out_idx)
+#else
+static bool
+CAT(hash_probe_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key, int32 key_length, uint64 hash, uint32 base_index, uint32 *out_idx)
+#endif
+{
+    uint32 capacity = map->capacity;
+    uint32 i = 0;
+    uint32 probe = base_index;
+    int32 first_tombstone = -1;
 
     while (i < capacity) {
         Bucket *iterator = &map->array[probe];
-
-        switch ((int64)iterator->key) {
-        case HASH_SLOT_FREE: {
-            Bucket *target;
-            if (first_tombstone >= 0) {
-                target = &map->array[first_tombstone];
-            } else {
-                target = iterator;
-                map->occupied += 1;
-            }
-
-#if HASH_DUPLICATE_KEYS
-            target->key = xmemdup(key, key_length + 1);
+#if HASH_KEY_FIXED_LEN
+        int64 state = iterator->slot_state;
 #else
-            target->key = key;
+        int64 state = (int64)iterator->key;
 #endif
-            target->key_len = key_length;
-            target->hash = hash;
-#if defined(HASH_VALUE_TYPE)
-            target->value = value;
-#endif
-            map->length += 1;
-            return true;
-        }
-        case HASH_SLOT_DELETED:
+
+        if (state == HASH_SLOT_FREE) {
+            *out_idx = (first_tombstone >= 0) ? (uint32)first_tombstone : probe;
+            return false;
+        } else if (state == HASH_SLOT_DELETED) {
             if (first_tombstone < 0) {
                 first_tombstone = (int32)probe;
             }
-            break;
-        default:
-            if ((iterator->hash == hash) && (strcmp(iterator->key, key) == 0)) {
-                return false;
+        } else {
+#if HASH_KEY_FIXED_LEN
+            if ((iterator->hash == hash) && !memcmp64(&iterator->key, key, sizeof(HASH_KEY_TYPE)))
+#else
+            if ((iterator->hash == hash)
+                    && (iterator->key_len == key_length)
+                    && !memcmp64(iterator->key, key, key_length))
+#endif
+            {
+                *out_idx = probe;
+                return true;
             }
-            break;
         }
 
         i += 1;
@@ -321,147 +361,335 @@ CAT(hash_insert_pre_calc_, HASH_TYPE)(struct Map *map,
     }
 
     if (first_tombstone >= 0) {
-        Bucket *target = &map->array[first_tombstone];
-#if HASH_DUPLICATE_KEYS
-        target->key = xmemdup(key, key_length + 1);
+        *out_idx = (uint32)first_tombstone;
+    }
+
+    return false;
+}
+
+
+#if HASH_KEY_FIXED_LEN
+static bool
+CAT(hash_insert_pre_calc_, HASH_TYPE)(struct Map *map,
+                                      HASH_KEY_TYPE *key,
+                                      uint64 hash, uint32 base_index
+  #if defined(HASH_VALUE_TYPE)
+                                      , HASH_VALUE_TYPE value
+  #endif
 #else
-        target->key = key;
+static bool
+CAT(hash_insert_pre_calc_, HASH_TYPE)(struct Map *map,
+                                      HASH_KEY_TYPE *key, int32 key_length,
+                                      uint64 hash, uint32 base_index
+  #if defined(HASH_VALUE_TYPE)
+                                      , HASH_VALUE_TYPE value
+  #endif
 #endif
-        target->key_len = key_length;
-        target->hash = hash;
+) {
+    uint32 target_idx = MAXOF(target_idx);
+    Bucket *target;
+
+    if (HASH_AUTO_RESIZE && (map->occupied*100 >= map->capacity*75)) {
+        CAT(hash_resize_, HASH_TYPE)(map);
+        base_index = hash & map->bitmask;
+    }
+
+#if HASH_KEY_FIXED_LEN
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
+#else
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash, base_index, &target_idx))
+#endif
+    {
+        return false;
+    }
+
+    target = &map->array[target_idx];
+
+#if HASH_KEY_FIXED_LEN
+    if (target->slot_state == HASH_SLOT_FREE) {
+        map->occupied += 1;
+    }
+    memcpy64(&target->key, key, sizeof(HASH_KEY_TYPE));
+    target->slot_state = HASH_SLOT_USED;
+    target->hash = hash;
+#else
+    if ((int64)target->key == HASH_SLOT_FREE) {
+        map->occupied += 1;
+    }
+  #if HASH_DUPLICATE_KEYS
+    target->key = xmemdup(key, key_length + 1);
+  #else
+    target->key = key;
+  #endif
+    target->key_len = key_length;
+    target->hash = hash;
+#endif
+
 #if defined(HASH_VALUE_TYPE)
-        target->value = value;
+    target->value = value;
 #endif
-        map->length += 1;
+    map->length += 1;
+    return true;
+}
+
+#if HASH_KEY_FIXED_LEN
+static bool
+CAT(hash_insert_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
+  #if defined(HASH_VALUE_TYPE)
+                             , HASH_VALUE_TYPE value
+  #endif
+) {
+    uint64 hash = hash_function(key, sizeof(HASH_KEY_TYPE));
+    uint32 index = hash_normal(map, hash);
+    return CAT(hash_insert_pre_calc_, HASH_TYPE)(map, key, hash, index
+  #if defined(HASH_VALUE_TYPE)
+                                                 , value
+  #endif
+    );
+}
+#else
+static bool
+CAT(hash_insert_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key,
+                             int32 key_length
+  #if defined(HASH_VALUE_TYPE)
+                             , HASH_VALUE_TYPE value
+  #endif
+) {
+    uint64 hash = hash_function(key, key_length);
+    uint32 index = hash_normal(map, hash);
+    return CAT(hash_insert_pre_calc_, HASH_TYPE)(map, key, key_length,
+                                                 hash, index
+  #if defined(HASH_VALUE_TYPE)
+                                                 , value
+  #endif
+    );
+}
+#endif
+
+
+#if HASH_KEY_FIXED_LEN
+static bool
+CAT(hash_overwrite_pre_calc_, HASH_TYPE)(struct Map *map,
+                                         HASH_KEY_TYPE *key,
+                                         uint64 hash, uint32 base_index
+  #if defined(HASH_VALUE_TYPE)
+                                         , HASH_VALUE_TYPE value
+  #endif
+#else
+static bool
+CAT(hash_overwrite_pre_calc_, HASH_TYPE)(struct Map *map,
+                                         HASH_KEY_TYPE *key, int32 key_length,
+                                         uint64 hash, uint32 base_index
+  #if defined(HASH_VALUE_TYPE)
+                                         , HASH_VALUE_TYPE value
+  #endif
+#endif
+) {
+    uint32 target_idx = MAXOF(target_idx);
+    Bucket *target;
+
+    if (HASH_AUTO_RESIZE && (map->occupied*100 >= map->capacity*75)) {
+        CAT(hash_resize_, HASH_TYPE)(map);
+        base_index = hash & map->bitmask;
+    }
+
+#if HASH_KEY_FIXED_LEN
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
+#else
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash, base_index, &target_idx))
+#endif
+    {
+        target = &map->array[target_idx];
+  #if defined(HASH_VALUE_TYPE)
+        target->value = value;
+  #endif
+        return true;
+    }
+
+    target = &map->array[target_idx];
+
+#if HASH_KEY_FIXED_LEN
+    if (target->slot_state == HASH_SLOT_FREE) {
+        map->occupied += 1;
+    }
+    memcpy64(&target->key, key, sizeof(HASH_KEY_TYPE));
+    target->slot_state = HASH_SLOT_USED;
+    target->hash = hash;
+#else
+    if ((int64)target->key == HASH_SLOT_FREE) {
+        map->occupied += 1;
+    }
+  #if HASH_DUPLICATE_KEYS
+    target->key = xmemdup(key, key_length + 1);
+  #else
+    target->key = key;
+  #endif
+    target->key_len = key_length;
+    target->hash = hash;
+#endif
+
+#if defined(HASH_VALUE_TYPE)
+    target->value = value;
+#endif
+    map->length += 1;
+    return true;
+}
+
+#if HASH_KEY_FIXED_LEN
+static bool
+CAT(hash_overwrite_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
+  #if defined(HASH_VALUE_TYPE)
+                                , HASH_VALUE_TYPE value
+  #endif
+) {
+    uint64 hash = hash_function(key, sizeof(HASH_KEY_TYPE));
+    uint32 index = hash_normal(map, hash);
+    return CAT(hash_overwrite_pre_calc_, HASH_TYPE)(map, key, hash, index
+  #if defined(HASH_VALUE_TYPE)
+                                                    , value
+  #endif
+    );
+}
+#else
+static bool
+CAT(hash_overwrite_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key,
+                                int32 key_length
+  #if defined(HASH_VALUE_TYPE)
+                                , HASH_VALUE_TYPE value
+  #endif
+) {
+    uint64 hash = hash_function(key, key_length);
+    uint32 index = hash_normal(map, hash);
+    return CAT(hash_overwrite_pre_calc_, HASH_TYPE)(map, key, key_length,
+                                                    hash, index
+  #if defined(HASH_VALUE_TYPE)
+                                                    , value
+  #endif
+    );
+}
+#endif
+
+
+#if HASH_KEY_FIXED_LEN
+static bool
+CAT(hash_lookup_pre_calc_, HASH_TYPE)(struct Map *map,
+                                      HASH_KEY_TYPE *key, uint64 hash, uint32 base_index
+  #if defined(HASH_VALUE_TYPE)
+                                      , HASH_VALUE_TYPE *value_ptr
+  #endif
+#else
+static bool
+CAT(hash_lookup_pre_calc_, HASH_TYPE)(struct Map *map,
+                                      HASH_KEY_TYPE *key, int32 key_length, uint64 hash, uint32 base_index
+  #if defined(HASH_VALUE_TYPE)
+                                      , HASH_VALUE_TYPE *value_ptr
+  #endif
+#endif
+) {
+    uint32 target_idx;
+
+#if HASH_KEY_FIXED_LEN
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
+#else
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash, base_index, &target_idx))
+#endif
+    {
+  #if defined(HASH_VALUE_TYPE)
+        *value_ptr = map->array[target_idx].value;
+  #endif
         return true;
     }
 
     return false;
 }
 
+#if HASH_KEY_FIXED_LEN
 static bool
-CAT(hash_insert_, HASH_TYPE)(struct Map *map, char *key,
-                             int32 key_length
-#if defined(HASH_VALUE_TYPE)
-                             , HASH_VALUE_TYPE value
-#endif
+CAT(hash_lookup_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
+  #if defined(HASH_VALUE_TYPE)
+                             , HASH_VALUE_TYPE *value_ptr
+  #endif
+) {
+    uint64 hash = hash_function(key, sizeof(HASH_KEY_TYPE));
+    uint32 index = hash_normal(map, hash);
+    return CAT(hash_lookup_pre_calc_, HASH_TYPE)(map, key, hash, index
+  #if defined(HASH_VALUE_TYPE)
+                                                 , value_ptr
+  #endif
+    );
+}
+#else
+static bool
+CAT(hash_lookup_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key, int32 key_length
+  #if defined(HASH_VALUE_TYPE)
+                             , HASH_VALUE_TYPE *value_ptr
+  #endif
 ) {
     uint64 hash = hash_function(key, key_length);
     uint32 index = hash_normal(map, hash);
-    return CAT(hash_insert_pre_calc_, HASH_TYPE)(map, key, key_length,
-                                                 hash, index
-#if defined(HASH_VALUE_TYPE)
-                                                 , value
-#endif
+    return CAT(hash_lookup_pre_calc_, HASH_TYPE)(map, key, key_length, hash, index
+  #if defined(HASH_VALUE_TYPE)
+                                                 , value_ptr
+  #endif
     );
 }
-
-static bool
-CAT(hash_insert2_, HASH_TYPE)(struct Map *map, char *key
-#if defined(HASH_VALUE_TYPE)
-                             , HASH_VALUE_TYPE value
 #endif
-) {
-    int32 key_length = strlen32(key);
-    return CAT(hash_insert_, HASH_TYPE)(map, key, key_length
-#if defined(HASH_VALUE_TYPE)
-                                        , value
-#endif
-    );
-}
 
-#if defined(HASH_VALUE_TYPE)
-static HASH_VALUE_TYPE *
-#else
-static void *
-#endif
-CAT(hash_lookup_pre_calc_, HASH_TYPE)(struct Map *map,
-                                      char *key, uint64 hash, uint32 base_index) {
-    uint32 capacity = map->capacity;
-    uint32 i = 0;
-    uint32 probe = base_index;
 
-    while (i < capacity) {
-        Bucket *iterator = &map->array[probe];
-
-        switch ((int64)iterator->key) {
-        case HASH_SLOT_FREE:
-            return NULL;
-        case HASH_SLOT_DELETED:
-            break;
-        default:
-            if ((iterator->hash == hash) && (strcmp(iterator->key, key) == 0)) {
-#if defined(HASH_VALUE_TYPE)
-                return &(iterator->value);
-#else
-                return iterator->key;
-#endif
-            }
-        }
-
-        i += 1;
-        probe = (uint32)(base_index + ((uint64)i + (uint64)i*i) / 2) & map->bitmask;
-    }
-
-    return NULL;
-}
-
-static void *
-CAT(hash_lookup_, HASH_TYPE)(struct Map *map, char *key, int32 key_length) {
-    uint64 hash = hash_function(key, key_length);
-    uint32 index = hash_normal(map, hash);
-    return CAT(hash_lookup_pre_calc_, HASH_TYPE)(map, key, hash, index);
-}
-
-static void *
-CAT(hash_lookup2_, HASH_TYPE)(struct Map *map, char *key) {
-    int32 key_length = strlen32(key);
-    return CAT(hash_lookup_, HASH_TYPE)(map, key, key_length);
-}
-
+#if HASH_KEY_FIXED_LEN
 static bool
 CAT(hash_remove_pre_calc_, HASH_TYPE)(struct Map *map,
-                                      char *key, uint64 hash, uint32 base_index) {
-    uint32 i = 0;
-    uint32 probe = base_index;
+                                      HASH_KEY_TYPE *key, uint64 hash, uint32 base_index)
+#else
+static bool
+CAT(hash_remove_pre_calc_, HASH_TYPE)(struct Map *map,
+                                      HASH_KEY_TYPE *key, int32 key_length, uint64 hash, uint32 base_index)
+#endif
+{
+    uint32 target_idx;
+    Bucket *target;
 
     if (map == NULL) {
         return false;
     }
 
-    while (i < map->capacity) {
-        Bucket *iterator = &map->array[probe];
-
-        switch ((int64)iterator->key) {
-        case HASH_SLOT_FREE:
-            return false;
-        case HASH_SLOT_DELETED:
-            break;
-        default:
-            if ((iterator->hash == hash) && (strcmp(iterator->key, key) == 0)) {
-#if HASH_DUPLICATE_KEYS
-                free(iterator->key, iterator->key_len);
-#endif
-                iterator->key = (char *)HASH_SLOT_DELETED;
-                map->length -= 1;
-                return true;
-            }
-            break;
-        }
-
-        i += 1;
-        probe = (uint32)(base_index + ((uint64)i + (uint64)i*i) / 2) & map->bitmask;
+#if HASH_KEY_FIXED_LEN
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx)) {
+        target = &map->array[target_idx];
+        target->slot_state = HASH_SLOT_DELETED;
+        map->length -= 1;
+        return true;
     }
+#else
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash, base_index, &target_idx)) {
+        target = &map->array[target_idx];
+  #if HASH_DUPLICATE_KEYS
+        free(target->key, target->key_len);
+  #endif
+        target->key = (HASH_KEY_TYPE *)(int64)HASH_SLOT_DELETED;
+        map->length -= 1;
+        return true;
+    }
+#endif
 
     return false;
 }
 
+#if HASH_KEY_FIXED_LEN
 static bool
-CAT(hash_remove_, HASH_TYPE)(struct Map *map, char *key, int32 key_length) {
-    uint64 hash = hash_function(key, key_length);
+CAT(hash_remove_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key) {
+    uint64 hash = hash_function(key, sizeof(HASH_KEY_TYPE));
     uint32 index = hash_normal(map, hash);
     return CAT(hash_remove_pre_calc_, HASH_TYPE)(map, key, hash, index);
 }
+#else
+static bool
+CAT(hash_remove_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key, int32 key_length) {
+    uint64 hash = hash_function(key, key_length);
+    uint32 index = hash_normal(map, hash);
+    return CAT(hash_remove_pre_calc_, HASH_TYPE)(map, key, key_length, hash, index);
+}
+#endif
 
 static void
 CAT(hash_print_summary_, HASH_TYPE)(struct Map *map, char *name) {
@@ -483,17 +711,31 @@ CAT(hash_print_, HASH_TYPE)(struct Map *map, bool verbose) {
         Bucket *iterator = &map->array[i];
 
         if (!verbose) {
-            if (iterator->key == (char *)HASH_SLOT_FREE) {
+#if HASH_KEY_FIXED_LEN
+            if (iterator->slot_state == HASH_SLOT_FREE) {
                 continue;
             }
-            if (iterator->key == (char *)HASH_SLOT_DELETED) {
+            if (iterator->slot_state == HASH_SLOT_DELETED) {
                 continue;
             }
+#else
+            if ((int64)iterator->key == HASH_SLOT_FREE) {
+                continue;
+            }
+            if ((int64)iterator->key == HASH_SLOT_DELETED) {
+                continue;
+            }
+#endif
         }
 
         printf("\n%03u: ", i);
 
-        switch ((int64)iterator->key) {
+#if HASH_KEY_FIXED_LEN
+        switch (iterator->slot_state)
+#else
+        switch ((int64)iterator->key)
+#endif
+        {
         case HASH_SLOT_FREE:
             printf("[empty]");
             break;
@@ -501,10 +743,15 @@ CAT(hash_print_, HASH_TYPE)(struct Map *map, bool verbose) {
             printf("[deleted]");
             break;
         default:
-            printf("'%s'", iterator->key);
-#if defined(HASH_VALUE_TYPE) && defined(HASH_VALUE_FORMATTER)
-            printf("="HASH_VALUE_FORMATTER, iterator->value);
+#if defined(HASH_KEY_FORMATTER)
+            printf("'" HASH_KEY_FORMATTER "'", iterator->key);
+#else
+            printf("key");
 #endif
+#if defined(HASH_VALUE_TYPE) && defined(HASH_VALUE_FORMATTER)
+            printf("=" HASH_VALUE_FORMATTER, iterator->value);
+#endif
+            break;
         }
     }
 
@@ -517,7 +764,12 @@ CAT(hash_ndeleted_, HASH_TYPE)(struct Map *map) {
     uint32 ndeleted = 0;
     for (uint32 i = 0; i < map->capacity; i += 1) {
         Bucket *iterator = &map->array[i];
-        if (iterator->key == (char *)HASH_SLOT_DELETED) {
+#if HASH_KEY_FIXED_LEN
+        if (iterator->slot_state == HASH_SLOT_DELETED)
+#else
+        if ((int64)iterator->key == HASH_SLOT_DELETED)
+#endif
+        {
             ndeleted += 1;
         }
     }
@@ -526,15 +778,18 @@ CAT(hash_ndeleted_, HASH_TYPE)(struct Map *map) {
 
 static inline void
 CAT(hash_functions_sink_, HASH_TYPE)(void) {
+    (void)CAT(hash_functions_sink_, HASH_TYPE);
     (void)CAT(hash_zero_, HASH_TYPE);
     (void)CAT(hash_create_, HASH_TYPE);
     (void)CAT(hash_destroy_, HASH_TYPE);
+    (void)CAT(hash_resize_, HASH_TYPE);
+    (void)CAT(hash_probe_, HASH_TYPE);
     (void)CAT(hash_insert_pre_calc_, HASH_TYPE);
     (void)CAT(hash_insert_, HASH_TYPE);
-    (void)CAT(hash_insert2_, HASH_TYPE);
+    (void)CAT(hash_overwrite_pre_calc_, HASH_TYPE);
+    (void)CAT(hash_overwrite_, HASH_TYPE);
     (void)CAT(hash_lookup_pre_calc_, HASH_TYPE);
     (void)CAT(hash_lookup_, HASH_TYPE);
-    (void)CAT(hash_lookup2_, HASH_TYPE);
     (void)CAT(hash_remove_pre_calc_, HASH_TYPE);
     (void)CAT(hash_remove_, HASH_TYPE);
     (void)CAT(hash_print_summary_, HASH_TYPE);
@@ -547,12 +802,15 @@ CAT(hash_functions_sink_, HASH_TYPE)(void) {
 #undef HASH_TYPE
 #undef HASH_DUPLICATE_KEYS
 #undef HASH_VALUE_FORMATTER
+#undef HASH_KEY_TYPE
+#undef HASH_KEY_FORMATTER
+#undef HASH_KEY_FIXED_LEN
 
 #if !defined(HASH_H2)
 #define HASH_H2
 
 uint64
-hash_function(char *key, int32 key_length) {
+hash_function(void *key, int32 key_length) {
     uint64 hash;
     hash = rapidhash(key, (size_t)key_length);
     return hash;
@@ -588,7 +846,8 @@ hash_expected_collisions(void *map) {
 
 #endif /* HASH_H2 */
 
-#if TESTING_hash
+#if TESTING_hash && !defined(TESTING_hash_started)
+#define TESTING_hash_started
 
 #if !OS_UNIX
 #error "hash.c tests only work on unix systems"
@@ -597,8 +856,26 @@ hash_expected_collisions(void *map) {
 #include <assert.h>
 #include "arena.c"
 
-#define NSTRINGS 500
-#define NBYTES ALIGNMENT
+// Have to add these declarations so that clangd does not complain
+struct Hash_map_by_value;
+static struct Hash_map_by_value *hash_create_map_by_value(uint32);
+static void hash_destroy_map_by_value(struct Hash_map_by_value *);
+static uint32 hash_ndeleted_map_by_value(struct Hash_map_by_value *);
+static bool hash_insert_map_by_value(struct Hash_map_by_value *, int64 *, int32);
+static bool hash_lookup_map_by_value(struct Hash_map_by_value *, int64 *, int32 *);
+static bool hash_remove_map_by_value(struct Hash_map_by_value *, int64 *);
+
+#define HASH_KEY_TYPE int64
+#define HASH_KEY_FIXED_LEN 1
+#define HASH_VALUE_TYPE int32
+#define HASH_VALUE_FORMATTER "%d"
+#define HASH_TYPE map_by_value
+#define HASH_AUTO_RESIZE 1
+#define HASH_DUPLICATE_KEYS 0
+#include "hash.c"
+
+#define NSTRINGS 10000
+#define NBYTES 100*ALIGNMENT
 
 typedef struct String {
     char *s;
@@ -639,6 +916,7 @@ main(void) {
     String str2 = {.s = "bbbbbbbbbbbbbbb", .value = 1};
     String *strings;
     uint32 initial_capacity;
+    int32 test;
 
     map = hash_create_map(100);
     arena = arena_create(NBYTES*NSTRINGS);
@@ -656,7 +934,7 @@ main(void) {
 
     ASSERT_EQUAL(hash_length(map), 2u);
 
-    ASSERT_NULL(hash_lookup_map(map, "does_not_exist", 14));
+    ASSERT(!hash_lookup_map(map, "does_not_exist", 14, &test));
 
     srand(42);
     for (uint32 i = 0; i < NSTRINGS; i += 1) {
@@ -674,10 +952,9 @@ main(void) {
     ASSERT(map->capacity > initial_capacity);
 
     for (uint32 i = 0; i < NSTRINGS; i += 1) {
-        int32 *stored;
-        stored = hash_lookup_map(map, strings[i].s, strings[i].len);
-        ASSERT(stored);
-        ASSERT_EQUAL(*stored, strings[i].value);
+        int32 stored;
+        ASSERT(hash_lookup_map(map, strings[i].s, strings[i].len, &stored));
+        ASSERT_EQUAL(stored, strings[i].value);
     }
 
     ASSERT(hash_remove_map(map, strings[0].s, strings[0].len));
@@ -696,7 +973,33 @@ main(void) {
     hash_destroy_map(map);
     free(strings, NSTRINGS*sizeof(*strings));
 
+    {
+        struct Hash_map_by_value *map2 = hash_create_map_by_value(16);
+        int64 key1 = 12345;
+        int64 key2 = 67890;
+        int32 value1 = 99;
+        int32 value2 = 100;
+        int32 test2 = 0;
+        int64 missing_key = 999;
+
+        ASSERT(hash_insert_map_by_value(map2, &key1, value1));
+        ASSERT(!hash_insert_map_by_value(map2, &key1, 1));
+        ASSERT(hash_insert_map_by_value(map2, &key2, value2));
+
+        ASSERT_EQUAL(hash_length(map2), 2u);
+
+        ASSERT(hash_lookup_map_by_value(map2, &key1, &test2));
+        ASSERT_EQUAL(test2, value1);
+
+        ASSERT(!hash_lookup_map_by_value(map2, &missing_key, &test2));
+
+        ASSERT(hash_remove_map_by_value(map2, &key1));
+        ASSERT_EQUAL(hash_ndeleted_map_by_value(map2), 1);
+
+        hash_destroy_map_by_value(map2);
+    }
+
     exit(EXIT_SUCCESS);
 }
 
-#endif /* TESTING_hash */
+#endif /* TESTING_hash && !defined(TESTING_hash_started) */

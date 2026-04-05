@@ -201,7 +201,7 @@ history_exit(int32 signum) {
 
     thread_copying_images = history_save();
     if (thread_copying_images) {
-        xpthread_join(thread_copying_images, NULL);
+        xpthread_join(&thread_copying_images, NULL);
     }
 
     error("Deleting temporary images...\n");
