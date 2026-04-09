@@ -197,7 +197,6 @@ _Generic((ARRAY), \
 #endif
 
 // Note: NEVER delete lines with // clang-format
-// clang-format off
 
 #endif
 
@@ -221,7 +220,6 @@ _Generic((SIZE), \
 #define ALIGN(x) UTIL_ALIGN(x, ALIGNMENT)
 #endif
 
-// clang-format on
 
 static char *notifiers[2] = {"dunstify", "notify-send"};
 static int64 util_page_size = 0;
@@ -232,8 +230,6 @@ static void util_segv_handler(int32) __attribute__((noreturn));
 static int32 itoa2(char *, int32, llong);
 static long atoi2(char *);
 INLINE void *memchr64(void *pointer, int32 value, int64 size);
-static int xclose(char *file, int line,
-                  int *fd, char *fd_var_name, char *filename);
 
 #if !defined(CAT) || !defined(CAT3)
   #define CAT_(a, b)     a##b
@@ -1362,7 +1358,6 @@ fatal(int status) {
 }
 
 // Note: NEVER delete lines with // clang-format
-// clang-format off
 void
 util_segv_handler(int32 unused) {
     char *message = "Memory error. Please send a bug report.\n";
@@ -1375,7 +1370,6 @@ util_segv_handler(int32 unused) {
     }
     _exit(EXIT_FAILURE);
 }
-// clang-format on
 
 static int32
 util_string_int32(int32 *number, char *string) {
@@ -1417,7 +1411,6 @@ util_die_notify(char *program_name, char *format, ...) {
 }
 
 // Note: NEVER delete lines with // clang-format
-// clang-format off
 
 #if OS_UNIX
 static int32
@@ -1470,7 +1463,6 @@ util_copy_file_sync(char *destination, char *source) {
     return 0;
 }
 
-// clang-format on
 
 #if !defined(MAX_FILES_COPY)
 #define MAX_FILES_COPY 256
@@ -1709,7 +1701,6 @@ util_equal_files(char *filename_a, char *filename_b) {
             void *map_b;
 
             // Note: NEVER delete lines with // clang-format
-            // clang-format off
             map_a = mmap(NULL, (size_t)stat_a.st_size,
                          PROT_READ, MAP_PRIVATE, fd_a, 0);
             if (map_a == MAP_FAILED) {
@@ -1718,7 +1709,6 @@ util_equal_files(char *filename_a, char *filename_b) {
             }
             map_b = mmap(NULL, (size_t)stat_a.st_size,
                          PROT_READ, MAP_PRIVATE, fd_b, 0);
-            // clang-format on
             if (map_b == MAP_FAILED) {
                 error("Error in mmap(%s): %s\n", filename_b, strerror(errno));
                 xmunmap(map_a, stat_a.st_size);
@@ -1779,12 +1769,13 @@ deg2rad(double degrees) {
     return degrees*DEG2RAD;
 }
 
-static int64
+static int32
 bytes_pretty(char *buffer, int64 raw) {
     char *suffixes[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
     double aux_pretty;
     int64 i;
     int32 n;
+    char *comma;
 
     if (raw < 0) {
         *buffer = '\0';
@@ -1811,6 +1802,10 @@ bytes_pretty(char *buffer, int64 raw) {
         n = snprintf2(buffer, 16, "%.3f%s", aux_pretty, suffixes[i]);
     } else {
         n = snprintf2(buffer, 16, "%.4f%s", aux_pretty, suffixes[i]);
+    }
+
+    if ((comma = memchr64(buffer, ',', n))) {
+        *comma = '.';
     }
 
     return n;
@@ -1849,7 +1844,7 @@ shell_escape(char *path) {
 
 static void
 normalize(char *path, int32 *length) {
-    char *p = path;
+    char *p;
     int64 off = 0;
 
     if (*length < 0) {
@@ -1999,7 +1994,6 @@ print_timings(char *file, int32 line, const char *func,
 
 #if OS_UNIX
 
-// clang-format off
 #define XSIGNAL(NAME) [NAME] = #NAME
 static char *signal_names[] = {
     XSIGNAL(SIGABRT),
@@ -2034,7 +2028,6 @@ static char *signal_names[] = {
     XSIGNAL(SIGXFSZ),
 };
 #undef XSIGNAL
-// clang-format on
 
 static void
 xpipe(int array[2]) {
@@ -2093,7 +2086,7 @@ timezone_init(void) {
 }
 #endif
 
-static volatile ullong here_counter = 0;
+static ullong here_counter = 0;
 
 #define HERE do { \
     fprintf(stderr, "\n===== HERE(%llu): %s:%d (%s)\n", \
@@ -2246,6 +2239,7 @@ main(int argc, char **argv) {
 
     (void)argc;
     (void)argv;
+    (void)here_counter;
 
     p2 = realloc(p2, 0, 1, SIZEMB(2));
     ASSERT(BEGINS_WITH(s1, "aaaa"));
@@ -2322,11 +2316,11 @@ main(int argc, char **argv) {
     {
         char b[32];
         bytes_pretty(b, 512);
-        ASSERT_EQUAL(b, "512B");
+        ASSERT_EQUAL((char *)b, "512B");
         bytes_pretty(b, 1024);
-        ASSERT_EQUAL(b, "1.0000kB");
+        ASSERT_EQUAL((char *)b, "1.0000kB");
         bytes_pretty(b, SIZEMB(2));
-        ASSERT_EQUAL(b, "2.0000MB");
+        ASSERT_EQUAL((char *)b, "2.0000MB");
     }
 
     {
@@ -2378,7 +2372,6 @@ main(int argc, char **argv) {
 
     {
         // Note: NEVER delete lines with // clang-format
-        // clang-format off
         char paths[][30] = {
             "/aaaa/bbbb/cccc", "/aa/bb/cc",  "/a/b/c",    "a/b//c",
             "a/b/cccc",        "a/bb/cccc", "aaaa//cccc", "/aaaa",
@@ -2403,7 +2396,6 @@ main(int argc, char **argv) {
             "/",               "/",           "/a/",        "/a/b/",
             "./",              "..",          "./",        "a/",
         };
-        // clang-format on
         for (int64 i = 0; i < LENGTH(paths); i += 1) {
             char *path = xstrdup(paths[i]);
             char *base = bases[i];
@@ -2462,7 +2454,6 @@ main(int argc, char **argv) {
 
     {
         // Note: NEVER delete lines with // clang-format
-        // clang-format off
         const char characters[] = "abcdefghijklmnopqrstuvwxyz1234567890";
         char buffer2[4096];
         char name2[256];
@@ -2498,7 +2489,6 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(realpath(name2, buffer3), buffer2);
         XCLOSE(&fd);
         xunlink(name2);
-        // clang-format on
     }
 
     free(p1, SIZEMB(1));
