@@ -40,15 +40,15 @@
 #endif
 
 #if 1 == TESTING_assert
-#define TRAP(...) raise(SIGILL)
+  #define TRAP(...) raise(SIGILL)
 #elif !defined(TRAP)
-#if defined(__GNUC__) || defined(__clang__)
-#define TRAP(...) __builtin_trap()
-#elif defined(_MSC_VER)
-#define TRAP(...) __debugbreak()
-#else
-#define TRAP(...) *(volatile int *)0 = 0
-#endif
+  #if defined(__GNUC__) || defined(__clang__)
+  #define TRAP(...) __builtin_trap()
+  #elif defined(_MSC_VER)
+  #define TRAP(...) __debugbreak()
+  #else
+  #define TRAP(...) *(volatile int *)0 = 0
+  #endif
 #endif
 
 #include "generic.c"
@@ -263,6 +263,43 @@ GENERATE_ASSERT_LDOUBLE(more_equal, >=)
 
 #undef GENERATE_ASSERT_LDOUBLE
 
+#define GENERATE_ASSERT_BOOLS(MODE, SYMBOL) \
+static void \
+a_bool_##MODE(char *file, uint line, \
+              char *name1, char *name2, \
+              char *type1, char *type2, \
+              llong bits1, llong bits2, \
+              bool var1, bool var2) { \
+    if (!(var1 SYMBOL var2)) { \
+        char *s1; \
+        char *s2; \
+        if (var1) { \
+            s1 = "true"; \
+        } else { \
+            s1 = "false"; \
+        } \
+        if (var2) { \
+            s2 = "true"; \
+        } else { \
+            s2 = "false"; \
+        } \
+        error2("\n%s: Assertion failed at %s:%u\n", __func__, file, line); \
+        error2("[%s%lld]%s = %s " #SYMBOL " %s = %s[%s%lld]\n", \
+               type1, bits1, name1, s1, s2, name2, type2, bits2); \
+        TRAP(); \
+    } \
+    return; \
+}
+
+GENERATE_ASSERT_BOOLS(equal,      ==)
+GENERATE_ASSERT_BOOLS(not_equal,  !=)
+GENERATE_ASSERT_BOOLS(less,       <)
+GENERATE_ASSERT_BOOLS(less_equal, <=)
+GENERATE_ASSERT_BOOLS(more,       >)
+GENERATE_ASSERT_BOOLS(more_equal, >=)
+
+#undef GENERATE_ASSERT_BOOLS
+
 #define A_BOTH_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
     a_both_signed_##MODE(__FILE__, __LINE__,               \
                          #VAR1, #VAR2,                     \
@@ -378,6 +415,17 @@ _Generic((VAR2), \
 )
 void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_LDOUBLE(void);
 
+#define A_FIRST_BOOL(MODE, VAR1, VAR2, TYPE1) \
+_Generic((VAR2), \
+    bool: a_bool_##MODE(__FILE__, __LINE__, \
+                        #VAR1, #VAR2, \
+                        typename(TYPE1), typename(TYPE_BOOL), \
+                        typebits(TYPE1), typebits(TYPE_BOOL), \
+                        (VAR1), (VAR2)), \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_BOOL() \
+)
+void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_BOOL(void);
+
 #define A_POINTERS(MODE, VAR1, VAR2) \
     a_pointers_##MODE(__FILE__, __LINE__, \
                       #VAR1, #VAR2, \
@@ -414,7 +462,8 @@ _Generic((VAR1), \
     ullong:  A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_ULLONG ), \
     float:   A_FIRST_LDOUBLE(MODE,  VAR1, VAR2, TYPE_FLOAT  ), \
     double:  A_FIRST_LDOUBLE(MODE,  VAR1, VAR2, TYPE_DOUBLE ), \
-    ldouble: A_FIRST_LDOUBLE(MODE,  VAR1, VAR2, TYPE_LDOUBLE)  \
+    ldouble: A_FIRST_LDOUBLE(MODE,  VAR1, VAR2, TYPE_LDOUBLE), \
+    bool:    A_FIRST_BOOL(MODE,     VAR1, VAR2, TYPE_BOOL)    \
 )
 
 #define ASSERT_EQUAL(VAR1, VAR2)      ASSERT_COMPARE(equal,      VAR1, VAR2)
@@ -485,6 +534,9 @@ assert_functions_sink(void) {
     (void)a_ldouble_not_equal;
     (void)a_ldouble_more;
     (void)a_ldouble_more_equal;
+
+    (void)a_bool_equal;
+    (void)a_bool_not_equal;
     return;
 }
 #endif
@@ -636,11 +688,27 @@ main(void) {
         ASSERT_MORE(b, a);
         ASSERT_MORE_EQUAL(b, a);
     }{
+        bool a = true;
+        bool b = true;
+        ASSERT_EQUAL(a, b);
+        ASSERT_LESS_EQUAL(a, b);
+        ASSERT_MORE_EQUAL(a, b);
+    }{
+        bool a = true;
+        bool b = false;
+        ASSERT_NOT_EQUAL(a, b);
+        ASSERT_MORE(a, b);
+        ASSERT_MORE_EQUAL(a, b);
+        ASSERT_LESS(b, a);
+        ASSERT_LESS_EQUAL(b, a);
+    }{
         // uncomment to trigger linking error
         /* double x = 0.1; */
         /* void *a = NULL; */
         /* ASSERT_MORE_EQUAL(x, a); */
         /* ASSERT_MORE_EQUAL(a, x); */
+        /* bool b = true; */
+        /* ASSERT_EQUAL(b, 1); */
     }{
         int a = 0;
         double b = 1;
@@ -699,6 +767,12 @@ main(void) {
 
         if (sigsetjmp(assert_env, 1) == 0) {
             ASSERT_LESS((void *)&array[1], (void *)&array[0]);
+        }
+        ASSERT(assertion_failed);
+        assertion_failed = false;
+
+        if (sigsetjmp(assert_env, 1) == 0) {
+            ASSERT_EQUAL(true, false);
         }
         ASSERT(assertion_failed);
         assertion_failed = false;

@@ -11,3 +11,4 @@ AUR
 clipsim-git
 *.git/
 .SRCINFO
+temp_delete_me
