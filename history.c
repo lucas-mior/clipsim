@@ -641,7 +641,7 @@ history_free_entry(Entry *e, int32 index) {
             error("Error deleting %s: %s.\n", e->content, strerror(errno));
         }
     }
-    assert(arena_pop(arena, e->content));
+    assert(arena_decr(arena, e->content));
 
     return;
 }
