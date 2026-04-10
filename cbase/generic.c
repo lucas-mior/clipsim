@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <stdio.h>
 
 #if !defined(error2)
 #define error2(...) fprintf(stderr, __VA_ARGS__)
@@ -554,7 +555,6 @@ main(void) {
 
         PRINTLN(*var_string);
         PRINTLN(var_uint - (uint)var_int);
-        PRINTLN((void*)main);
     }
 }
 

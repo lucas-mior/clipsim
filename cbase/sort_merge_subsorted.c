@@ -23,13 +23,13 @@
 #include "util.c"
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
-#define TESTING_sort 1
-#elif !defined(TESTING_sort)
-#define TESTING_sort 0
+#define TESTING_sort_merge_subsorted 1
+#elif !defined(TESTING_sort_merge_subsorted)
+#define TESTING_sort_merge_subsorted 0
 #endif
 
-#if !defined(COMPARE)
-#define COMPARE(A, B) compare_func(A, B)
+#if !defined(SORT_MERGE_SUBSORTED_COMPARE)
+#define SORT_MERGE_SUBSORTED_COMPARE(A, B) compare_func(A, B)
 #endif
 
 #ifndef MAX_NTHREADS
@@ -83,11 +83,11 @@ sort_heapify(HeapNode *heap, int32 p, int32 i,
             break;
         }
 
-        if (COMPARE(heap[left].value, heap[smallest].value) < 0) {
+        if (SORT_MERGE_SUBSORTED_COMPARE(heap[left].value, heap[smallest].value) < 0) {
             smallest = left;
         }
         if ((right < p)
-            && COMPARE(heap[right].value, heap[smallest].value) < 0) {
+            && SORT_MERGE_SUBSORTED_COMPARE(heap[right].value, heap[smallest].value) < 0) {
             smallest = right;
         }
 
@@ -162,90 +162,21 @@ sort_merge_subsorted(void *array, int32 n, int32 p, int64 obj_size,
     return;
 }
 
-#define SORT_BENCHMARK 0
-
-#if !TESTING_sort || (defined(__INCLUDE_LEVEL__) && __INCLUDE_LEVEL__)
-static void
-sort(FileList *old) {
-    int32 p;
-
-    char *last = "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-                 "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
-                 "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF";
-    int32 last_length = strlen32(last);
-    FileName *dummy_last;
-    int64 dummy_size = STRUCT_ARRAY_SIZE(dummy_last, char, last_length + 1);
-
-    dummy_last = xmalloc(dummy_size);
-    memset64(dummy_last, 0, sizeof(*dummy_last));
-    memcpy64(dummy_last, last, last_length + 1);
-
-#if SORT_BENCHMARK
-    struct timespec t0;
-    struct timespec t1;
-
-    FileList copy = {0};
-    sort_shuffle(old->files, old->length, SIZEOF(*(old->files)));
-
-    memcpy64(&copy, old, sizeof(*old));
-    copy.files = xmalloc(copy.length*sizeof(*(old->files)));
-    memcpy64(copy.files, old->files, copy.length*sizeof(*(old->files)));
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
-#endif
-
-    p = brn2_threads(brn2_threads_work_sort, old->length, old, NULL, NULL, 0,
-                     NULL);
-    if (p == 1) {
-        free(dummy_last, dummy_size);
-        return;
-    }
-
-    /* qsort(old->files, old->length, sizeof(*(old->files)),
-     * brn2_compare); */
-    sort_merge_subsorted(old->files, old->length, p, sizeof(*(old->files)),
-                         &dummy_last, brn2_compare);
-
-#if SORT_BENCHMARK
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
-    qsort(copy.files, copy.length, sizeof(*(copy.files)), brn2_compare);
-    if (memcmp64(copy.files, old->files, copy.length*sizeof(*(copy.files)))) {
-        error("Error in sorting.\n");
-        for (int32 i = 0; i < old->length; i += 1) {
-            char *name1 = old->files[i]->name;
-            char *name2 = copy.files[i]->name;
-            if (strcmp(name1, name2)) {
-                error("[%u] = %s != %s\n", i, name1, name2);
-            }
-        }
-        fatal(EXIT_FAILURE);
-    } else {
-        error("Sorting successful.\n");
-    }
-    brn2_timings("sorting", t0, t1, old->length);
-    exit(EXIT_SUCCESS);
-#endif
-
-    free(dummy_last, dummy_size);
-    return;
-}
-#endif
-
-#if 0 == TESTING_sort
+#if 0 == TESTING_sort_merge_subsorted
 static inline void
 sort_functions_sink(void) {
     (void)sort_shuffle;
     (void)sort_heapify;
     (void)sort_merge_subsorted;
-    (void)sort;
     return;
 }
 #endif
 
-#if TESTING_sort
+#if TESTING_sort_merge_subsorted
 
 #define MAXI 10000
-static const int32 possibleN[] = {31, 32, 33, 50};
-static const int32 possibleP[] = {1, 2, 3, 8};
+static int32 possibleN[] = {31, 32, 33, 50};
+static int32 possibleP[] = {1, 2, 3, 8};
 
 static int32
 compare_int(const void *a, const void *b) {

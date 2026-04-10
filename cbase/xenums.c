@@ -21,6 +21,7 @@
 
 #include "generic.c"
 #include "util.c"
+#include "arena.c"
 
 #if !defined(CAT) || !defined(CAT3)
   #define CAT_(a, b)     a##b
@@ -55,7 +56,7 @@
   #define TESTING_xenums 0
 #endif
 
-#if TESTING_xenums
+#if TESTING_xenums && !defined(ENUM_NAME)
 #define ENUM_NAME TestFlags
 #define ENUM_PREFIX_ TEST_FLAGS_
 #define ENUM_BITFLAGS 1
@@ -113,6 +114,12 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE {
     CAT(ENUM_PREFIX_, LAST)
 };
 
+// TODO: When ENUM_BITFLAGS == 1, passing bitwise OR'd integers into a strict
+// `enum ENUM_NAME` type could trigger compiler warnings or undefined behavior
+// in pedantic modes since the result isn't explicitly defined in the enum.
+// Consider changing the parameter type to an integer (e.g., uint32) for
+// bitflags.
+
 static char *
 CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
 #if ENUM_BITFLAGS == 0
@@ -138,13 +145,11 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
     char *buffer_ptr = buffer;
     char *buffer_end = buffer + sizeof(buffer);
     int32 is_first = 1;
-    int64 final_len;
-    char *copy;
 
     #define XENUM(e) \
         if (val & CAT(ENUM_PREFIX_, e)) { \
             char *name = QUOTE(ENUM_PREFIX_) #e; \
-            int32 len = (int32)strlen(name); \
+            int32 len = (int32)strlen32(name); \
             if (is_first == 0) { \
                 if (buffer_ptr < (buffer_end - 1)) { \
                     *buffer_ptr = '|'; \
@@ -180,13 +185,17 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
     }
 
     *buffer_ptr = '\0';
-    final_len = (int64)(buffer_ptr - buffer) + 1;
 
-    if ((copy = xmalloc(final_len))) {
-        memcpy64(copy, buffer, final_len);
+    {
+        int64 final_len = (int64)(buffer_ptr - buffer) + 1;
+        char *copy;
+
+        if ((copy = xarena_push(global_arena, final_len))) {
+            memcpy64(copy, buffer, final_len);
+        }
+
+        return copy;
     }
-
-    return copy;
 #endif
 }
 
@@ -203,39 +212,56 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #undef ENUM_FIELDS
 #undef ENUM_BITFLAGS
 
-#if TESTING_xenums
+#if TESTING_xenums && !defined(TESTING_xenums_started)
+#define TESTING_xenums_started
+
 #include "assert.c"
+
+#define ENUM_NAME TestNormal
+#define ENUM_PREFIX_ TEST_NORMAL_
+#define ENUM_BITFLAGS 0
+#define ENUM_FIELDS \
+    X(APPLE) \
+    X(BANANA) \
+    X(CHERRY, 10)
+#include "xenums.c"
 
 int
 main(void) {
+    char *s;
     ASSERT_EQUAL(TEST_FLAGS_READ_BIT_IDX, 0);
     ASSERT_EQUAL(TEST_FLAGS_READ, 1 << 0);
     ASSERT_EQUAL(TEST_FLAGS_WRITE, 1 << 1);
     ASSERT_EQUAL(TEST_FLAGS_EXEC, 1 << 2);
 
-    {
-        char *s;
+    s = TEST_FLAGS_str(TEST_FLAGS_READ);
+    ASSERT_EQUAL(s, "TEST_FLAGS_READ");
+    ASSERT(arena_decr(global_arena, s));
 
-        if ((s = TEST_FLAGS_str(TEST_FLAGS_READ))) {
-            ASSERT_EQUAL(s, "TEST_FLAGS_READ");
-            free(s, strlen32(s) + 1);
-        }
+    s = TEST_FLAGS_str(TEST_FLAGS_READ | TEST_FLAGS_EXEC);
+    ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_EXEC");
+    ASSERT(arena_decr(global_arena, s));
 
-        if ((s = TEST_FLAGS_str(TEST_FLAGS_READ | TEST_FLAGS_EXEC))) {
-            ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_EXEC");
-            free(s, strlen32(s) + 1);
-        }
+    s = TEST_FLAGS_str(TEST_FLAGS_READ | TEST_FLAGS_WRITE | TEST_FLAGS_EXEC);
+    ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_WRITE|TEST_FLAGS_EXEC");
+    ASSERT(arena_decr(global_arena, s));
 
-        if ((s = TEST_FLAGS_str(TEST_FLAGS_READ | TEST_FLAGS_WRITE | TEST_FLAGS_EXEC))) {
-            ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_WRITE|TEST_FLAGS_EXEC");
-            free(s, strlen32(s) + 1);
-        }
+    ASSERT_EQUAL(TEST_FLAGS_str(0), "NONE");
 
-        ASSERT_EQUAL(TEST_FLAGS_str(0), "NONE");
-    }
+    s = TEST_NORMAL_str(TEST_NORMAL_APPLE);
+    ASSERT_EQUAL(s, "TEST_NORMAL_APPLE");
+
+    s = TEST_NORMAL_str(TEST_NORMAL_BANANA);
+    ASSERT_EQUAL(s, "TEST_NORMAL_BANANA");
+
+    s = TEST_NORMAL_str(TEST_NORMAL_CHERRY);
+    ASSERT_EQUAL(s, "TEST_NORMAL_CHERRY");
+
+    s = TEST_NORMAL_str(999);
+    ASSERT_EQUAL(s, "Unknown value");
 
     printf("xenums.c: All tests passed successfully.\n");
     return EXIT_SUCCESS;
 }
 
-#endif /* TESTING_xenums */
+#endif /* TESTING_xenums && !defined(TESTING_xenums_started) */
