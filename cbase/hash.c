@@ -44,7 +44,6 @@
 #define HASH_VALUE_TYPE int32
 #define HASH_VALUE_FORMATTER "%d"
 #define HASH_TYPE map
-#define HASH_AUTO_RESIZE 1
 #endif
 
 #define HASH_SLOT_USED     1
@@ -60,10 +59,10 @@
 #define ALIGNMENT 16
 #endif
 
-uint64 hash_function(void *key, int32 key_length);
-uint32 hash_normal(void *map, uint64 hash);
-uint32 hash_capacity(void *map);
-uint32 hash_length(void *map);
+INLINE uint64 hash_function(void *key, int32 key_length);
+INLINE uint32 hash_normal(void *map, uint64 hash);
+INLINE uint32 hash_capacity(void *map);
+INLINE uint32 hash_length(void *map);
 uint32 hash_expected_collisions(void *map);
 
 #if !defined(INTEGERS)
@@ -93,21 +92,23 @@ typedef uint64_t uint64;
 #define HASH_PRINT_SUMMARY_map(MAP) hash_print_summary_map(MAP, QUOTE(MAP))
 #define HASH_PRINT_SUMMARY_set(MAP) hash_print_summary_set(MAP, QUOTE(MAP))
 
-#if !defined(CAT)
-#define CAT_(a, b) a##b
-#define CAT(a, b) CAT_(a, b)
+#if !defined(CAT) || !defined(CAT3)
+  #define CAT_(a, b)     a##b
+  #define CAT3_(a, b, c) a##b##c
+  #define CAT(a, b)      CAT_(a, b)
+  #define CAT3(a, b, c)  CAT3_(a, b, c)
 #endif
 
 struct CommonBucket;
 
-struct CommonMap {
+typedef struct CommonMap {
     int64 size;
     uint32 capacity;
     uint32 bitmask;
     uint32 length;
     uint32 occupied;
     struct CommonBucket *array;
-};
+} CommonMap;
 
 #endif /* HASH_H */
 
@@ -127,10 +128,6 @@ struct CommonMap {
 #define HASH_DUPLICATE_KEYS 0
 #endif
 
-#if !defined(HASH_AUTO_RESIZE)
-#error HASH_AUTO_RESIZE is undefined
-#endif
-
 #define Bucket CAT(Bucket_, HASH_TYPE)
 #define Map CAT(Hash_, HASH_TYPE)
 
@@ -139,6 +136,7 @@ typedef struct Bucket {
 #if HASH_KEY_FIXED_LEN
     HASH_KEY_TYPE key;
     int8 slot_state;
+    uint8 padding2[3];
 #else
     HASH_KEY_TYPE *key;
     int32 key_len;
@@ -151,6 +149,8 @@ typedef struct Bucket {
 #endif
 } Bucket;
 
+// TODO: Struct `Map` is not typedef'd. Per your codebase rules ("do typedef
+// structs"), define it as `typedef struct Map { ... } Map;`.
 struct Map {
     int64 size;
     uint32 capacity;
@@ -161,7 +161,7 @@ struct Map {
 };
 
 #define CHECK_COMMON_MAP(FIELD) \
-    _Static_assert(offsetof(struct Map, FIELD) == offsetof(struct CommonMap, FIELD), \
+    _Static_assert(offsetof(struct Map, FIELD) == offsetof(CommonMap, FIELD), \
                    "CommonMap and new Map must have the same offset for " #FIELD)
 
 CHECK_COMMON_MAP(size);
@@ -169,6 +169,8 @@ CHECK_COMMON_MAP(capacity);
 CHECK_COMMON_MAP(bitmask);
 CHECK_COMMON_MAP(length);
 CHECK_COMMON_MAP(occupied);
+
+#undef CHECK_COMMON_MAP
 
 static void
 CAT(hash_zero_, HASH_TYPE)(struct Map *map) {
@@ -232,9 +234,9 @@ CAT(hash_destroy_, HASH_TYPE)(struct Map *map) {
 
 static void
 CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
-    uint32 new_capacity = map->capacity * 2;
+    uint32 new_capacity = map->capacity*2;
     uint32 new_bitmask = (new_capacity - 1);
-    int64 new_size = new_capacity * sizeof(Bucket);
+    int64 new_size = new_capacity*sizeof(Bucket);
     Bucket *new_array = xmmap_commit(&new_size);
     Bucket *old_array = map->array;
     uint32 old_capacity = map->capacity;
@@ -245,6 +247,8 @@ CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
 
     for (uint32 j = 0; j < old_capacity; j += 1) {
         Bucket *iterator = &old_array[j];
+        // TODO: Initialize `rehash_base` and `rehash_probe` at declaration
+        // below to reduce uninitialized state branching.
         uint32 rehash_base;
         uint32 rehash_probe;
         uint32 rehash_step = 0;
@@ -335,7 +339,11 @@ CAT(hash_probe_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
 #endif
 
         if (state == HASH_SLOT_FREE) {
-            *out_idx = (first_tombstone >= 0) ? (uint32)first_tombstone : probe;
+            if (first_tombstone >= 0) {
+                *out_idx = (uint32)first_tombstone;
+            } else {
+                *out_idx = probe;
+            }
             return false;
         } else if (state == HASH_SLOT_DELETED) {
             if (first_tombstone < 0) {
@@ -343,7 +351,8 @@ CAT(hash_probe_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
             }
         } else {
 #if HASH_KEY_FIXED_LEN
-            if ((iterator->hash == hash) && !memcmp64(&iterator->key, key, sizeof(HASH_KEY_TYPE)))
+            (void)hash;
+            if (!memcmp64(&iterator->key, key, sizeof(HASH_KEY_TYPE)))
 #else
             if ((iterator->hash == hash)
                     && (iterator->key_len == key_length)
@@ -381,7 +390,7 @@ CAT(hash_insert_pre_calc_, HASH_TYPE)(struct Map *map,
     uint32 target_idx = MAXOF(target_idx);
     Bucket *target;
 
-    if (HASH_AUTO_RESIZE && (map->occupied*100 >= map->capacity*75)) {
+    if (map->occupied*100 >= map->capacity*75) {
         CAT(hash_resize_, HASH_TYPE)(map);
         base_index = hash & map->bitmask;
     }
@@ -463,7 +472,7 @@ CAT(hash_overwrite_pre_calc_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
     uint32 target_idx = MAXOF(target_idx);
     Bucket *target;
 
-    if (HASH_AUTO_RESIZE && (map->occupied*100 >= map->capacity*75)) {
+    if (map->occupied*100 >= map->capacity*75) {
         CAT(hash_resize_, HASH_TYPE)(map);
         base_index = hash & map->bitmask;
     }
@@ -742,6 +751,7 @@ CAT(hash_functions_sink_, HASH_TYPE)(void) {
     (void)CAT(hash_print_summary_, HASH_TYPE);
     (void)CAT(hash_print_, HASH_TYPE);
     (void)CAT(hash_ndeleted_, HASH_TYPE);
+    return;
 }
 
 #undef HASH_VALUE_TYPE
@@ -756,35 +766,35 @@ CAT(hash_functions_sink_, HASH_TYPE)(void) {
 #if !defined(HASH_H2)
 #define HASH_H2
 
-uint64
+INLINE uint64
 hash_function(void *key, int32 key_length) {
     uint64 hash;
     hash = rapidhash(key, (size_t)key_length);
     return hash;
 }
 
-uint32
+INLINE uint32
 hash_normal(void *map, uint64 hash) {
-    struct CommonMap *map2 = map;
+    CommonMap *map2 = map;
     uint32 normal = hash & map2->bitmask;
     return normal;
 }
 
-uint32
+INLINE uint32
 hash_capacity(void *map) {
-    struct CommonMap *map2 = map;
+    CommonMap *map2 = map;
     return map2->capacity;
 }
 
-uint32
+INLINE uint32
 hash_length(void *map) {
-    struct CommonMap *map2 = map;
+    CommonMap *map2 = map;
     return map2->length;
 }
 
 uint32
 hash_expected_collisions(void *map) {
-    struct CommonMap *map2 = map;
+    CommonMap *map2 = map;
     long double n = map2->length;
     long double m = map2->capacity;
     long double result = n - m*(1 - powl((m - 1) / m, n));
@@ -818,7 +828,6 @@ static bool hash_remove_map_by_value(struct Hash_map_by_value *, int64 *);
 #define HASH_VALUE_TYPE int32
 #define HASH_VALUE_FORMATTER "%d"
 #define HASH_TYPE map_by_value
-#define HASH_AUTO_RESIZE 1
 #define HASH_DUPLICATE_KEYS 0
 #include "hash.c"
 
@@ -841,8 +850,8 @@ random_string(Arena *arena, uint32 nbytes) {
     string.s = arena_push(arena, size);
 
     for (int32 i = 0; i < len; i += 1) {
-        int32 c = (int32)((size_t)rand() % (sizeof(characters) - 1));
-        string.s[i] = characters[c];
+        int32 ci = (int32)((size_t)rand() % (sizeof(characters) - 1));
+        string.s[i] = characters[ci];
     }
     string.s[len] = '\0';
     string.len = len;
