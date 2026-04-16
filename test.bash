@@ -22,10 +22,10 @@ mkdir -p "$XDG_CACHE_HOME"
 export XDG_CACHE_HOME
 
 $clipsim_bin --daemon &
-DAEMON_PID=$!
+clipsim_daemon_pid=$!
 
 cleanup () {
-    kill -SIGKILL $DAEMON_PID 2>/dev/null
+    kill -SIGKILL $clipsim_daemon_pid 2>/dev/null
     rm -rf "$TEST_DIR"
 
     if [ "$clipsim_was_running" = true ]; then
