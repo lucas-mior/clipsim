@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
-# Exit immediately if a command exits with a non-zero status
 killall -SIGKILL clipsim
 
 set -e
 
-CLIPSIM_BIN="bin/clipsim"
+clipsim_bin="bin/clipsim"
 TEST_DIR="/tmp/clipsim_full_test"
 XDG_CACHE_HOME="$TEST_DIR/.cache"
 ./build.sh || exit 1
@@ -14,24 +13,22 @@ XDG_CACHE_HOME="$TEST_DIR/.cache"
 rm -rf "$TEST_DIR"
 mkdir -p "$XDG_CACHE_HOME"
 
-export XDG_CACHE_HOME
-
 ls /tmp/clipsim_full_test
 echo "Starting daemon..."
-$CLIPSIM_BIN --daemon &
+XDG_CACHE_HOME=$XDG_CACHE_HOME $clipsim_bin --daemon &
 DAEMON_PID=$!
 
 cleanup () {
     echo "Cleaning up..."
-    kill $DAEMON_PID 2>/dev/null
+    kill -SIGKILL $DAEMON_PID 2>/dev/null
     rm -rf "$TEST_DIR"
-    setsid -f clipsim -d
+    XDG_CACHE_HOME="$HOME/.cache/" setsid -f clipsim -d
 }
 trap cleanup EXIT
 
-sleep 2
+sleep 1
 
-timeout 2s $CLIPSIM_BIN --daemon
+XDG_CACHE_HOME=$XDG_CACHE_HOME timeout 1s $clipsim_bin --daemon
 timeout_status=$?
 if [ $timeout_status == 124 ]; then
     echo "FAIL: A second daemon was successfully started (it should have been blocked)."
@@ -47,21 +44,21 @@ echo -n "third_test_string" | xclip -selection clipboard
 sleep 0.5
 
 echo "Testing --print..."
-PRINT_OUT=$($CLIPSIM_BIN -p)
+PRINT_OUT=$($clipsim_bin -p)
 if ! echo "$PRINT_OUT" | grep -q "first_test_string"; then
     echo "FAIL: --print did not output expected history."
     exit 1
 fi
 
 echo "Testing --info..."
-INFO_OUT=$($CLIPSIM_BIN -i 0)
+INFO_OUT=$($clipsim_bin -i 0)
 if ! echo "$INFO_OUT" | grep -q "Length:"; then
     echo "FAIL: --info did not output the expected length metadata."
     exit 1
 fi
 
 echo "Testing --copy..."
-$CLIPSIM_BIN -c 0
+$clipsim_bin -c 0
 sleep 0.5
 CLIP_DATA=$(xclip -o -selection clipboard)
 if [ -z "$CLIP_DATA" ]; then
@@ -70,7 +67,7 @@ if [ -z "$CLIP_DATA" ]; then
 fi
 
 echo "Testing --save..."
-$CLIPSIM_BIN -s
+$clipsim_bin -s
 sleep 0.5
 if [ ! -s "$XDG_CACHE_HOME/clipsim/history" ]; then
     echo "FAIL: --save failed, history file is missing or empty."
@@ -78,9 +75,9 @@ if [ ! -s "$XDG_CACHE_HOME/clipsim/history" ]; then
 fi
 
 echo "Testing --remove..."
-$CLIPSIM_BIN -r 0
+$clipsim_bin -r 0
 sleep 0.5
-NEW_PRINT_OUT=$($CLIPSIM_BIN -p)
+NEW_PRINT_OUT=$($clipsim_bin -p)
 
 OLD_LINES=$(echo "$PRINT_OUT" | wc -l)
 NEW_LINES=$(echo "$NEW_PRINT_OUT" | wc -l)
@@ -90,7 +87,7 @@ if [ "$NEW_LINES" -ge "$OLD_LINES" ]; then
 fi
 
 echo "Testing --help..."
-HELP_OUT=$($CLIPSIM_BIN -h)
+HELP_OUT=$($clipsim_bin -h)
 if ! echo "$HELP_OUT" | grep -q "Available commands:"; then
     echo "FAIL: --help did not output the expected usage text."
     exit 1
