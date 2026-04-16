@@ -4,8 +4,10 @@ old_xdg_cache_home="$XDG_CACHE_HOME"
 interval=0.3
 
 CLIPSIM_WAS_RUNNING=false
-if killall -SIGKILL clipsim 2>/dev/null; then
+if killall -SIGTERM clipsim 2>/dev/null; then
     CLIPSIM_WAS_RUNNING=true
+    sleep $interval
+    killall -SIGKILL clipsim
 fi
 
 set -e
