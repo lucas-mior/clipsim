@@ -124,7 +124,7 @@ history_save(void) {
             int32 n;
 
             n = SNPRINTF(image_save, "%s/clipsim/%s",
-                                     XDG_CACHE_HOME, basename(e->content));
+                                     XDG_CACHE_HOME, basename2(e->content));
 
             if (strcmp(image_save, e->content)) {
                 int32 fadvise_err;
