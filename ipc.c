@@ -22,6 +22,12 @@
 #include "cbase/util.c"
 #include "history.c"
 
+#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+#define TESTING_ipc 1
+#elif !defined(TESTING_ipc)
+#define TESTING_ipc 0
+#endif
+
 static File command_fifo
     = {.file = NULL, .fd = -1, .name = "/tmp/clipsim/command.fifo"};
 static File passid_fifo
@@ -403,5 +409,12 @@ ipc_create_fifo(char *name) {
     }
     return;
 }
+
+#if TESTING_ipc
+int
+main(void) {
+    exit(EXIT_SUCCESS);
+}
+#endif
 
 #endif /* IPC_C */

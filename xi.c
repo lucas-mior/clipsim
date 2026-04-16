@@ -37,6 +37,12 @@
 
 #include "cbase/util.c"
 
+#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+#define TESTING_xi 1
+#elif !defined(TESTING_xi)
+#define TESTING_xi 0
+#endif
+
 #define BUTTON_MIDDLE_CODE 2
 
 static void *xi_daemon_loop(void *);
@@ -131,5 +137,12 @@ xi_daemon_loop(void *unused) {
         }
     }
 }
+
+#if TESTING_xi
+int
+main(void) {
+    exit(EXIT_SUCCESS);
+}
+#endif
 
 #endif /* XI_C */
