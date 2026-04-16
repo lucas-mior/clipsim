@@ -125,11 +125,11 @@ static char IMAGE_TAG = (char)0x02;
 static pthread_mutex_t lock;
 static magic_t magic;
 
-static int32 util_open(File *file, const int32 flag);
+static int32 util_open(File *file, int32 flag);
 static void util_close(File *file);
 
 int32
-util_open(File *file, const int32 flag) {
+util_open(File *file, int32 flag) {
     if ((file->fd = open(file->name, flag)) < 0) {
         fprintf(stderr, "Error opening %s: %s\n", file->name, strerror(errno));
         return -1;
