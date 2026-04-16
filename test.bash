@@ -135,8 +135,8 @@ $clipsim_bin -r 0
 sleep $interval
 $clipsim_bin -p > "$TEST_DIR/after_remove"
 
-OLD_LINES=$(tr -cd '\0' < "$TEST_DIR/before_remove"   | wc -c)
-NEW_LINES=$(tr -cd '\0' < "$TEST_DIR/after_remove" | wc -c)
+OLD_LINES=$(tr -cd '\0' < "$TEST_DIR/before_remove" | wc -c)
+NEW_LINES=$(tr -cd '\0' < "$TEST_DIR/after_remove"  | wc -c)
 if [ "$NEW_LINES" -ge "$OLD_LINES" ]; then
     echo "FAIL: --remove did not decrease the number of history entries."
     exit 1
