@@ -34,75 +34,13 @@
 #include <sys/stat.h>
 #include <float.h>
 
-#if defined(__linux__)
-#define OS_LINUX 1
-#define OS_MAC 0
-#define OS_BSD 0
-#define OS_WINDOWS 0
-#elif defined(__APPLE__) && defined(__MACH__)
-#define OS_LINUX 0
-#define OS_MAC 1
-#define OS_BSD 0
-#define OS_WINDOWS 0
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-#define OS_LINUX 0
-#define OS_MAC 0
-#define OS_BSD 1
-#define OS_WINDOWS 0
-#elif defined(_WIN32) || defined(_WIN64)
-#define OS_LINUX 0
-#define OS_MAC 0
-#define OS_BSD 0
-#define OS_WINDOWS 1
-#else
-#error "Unsupported OS.\n"
-#endif
-
-#define OS_UNIX (OS_LINUX || OS_MAC || OS_BSD)
-
-
-#if defined(__GNUC__)
-#define COMPILER_GCC 1
-#define COMPILER_CLANG 0
-#elif defined(__clang__)
-#define COMPILER_GCC 0
-#define COMPILER_CLANG 1
-#else
-#define COMPILER_GCC 0
-#define COMPILER_CLANG 0
-#endif
-
-#if OS_WINDOWS
-#include <windows.h>
-#endif
-
-#if OS_UNIX
-#include <sys/mman.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <pthread.h>
-#include <poll.h>
-#endif
-
-#if OS_MAC
-#include <sys/param.h>
-#undef MIN
-#undef MAX
-#endif
+#include "platform_detection.h"
 
 #include "generic.c"
 #include "minmax.c"
-
-#if defined(__has_include)
-  #if __has_include(<valgrind/valgrind.h>)
-    #include <valgrind/valgrind.h>
-  #else
-    #define RUNNING_ON_VALGRIND 0
-  #endif
-#else
-    #define RUNNING_ON_VALGRIND 0
-#endif
+#include "base_macros.h"
+#include "assert.c"
+#include "memory.c"
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_util 1
@@ -110,6 +48,7 @@
 #define TESTING_util 0
 #endif
 
+static int32 snprintf2(char *buffer, int64 size, char *format, ...);
 static void __attribute__((format(printf, 3, 4)))
     error_impl(char *file, int32 line, char *format, ...);
 #define error(...) error_impl(__FILE__, __LINE__, __VA_ARGS__)
@@ -124,17 +63,6 @@ static int32 program_len __attribute__((unused));
 static bool timezone_initialized = false;
 static time_t timezone_offset = 0;
 
-#define SIZEOF(X) ((int64)sizeof(X))
-
-#if !defined(SIZEKB)
-#define SIZEKB(X) ((int64)(X)*1024ll)
-#define SIZEMB(X) ((int64)(X)*1024ll*1024ll)
-#define SIZEGB(X) ((int64)(X)*1024ll*1024ll*1024ll)
-#endif
-
-#if !defined(LENGTH)
-#define LENGTH(x) (int64)((sizeof(x) / sizeof(*x)))
-#endif
 #if !defined(SNPRINTF)
 #define SNPRINTF(BUFFER, FORMAT, ...) \
     snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
@@ -147,13 +75,21 @@ static time_t timezone_offset = 0;
 #define STRUCT_ARRAY_SIZE(struct_object, ArrayType, array_length) \
     (int64)(SIZEOF(*(struct_object)) + ((array_length)*SIZEOF(ArrayType)))
 
-#define SWAP(x, y) do { __typeof__(x) SWAP = x; x = y; y = SWAP; } while (0)
-
 #define STRING_FROM_ARRAY(BUFFER, SEP, ARRAY, LENGTH) \
 _Generic((ARRAY), \
     double *: string_from_doubles, \
     char **: string_from_strings \
 )(BUFFER, sizeof(BUFFER), SEP, ARRAY, LENGTH)
+
+#define SFA_TYPE char *
+#define SFA_NAME strings
+#define SFA_FORMAT "%s"
+#include "sfa.h"
+
+#define SFA_TYPE double
+#define SFA_NAME doubles
+#define SFA_FORMAT "%f"
+#include "sfa.h"
 
 #if !defined(DEBUGGING)
 #define DEBUGGING 0
@@ -167,28 +103,6 @@ _Generic((ARRAY), \
 #define ERROR_NOTIFY 0
 #endif
 
-#include "assert.c"
-
-#if !defined(FLAGS_HUGE_PAGES)
-#if defined(MAP_HUGETLB) && defined(MAP_HUGE_2MB)
-#define FLAGS_HUGE_PAGES MAP_HUGETLB | MAP_HUGE_2MB
-#else
-#define FLAGS_HUGE_PAGES 0
-#endif
-#endif
-
-#if !defined(MAP_POPULATE)
-#define MAP_POPULATE 0
-#endif
-
-#if !defined(INLINE)
-#if defined(__GNUC__)
-#define INLINE static inline __attribute__((always_inline))
-#else
-#define INLINE static inline
-#endif
-#endif
-
 #if DEBUGGING || TESTING_util
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wc11-extensions"
@@ -198,28 +112,7 @@ _Generic((ARRAY), \
 
 #endif
 
-#define UTIL_ALIGN_UINT(SIZE, A) (int64)(((SIZE) + ((A) - 1)) & ~((A) - 1))
-#define ALIGN16(x) (((x) + 15) & ~15)
-
-#define UTIL_ALIGN(SIZE, A) \
-_Generic((SIZE), \
-    ullong: UTIL_ALIGN_UINT((ullong)SIZE, (ullong)A), \
-    ulong:  UTIL_ALIGN_UINT((ulong)SIZE,  (ulong)A),  \
-    uint:   UTIL_ALIGN_UINT((uint)SIZE,   (uint)A),   \
-    llong:  UTIL_ALIGN_UINT((ullong)SIZE, (ullong)A), \
-    long:   UTIL_ALIGN_UINT((ulong)SIZE,  (ulong)A),  \
-    int:    UTIL_ALIGN_UINT((uint)SIZE,   (uint)A)    \
-)
-
-#if !defined(ALIGNMENT)
-#define ALIGNMENT 16ul
-#endif
-#if !defined(ALIGN)
-#define ALIGN(x) UTIL_ALIGN(x, ALIGNMENT)
-#endif
-
 static char *notifiers[2] = {"dunstify", "notify-send"};
-static int64 util_page_size = 0;
 
 static void error_async_safe(char *message);
 static void fatal(int) __attribute__((noreturn));
@@ -228,20 +121,6 @@ static int32 itoa2(char *, int32, llong);
 static long atoi2(char *);
 INLINE void *memchr64(void *pointer, int32 value, int64 size);
 INLINE int memcmp64(void *left, void *right, int64 size);
-
-#if !defined(CAT) || !defined(CAT3)
-  #define CAT_(a, b)     a##b
-  #define CAT3_(a, b, c) a##b##c
-  #define CAT(a, b)      CAT_(a, b)
-  #define CAT3(a, b, c)  CAT3_(a, b, c)
-#endif
-
-#if !defined(SELECT_ON_NUM_ARGS)
-  #define NUM_ARGS_(_1, _2, _3, _4, _5, _6, _7, _8, n, ...) n
-  #define NUM_ARGS(...) NUM_ARGS_(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1, x)
-  #define SELECT_ON_NUM_ARGS(macro, ...) \
-      CAT(macro, NUM_ARGS(__VA_ARGS__))(__VA_ARGS__)
-#endif
 
 #if OS_WINDOWS
 static void *
@@ -291,50 +170,6 @@ memrchr(const void *pointer, int32 character_to_find, size_t size) {
     }
 
     return NULL;
-}
-
-#define X64(func) \
-INLINE void \
-CAT(func, 64)(void *dest, void *source, int64 n) { \
-    if (n == 0) \
-        return; \
-    if (DEBUGGING) { \
-        if (n < 0) { \
-            error("Error in %s: Invalid n = %lld\n", __func__, (llong)n); \
-            fatal(EXIT_FAILURE); \
-        } \
-        if ((ullong)n >= (ullong)SIZE_MAX) { \
-            error("Error in %s: n (%lld) is bigger than SIZEMAX\n", \
-                   __func__, (llong)n); \
-            fatal(EXIT_FAILURE); \
-        } \
-    } \
-    func(dest, source, (size_t)n); \
-    return; \
-}
-
-X64(memcpy)
-X64(memmove)
-#undef X64
-
-INLINE void
-memset64(void *buffer, int value, int64 size) {
-    if (size == 0) {
-        return;
-    }
-    if (DEBUGGING) {
-        if (size < 0) {
-            error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
-            fatal(EXIT_FAILURE);
-        }
-        if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
-                  (llong)size);
-            fatal(EXIT_FAILURE);
-        }
-    }
-    memset(buffer, value, (size_t)size);
-    return;
 }
 
 INLINE void *
@@ -404,8 +239,8 @@ strncmp32(char *left, char *right, int64 size) {
     }
     if (DEBUGGING) {
         if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
-                  (llong)size);
+            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n",
+                  __func__, (llong)size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -436,8 +271,8 @@ memcmp64(void *left, void *right, int64 size) {
     }
     if (DEBUGGING) {
         if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
-                  (llong)size);
+            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n",
+                  __func__, (llong)size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -445,10 +280,10 @@ memcmp64(void *left, void *right, int64 size) {
     return result;
 }
 
-#define X64(func, TYPE) \
+#define X64(FUNC, TYPE) \
 INLINE int64 \
-CAT(func, 64)(int fd, void *buffer, int64 size) { \
-    TYPE instance; \
+CAT(FUNC, 64)(int fd, void *buffer, int64 size) { \
+    TYPE instance = 0; \
     ssize_t w; \
     (void)instance; \
     if (size == 0) \
@@ -459,10 +294,10 @@ CAT(func, 64)(int fd, void *buffer, int64 size) { \
     } \
     if ((ullong)size >= (ullong)MAXOF(instance)) { \
         error("Error in %s: Size (%lld) is too big for %s\n", __func__, \
-              (llong)size, #func); \
+              (llong)size, #FUNC); \
         fatal(EXIT_FAILURE); \
     } \
-    w = func(fd, buffer, (TYPE)size); \
+    w = FUNC(fd, buffer, (TYPE)size); \
     return (int64)w; \
 }
 
@@ -497,9 +332,9 @@ write_all(int fd, char *buffer, int64 left) {
     return;
 }
 
-#define X64(func) \
+#define X64(FUNC) \
 INLINE int64 \
-CAT(func, 64)(void *buffer, int64 size, int64 n, FILE *file) { \
+CAT(FUNC, 64)(void *buffer, int64 size, int64 n, FILE *file) { \
     size_t rw; \
     if ((size_t)size >= (SIZE_MAX/(size_t)n)) { \
         error("Error in %s: Overflow (%lld*%lld)\n", \
@@ -521,7 +356,7 @@ CAT(func, 64)(void *buffer, int64 size, int64 n, FILE *file) { \
               __func__, (llong)size); \
         fatal(EXIT_FAILURE); \
     } \
-    rw = func(buffer, (size_t)size, (size_t)n, file); \
+    rw = FUNC(buffer, (size_t)size, (size_t)n, file); \
     return (int64)rw; \
 }
 
@@ -533,25 +368,27 @@ X64(fread)
 static void
 qsort64(void *base, int64 n, int64 size,
         int (*compar)(const void *, const void *)) {
-    if ((size_t)size >= (SIZE_MAX / (size_t)n)) {
-        error("Error in %s: Overflow (%lld*%lld)\n", __func__, (llong)size,
-              (llong)n);
-        fatal(EXIT_FAILURE);
-    }
-    if ((size <= 0) || (n <= 0)) {
-        error("Error in %s: Invalid size(%lld) or n(%lld)\n", __func__,
-              (llong)size, (llong)n);
-        fatal(EXIT_FAILURE);
-    }
-    if ((ullong)size >= (ullong)SIZE_MAX) {
-        error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", __func__,
-              (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-    if ((ullong)n >= (ullong)SIZE_MAX) {
-        error("Error in %s: Number (%lld) is bigger than SIZEMAX\n", __func__,
-              (llong)size);
-        fatal(EXIT_FAILURE);
+    if (DEBUGGING) {
+        if ((size_t)size >= (SIZE_MAX / (size_t)n)) {
+            error("Error in %s: Overflow (%lld*%lld)\n",
+                  __func__, (llong)size, (llong)n);
+            fatal(EXIT_FAILURE);
+        }
+        if ((size <= 0) || (n <= 0)) {
+            error("Error in %s: Invalid size(%lld) or n(%lld)\n",
+                  __func__, (llong)size, (llong)n);
+            fatal(EXIT_FAILURE);
+        }
+        if ((ullong)size >= (ullong)SIZE_MAX) {
+            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n",
+                  __func__, (llong)size);
+            fatal(EXIT_FAILURE);
+        }
+        if ((ullong)n >= (ullong)SIZE_MAX) {
+            error("Error in %s: Number (%lld) is bigger than SIZEMAX\n",
+                  __func__, (llong)size);
+            fatal(EXIT_FAILURE);
+        }
     }
     qsort(base, (size_t)n, (size_t)size, compar);
     return;
@@ -574,276 +411,6 @@ util_nthreads(void) {
 
 #if OS_WINDOWS || OS_MAC
 #define basename basename2
-#endif
-
-#define MEM_FREED 0xDC
-#define MEM_MALLOCED_UNINITIALIZED 0xCD
-#define MEM_DONT_READ 0xBD
-
-#if !defined(DEBUGGING_MEMORY)
-#define DEBUGGING_MEMORY DEBUGGING
-#else
-#define DEBUGGING_MEMORY 0
-#endif
-
-INLINE void
-dont_read(void *pointer, int64 size) {
-    memset64(pointer, MEM_DONT_READ, size);
-    return;
-}
-
-INLINE void *
-xmalloc(int64 size) {
-    void *p;
-    if ((p = malloc((size_t)size)) == NULL) {
-        error("Failed to allocate %lld bytes.\n", (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-    return p;
-}
-
-static void *
-malloc_debug(char *file, int32 line, int64 size) {
-    void *p;
-
-    if (size <= 0) {
-        error_impl(file, line,
-                   "Error in malloc: invalid size = %lld.\n", (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-    if ((ullong)size >= (ullong)SIZE_MAX) {
-        error_impl(file, line,
-                   "Error in malloc: Number (%lld) is bigger than SIZEMAX\n",
-                   (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-
-    if ((p = malloc((size_t)size)) == NULL) {
-        error_impl(file, line,
-                   "Failed to allocate %lld bytes.\n", (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-
-    if (!RUNNING_ON_VALGRIND) {
-        memset64(p, MEM_MALLOCED_UNINITIALIZED, size);
-    }
-    return p;
-}
-
-INLINE void *
-xrealloc(void *old, int64 new_size) {
-    void *p;
-    uint64 old_save = (uint64)old;
-
-    if ((p = realloc(old, (size_t)new_size)) == NULL) {
-        error("Failed to reallocate %lld bytes from %llx.\n",
-              (llong)new_size, (ullong)old_save);
-        fatal(EXIT_FAILURE);
-    }
-
-    return p;
-}
-
-INLINE void *
-xrealloc4(void *old, int64 old_capacity, int64 new_capacity, int64 obj_size) {
-    int64 new_size = new_capacity*obj_size;
-
-    if (DEBUGGING_MEMORY) {
-        error("Reallocating %p: %lld to %lld objects of size %lld.\n",
-              old, (llong)old_capacity, (llong)new_capacity, (llong)obj_size);
-    }
-
-    return xrealloc(old, new_size);
-}
-
-static void *
-realloc_debug(char *file, int32 line,
-              void *old, int64 old_capacity, int64 new_capacity, int64 obj_size) {
-    int64 new_size;
-    (void)old_capacity;
-    if (obj_size <= 0) {
-        error_impl(file, line,
-                   "Error in realloc: invalid object size = %lld.\n",
-                   (llong)obj_size);
-        fatal(EXIT_FAILURE);
-    }
-    if ((ullong)SIZE_MAX / (ullong)obj_size < (ullong)new_capacity) {
-        error_impl(file, line,
-                   "Error in realloc: Number (%lld) is bigger than SIZEMAX\n",
-                   (llong)obj_size);
-        fatal(EXIT_FAILURE);
-    }
-    if (DEBUGGING_MEMORY) {
-        error_impl(file, line,
-                   "Reallocating %p: %lld to %lld objects of size %lld.\n",
-                   old, (llong)old_capacity, (llong)new_capacity, (llong)obj_size);
-    }
-
-    new_size = new_capacity*obj_size;
-    return xrealloc(old, new_size);
-}
-
-static void
-free_debug(char *file, int32 line, void *pointer, int64 size) {
-    if (size < 0) {
-        error_impl(file, line,
-                   "Error: freeing allocation of negative size = %lld.\n",
-                   (llong)size);
-        fatal(EXIT_FAILURE);
-    }
-    if (pointer && size) {
-        error_impl(file, line,
-                   "Freeing pointer of size %lld [%p]\n", (llong)size, pointer);
-        if (!RUNNING_ON_VALGRIND) {
-            memset64(pointer, MEM_FREED, size);
-        }
-    }
-    free(pointer);
-    return;
-}
-
-INLINE void
-free2(void *pointer, int64 size) {
-    (void)size;
-    if (pointer) {
-        free(pointer);
-    }
-    return;
-}
-
-#if DEBUGGING_MEMORY
-#define malloc(size) \
-    malloc_debug(__FILE__, __LINE__, size)
-#define realloc(old, old_capacity, new_capacity, obj_size) \
-    realloc_debug(__FILE__, __LINE__, old, old_capacity, new_capacity, obj_size)
-#define free(pointer, size) \
-    free_debug(__FILE__, __LINE__, pointer, size)
-#else
-#define malloc(size) \
-    xmalloc(size)
-#define realloc(old, old_capacity, new_capacity, obj_size) \
-    xrealloc4(old, old_capacity, new_capacity, obj_size)
-#define free(pointer, size) \
-    free2(pointer, size)
-#endif
-
-static void *
-xmemdup(void *source, int64 size) {
-    void *p = xmalloc(size);
-    memcpy64(p, source, size);
-    return p;
-}
-
-static char *
-xstrdup(char *string) {
-    char *p;
-    int64 length;
-
-    length = strlen32(string) + 1;
-    if ((p = malloc(length)) == NULL) {
-        error("Error allocating %lld bytes to duplicate '%s': %s\n",
-              (llong)length, string, strerror(errno));
-        fatal(EXIT_FAILURE);
-    }
-
-    memcpy64(p, string, length);
-    return p;
-}
-
-#if OS_UNIX
-static void *
-xmmap_commit(int64 *size) {
-    void *p;
-
-    if (RUNNING_ON_VALGRIND) {
-        p = xmalloc(*size);
-        memset64(p, 0, *size);
-        return p;
-    }
-    if (util_page_size == 0) {
-        long aux;
-        if ((aux = sysconf(_SC_PAGESIZE)) <= 0) {
-            fprintf(stderr, "Error getting page size: %s.\n", strerror(errno));
-            fatal(EXIT_FAILURE);
-        }
-        util_page_size = aux;
-    }
-
-    do {
-        if ((*size >= SIZEMB(2)) && FLAGS_HUGE_PAGES) {
-            p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
-                     MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE
-                         | FLAGS_HUGE_PAGES,
-                     -1, 0);
-            if (p != MAP_FAILED) {
-                *size = UTIL_ALIGN(*size, SIZEMB(2));
-                break;
-            }
-        }
-        p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
-                 MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE, -1, 0);
-        *size = UTIL_ALIGN(*size, util_page_size);
-    } while (0);
-    if (p == MAP_FAILED) {
-        error("Error in mmap(%lld): %s.\n", (llong)*size, strerror(errno));
-        fatal(EXIT_FAILURE);
-    }
-    return p;
-}
-static void
-xmunmap(void *p, int64 size) {
-    if (RUNNING_ON_VALGRIND) {
-        free(p, size);
-        return;
-    }
-    if (munmap(p, (size_t)size) < 0) {
-        error("Error in munmap(%p, %lld): %s.\n", p, (llong)size,
-              strerror(errno));
-        fatal(EXIT_FAILURE);
-    }
-    return;
-}
-#else
-static void *
-xmmap_commit(int64 *size) {
-    void *p;
-
-    if (RUNNING_ON_VALGRIND) {
-        p = xmalloc(*size);
-        memset64(p, 0, *size);
-        return p;
-    }
-    if (util_page_size == 0) {
-        SYSTEM_INFO system_info;
-        GetSystemInfo(&system_info);
-        util_page_size = system_info.dwPageSize;
-        if (util_page_size <= 0) {
-            fprintf(stderr, "Error getting page size.\n");
-            fatal(EXIT_FAILURE);
-        }
-    }
-
-    p = VirtualAlloc(NULL, (size_t)*size, MEM_COMMIT | MEM_RESERVE,
-                     PAGE_READWRITE);
-    if (p == NULL) {
-        fprintf(stderr, "Error in VirtualAlloc(%lld): %lu.\n", (llong)*size,
-                GetLastError());
-        fatal(EXIT_FAILURE);
-    }
-    return p;
-}
-static void
-xmunmap(void *p, size_t size) {
-    (void)size;
-    if (RUNNING_ON_VALGRIND) {
-        free(p, (int64)size);
-        return;
-    }
-    if (!VirtualFree(p, 0, MEM_RELEASE)) {
-        fprintf(stderr, "Error in VirtualFree(%p): %lu.\n", p, GetLastError());
-    }
-    return;
-}
 #endif
 
 static void
@@ -918,7 +485,8 @@ snprintf2(char *buffer, int64 size, char *format, ...) {
     va_end(args);
 
     if ((n < 0) || (n >= size)) {
-        fprintf(stderr, "Error in vsnprintf(%s) (n = %lld)\n", format, (llong)n);
+        fprintf(stderr, "Error in vsnprintf(\"%s\") (n = %lld)\n",
+                        format, (llong)n);
         fatal(EXIT_FAILURE);
     }
     return n;
@@ -1254,27 +822,6 @@ util_command_launch(int argc, char **argv) {
 }
 #endif
 
-#define GENERATE_STRING_FROM_ARRAY(NAME, TYPE, FORMAT) \
-static void \
-string_from_##NAME(char *buffer, int32 size, \
-                   char *sep, TYPE array, int32 array_length) { \
-    int32 n = 0; \
-    for (int32 i = 0; i < (array_length - 1); i += 1) { \
-        int32 space = size - n; \
-        int32 m = snprintf2(buffer + n, space, FORMAT"%s", array[i], sep); \
-        n += m; \
-    } \
-    { \
-        int32 i = array_length - 1; \
-        int32 space = size - n; \
-        snprintf2(buffer + n, space, FORMAT, array[i]); \
-    } \
-    return; \
-}
-
-GENERATE_STRING_FROM_ARRAY(strings, char **, "%s")
-GENERATE_STRING_FROM_ARRAY(doubles, double *, "%f")
-
 void __attribute__((format(printf, 3, 4)))
 error_impl(char *file, int32 line, char *format, ...) {
     char buffer[BUFSIZ];
@@ -1292,12 +839,13 @@ error_impl(char *file, int32 line, char *format, ...) {
     if (n >= m) {
         if (RELEASING) {
             m = n + 1;
-            big_buffer = xmalloc(m);
+            big_buffer = malloc((size_t)m);
+            assert(big_buffer);
             n = vsnprintf(big_buffer, (size_t)m, format, args);
             pbuffer = big_buffer;
         } else {
-            fprintf(stderr, "Error in vsnprintf(\"%s\") (n = %lld).\n", format,
-                    (llong)n);
+            fprintf(stderr, "Error in vsnprintf(\"%s\") (n = %lld).\n",
+                            format, (llong)n);
             fatal(EXIT_FAILURE);
         }
     }
@@ -1305,8 +853,8 @@ error_impl(char *file, int32 line, char *format, ...) {
     va_end(args);
 
     if ((n < 0) || (n >= m)) {
-        fprintf(stderr, "Error in vsnprintf(\"%s\") (n = %lld).\n", format,
-                (llong)n);
+        fprintf(stderr, "Error in vsnprintf(\"%s\") (n = %lld).\n",
+                        format, (llong)n);
         fatal(EXIT_FAILURE);
     }
 
@@ -1332,8 +880,8 @@ error_impl(char *file, int32 line, char *format, ...) {
     switch (fork()) {
     case 0:
         for (uint32 i = 0; i < LENGTH(notifiers); i += 1) {
-            execlp(notifiers[i], notifiers[i], "-u", "critical", program,
-                   pbuffer, NULL);
+            execlp(notifiers[i],
+                   notifiers[i], "-u", "critical", program, pbuffer, NULL);
         }
         fprintf(stderr, "Error executing notifier: %s.\n", strerror(errno));
         exit(EXIT_FAILURE);
@@ -1346,7 +894,7 @@ error_impl(char *file, int32 line, char *format, ...) {
 #endif
 
     if (big_buffer) {
-        free(big_buffer, m);
+        free2(big_buffer, m);
     }
     return;
 }
@@ -1437,8 +985,8 @@ util_copy_file_sync(char *destination, char *source) {
     if ((destination_fd
              = open(destination,
                     O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
-        error("Error opening %s for writing: %s.\n", destination,
-              strerror(errno));
+        error("Error opening %s for writing: %s.\n",
+              destination, strerror(errno));
         XCLOSE(&source_fd, source);
         return -1;
     }
@@ -1495,8 +1043,8 @@ util_copy_file_async(char *destination, char *source, int *dest_fd) {
     if ((*dest_fd
          = open(destination, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
         < 0) {
-        error("Error opening %s for writing: %s.\n", destination,
-              strerror(errno));
+        error("Error opening %s for writing: %s.\n",
+              destination, strerror(errno));
         XCLOSE(&source_fd, source);
         return -1;
     }
@@ -1529,8 +1077,8 @@ util_copy_file_async_thread(void *arg) {
             break;
         }
         if (n < 0) {
-            error("Error in poll(nfds=%lld): %s.\n", (llong)copy_files->nfds,
-                  strerror(errno));
+            error("Error in poll(nfds=%lld): %s.\n",
+                  (llong)copy_files->nfds, strerror(errno));
             break;
         }
         for (int32 i = 0; i < copy_files->nfds; i += 1) {
@@ -1560,7 +1108,7 @@ util_copy_file_async_thread(void *arg) {
             pipes[i].revents = 0;
         }
     }
-    free(copy_files, sizeof(*copy_files));
+    free2(copy_files, sizeof(*copy_files));
     pthread_exit(NULL);
     return NULL;
 }
@@ -1696,7 +1244,7 @@ util_equal_files(char *filename_a, char *filename_b) {
         equal = false;
         goto out;
     }
-    if (stat_a.st_dev == stat_b.st_dev && stat_a.st_ino == stat_b.st_ino) {
+    if ((stat_a.st_dev == stat_b.st_dev) && (stat_a.st_ino == stat_b.st_ino)) {
         equal = true;
         goto out;
     }
@@ -1816,37 +1364,6 @@ bytes_pretty(char *buffer, int64 raw) {
     }
 
     return n;
-}
-
-static char *
-shell_escape(char *path) {
-    int64 len;
-    int64 count;
-    char *escaped;
-    char *write_ptr;
-
-    len = strlen32(path);
-    count = 0;
-    for (int64 i = 0; i < len; i += 1) {
-        if (path[i] == '\'') {
-            count += 1;
-        }
-    }
-
-    escaped = xmalloc(len + (count*3) + 1);
-    write_ptr = escaped;
-
-    for (int64 i = 0; i < len; i += 1) {
-        if (path[i] == '\'') {
-            memcpy64(write_ptr, "'\\''", 4);
-            write_ptr += 4;
-        } else {
-            *write_ptr = path[i];
-            write_ptr += 1;
-        }
-    }
-    *write_ptr = '\0';
-    return escaped;
 }
 
 static void
@@ -2132,7 +1649,6 @@ util_functions_sink(void) {
     (void)free_debug;
 
     (void)send_signal;
-    (void)shell_escape;
     (void)atoi2;
 #if OS_UNIX
     (void)timezone_init;
@@ -2186,13 +1702,12 @@ util_functions_sink(void) {
 #define ENUM_BITFLAGS 1
 #define ENUM_PREFIX_ POWER_OF2_
 #define ENUM_FIELDS \
-    X(ONE,     1 << 0)             \
-    X(TWO,     1 << 1)             \
-    X(FOUR,    1 << 2)             \
-    X(EIGHT,   1 << 3)             \
-    X(SIXTEEN, 1 << 4)             \
-    X(THIRTY2, 1 << 5)             \
-    X(SIXTY4,  1 << 6)
+    X(ONE)          \
+    X(TWO)          \
+    X(FOUR)         \
+    X(EIGHT)        \
+    X(SIXTEEN)      \
+    X(THIRTY2)
 #include "xenums.c"
 
 
@@ -2213,7 +1728,7 @@ write_file(char *path, void *data, int64 len) {
 }
 #define WRITE_FILE(PATH, STRING) write_file(PATH, STRING, strlen32(STRING))
 
-static volatile sig_atomic_t received_signal = false;
+static sig_atomic_t received_signal = false;
 static void
 signal_handler(int signal_number) {
     (void)signal_number;
@@ -2236,10 +1751,6 @@ util_test_qsort_cmp(const void *a, const void *b) {
 
 int
 main(int argc, char **argv) {
-    void *p1 = xmalloc(SIZEMB(1));
-    void *p2 = malloc(SIZEMB(2));
-    char *p3;
-    char *string = __FILE__;
     char *s1 = "aaaabbbb";
     struct timespec t0;
     struct timespec t1;
@@ -2248,7 +1759,6 @@ main(int argc, char **argv) {
     (void)argv;
     (void)here_counter;
 
-    p2 = realloc(p2, 0, 1, SIZEMB(2));
     ASSERT(BEGINS_WITH(s1, "aaaa"));
     ASSERT(BEGINS_WITH(s1, "aaaabbbb"));
 
@@ -2265,9 +1775,9 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(a, 20);
         ASSERT_EQUAL(b, 10);
 
-        ASSERT_EQUAL(UTIL_ALIGN(7, 16), 16);
-        ASSERT_EQUAL(UTIL_ALIGN(16, 16), 16);
-        ASSERT_EQUAL(UTIL_ALIGN(17, 16), 32);
+        ASSERT_EQUAL(ALIGN_POWER_OF_2(7, 16), 16);
+        ASSERT_EQUAL(ALIGN_POWER_OF_2(16, 16), 16);
+        ASSERT_EQUAL(ALIGN_POWER_OF_2(17, 16), 32);
         ASSERT_EQUAL(ALIGN16(7), 16);
     }
 
@@ -2294,13 +1804,6 @@ main(int argc, char **argv) {
         send_signal(argv[0], SIGUSR1);
         ASSERT(received_signal);
     }
-
-    memset64(p1, 0, SIZEMB(1));
-    memcpy64(p1, string, strlen32(string));
-    p3 = xstrdup(p1);
-
-    ASSERT_EQUAL(string, p3);
-    free(p3, strlen32(p3) + 1);
 
     srand((uint)time(NULL));
     for (int i = 0; i < 10; i += 1) {
@@ -2331,13 +1834,6 @@ main(int argc, char **argv) {
     }
 
     {
-        char *path = "path'with'quotes";
-        char *escaped = shell_escape(path);
-        ASSERT_EQUAL(escaped, "path'\\''with'\\''quotes");
-        free(escaped, strlen32(escaped) + 1);
-    }
-
-    {
         int32 arr[] = {10, 5, 20, 1};
         qsort64(arr, 4, sizeof(int32), util_test_qsort_cmp);
         ASSERT_EQUAL(arr[0], 1);
@@ -2361,7 +1857,7 @@ main(int argc, char **argv) {
         char *dup = xmemdup(src, 12);
         ASSERT_EQUAL(src, dup);
         ASSERT_NOT_EQUAL((void *)src, (void *)dup);
-        free(dup, 12);
+        free2(dup, 12);
     }
 
     {
@@ -2407,14 +1903,14 @@ main(int argc, char **argv) {
             char *base = bases[i];
             int32 path_len = strlen32(path);
             ASSERT_EQUAL(basename2(path, &path_len, NULL), base);
-            free(path, path_len + 1);
+            free2(path, path_len + 1);
         }
         for (int64 i = 0; i < LENGTH(paths); i += 1) {
             char *copy = xstrdup(paths[i]);
             int len = strlen32(copy);
             normalize(copy, &len);
             ASSERT_EQUAL(copy, normalized[i]);
-            free(copy, len + 1);
+            free2(copy, len + 1);
         }
 
         for (int64 i = 0; i < LENGTH(paths); i += 1) {
@@ -2496,8 +1992,6 @@ main(int argc, char **argv) {
         xunlink(name2);
     }
 
-    free(p1, SIZEMB(1));
-
     ASSERT_EQUAL(deg2rad(180.0), 3.141592653589793);
     ASSERT_EQUAL(rad2deg(3.141592653589793), 180.0);
     ASSERT_MORE(util_nthreads(), 0);
@@ -2514,13 +2008,10 @@ main(int argc, char **argv) {
 #endif
     (void)util_command_launch;
 
-    (void)dont_read;
-
     (void)malloc_debug;
     (void)realloc_debug;
     (void)free_debug;
-    (void)xrealloc4;
-    (void)free2;
+    (void)free2_;
 
     (void)xmmap_commit;
     (void)xkill;

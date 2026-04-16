@@ -44,31 +44,14 @@
 #elif defined(_MSC_VER)
 #define TRAP(...) __debugbreak()
 #else
-#define TRAP(...) *(volatile int *)0 = 0
+#define TRAP(...) *(int *)0 = 0
 #endif
 #endif
 
 #include "generic.c"
 #include "assert.c"
 
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-typedef unsigned long ulong;
-typedef unsigned long long ullong;
-
-typedef signed char schar;
-typedef long long llong;
-typedef long double ldouble;
-
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
+#include "primitives.h"
 
 #define GENERATE_COMPARE_POINTERS(MODE, SYMBOL) \
 static void * \
@@ -167,8 +150,10 @@ _Generic((VAR2), \
     ullong:  SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_ULLONG ), \
     float:   BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_FLOAT  ), \
     double:  BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
-    ldouble: BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_LDOUBLE), \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_SIGNED() \
+    default: _Generic((VAR2), \
+      ldouble: BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_LDOUBLE), \
+      default: UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_SIGNED() \
+    ) \
 )
 void UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_SIGNED(void);
 
@@ -192,8 +177,10 @@ _Generic((VAR2), \
     ullong:  BOTH_UNSIGNED(MODE,   VAR1, VAR2, TYPE1, TYPE_ULLONG ), \
     float:   BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_FLOAT  ), \
     double:  BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
-    ldouble: BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_LDOUBLE), \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_UNSIGNED() \
+    default: _Generic((VAR2), \
+      ldouble: BOTH_LDOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_LDOUBLE), \
+      default: UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_UNSIGNED() \
+    ) \
 )
 void UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_UNSIGNED(void);
 
@@ -214,8 +201,10 @@ _Generic((VAR2), \
     ullong:  BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_ULLONG ), \
     float:   BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_FLOAT  ), \
     double:  BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
-    ldouble: BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_LDOUBLE), \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_LDOUBLE() \
+    default: _Generic((VAR2), \
+      ldouble: BOTH_LDOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_LDOUBLE), \
+      default: UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_LDOUBLE() \
+    ) \
 )
 void UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_LDOUBLE(void);
 
@@ -223,6 +212,7 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_LDOUBLE(void);
     get_pointer_##MODE((void *)(uintptr_t)(VAR1), (void *)(uintptr_t)(VAR2))
 
 void UNSUPPORTED_TYPE_FOR_GENERIC_MINMAX_COMPARE_VOIDP(void);
+void UNSUPPORTED_TYPE_FOR_GENERIC_MINMAX_COMPARE(void);
 
 #define MINMAX_COMPARE(MODE, VAR1, VAR2) \
 _Generic((VAR1), \
@@ -243,13 +233,21 @@ _Generic((VAR1), \
     ullong:  FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_ULLONG ), \
     float:   FIRST_LDOUBLE(MODE,  VAR1, VAR2, TYPE_FLOAT  ), \
     double:  FIRST_LDOUBLE(MODE,  VAR1, VAR2, TYPE_DOUBLE ), \
-    ldouble: FIRST_LDOUBLE(MODE,  VAR1, VAR2, TYPE_LDOUBLE)  \
+    default: _Generic((VAR1), \
+      ldouble: FIRST_LDOUBLE(MODE,  VAR1, VAR2, TYPE_LDOUBLE), \
+      default: UNSUPPORTED_TYPE_FOR_GENERIC_MINMAX_COMPARE() \
+    ) \
 )
 
-#if !defined(MIN)
+#if defined(MIN)
+#undef MIN
+#endif
+#if defined(MAX)
+#undef MAX
+#endif
+
 #define MIN(VAR1, VAR2) MINMAX_COMPARE(min, VAR1, VAR2)
 #define MAX(VAR1, VAR2) MINMAX_COMPARE(max, VAR1, VAR2)
-#endif
 
 #if 0 == TESTING_minmax
 static inline void
@@ -301,14 +299,14 @@ main(void) {
     }{
         long a = -1;
         ulong b = 0;
-        long double min = MIN(a, b);
-        long double max = MAX(a, b);
+        ldouble min = MIN(a, b);
+        ldouble max = MAX(a, b);
         ASSERT_EQUAL(min, a);
         ASSERT_EQUAL(max, b);
     }{
         long a = MINOF(a);
         ulong b = MAXOF(b);
-        long double min = MIN(a, b);
+        ldouble min = MIN(a, b);
         ullong max = (ullong)MAX(a, b);
         ASSERT_EQUAL((long)min, a);
         ASSERT_EQUAL(max, b);
