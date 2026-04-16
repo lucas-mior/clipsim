@@ -307,7 +307,6 @@ main(void) {
                 setenv("CLIPSIM_SIGNAL_NUMBER", "1", 1);
 
                 clipboard_daemon_watch();
-                _exit(EXIT_SUCCESS);
             } else {
                 int32 status = 0;
                 usleep(200000);
