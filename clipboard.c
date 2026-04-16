@@ -289,10 +289,114 @@ clipboard_incremental_case(char **save, ulong *length) {
 
 int
 main(void) {
-    int32 num_events;
+    {
+        int32 num_events = LENGTH(event_names);
+        ASSERT_EQUAL(num_events, LASTEvent);
+    }
 
-    num_events = LENGTH(event_names);
-    ASSERT_EQUAL(num_events, LASTEvent);
+    display = XOpenDisplay(NULL);
+    if (display != NULL) {
+        {
+            pid_t pid = fork();
+            if (pid == 0) {
+                int32 nullfd = open("/dev/null", O_WRONLY);
+                dup2(nullfd, STDERR_FILENO);
+                close(nullfd);
+
+                setenv("CLIPSIM_SIGNAL_PROGRAM", "clipsim_test", 1);
+                setenv("CLIPSIM_SIGNAL_NUMBER", "1", 1);
+
+                clipboard_daemon_watch();
+                _exit(EXIT_SUCCESS);
+            } else {
+                int32 status = 0;
+                usleep(200000);
+                kill(pid, SIGTERM);
+                wait(&status);
+            }
+        }
+
+        {
+            ulong color;
+            char *test_str = "test_clip";
+            ulong len = 0;
+            char *res_save = NULL;
+            int32 res_clip;
+
+            CLIPBOARD = XInternAtom(display, "CLIPBOARD", False);
+            XSEL_DATA = XInternAtom(display, "XSEL_DATA", False);
+            INCR = XInternAtom(display, "INCR", False);
+            UTF8_STRING = XInternAtom(display, "UTF8_STRING", False);
+            image_png = XInternAtom(display, "image/png", False);
+            TARGETS = XInternAtom(display, "TARGETS", False);
+
+            root = DefaultRootWindow(display);
+            color = BlackPixel(display, DefaultScreen(display));
+            window = XCreateSimpleWindow(display, root, 0, 0, 1, 1, 0, color, color);
+
+            XChangeProperty(display, window, XSEL_DATA, UTF8_STRING, 8,
+                            PropModeReplace, (uchar *)test_str, 9);
+
+            {
+                XEvent mock_event;
+                Atom tgt;
+
+                mock_event.type = SelectionNotify;
+                mock_event.xselection.selection = CLIPBOARD;
+                mock_event.xselection.target = UTF8_STRING;
+                mock_event.xselection.property = UTF8_STRING;
+                XPutBackEvent(display, &mock_event);
+
+                tgt = clipboard_check_target(UTF8_STRING);
+                ASSERT_EQUAL(tgt, UTF8_STRING);
+            }
+
+            {
+                XEvent mock_event2;
+
+                mock_event2.type = SelectionNotify;
+                mock_event2.xselection.selection = CLIPBOARD;
+                mock_event2.xselection.target = UTF8_STRING;
+                mock_event2.xselection.property = UTF8_STRING;
+                XPutBackEvent(display, &mock_event2);
+
+                res_clip = clipboard_get_clipboard(&res_save, &len);
+                ASSERT_EQUAL(res_clip, CLIPBOARD_TEXT);
+                ASSERT_MORE(len, 0);
+
+                if (res_save != NULL) {
+                    XFree(res_save);
+                }
+            }
+
+            {
+                char *dummy_save = NULL;
+                ulong dummy_len = 0;
+                XEvent prop_event1;
+                XEvent prop_event2;
+
+                prop_event1.type = PropertyNotify;
+                prop_event1.xproperty.window = window;
+                prop_event1.xproperty.atom = XSEL_DATA;
+                prop_event1.xproperty.state = PropertyNewValue;
+
+                prop_event2.type = PropertyNotify;
+                prop_event2.xproperty.window = window;
+                prop_event2.xproperty.atom = XSEL_DATA;
+                prop_event2.xproperty.state = PropertyNewValue;
+
+                XChangeProperty(display, window, XSEL_DATA, INCR, 8,
+                                PropModeReplace, NULL, 0);
+
+                XPutBackEvent(display, &prop_event2);
+                XPutBackEvent(display, &prop_event1);
+
+                clipboard_incremental_case(&dummy_save, &dummy_len);
+                ASSERT_EQUAL(dummy_len, 0);
+            }
+        }
+        XCloseDisplay(display);
+    }
 
     exit(EXIT_SUCCESS);
 }
