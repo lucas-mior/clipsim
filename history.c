@@ -655,6 +655,36 @@ history_free_entry(Entry *e, int32 index) {
 #if TESTING_history
 int
 main(void) {
+    int32 idx;
+
+    history_length = 3;
+
+    entries[0].content = "alpha";
+    entries[0].content_length = 5;
+    is_image[0] = false;
+    length_counts[5] += 1;
+
+    entries[1].content = "beta";
+    entries[1].content_length = 4;
+    is_image[1] = false;
+    length_counts[4] += 1;
+
+    entries[2].content = "gamma";
+    entries[2].content_length = 5;
+    is_image[2] = false;
+    length_counts[5] += 1;
+
+    idx = history_repeated_index("beta", 4);
+    ASSERT_EQUAL(idx, 1);
+
+    idx = history_repeated_index("delta", 5);
+    ASSERT_EQUAL(idx, -1);
+
+    history_reorder(0);
+    ASSERT_EQUAL(entries[0].content_length, 4);
+    ASSERT_EQUAL(entries[1].content_length, 5);
+    ASSERT_EQUAL(entries[2].content_length, 5);
+
     exit(EXIT_SUCCESS);
 }
 #endif
