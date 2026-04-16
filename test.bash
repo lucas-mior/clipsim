@@ -111,12 +111,16 @@ fi
 
 echo "not me" | xclip -selection clipboard
 sleep $interval
+
 $clipsim_bin -c -1
 sleep $interval
+
 $clipsim_bin -p > "$TEST_DIR/before_xclip"
 sleep $interval
+
 CLIP_DATA=$(xclip -o -selection clipboard)
 sleep $interval
+
 if [ "$CLIP_DATA" != "not me" ]; then
     echo "FAIL: --copy resulted in an empty clipboard."
     exit 1
