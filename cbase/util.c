@@ -1034,6 +1034,7 @@ typedef struct UtilCopyFilesAsync {
 static int32
 util_copy_file_async(char *destination, char *source, int *dest_fd) {
     int32 source_fd;
+    int32 fadvise_err;
 
     if ((source_fd = open(source, O_RDONLY)) < 0) {
         error("Error opening %s for reading: %s.\n", source, strerror(errno));

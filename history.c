@@ -129,7 +129,6 @@ history_save(void) {
                                                    &(e->content_length), NULL));
 
             if (strcmp(image_save, e->content)) {
-                int32 fadvise_err;
                 if ((pipes[nfds].fd
                         = util_copy_file_async(image_save, e->content,
                                                &(dests[nfds]))) < 0) {
