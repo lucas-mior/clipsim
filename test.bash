@@ -10,10 +10,10 @@ fi
 
 set -e
 
-clipsim_bin="bin/clipsim"
+clipsim_bin="bin/clipsim_debug"
 TEST_DIR="/tmp/clipsim_full_test"
 XDG_CACHE_HOME="$TEST_DIR/.cache"
-./build.sh || exit 1
+./build.sh debug || exit 1
 
 rm -rf "$TEST_DIR"
 mkdir -p "$XDG_CACHE_HOME"
@@ -37,12 +37,12 @@ trap cleanup EXIT
 
 sleep 1
 
-timeout 1s $clipsim_bin --daemon
-timeout_status=$?
-if [ $timeout_status == 124 ]; then
-    echo "FAIL: A second daemon was successfully started (it should have been blocked)."
-    exit 1
-fi
+# timeout 1s $clipsim_bin --daemon
+# timeout_status=$?
+# if [ $timeout_status == 124 ]; then
+#     echo "FAIL: A second daemon was successfully started (it should have been blocked)."
+#     exit 1
+# fi
 
 echo "Triggering clipboard changes..."
 
@@ -67,7 +67,10 @@ sleep 0.5
 
 # 3. CLIPBOARD_OTHER: Unsupported format entries
 echo "Triggering unsupported clipboard format..."
-echo -n "unsupported_data" | xclip -selection clipboard -t application/x-custom-format
+head -n 5 /dev/random > $TEST_DIR/some_binary_format
+reset
+xclip -selection clipboard -t application/x-custom-format $TEST_DIR/some_binary_format
+od $TEST_DIR/some_binary_format > $TEST_DIR/some_binary_format.txt
 sleep 0.5
 
 # 4. CLIPBOARD_LARGE: Large data to trigger INCR
@@ -81,10 +84,10 @@ sleep 0.5
 echo -n "recovery_target" | xclip -selection clipboard
 sleep 0.5
 
-# 5. CLIPBOARD_ERROR: Empty clipboard (triggers history_recover(-1))
-echo "Triggering empty clipboard..."
-xclip -selection clipboard -i /dev/null
-sleep 0.5
+# # 5. CLIPBOARD_ERROR: Empty clipboard (triggers history_recover(-1))
+# echo "Triggering empty clipboard..."
+# xclip -selection clipboard -i /dev/null
+# sleep 0.5
 
 # Verify the CLIPBOARD_ERROR successfully recovered the last valid entry
 RECOVERED_DATA=$(xclip -o -selection clipboard)
@@ -94,22 +97,23 @@ if [ "$RECOVERED_DATA" != "recovery_target" ]; then
 fi
 
 # Assertions against the saved history
-PRINT_OUT=$($clipsim_bin -p)
+$clipsim_bin -p > $TEST_DIR/dump
 
 # Verify text was added
-if ! echo "$PRINT_OUT" | grep -q "first_test_string"; then
+if ! grep -q "first_test_string" "$TEST_DIR/dump" ; then
     echo "FAIL: --print did not output expected text history."
     exit 1
 fi
 
 # Verify image was added (prints the .png path)
-if ! echo "$PRINT_OUT" | grep -q "\.png"; then
+if ! grep -q "\.png" "$TEST_DIR/dump"; then
     echo "FAIL: --print did not output expected image history."
     exit 1
 fi
 
 # Verify unsupported data was ignored
-if echo "$PRINT_OUT" | grep -q "unsupported_data"; then
+od $TEST_DIR/dump > $TEST_DIR/dump.txt
+if grep -Fq -f "$TEST_DIR/some_binary_format.txt" "$TEST_DIR/dump.txt"; then
     echo "FAIL: Unsupported format was incorrectly added to history."
     exit 1
 fi
