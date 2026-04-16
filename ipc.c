@@ -178,12 +178,10 @@ ipc_client_check_save(void) {
         if (saved) {
             error("History saved to disk.\n");
         } else {
-            error("Error saving history to disk");
-            if (r < 0) {
-                error(": %s", strerror(errno));
-            }
-            error(".\n");
+            error("Error saving history to disk.\n");
         }
+    } else {
+        error("Error reading saving result from daemon.\n");
     }
 
     util_close(&content_fifo);
