@@ -201,17 +201,13 @@ history_save(void) {
 
 void
 history_exit(int32 signum) {
-    pthread_t thread_copying_images;
     if (signum < LENGTH(signal_names)) {
         error("Received signal %s.\n", signal_names[signum]);
     } else {
         error("Received signal %d.\n", signum);
     }
 
-    thread_copying_images = history_save();
-    if (thread_copying_images) {
-        xpthread_join(&thread_copying_images, NULL);
-    }
+    history_save();
 
     error("Deleting temporary images...\n");
     nftw(tmp_directory, history_callback_delete, MAX_OPEN_FD,
