@@ -55,7 +55,7 @@ static void history_reorder(int32);
 static int32 history_save_image(char **, int32 *);
 
 static void history_append(char *, int);
-static pthread_t history_save(void);
+static int history_save(void);
 static void history_recover(int32);
 static void history_remove(int32);
 static void history_exit(int) __attribute__((noreturn));
@@ -83,7 +83,7 @@ history_callback_delete(const char *path, const struct stat *stat,
     return 0;
 }
 
-pthread_t
+int
 history_save(void) {
     DEBUG_PRINT("void")
     int32 nfds = 0;
