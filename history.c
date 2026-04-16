@@ -547,9 +547,9 @@ history_recover(int32 id) {
     switch (fork()) {
     case 0:
         if (istext) {
-            close(fd[1]);
-            dup2(fd[0], STDIN_FILENO);
-            close(fd[0]);
+            XCLOSE(fd[1]);
+            xdup2(fd[0], STDIN_FILENO);
+            XCLOSE(fd[0]);
             execl(xclip_path, xclip, "-selection", "clipboard", NULL);
         } else {
             execl(xclip_path, xclip, "-selection", "clipboard", "-target",

@@ -109,10 +109,11 @@ if ! echo "$INFO_OUT" | grep -q "Length:"; then
     exit 1
 fi
 
-$clipsim_bin -c 0
+# echo "not me" | xclip -selection clipboard
+$clipsim_bin -c -1
 sleep $interval
 CLIP_DATA=$(xclip -o -selection clipboard)
-if [ -z "$CLIP_DATA" ]; then
+if [ "$CLIP_DATA" != "not me" ]; then
     echo "FAIL: --copy resulted in an empty clipboard."
     exit 1
 fi
