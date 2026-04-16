@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
+# kill any running clipsim so that they dont get on the way
 old_xdg_cache_home="$XDG_CACHE_HOME"
-killall -SIGKILL clipsim
+
+CLIPSIM_WAS_RUNNING=false
+if killall -SIGKILL clipsim 2>/dev/null; then
+    CLIPSIM_WAS_RUNNING=true
+fi
 
 set -e
 
@@ -21,8 +26,12 @@ DAEMON_PID=$!
 cleanup () {
     kill -SIGKILL $DAEMON_PID 2>/dev/null
     rm -rf "$TEST_DIR"
-    XDG_CACHE_HOME="$old_xdg_cache_home" \
-        setsid -f clipsim -d > /dev/null 2>&1
+
+    # restart clipsim only if it was killed previously
+    if [ "$CLIPSIM_WAS_RUNNING" = true ]; then
+        XDG_CACHE_HOME="$old_xdg_cache_home" \
+            setsid -f clipsim -d > /dev/null 2>&1
+    fi
 }
 trap cleanup EXIT
 
