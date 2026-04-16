@@ -178,7 +178,7 @@ ipc_client_check_save(void) {
         if (saved) {
             error("History saved to disk.\n");
         } else {
-            error("Error saving history to disk\n");
+            error("Error saving history to disk");
             if (r < 0) {
                 error(": %s", strerror(errno));
             }
