@@ -1060,9 +1060,8 @@ util_copy_file_async(char *destination, char *source, int *dest_fd) {
     return source_fd;
 }
 
-static void *
-util_copy_file_async_thread(void *arg) {
-    UtilCopyFilesAsync *copy_files = arg;
+static void
+util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
     struct pollfd *pipes = copy_files->pipes;
     int *dests = copy_files->dests;
     int32 left = copy_files->nfds;
@@ -1117,6 +1116,13 @@ util_copy_file_async_thread(void *arg) {
         }
     }
     free2(copy_files, sizeof(*copy_files));
+    return;
+}
+
+static void *
+util_copy_file_async_thread(void *arg) {
+    UtilCopyFilesAsync *copy_files = arg;
+    util_copy_file_async_parsed(copy_files);
     pthread_exit(NULL);
     return NULL;
 }

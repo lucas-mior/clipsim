@@ -87,7 +87,6 @@ pthread_t
 history_save(void) {
     DEBUG_PRINT("void")
     int32 nfds = 0;
-    pthread_t thread = 0;
     struct pollfd pipes[HISTORY_BUFFER_SIZE];
     int dests[HISTORY_BUFFER_SIZE];
 
@@ -191,8 +190,7 @@ history_save(void) {
         memcpy64(copy_files->dests, dests, sizeof(dests));
         copy_files->nfds = nfds;
 
-        xpthread_create(&thread, NULL, util_copy_file_async_thread, copy_files);
-        xpthread_join(&thread, NULL);
+        util_copy_file_async_parsed(copy_files);
     }
 
     util_close(&history);
