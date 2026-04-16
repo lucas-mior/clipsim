@@ -52,9 +52,6 @@ do { \
 #define DEBUG_PRINT(...)
 #endif
 
-#define LENGTH(x) (int64)((sizeof(x) / sizeof(*x)))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n') || (x == '\r'))
 
 #define PAUSE10MS (1000*1000*10)
@@ -65,6 +62,8 @@ do { \
 #define PRINT_DIGITS 3
 #define TRIMMED_SIZE 255
 #define MAX_FILES_COPY HISTORY_BUFFER_SIZE
+
+#include "util.c"
 
 #if !defined(INTEGERS)
 #define INTEGERS
@@ -132,6 +131,9 @@ int32
 fifo_open(File *file, int32 flag) {
     if ((file->fd = open(file->name, flag)) < 0) {
         fprintf(stderr, "Error opening %s: %s\n", file->name, strerror(errno));
+        if (errno == ENOENT) {
+            fatal(EXIT_FAILURE);
+        }
         return -1;
     } else {
         return 0;
