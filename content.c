@@ -124,4 +124,11 @@ content_check_content(uchar *data, const int32 length) {
     return CLIPBOARD_TEXT;
 }
 
+#if TESTING_content
+int
+main(void) {
+    exit(EXIT_SUCCESS);
+}
+#endif
+
 #endif /* CONTENT_C */

@@ -66,6 +66,9 @@ case "$target" in
     CC=clang
     CFLAGS="$CFLAGS -Werror"
     ;;
+"test")
+    CFLAGS="$CFLAGS -g3 $GNUSOURCE -DDEBUGGING=1 -fsanitize=undefined -Wno-address"
+    ;;
 "debug")
     CFLAGS="$CFLAGS -Wno-declaration-after-statement -g -fsanitize=undefined"
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
@@ -146,6 +149,67 @@ case "$target" in
 "assembly")
     trace_on
     $CC $CPPFLAGS $CFLAGS -S -o ${program}_$CC.S "$main" $LDFLAGS
+    exit
+    ;;
+"test")
+    find . -iname "*.c" | sort | while read -r src; do
+        trace_off
+        name=$(basename "$src")
+
+        if [ -n "$2" ] && [ "$name" != "$2" ]; then
+            continue
+        fi
+        if [ "$name" = "$main" ]; then
+            continue
+        fi
+        if echo "$src" | grep -q "stc/"; then
+            continue
+        fi
+        name=$(echo "$name" | sed 's/\.c//')
+        test_exe="/tmp/${name}_test"
+
+        printf "\nTesting ${RED}${src}${RES} ...\n"
+
+        flags="$(awk '/\/\/ flags:/ { $1=$2=""; print $0 }' "$src")"
+        if [ "$name" = "windows_functions" ]; then
+            if ! zig version; then
+                continue
+            fi
+            cmdline="zig cc $CPPFLAGS $CFLAGS"
+            cmdline=$(option_remove "$cmdline" "-D_GNU_SOURCE")
+            cmdline="$cmdline -target x86_64-windows-gnu"
+            cmdline="$cmdline -Wno-unused-variable -DTESTING_$name=1 -DTESTING=1"
+            cmdline="$cmdline $flags -o $test_exe $src"
+            CC="zig cc"
+        else
+            cmdline="$CC $CPPFLAGS $CFLAGS"
+            cmdline="$cmdline -Wno-unused-variable -DTESTING_$name=1 -DTESTING=1 $LDFLAGS"
+            cmdline="$cmdline $flags -o $test_exe $src"
+        fi
+
+        if [ "$CC" = "chibicc" ] || [ "$CC"  = "cproc" ]; then
+            cmdline_no_cc=$(option_remove "$cmdline" "$CC")
+            trace_on
+            if with_other "$CC" "$cmdline_no_cc"; then
+                /tmp/${name}_test
+            else
+                exit 1
+            fi
+        else
+            trace_on
+            if $cmdline; then
+                if ! $test_exe; then
+                    gdb --quiet \
+                        -ex run -ex backtrace -ex quit \
+                        $test_exe 2>&1 | xsel -b
+                    exit 1
+                fi
+            else
+                exit 1
+            fi
+        fi
+        trace_off
+    done
     exit
     ;;
 "test_all")

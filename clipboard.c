@@ -27,6 +27,12 @@
 #include "cbase/util.c"
 #include "history.c"
 
+#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+#define TESTING_clipboard 1
+#elif !defined(TESTING_clipboard)
+#define TESTING_clipboard 0
+#endif
+
 #define CHECK_TARGET_MAX_EVENTS 10
 
 static char *event_names[LASTEvent] = {
@@ -278,5 +284,19 @@ clipboard_incremental_case(char **save, ulong *length) {
     XFlush(display);
     return;
 }
+
+#if TESTING_clipboard
+Entry entries[HISTORY_BUFFER_SIZE] = {0};
+bool is_image[HISTORY_BUFFER_SIZE] = {0};
+char TEXT_TAG = (char)0x01;
+char IMAGE_TAG = (char)0x02;
+pthread_mutex_t lock;
+magic_t magic;
+
+int
+main(void) {
+    exit(EXIT_SUCCESS);
+}
+#endif
 
 #endif /* CLIPBOARD_C */
