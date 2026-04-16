@@ -1050,7 +1050,7 @@ util_copy_file_async(char *destination, char *source, int *dest_fd) {
         return -1;
     }
 
-    if ((fadvise_err = posix_fadvise(pipes[nfds].fd,
+    if ((fadvise_err = posix_fadvise(source_fd,
                                      0, 0,
                                      POSIX_FADV_WILLNEED)) < 0) {
         error("Error in posix_fadvise(POSIX_FADV_WILLNEED): %s.\n",
