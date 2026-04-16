@@ -42,10 +42,14 @@ static const char *event_names[LASTEvent] = {
 };
 
 static Display *display;
-static Atom CLIPBOARD, XSEL_DATA, INCR;
-static Atom UTF8_STRING, image_png, TARGETS;
 static Window window;
 static Window root;
+static Atom CLIPBOARD;
+static Atom XSEL_DATA;
+static Atom INCR;
+static Atom UTF8_STRING;
+static Atom image_png;
+static Atom TARGETS;
 
 static void clipboard_incremental_case(char **, ulong *);
 static Atom clipboard_check_target(const Atom);
