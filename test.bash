@@ -15,12 +15,10 @@ mkdir -p "$XDG_CACHE_HOME"
 export XDG_CACHE_HOME
 
 ls /tmp/clipsim_full_test
-echo "Starting daemon..."
 $clipsim_bin --daemon &
 DAEMON_PID=$!
 
 cleanup () {
-    echo "Cleaning up..."
     kill -SIGKILL $DAEMON_PID 2>/dev/null
     rm -rf "$TEST_DIR"
     XDG_CACHE_HOME="$old_xdg_cache_home" \
@@ -45,21 +43,18 @@ sleep 0.5
 echo -n "third_test_string" | xclip -selection clipboard
 sleep 0.5
 
-echo "Testing --print..."
 PRINT_OUT=$($clipsim_bin -p)
 if ! echo "$PRINT_OUT" | grep -q "first_test_string"; then
     echo "FAIL: --print did not output expected history."
     exit 1
 fi
 
-echo "Testing --info..."
 INFO_OUT=$($clipsim_bin -i 0)
 if ! echo "$INFO_OUT" | grep -q "Length:"; then
     echo "FAIL: --info did not output the expected length metadata."
     exit 1
 fi
 
-echo "Testing --copy..."
 $clipsim_bin -c 0
 sleep 0.5
 CLIP_DATA=$(xclip -o -selection clipboard)
@@ -68,7 +63,6 @@ if [ -z "$CLIP_DATA" ]; then
     exit 1
 fi
 
-echo "Testing --save..."
 $clipsim_bin -s
 sleep 0.5
 if [ ! -s "$XDG_CACHE_HOME/clipsim/history" ]; then
@@ -76,7 +70,6 @@ if [ ! -s "$XDG_CACHE_HOME/clipsim/history" ]; then
     exit 1
 fi
 
-echo "Testing --remove..."
 $clipsim_bin -r 0
 sleep 0.5
 NEW_PRINT_OUT=$($clipsim_bin -p)
@@ -88,11 +81,8 @@ if [ "$NEW_LINES" -ge "$OLD_LINES" ]; then
     exit 1
 fi
 
-echo "Testing --help..."
 HELP_OUT=$($clipsim_bin -h)
 if ! echo "$HELP_OUT" | grep -q "Available commands:"; then
     echo "FAIL: --help did not output the expected usage text."
     exit 1
 fi
-
-echo "--- All tests passed successfully! ---"
