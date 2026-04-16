@@ -62,9 +62,9 @@ od $TEST_DIR/some_binary_format > $TEST_DIR/some_binary_format.txt
 sleep $interval
 
 echo "Triggering large clipboard data (INCR)..."
-LARGE_FILE="$TEST_DIR/large_file.txt"
-dd if=/dev/zero of="$LARGE_FILE" bs=1M count=2 2>/dev/null
-xclip -selection clipboard -i "$LARGE_FILE"
+large_file="$TEST_DIR/large_file.txt"
+dd if=/dev/zero of="$large_file" bs=1M count=2 2>/dev/null
+xclip -selection clipboard -i "$large_file"
 sleep $interval
 
 echo -n "recovery_target" | xclip -quiet -selection clipboard &
