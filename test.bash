@@ -109,10 +109,14 @@ if ! echo "$INFO_OUT" | grep -q "Length:"; then
     exit 1
 fi
 
-# echo "not me" | xclip -selection clipboard
+echo "not me" | xclip -selection clipboard
+sleep $interval
 $clipsim_bin -c -1
 sleep $interval
+$clipsim_bin -p > "$TEST_DIR/before_xclip"
+sleep $interval
 CLIP_DATA=$(xclip -o -selection clipboard)
+sleep $interval
 if [ "$CLIP_DATA" != "not me" ]; then
     echo "FAIL: --copy resulted in an empty clipboard."
     exit 1
@@ -125,12 +129,14 @@ if [ ! -s "$XDG_CACHE_HOME/clipsim/history" ]; then
     exit 1
 fi
 
+$clipsim_bin -p > "$TEST_DIR/before_remove"
+sleep $interval
 $clipsim_bin -r 0
 sleep $interval
-$clipsim_bin -p > "$TEST_DIR/new_dump"
+$clipsim_bin -p > "$TEST_DIR/after_remove"
 
-OLD_LINES=$(tr -cd '\0' < "$clipsim_history"   | wc -c)
-NEW_LINES=$(tr -cd '\0' < "$TEST_DIR/new_dump" | wc -c)
+OLD_LINES=$(tr -cd '\0' < "$TEST_DIR/before_remove"   | wc -c)
+NEW_LINES=$(tr -cd '\0' < "$TEST_DIR/after_remove" | wc -c)
 if [ "$NEW_LINES" -ge "$OLD_LINES" ]; then
     echo "FAIL: --remove did not decrease the number of history entries."
     exit 1
