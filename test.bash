@@ -9,7 +9,6 @@ TEST_DIR="/tmp/clipsim_full_test"
 XDG_CACHE_HOME="$TEST_DIR/.cache"
 ./build.sh || exit 1
 
-# Ensure clean state
 rm -rf "$TEST_DIR"
 mkdir -p "$XDG_CACHE_HOME"
 
