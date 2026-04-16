@@ -413,19 +413,156 @@ ipc_create_fifo(char *name) {
 #if TESTING_ipc
 int
 main(void) {
-    char *test_fifo;
-    struct stat st;
-    int32 res;
+    command_fifo.name = "/tmp/clipsim/test_command.fifo";
+    passid_fifo.name = "/tmp/clipsim/test_passid.fifo";
+    content_fifo.name = "/tmp/clipsim/test_content.fifo";
 
-    test_fifo = "/tmp/clipsim_test.fifo";
+    {
+        struct stat st;
+        int32 res;
 
-    ipc_create_fifo(test_fifo);
-    res = stat(test_fifo, &st);
-    ASSERT_EQUAL(res, 0);
+        ipc_make_fifos();
+        res = stat(command_fifo.name, &st);
+        ASSERT_EQUAL(res, 0);
 
-    ipc_clean_fifo(test_fifo);
-    res = stat(test_fifo, &st);
-    ASSERT_NOT_EQUAL(res, 0);
+        ipc_clean_fifo(command_fifo.name);
+        res = stat(command_fifo.name, &st);
+        ASSERT_NOT_EQUAL(res, 0);
+
+        ipc_create_fifo(command_fifo.name);
+        res = stat(command_fifo.name, &st);
+        ASSERT_EQUAL(res, 0);
+    }
+
+    {
+        pid_t pid;
+
+        ipc_make_fifos();
+
+        pid = fork();
+        if (pid == 0) {
+            ipc_client_ask_id(42);
+            _exit(EXIT_SUCCESS);
+        } else {
+            int32 id;
+            int32 status = 0;
+
+            id = ipc_daemon_get_id();
+            ASSERT_EQUAL(id, 42);
+            wait(&status);
+        }
+    }
+
+    {
+        pid_t pid;
+
+        ipc_make_fifos();
+        history_length = 0;
+
+        pid = fork();
+        if (pid == 0) {
+            ipc_client_check_save();
+            _exit(EXIT_SUCCESS);
+        } else {
+            int32 status = 0;
+
+            ipc_daemon_history_save();
+            wait(&status);
+            ASSERT_NOT_EQUAL(WEXITSTATUS(status), EXIT_SUCCESS);
+        }
+    }
+
+    {
+        pid_t pid;
+
+        ipc_make_fifos();
+
+        history_length = 1;
+        entries[0].content = "test_entry";
+        entries[0].content_length = 10;
+        entries[0].trimmed = 0;
+        entries[0].trimmed_length = 10;
+        is_image[0] = false;
+
+        pid = fork();
+        if (pid == 0) {
+            int32 nullfd = open("/dev/null", O_WRONLY);
+
+            dup2(nullfd, STDOUT_FILENO);
+            close(nullfd);
+
+            ipc_client_print_entries();
+            _exit(EXIT_SUCCESS);
+        } else {
+            int32 status = 0;
+
+            ipc_daemon_pipe_entries();
+            wait(&status);
+            ASSERT_EQUAL(WEXITSTATUS(status), EXIT_SUCCESS);
+        }
+    }
+
+    {
+        pid_t pid;
+
+        ipc_make_fifos();
+
+        history_length = 1;
+        entries[0].content = "test_entry_id";
+        entries[0].content_length = 13;
+        is_image[0] = false;
+
+        pid = fork();
+        if (pid == 0) {
+            int32 nullfd = open("/dev/null", O_WRONLY);
+
+            dup2(nullfd, STDOUT_FILENO);
+            close(nullfd);
+
+            ipc_client_print_entries();
+            _exit(EXIT_SUCCESS);
+        } else {
+            int32 status = 0;
+
+            ipc_daemon_pipe_id(0);
+            wait(&status);
+            ASSERT_EQUAL(WEXITSTATUS(status), EXIT_SUCCESS);
+        }
+    }
+
+    {
+        pthread_t thread;
+        int32 create_res;
+
+        ipc_make_fifos();
+        pthread_mutex_init(&lock, NULL);
+
+        create_res = pthread_create(&thread, NULL, ipc_daemon_listen_fifo, NULL);
+        ASSERT_EQUAL(create_res, 0);
+
+        usleep(100000);
+
+        {
+            pid_t pid = fork();
+
+            if (pid == 0) {
+                int32 nullfd = open("/dev/null", O_WRONLY);
+
+                dup2(nullfd, STDOUT_FILENO);
+                close(nullfd);
+                ipc_client_speak_fifo(COMMAND_PRINT, 0);
+                _exit(EXIT_SUCCESS);
+            } else {
+                int32 status = 0;
+
+                wait(&status);
+                ASSERT_EQUAL(WEXITSTATUS(status), EXIT_SUCCESS);
+            }
+        }
+
+        pthread_cancel(thread);
+        pthread_join(thread, NULL);
+    }
 
     exit(EXIT_SUCCESS);
 }
