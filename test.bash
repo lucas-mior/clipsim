@@ -19,7 +19,6 @@ rm -rf "$TEST_DIR"
 mkdir -p "$XDG_CACHE_HOME"
 export XDG_CACHE_HOME
 
-ls /tmp/clipsim_full_test
 $clipsim_bin --daemon &
 DAEMON_PID=$!
 
