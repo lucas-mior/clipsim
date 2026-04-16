@@ -12,10 +12,11 @@ XDG_CACHE_HOME="$TEST_DIR/.cache"
 
 rm -rf "$TEST_DIR"
 mkdir -p "$XDG_CACHE_HOME"
+export XDG_CACHE_HOME
 
 ls /tmp/clipsim_full_test
 echo "Starting daemon..."
-XDG_CACHE_HOME=$XDG_CACHE_HOME $clipsim_bin --daemon &
+$clipsim_bin --daemon &
 DAEMON_PID=$!
 
 cleanup () {
@@ -28,7 +29,7 @@ trap cleanup EXIT
 
 sleep 1
 
-XDG_CACHE_HOME=$XDG_CACHE_HOME timeout 1s $clipsim_bin --daemon
+timeout 1s $clipsim_bin --daemon
 timeout_status=$?
 if [ $timeout_status == 124 ]; then
     echo "FAIL: A second daemon was successfully started (it should have been blocked)."
