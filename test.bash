@@ -45,16 +45,67 @@ if [ $timeout_status == 124 ]; then
 fi
 
 echo "Triggering clipboard changes..."
+
+# 1. CLIPBOARD_TEXT: Standard text entries
 echo -n "first_test_string" | xclip -selection clipboard
 sleep 0.5
 echo -n "second_test_string" | xclip -selection clipboard
 sleep 0.5
-echo -n "third_test_string" | xclip -selection clipboard
+
+# 2. CLIPBOARD_IMAGE: Image entries
+echo "Triggering clipboard image..."
+IMAGE_FILE="$TEST_DIR/test_image.png"
+# Create a valid 1x1 transparent PNG using base64
+echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==" | base64 -d > "$IMAGE_FILE"
+xclip -selection clipboard -t image/png -i "$IMAGE_FILE"
 sleep 0.5
 
+# 3. CLIPBOARD_OTHER: Unsupported format entries
+echo "Triggering unsupported clipboard format..."
+echo -n "unsupported_data" | xclip -selection clipboard -t application/x-custom-format
+sleep 0.5
+
+# 4. CLIPBOARD_LARGE: Large data to trigger INCR
+echo "Triggering large clipboard data (INCR)..."
+LARGE_FILE="$TEST_DIR/large_file.txt"
+dd if=/dev/zero of="$LARGE_FILE" bs=1M count=2 2>/dev/null
+xclip -selection clipboard -i "$LARGE_FILE"
+sleep 0.5
+
+# Prepare target for the recovery test
+echo -n "recovery_target" | xclip -selection clipboard
+sleep 0.5
+
+# 5. CLIPBOARD_ERROR: Empty clipboard (triggers history_recover(-1))
+echo "Triggering empty clipboard..."
+xclip -selection clipboard -i /dev/null
+sleep 0.5
+
+# Verify the CLIPBOARD_ERROR successfully recovered the last valid entry
+RECOVERED_DATA=$(xclip -o -selection clipboard)
+if [ "$RECOVERED_DATA" != "recovery_target" ]; then
+    echo "FAIL: Empty clipboard did not trigger recovery of the last valid entry."
+    exit 1
+fi
+
+# Assertions against the saved history
 PRINT_OUT=$($clipsim_bin -p)
+
+# Verify text was added
 if ! echo "$PRINT_OUT" | grep -q "first_test_string"; then
-    echo "FAIL: --print did not output expected history."
+    echo "FAIL: --print did not output expected text history."
+    exit 1
+fi
+
+# Verify image was added (prints the .png path)
+if ! echo "$PRINT_OUT" | grep -q "\.png"; then
+    echo "FAIL: --print did not output expected image history."
+    exit 1
+fi
+
+# Verify unsupported data was ignored
+if echo "$PRINT_OUT" | grep -q "unsupported_data"; then
+    echo "FAIL: Unsupported format was incorrectly added to history."
     exit 1
 fi
 
@@ -95,3 +146,5 @@ if ! echo "$HELP_OUT" | grep -q "Available commands:"; then
     echo "FAIL: --help did not output the expected usage text."
     exit 1
 fi
+
+echo "All tests passed successfully!"
