@@ -123,7 +123,6 @@ history_save(void) {
             char image_save[PATH_MAX];
             int32 n;
 
-            // clang-format off
             n = SNPRINTF(image_save, "%s/clipsim/%s",
                                      XDG_CACHE_HOME, basename(e->content));
 
@@ -138,7 +137,6 @@ history_save(void) {
                 }
                 nfds += 1;
             }
-            // clang-format on
             if (write64(history.fd, image_save, n) < n) {
                 error("Error writing %s: %s\n", image_save, strerror(errno));
                 history_remove(i);
