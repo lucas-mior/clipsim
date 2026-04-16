@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-# kill any running clipsim so that they dont get on the way
 old_xdg_cache_home="$XDG_CACHE_HOME"
 
 CLIPSIM_WAS_RUNNING=false
@@ -27,7 +26,6 @@ cleanup () {
     kill -SIGKILL $DAEMON_PID 2>/dev/null
     rm -rf "$TEST_DIR"
 
-    # restart clipsim only if it was killed previously
     if [ "$CLIPSIM_WAS_RUNNING" = true ]; then
         XDG_CACHE_HOME="$old_xdg_cache_home" \
             setsid -f clipsim -d > /dev/null 2>&1
@@ -39,13 +37,11 @@ sleep 1
 
 echo "Triggering clipboard changes..."
 
-# 1. CLIPBOARD_TEXT: Standard text entries
 echo -n "first_test_string" | xclip -selection clipboard
 sleep 0.5
 echo -n "second_test_string" | xclip -selection clipboard
 sleep 0.5
 
-# 2. CLIPBOARD_IMAGE: Image entries
 echo "Triggering clipboard image..."
 IMAGE_FILE="$TEST_DIR/test_image.png"
 printf '
@@ -58,7 +54,6 @@ AABJRU5ErkJggg==' | tr -d '\n' | base64 -d > "$IMAGE_FILE"
 xclip -selection clipboard -t image/png -i "$IMAGE_FILE"
 sleep 0.5
 
-# 3. CLIPBOARD_OTHER: Unsupported format entries
 echo "Triggering unsupported clipboard format..."
 head -n 5 /dev/random > $TEST_DIR/some_binary_format
 reset
@@ -66,50 +61,38 @@ xclip -selection clipboard -t application/x-custom-format $TEST_DIR/some_binary_
 od $TEST_DIR/some_binary_format > $TEST_DIR/some_binary_format.txt
 sleep 0.5
 
-# 4. CLIPBOARD_LARGE: Large data to trigger INCR
 echo "Triggering large clipboard data (INCR)..."
 LARGE_FILE="$TEST_DIR/large_file.txt"
 dd if=/dev/zero of="$LARGE_FILE" bs=1M count=2 2>/dev/null
 xclip -selection clipboard -i "$LARGE_FILE"
 sleep 0.5
 
-# Prepare target for the recovery test
 echo -n "recovery_target" | xclip -quiet -selection clipboard &
 pid_xclip=$!
 sleep 0.5
 kill -SIGTERM $pid_xclip
 sleep 0.5
 
-# # 5. CLIPBOARD_ERROR: Empty clipboard (triggers history_recover(-1))
-# echo "Triggering empty clipboard..."
-# xclip -selection clipboard -i /dev/null
-# sleep 0.5
-
-# Verify the CLIPBOARD_ERROR successfully recovered the last valid entry
 RECOVERED_DATA=$(xclip -o -selection clipboard)
 if [ "$RECOVERED_DATA" != "recovery_target" ]; then
     echo "FAIL: Empty clipboard did not trigger recovery of the last valid entry."
     exit 1
 fi
 
-# Assertions against the saved history
 sleep 0.5
 $clipsim_bin -p > $TEST_DIR/dump
 sleep 0.5
 
-# Verify text was added
 if ! grep -q "first_test_string" "$TEST_DIR/dump" ; then
     echo "FAIL: --print did not output expected text history."
     exit 1
 fi
 
-# Verify image was added (prints the .png path)
 if ! grep -q "\.png" "$TEST_DIR/dump"; then
     echo "FAIL: --print did not output expected image history."
     exit 1
 fi
 
-# Verify unsupported data was ignored
 od $TEST_DIR/dump > $TEST_DIR/dump.txt
 if grep -Fq -f "$TEST_DIR/some_binary_format.txt" "$TEST_DIR/dump.txt"; then
     echo "FAIL: Unsupported format was incorrectly added to history."
