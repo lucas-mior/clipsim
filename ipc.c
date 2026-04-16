@@ -166,7 +166,6 @@ ipc_daemon_history_save(void) {
 void
 ipc_client_check_save(void) {
     DEBUG_PRINT("void")
-    int64 r;
     char saved = 0;
 
     error("Trying to save history...\n");
@@ -174,7 +173,7 @@ ipc_client_check_save(void) {
         exit(EXIT_FAILURE);
     }
 
-    if ((r = read64(content_fifo.fd, &saved, sizeof(*(&saved)))) > 0) {
+    if (read64(content_fifo.fd, &saved, sizeof(*(&saved))) > 0) {
         if (saved) {
             error("History saved to disk.\n");
         } else {
