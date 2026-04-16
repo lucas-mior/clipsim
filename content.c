@@ -21,6 +21,12 @@
 #include "clipsim.h"
 #include "cbase/util.c"
 
+#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+#define TESTING_content 1
+#elif !defined(TESTING_content)
+#define TESTING_content 0
+#endif
+
 static void content_remove_newline(char *, int *);
 static void content_trim_spaces(int16 *, int16 *, char *, int32);
 static int32 content_check_content(uchar *, int);

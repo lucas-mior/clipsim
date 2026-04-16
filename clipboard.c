@@ -286,12 +286,6 @@ clipboard_incremental_case(char **save, ulong *length) {
 }
 
 #if TESTING_clipboard
-Entry entries[HISTORY_BUFFER_SIZE] = {0};
-bool is_image[HISTORY_BUFFER_SIZE] = {0};
-char TEXT_TAG = (char)0x01;
-char IMAGE_TAG = (char)0x02;
-pthread_mutex_t lock;
-magic_t magic;
 
 int
 main(void) {

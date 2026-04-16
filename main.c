@@ -43,13 +43,6 @@ static const Command commands[] = {
     [COMMAND_HELP] = {"-h", "--help", "print this help message"},
 };
 
-Entry entries[HISTORY_BUFFER_SIZE] = {0};
-bool is_image[HISTORY_BUFFER_SIZE] = {0};
-char TEXT_TAG = (char)0x01;
-char IMAGE_TAG = (char)0x02;
-pthread_mutex_t lock;
-magic_t magic;
-
 static bool main_check_cmdline(char *);
 static bool main_check_running(void);
 static void main_usage(FILE *) __attribute__((noreturn));
