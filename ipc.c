@@ -413,6 +413,20 @@ ipc_create_fifo(char *name) {
 #if TESTING_ipc
 int
 main(void) {
+    char *test_fifo;
+    struct stat st;
+    int32 res;
+
+    test_fifo = "/tmp/clipsim_test.fifo";
+
+    ipc_create_fifo(test_fifo);
+    res = stat(test_fifo, &st);
+    ASSERT_EQUAL(res, 0);
+
+    ipc_clean_fifo(test_fifo);
+    res = stat(test_fifo, &st);
+    ASSERT_NOT_EQUAL(res, 0);
+
     exit(EXIT_SUCCESS);
 }
 #endif

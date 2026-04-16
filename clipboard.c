@@ -289,6 +289,11 @@ clipboard_incremental_case(char **save, ulong *length) {
 
 int
 main(void) {
+    int32 num_events;
+
+    num_events = LENGTH(event_names);
+    ASSERT_EQUAL(num_events, LASTEvent);
+
     exit(EXIT_SUCCESS);
 }
 #endif
