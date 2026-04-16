@@ -33,6 +33,12 @@
 
 #define MAX_OPEN_FD 64
 
+#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+#define TESTING_history 1
+#elif !defined(TESTING_history)
+#define TESTING_history 0
+#endif
+
 static volatile bool recovered = false;
 static int32 history_length;
 static File history = {.file = NULL, .fd = -1, .name = NULL};
@@ -645,5 +651,12 @@ history_free_entry(Entry *e, int32 index) {
 
     return;
 }
+
+#if TESTING_history
+int
+main(void) {
+    exit(EXIT_SUCCESS);
+}
+#endif
 
 #endif /* HISTORY_C */
