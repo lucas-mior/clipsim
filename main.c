@@ -28,7 +28,7 @@ typedef struct Command {
     char *description;
 } Command;
 
-static const Command commands[] = {
+static Command commands[] = {
     [COMMAND_PRINT]
     = {"-p", "--print", "print entire history, with trimmed whitespace"},
     [COMMAND_INFO]

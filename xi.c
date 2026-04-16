@@ -111,7 +111,7 @@ xi_daemon_loop(void *unused) {
             XEvent xevent;
             while (XPending(display2) > 0) {
                 XGenericEventCookie *cookie;
-                const XIRawEvent *data;
+                XIRawEvent *data;
 
                 XNextEvent(display2, &xevent);
                 cookie = &xevent.xcookie;
