@@ -417,7 +417,7 @@ static void
 xpthread_mutex_lock(pthread_mutex_t *mutex) {
     int err;
     if ((err = pthread_mutex_lock(mutex))) {
-        error("Error locking mutex %p: %s.\n", mutex, strerror(err));
+        error("Error locking mutex %p: %s.\n", (void *)mutex, strerror(err));
         fatal(EXIT_FAILURE);
     }
     return;
@@ -427,7 +427,7 @@ static void
 xpthread_mutex_unlock(pthread_mutex_t *mutex) {
     int err;
     if ((err = pthread_mutex_unlock(mutex))) {
-        error("Error unlocking mutex %p: %s.\n", mutex, strerror(err));
+        error("Error unlocking mutex %p: %s.\n", (void *)mutex, strerror(err));
         fatal(EXIT_FAILURE);
     }
     return;
@@ -437,7 +437,7 @@ static void
 xpthread_cond_destroy(pthread_cond_t *cond) {
     int err;
     if ((err = pthread_cond_destroy(cond))) {
-        error("Error destroying cond %p: %s.\n", cond, strerror(err));
+        error("Error destroying cond %p: %s.\n", (void *)cond, strerror(err));
         fatal(EXIT_FAILURE);
     }
     return;
@@ -447,7 +447,7 @@ static void
 xpthread_mutex_destroy(pthread_mutex_t *mutex) {
     int err;
     if ((err = pthread_mutex_destroy(mutex))) {
-        error("Error destroying mutex %p: %s.\n", mutex, strerror(err));
+        error("Error destroying mutex %p: %s.\n", (void *)mutex, strerror(err));
         fatal(EXIT_FAILURE);
     }
     return;
@@ -1034,7 +1034,6 @@ typedef struct UtilCopyFilesAsync {
 static int32
 util_copy_file_async(char *destination, char *source, int *dest_fd) {
     int32 source_fd;
-    int32 fadvise_err;
 
     if ((source_fd = open(source, O_RDONLY)) < 0) {
         error("Error opening %s for reading: %s.\n", source, strerror(errno));
@@ -1049,12 +1048,15 @@ util_copy_file_async(char *destination, char *source, int *dest_fd) {
         return -1;
     }
 
+#if 0
+    int32 fadvise_err;
     if ((fadvise_err = posix_fadvise(source_fd,
                                      0, 0,
                                      POSIX_FADV_WILLNEED)) < 0) {
         error("Error in posix_fadvise(POSIX_FADV_WILLNEED): %s.\n",
               strerror(fadvise_err));
     }
+#endif
 
     return source_fd;
 }
