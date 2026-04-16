@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+old_xdg_cache_home="$XDG_CACHE_HOME"
 killall -SIGKILL clipsim
 
 set -e
@@ -21,7 +22,7 @@ cleanup () {
     echo "Cleaning up..."
     kill -SIGKILL $DAEMON_PID 2>/dev/null
     rm -rf "$TEST_DIR"
-    XDG_CACHE_HOME="$HOME/.cache/" setsid -f clipsim -d
+    XDG_CACHE_HOME="$old_xdg_cache_home" setsid -f clipsim -d
 }
 trap cleanup EXIT
 
