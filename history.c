@@ -191,7 +191,7 @@ history_save(void) {
     }
 
     util_close(&history);
-    return thread;
+    return 1;
 }
 
 void
