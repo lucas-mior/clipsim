@@ -144,10 +144,10 @@ fi
 
 $clipsim_bin -r 0
 sleep 0.5
-NEW_PRINT_OUT=$($clipsim_bin -p)
+$clipsim_bin -p > "$TEST_DIR/new_dump"
 
-OLD_LINES=$(echo "$PRINT_OUT" | wc -l)
-NEW_LINES=$(echo "$NEW_PRINT_OUT" | wc -l)
+OLD_LINES=$(wc -l "$TEST_DIR/dump")
+NEW_LINES=$(wc -l "$TEST_DIR/new_dump")
 if [ "$NEW_LINES" -ge "$OLD_LINES" ]; then
     echo "FAIL: --remove did not decrease the number of history entries."
     exit 1
