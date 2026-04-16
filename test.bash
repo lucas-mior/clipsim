@@ -81,7 +81,10 @@ xclip -selection clipboard -i "$LARGE_FILE"
 sleep 0.5
 
 # Prepare target for the recovery test
-echo -n "recovery_target" | xclip -selection clipboard
+echo -n "recovery_target" | xclip -quiet -selection clipboard &
+pid_xclip=$!
+sleep 0.5
+kill -SIGTERM $pid_xclip
 sleep 0.5
 
 # # 5. CLIPBOARD_ERROR: Empty clipboard (triggers history_recover(-1))
@@ -97,6 +100,7 @@ if [ "$RECOVERED_DATA" != "recovery_target" ]; then
 fi
 
 # Assertions against the saved history
+sleep 0.5
 $clipsim_bin -p > $TEST_DIR/dump
 sleep 0.5
 
@@ -113,12 +117,11 @@ if ! grep -q "\.png" "$TEST_DIR/dump"; then
 fi
 
 # Verify unsupported data was ignored
-# od $TEST_DIR/dump > $TEST_DIR/dump.txt
-# if grep -Fq -f "$TEST_DIR/some_binary_format.txt" "$TEST_DIR/dump.txt"; then
-#     echo "FAIL: Unsupported format was incorrectly added to history."
-#     exit 1
-# fi
-
+od $TEST_DIR/dump > $TEST_DIR/dump.txt
+if grep -Fq -f "$TEST_DIR/some_binary_format.txt" "$TEST_DIR/dump.txt"; then
+    echo "FAIL: Unsupported format was incorrectly added to history."
+    exit 1
+fi
 
 INFO_OUT=$($clipsim_bin -i 0)
 sleep 0.5
