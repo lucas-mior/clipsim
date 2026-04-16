@@ -127,6 +127,7 @@ history_save(void) {
                                      XDG_CACHE_HOME, basename(e->content));
 
             if (strcmp(image_save, e->content)) {
+                int32 fadvise_err;
                 if ((pipes[nfds].fd
                         = util_copy_file_async(image_save, e->content,
                                                &(dests[nfds]))) < 0) {
@@ -134,6 +135,12 @@ history_save(void) {
                           e->content, image_save, strerror(errno));
                     history_remove(i);
                     continue;
+                }
+                if ((fadvise_err = posix_fadvise(pipes[nfds].fd,
+                                                 0, 0,
+                                                 POSIX_FADV_WILLNEED)) < 0) {
+                    error("Error in posix_fadvise(POSIX_FADV_WILLNEED): %s.\n",
+                          strerror(fadvise_err));
                 }
                 nfds += 1;
             }
@@ -190,6 +197,7 @@ history_save(void) {
         copy_files->nfds = nfds;
 
         xpthread_create(&thread, NULL, util_copy_file_async_thread, copy_files);
+        xpthread_join(&thread, NULL);
     }
 
     util_close(&history);
