@@ -74,8 +74,8 @@ sleep $interval
 kill -SIGTERM $pid_xclip
 sleep $interval
 
-RECOVERED_DATA=$(xclip -o -selection clipboard)
-if [ "$RECOVERED_DATA" != "recovery_target" ]; then
+recovered=$(xclip -o -selection clipboard)
+if [ "$recovered" != "recovery_target" ]; then
     echo "FAIL: Empty clipboard did not trigger recovery of the last valid entry."
     exit 1
 fi
