@@ -29,7 +29,7 @@
 
 #define CHECK_TARGET_MAX_EVENTS 10
 
-static const char *event_names[LASTEvent] = {
+static char *event_names[LASTEvent] = {
     "ProtocolError",  "ProtocolReply",  "KeyPress",         "KeyRelease",
     "ButtonPress",    "ButtonRelease",  "MotionNotify",     "EnterNotify",
     "LeaveNotify",    "FocusIn",        "FocusOut",         "KeymapNotify",
@@ -52,7 +52,7 @@ static Atom image_png;
 static Atom TARGETS;
 
 static void clipboard_incremental_case(char **, ulong *);
-static Atom clipboard_check_target(const Atom);
+static Atom clipboard_check_target(Atom);
 static int32 clipboard_get_clipboard(char **, ulong *);
 
 static int clipboard_daemon_watch(void) __attribute__((noreturn));
@@ -206,7 +206,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
 }
 
 Atom
-clipboard_check_target(const Atom target) {
+clipboard_check_target(Atom target) {
     DEBUG_PRINT("%lu", target)
 
     XEvent xevent;
