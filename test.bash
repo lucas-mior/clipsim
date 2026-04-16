@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 old_xdg_cache_home="$XDG_CACHE_HOME"
+interval=0.3
 
 CLIPSIM_WAS_RUNNING=false
 if killall -SIGKILL clipsim 2>/dev/null; then
@@ -38,9 +39,9 @@ sleep 1
 echo "Triggering clipboard changes..."
 
 echo -n "first_test_string" | xclip -selection clipboard
-sleep 0.5
+sleep $interval
 echo -n "second_test_string" | xclip -selection clipboard
-sleep 0.5
+sleep $interval
 
 echo "Triggering clipboard image..."
 IMAGE_FILE="$TEST_DIR/test_image.png"
@@ -52,26 +53,26 @@ Om1vZGlmeQAyMDI2LTA0LTE2VDE3OjM4OjMxKzAwOjAwcN7mBwAAACh0RVh0ZGF0ZTp0aW1lc3Rh
 bXAAMjAyNi0wNC0xNlQxNzozODozMSswMDowMCfLx9gAAAALSURBVAjXY2DABwAAHgABboVHMgAA
 AABJRU5ErkJggg==' | tr -d '\n' | base64 -d > "$IMAGE_FILE"
 xclip -selection clipboard -t image/png -i "$IMAGE_FILE"
-sleep 0.5
+sleep $interval
 
 echo "Triggering unsupported clipboard format..."
 head -n 5 /dev/random > $TEST_DIR/some_binary_format
 reset
 xclip -selection clipboard -t application/x-custom-format $TEST_DIR/some_binary_format
 od $TEST_DIR/some_binary_format > $TEST_DIR/some_binary_format.txt
-sleep 0.5
+sleep $interval
 
 echo "Triggering large clipboard data (INCR)..."
 LARGE_FILE="$TEST_DIR/large_file.txt"
 dd if=/dev/zero of="$LARGE_FILE" bs=1M count=2 2>/dev/null
 xclip -selection clipboard -i "$LARGE_FILE"
-sleep 0.5
+sleep $interval
 
 echo -n "recovery_target" | xclip -quiet -selection clipboard &
 pid_xclip=$!
-sleep 0.5
+sleep $interval
 kill -SIGTERM $pid_xclip
-sleep 0.5
+sleep $interval
 
 RECOVERED_DATA=$(xclip -o -selection clipboard)
 if [ "$RECOVERED_DATA" != "recovery_target" ]; then
@@ -79,9 +80,9 @@ if [ "$RECOVERED_DATA" != "recovery_target" ]; then
     exit 1
 fi
 
-sleep 0.5
+sleep $interval
 $clipsim_bin -p > $TEST_DIR/dump
-sleep 0.5
+sleep $interval
 
 if ! grep -q "first_test_string" "$TEST_DIR/dump" ; then
     echo "FAIL: --print did not output expected text history."
@@ -100,14 +101,14 @@ if grep -Fq -f "$TEST_DIR/some_binary_format.txt" "$TEST_DIR/dump.txt"; then
 fi
 
 INFO_OUT=$($clipsim_bin -i 0)
-sleep 0.5
+sleep $interval
 if ! echo "$INFO_OUT" | grep -q "Length:"; then
     echo "FAIL: --info did not output the expected length metadata."
     exit 1
 fi
 
 $clipsim_bin -c 0
-sleep 0.5
+sleep $interval
 CLIP_DATA=$(xclip -o -selection clipboard)
 if [ -z "$CLIP_DATA" ]; then
     echo "FAIL: --copy resulted in an empty clipboard."
@@ -115,14 +116,14 @@ if [ -z "$CLIP_DATA" ]; then
 fi
 
 $clipsim_bin -s
-sleep 0.5
+sleep $interval
 if [ ! -s "$XDG_CACHE_HOME/clipsim/history" ]; then
     echo "FAIL: --save failed, history file is missing or empty."
     exit 1
 fi
 
 $clipsim_bin -r 0
-sleep 0.5
+sleep $interval
 $clipsim_bin -p > "$TEST_DIR/new_dump"
 
 OLD_LINES=$(wc -l "$TEST_DIR/dump")
