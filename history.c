@@ -655,36 +655,145 @@ history_free_entry(Entry *e, int32 index) {
 #if TESTING_history
 int
 main(void) {
-    int32 idx;
+    char *test_dir = "/tmp/clipsim_test_cache";
 
-    history_length = 3;
+    arena = arena_create(SIZEMB(2), "arena");
+    setenv("XDG_CACHE_HOME", test_dir, 1);
+    mkdir(test_dir, 0770);
+    tmp_directory = "/tmp/clipsim_test_tmp";
+    mkdir(tmp_directory, 0770);
 
-    entries[0].content = "alpha";
-    entries[0].content_length = 5;
-    is_image[0] = false;
-    length_counts[5] += 1;
+    magic = magic_open(MAGIC_MIME_TYPE);
+    magic_load(magic, NULL);
 
-    entries[1].content = "beta";
-    entries[1].content_length = 4;
-    is_image[1] = false;
-    length_counts[4] += 1;
+    {
+        int32 idx = 0;
 
-    entries[2].content = "gamma";
-    entries[2].content_length = 5;
-    is_image[2] = false;
-    length_counts[5] += 1;
+        history_length = 3;
 
-    idx = history_repeated_index("beta", 4);
-    ASSERT_EQUAL(idx, 1);
+        entries[0].content = "alpha";
+        entries[0].content_length = 5;
+        is_image[0] = false;
+        length_counts[5] += 1;
 
-    idx = history_repeated_index("delta", 5);
-    ASSERT_EQUAL(idx, -1);
+        entries[1].content = "beta";
+        entries[1].content_length = 4;
+        is_image[1] = false;
+        length_counts[4] += 1;
 
-    history_reorder(0);
-    ASSERT_EQUAL(entries[0].content_length, 4);
-    ASSERT_EQUAL(entries[1].content_length, 5);
-    ASSERT_EQUAL(entries[2].content_length, 5);
+        entries[2].content = "gamma";
+        entries[2].content_length = 5;
+        is_image[2] = false;
+        length_counts[5] += 1;
 
+        idx = history_repeated_index("beta", 4);
+        ASSERT_EQUAL(idx, 1);
+
+        idx = history_repeated_index("delta", 5);
+        ASSERT_EQUAL(idx, -1);
+
+        history_reorder(0);
+        ASSERT_EQUAL(entries[0].content_length, 4);
+        ASSERT_EQUAL(entries[1].content_length, 5);
+        ASSERT_EQUAL(entries[2].content_length, 5);
+
+        history_length = 0;
+        length_counts[4] = 0;
+        length_counts[5] = 0;
+    }
+
+    {
+        char *text1 = malloc(10);
+        char *text2 = malloc(10);
+
+        memcpy64(text1, "testing12", 10);
+        history_append(text1, 9);
+        ASSERT_EQUAL(history_length, 1);
+        ASSERT_EQUAL(entries[0].content_length, 9);
+
+        memcpy64(text2, "testing34", 10);
+        history_append(text2, 9);
+        ASSERT_EQUAL(history_length, 2);
+    }
+
+    {
+        history_remove(0);
+        ASSERT_EQUAL(history_length, 1);
+        ASSERT_EQUAL(entries[0].content_length, 9);
+    }
+
+    {
+        pthread_t thread = 0;
+
+        history.name = "/tmp/clipsim_test_cache/clipsim/history";
+        mkdir("/tmp/clipsim_test_cache/clipsim", 0770);
+
+        thread = history_save();
+        if (thread != 0) {
+            xpthread_join(&thread, NULL);
+        }
+
+        history_length = 0;
+        memset64(length_counts, 0, sizeof(length_counts));
+
+        history_read();
+        ASSERT_EQUAL(history_length, 1);
+        ASSERT_EQUAL(entries[0].content_length, 9);
+    }
+
+    {
+        char *img_content = malloc(256);
+        int32 img_len = 15;
+        int32 res = 0;
+        struct stat st;
+
+        memcpy64(img_content, "fake_image_data", 15);
+
+        res = history_save_image(&img_content, &img_len);
+        ASSERT_EQUAL(res, 0);
+
+        stat(img_content, &st);
+        history_callback_delete(img_content, &st, FTW_F, NULL);
+        res = stat(img_content, &st);
+        ASSERT_NOT_EQUAL(res, 0);
+
+        free(img_content);
+    }
+
+    {
+        pid_t pid = fork();
+
+        if (pid == 0) {
+            int32 nullfd = open("/dev/null", O_WRONLY);
+            dup2(nullfd, STDERR_FILENO);
+            close(nullfd);
+
+            history_recover(0);
+            _exit(EXIT_SUCCESS);
+        } else {
+            int32 status = 0;
+            wait(&status);
+        }
+    }
+
+    {
+        pid_t pid = fork();
+
+        if (pid == 0) {
+            int32 nullfd = open("/dev/null", O_WRONLY);
+            dup2(nullfd, STDERR_FILENO);
+            close(nullfd);
+
+            history_exit(SIGTERM);
+            ASSERT(false);
+        } else {
+            int32 status = 0;
+            wait(&status);
+            ASSERT_EQUAL(WEXITSTATUS(status), EXIT_SUCCESS);
+        }
+    }
+
+    magic_close(magic);
     exit(EXIT_SUCCESS);
 }
 #endif
