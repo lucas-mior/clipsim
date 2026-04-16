@@ -1041,9 +1041,8 @@ util_copy_file_async(char *destination, char *source, int *dest_fd) {
         return -1;
     }
 
-    if ((*dest_fd
-         = open(destination, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
-        < 0) {
+    if ((*dest_fd = open(destination,
+                         O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR|S_IWUSR)) < 0) {
         error("Error opening %s for writing: %s.\n",
               destination, strerror(errno));
         XCLOSE(&source_fd, source);
