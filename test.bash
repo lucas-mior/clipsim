@@ -11,7 +11,7 @@ fi
 set -e
 
 clipsim_bin="bin/clipsim_debug"
-TEST_DIR="/tmp/clipsim_full_test"
+TEST_DIR="/tmp/clipsim_test_bash"
 XDG_CACHE_HOME="$TEST_DIR/.cache"
 ./build.sh debug || exit 1
 
