@@ -3,9 +3,9 @@
 old_xdg_cache_home="$XDG_CACHE_HOME"
 interval=0.3
 
-CLIPSIM_WAS_RUNNING=false
+clipsim_was_running=false
 if killall -SIGTERM clipsim 2>/dev/null; then
-    CLIPSIM_WAS_RUNNING=true
+    clipsim_was_running=true
     sleep $interval
     killall -SIGKILL clipsim
 fi
@@ -28,7 +28,7 @@ cleanup () {
     kill -SIGKILL $DAEMON_PID 2>/dev/null
     rm -rf "$TEST_DIR"
 
-    if [ "$CLIPSIM_WAS_RUNNING" = true ]; then
+    if [ "$clipsim_was_running" = true ]; then
         XDG_CACHE_HOME="$old_xdg_cache_home" \
             setsid -f clipsim -d > /dev/null 2>&1
     fi
