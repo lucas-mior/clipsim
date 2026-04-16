@@ -118,12 +118,12 @@ enum {
     COMMAND_HELP,
 };
 
-extern Entry entries[];
-extern bool is_image[];
-extern pthread_mutex_t lock;
-extern char TEXT_TAG;
-extern char IMAGE_TAG;
-extern magic_t magic;
+static Entry entries[HISTORY_BUFFER_SIZE] = {0};
+static bool is_image[HISTORY_BUFFER_SIZE] = {0};
+static char TEXT_TAG = (char)0x01;
+static char IMAGE_TAG = (char)0x02;
+static pthread_mutex_t lock;
+static magic_t magic;
 
 static int32 util_open(File *file, const int32 flag);
 static void util_close(File *file);
