@@ -1498,7 +1498,7 @@ dirname2(char *buffer, char *path, int32 *path_len) {
 }
 
 static void
-print_timings(char *file, int32 line, const char *func,
+print_timings(char *file, int32 line, char *func,
               int64 nitems, struct timespec t0, struct timespec t1) {
     llong seconds = t1.tv_sec - t0.tv_sec;
     llong nanos = t1.tv_nsec - t0.tv_nsec;
@@ -1511,7 +1511,7 @@ print_timings(char *file, int32 line, const char *func,
     return;
 }
 #define PRINT_TIMINGS_3(N, T0, T1) \
-        print_timings(__FILE__, __LINE__, __func__, N, T0, T1)
+        print_timings(__FILE__, __LINE__, (char *)__func__, N, T0, T1)
 #define PRINT_TIMINGS_4(N, T0, T1, NAME) \
         print_timings(__FILE__, __LINE__, NAME, N, T0, T1)
 #define PRINT_TIMINGS(...) SELECT_ON_NUM_ARGS(PRINT_TIMINGS_, __VA_ARGS__)
@@ -1738,8 +1738,8 @@ signal_handler(int signal_number) {
 
 static int
 util_test_qsort_cmp(const void *a, const void *b) {
-    int32 va = *(int32 *)a;
-    int32 vb = *(int32 *)b;
+    int32 va = *(const int32 *)a;
+    int32 vb = *(const int32 *)b;
     if (va < vb) {
         return -1;
     }
