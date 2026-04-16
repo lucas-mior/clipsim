@@ -138,12 +138,6 @@ history_save(void) {
                     history_remove(i);
                     continue;
                 }
-                if ((fadvise_err = posix_fadvise(pipes[nfds].fd,
-                                                 0, 0,
-                                                 POSIX_FADV_WILLNEED)) < 0) {
-                    error("Error in posix_fadvise(POSIX_FADV_WILLNEED): %s.\n",
-                          strerror(fadvise_err));
-                }
                 nfds += 1;
             }
             if (write64(history.fd, image_save, n) < n) {
