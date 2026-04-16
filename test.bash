@@ -80,21 +80,22 @@ if [ "$recovered" != "recovery_target" ]; then
 fi
 
 sleep $interval
-$clipsim_bin -p > $TEST_DIR/dump
+clipsim_history="$TEST_DIR/dump"
+$clipsim_bin -p > "$clipsim_history"
 sleep $interval
 
-if ! grep -q "first_test_string" "$TEST_DIR/dump" ; then
+if ! grep -q "first_test_string" "$clipsim_history" ; then
     echo "FAIL: --print did not output expected text history."
     exit 1
 fi
 
-if ! grep -q "\.png" "$TEST_DIR/dump"; then
+if ! grep -q "\.png" "$clipsim_history"; then
     echo "FAIL: --print did not output expected image history."
     exit 1
 fi
 
-od $TEST_DIR/dump > $TEST_DIR/dump.txt
-if grep -Fq -f "$TEST_DIR/some_binary_format.txt" "$TEST_DIR/dump.txt"; then
+od $clipsim_history > $clipsim_history.txt
+if grep -Fq -f "$TEST_DIR/some_binary_format.txt" "$clipsim_history.txt"; then
     echo "FAIL: Unsupported format was incorrectly added to history."
     exit 1
 fi
@@ -125,7 +126,7 @@ $clipsim_bin -r 0
 sleep $interval
 $clipsim_bin -p > "$TEST_DIR/new_dump"
 
-OLD_LINES=$(wc -l "$TEST_DIR/dump")
+OLD_LINES=$(wc -l "$clipsim_history")
 NEW_LINES=$(wc -l "$TEST_DIR/new_dump")
 if [ "$NEW_LINES" -ge "$OLD_LINES" ]; then
     echo "FAIL: --remove did not decrease the number of history entries."
