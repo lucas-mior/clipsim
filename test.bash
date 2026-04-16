@@ -23,7 +23,8 @@ cleanup () {
     echo "Cleaning up..."
     kill -SIGKILL $DAEMON_PID 2>/dev/null
     rm -rf "$TEST_DIR"
-    XDG_CACHE_HOME="$old_xdg_cache_home" setsid -f clipsim -d
+    XDG_CACHE_HOME="$old_xdg_cache_home" \
+        setsid -f clipsim -d > /dev/null 2>&1
 }
 trap cleanup EXIT
 
