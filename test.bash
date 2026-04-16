@@ -39,9 +39,9 @@ sleep 1
 
 echo "Triggering clipboard changes..."
 
-echo -n "first_test_string" | xclip -selection clipboard
+echo "first_test_string" | xclip -selection clipboard
 sleep $interval
-echo -n "second_test_string" | xclip -selection clipboard
+echo "second_test_string" | xclip -selection clipboard
 sleep $interval
 
 echo "Triggering clipboard image..."
@@ -69,7 +69,7 @@ dd if=/dev/zero of="$large_file" bs=1M count=2 2>/dev/null
 xclip -selection clipboard -i "$large_file"
 sleep $interval
 
-echo -n "recovery_target" | xclip -quiet -selection clipboard &
+echo "recovery_target" | xclip -quiet -selection clipboard &
 pid_xclip=$!
 sleep $interval
 kill -SIGTERM $pid_xclip
