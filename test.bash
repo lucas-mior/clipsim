@@ -37,13 +37,6 @@ trap cleanup EXIT
 
 sleep 1
 
-# timeout 1s $clipsim_bin --daemon
-# timeout_status=$?
-# if [ $timeout_status == 124 ]; then
-#     echo "FAIL: A second daemon was successfully started (it should have been blocked)."
-#     exit 1
-# fi
-
 echo "Triggering clipboard changes..."
 
 # 1. CLIPBOARD_TEXT: Standard text entries
@@ -66,12 +59,12 @@ xclip -selection clipboard -t image/png -i "$IMAGE_FILE"
 sleep 0.5
 
 # 3. CLIPBOARD_OTHER: Unsupported format entries
-# echo "Triggering unsupported clipboard format..."
-# head -n 5 /dev/random > $TEST_DIR/some_binary_format
-# reset
-# xclip -selection clipboard -t application/x-custom-format $TEST_DIR/some_binary_format
-# od $TEST_DIR/some_binary_format > $TEST_DIR/some_binary_format.txt
-# sleep 0.5
+echo "Triggering unsupported clipboard format..."
+head -n 5 /dev/random > $TEST_DIR/some_binary_format
+reset
+xclip -selection clipboard -t application/x-custom-format $TEST_DIR/some_binary_format
+od $TEST_DIR/some_binary_format > $TEST_DIR/some_binary_format.txt
+sleep 0.5
 
 # 4. CLIPBOARD_LARGE: Large data to trigger INCR
 echo "Triggering large clipboard data (INCR)..."
