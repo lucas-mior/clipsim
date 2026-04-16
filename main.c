@@ -23,9 +23,9 @@
 #include "xi.c"
 
 typedef struct Command {
-    const char *shortname;
-    const char *longname;
-    const char *description;
+    char *shortname;
+    char *longname;
+    char *description;
 } Command;
 
 static const Command commands[] = {
