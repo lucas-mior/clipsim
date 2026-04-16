@@ -63,7 +63,7 @@ ipc_daemon_listen_fifo(void *unused) {
     while (true) {
         int64 r;
         nanosleep(&pause, NULL);
-        if (util_open(&command_fifo, O_RDONLY) < 0) {
+        if (fifo_open(&command_fifo, O_RDONLY) < 0) {
             continue;
         }
 
@@ -105,7 +105,7 @@ void
 ipc_client_speak_fifo(int32 command, int32 id) {
     DEBUG_PRINT("%u, %d", command, id)
     int64 w;
-    if (util_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
+    if (fifo_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
         error("Could not open Fifo for sending command to daemon. "
               "Is `%s daemon` running?\n",
               "clipsim");
@@ -149,7 +149,7 @@ ipc_daemon_history_save(void) {
     char saved;
     int64 saved_size = sizeof(*(&saved));
     error("Trying to save history...\n");
-    if (util_open(&content_fifo, O_WRONLY) < 0) {
+    if (fifo_open(&content_fifo, O_WRONLY) < 0) {
         return;
     }
 
@@ -170,7 +170,7 @@ ipc_client_check_save(void) {
     char saved = 0;
 
     error("Trying to save history...\n");
-    if (util_open(&content_fifo, O_RDONLY) < 0) {
+    if (fifo_open(&content_fifo, O_RDONLY) < 0) {
         exit(EXIT_FAILURE);
     }
 
@@ -233,7 +233,7 @@ ipc_daemon_pipe_id(int32 id) {
     Entry *e;
     int64 tag_size = sizeof(*(&IMAGE_TAG));
 
-    if (util_open(&content_fifo, O_WRONLY) < 0) {
+    if (fifo_open(&content_fifo, O_WRONLY) < 0) {
         return;
     }
 
@@ -275,7 +275,7 @@ ipc_client_print_entries(void) {
     static char buffer[BUFSIZ];
     int64 r;
 
-    if (util_open(&content_fifo, O_RDONLY) < 0) {
+    if (fifo_open(&content_fifo, O_RDONLY) < 0) {
         return;
     }
 
