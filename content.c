@@ -133,6 +133,50 @@ content_check_content(uchar *data, const int32 length) {
 #if TESTING_content
 int
 main(void) {
+    {
+        char test_newline1[] = "hello\n\n";
+        int32 length1 = 7;
+        content_remove_newline(test_newline1, &length1);
+        ASSERT_EQUAL(length1, 5);
+        ASSERT_EQUAL(test_newline1[5], '\0');
+    }
+
+    {
+        char test_newline2[] = "world";
+        int32 length2 = 5;
+        content_remove_newline(test_newline2, &length2);
+        ASSERT_EQUAL(length2, 5);
+    }
+
+    {
+        char content[512] = "  hello   world ";
+        int16 trimmed;
+        int16 trimmed_length;
+        int32 orig_length = strlen32(content);
+        content_trim_spaces(&trimmed, &trimmed_length, content, orig_length);
+        PRINTLN(content + trimmed);
+        ASSERT_EQUAL(trimmed_length, 12);
+        ASSERT_EQUAL(trimmed, orig_length + 1);
+    }
+
+    {
+        uchar text_data[] = "just some text";
+        int32 check1;
+        uchar spaces_data[] = "   \n \t  ";
+        int32 check2;
+
+        magic = magic_open(MAGIC_MIME_TYPE);
+        magic_load(magic, NULL);
+
+        check1 = content_check_content(text_data, 14);
+        ASSERT_EQUAL(check1, CLIPBOARD_TEXT);
+
+        check2 = content_check_content(spaces_data, 8);
+        ASSERT_EQUAL(check2, CLIPBOARD_ERROR);
+
+        magic_close(magic);
+    }
+
     exit(EXIT_SUCCESS);
 }
 #endif
