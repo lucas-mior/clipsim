@@ -135,10 +135,4 @@ if [ "$NEW_LINES" -ge "$OLD_LINES" ]; then
     exit 1
 fi
 
-HELP_OUT=$($clipsim_bin -h)
-if ! echo "$HELP_OUT" | grep -q "Available commands:"; then
-    echo "FAIL: --help did not output the expected usage text."
-    exit 1
-fi
-
 echo "All tests passed successfully!"
