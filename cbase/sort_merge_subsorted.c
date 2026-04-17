@@ -108,6 +108,7 @@ sort_merge_subsorted(void *array, int32 n, int32 p, int64 obj_size,
     int64 memory_size = obj_size*n;
     char *output = malloc2(memory_size);
     char *array2 = array;
+    ASSERT_MORE(p, 1);
 
     for (int32 k = 0; k < (p - 1); k += 1) {
         n_sub[k] = n / p;
