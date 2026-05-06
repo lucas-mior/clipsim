@@ -62,6 +62,9 @@ ipc_daemon_listen_fifo(void *unused) {
 
     while (true) {
         int64 r;
+        if (DEBUGGING) {
+            error("ipc_daemon_listen_fifo loop...\n");
+        }
         nanosleep(&pause, NULL);
         if (fifo_open(&command_fifo, O_RDONLY) < 0) {
             continue;

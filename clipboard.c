@@ -221,6 +221,9 @@ clipboard_check_target(Atom target) {
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA, window,
                       CurrentTime);
     do {
+        if (DEBUGGING) {
+            error("Inside %s loop...\n", __func__);
+        }
         if (nevents >= CHECK_TARGET_MAX_EVENTS) {
             return 0;
         }
@@ -228,6 +231,9 @@ clipboard_check_target(Atom target) {
         nevents += 1;
     } while ((xevent.type != SelectionNotify)
              || (xevent.xselection.selection != CLIPBOARD));
+    if (DEBUGGING) {
+        error("Outside %s loop...\n", __func__);
+    }
     /* if (DEBUGGING) { */
     /*     if (xevent.xselection.property) { */
     /*         error("X clipboard target: %s.\n", XGetAtomName(display,

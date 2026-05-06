@@ -179,12 +179,12 @@ compare_int(const void *a, const void *b) {
     const int32 *bb = b;
     return *aa - *bb;
 }
-static int32 dummy = INT32_MAX;
 
 static void
 test_sorting(int32 n, int32 p) {
     int32 *array = malloc2(n*SIZEOF(*array));
     int32 *n_sub = malloc2(p*SIZEOF(*n_sub));
+    int32 dummy = INT32_MAX;
 
     if (n < p*2) {
         fprintf(stderr, "n=%d must be larger than p*2=%d*2\n", n, p);
