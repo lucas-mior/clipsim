@@ -71,6 +71,7 @@ ipc_daemon_listen_fifo(void *unused) {
         }
 
         r = read64(command_fifo.fd, &command, sizeof(*(&command)));
+        util_close(&command_fifo);
         if (r < SIZEOF(*(&command))) {
             error("Error reading command from %s: %s\n", command_fifo.name,
                   strerror(errno));
@@ -79,7 +80,6 @@ ipc_daemon_listen_fifo(void *unused) {
 
         xpthread_mutex_lock(&lock);
 
-        util_close(&command_fifo);
         switch (command) {
         case COMMAND_PRINT:
             ipc_daemon_pipe_entries();
