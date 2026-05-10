@@ -834,7 +834,7 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
     int32 n;
     int32 m = SIZEOF(buffer);
     int32 p;
-    char fileline[64];
+    char fileline[256];
 
     va_start(args, format);
     n = vsnprintf(buffer, (size_t)m, format, args);
