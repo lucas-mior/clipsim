@@ -1,6 +1,8 @@
 #if !defined(BASE_MACROS_H)
 #define BASE_MACROS_H
 
+#include "platform_detection.h"
+
 #define QUOTE_(x) #x
 #define QUOTE(x) QUOTE_(x)
 

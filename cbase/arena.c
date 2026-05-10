@@ -18,7 +18,9 @@
 #if !defined(ARENA_C)
 #define ARENA_C
 
-#include "util.c"
+#include "base_macros.h"
+#include "platform_detection.h"
+#include "util.h"
 
 #define BYTE_POPED 0xDC
 #define BYTE_PUSHED_UNINITIALIZED 0xCD
@@ -156,7 +158,9 @@ arena_create(int64 size, char *name) {
 
     arena = p;
     if (name) {
-        arena->name = xstrdup(name);
+        int64 len = strlen32(name);
+        arena->name = xmalloc(len + 1);
+        memcpy64(arena->name, name, len + 1);
     }
     arena->begin = (char *)arena + ALIGN(sizeof(*arena));
     arena->size = size;
@@ -238,7 +242,7 @@ arena_allocate(int64 *size) {
     }
 
     if ((p
-         = VirtualAlloc(NULL, *size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE))
+         = VirtualAlloc(NULL, (size_t)*size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE))
         == NULL) {
         error2("Error in VirtualAlloc(%lld): %lu.\n", (llong)*size,
                GetLastError());
@@ -492,6 +496,7 @@ arena_functions_sink(void) {
 #if TESTING_arena
 #include "assert.c"
 #include <stdio.h>
+#include "util.c"
 
 #if !defined(UTIL_C)
 static void
