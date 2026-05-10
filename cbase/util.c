@@ -825,8 +825,8 @@ util_command_launch(int argc, char **argv) {
 }
 #endif
 
-void __attribute__((format(printf, 3, 4)))
-error_impl(char *file, int32 line, char *format, ...) {
+void __attribute__((format(printf, 4, 5)))
+error_impl(char *file, int32 line, char *func, char *format, ...) {
     char buffer[BUFSIZ];
     char *big_buffer = NULL;
     char *pbuffer = buffer;
@@ -862,7 +862,7 @@ error_impl(char *file, int32 line, char *format, ...) {
     }
 
     if (!RELEASING) {
-        p = SNPRINTF(fileline, "%s:%d: ", file, line);
+        p = SNPRINTF(fileline, "%s:%d %s():", file, line, func);
     } else {
         p = 0;
     }
