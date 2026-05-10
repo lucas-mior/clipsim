@@ -174,7 +174,7 @@ INLINE void *
 memchr64(void *pointer, int32 value, int64 size) {
     if (DEBUGGING) {
         if (size < 0) {
-            error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
+            error("Error: Invalid size = %lld\n", (llong)size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -188,7 +188,7 @@ INLINE void *
 memrchr64(void *pointer, int32 value, int64 size) {
     if (DEBUGGING) {
         if (size < 0) {
-            error("Error in %s: Invalid size = %lld\n", __func__, (llong)size);
+            error("Error: Invalid size = %lld\n", (llong)size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -222,8 +222,7 @@ strncmp32(char *left, char *right, int64 size) {
     }
     if (DEBUGGING) {
         if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n",
-                  __func__, (llong)size);
+            error("Error: Size (%lld) is bigger than SIZEMAX\n", (llong)size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -274,8 +273,7 @@ memcmp64(void *left, void *right, int64 size) {
     }
     if (DEBUGGING) {
         if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n",
-                  __func__, (llong)size);
+            error("Error: Size (%lld) is bigger than SIZEMAX\n", (llong)size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -292,12 +290,11 @@ CAT(FUNC, 64)(int fd, void *buffer, int64 size) { \
     if (size == 0) \
         return 0; \
     if (size < 0) {\
-        error("Error in %s: Invalid size = %lld\n", __func__, (llong)size); \
+        error("Error: Invalid size = %lld\n", (llong)size); \
         fatal(EXIT_FAILURE); \
     } \
     if ((ullong)size >= (ullong)MAXOF(instance)) { \
-        error("Error in %s: Size (%lld) is too big for %s\n", __func__, \
-              (llong)size, #FUNC); \
+        error("Error: Size (%lld) is too big for %s\n", (llong)size, #FUNC); \
         fatal(EXIT_FAILURE); \
     } \
     w = FUNC(fd, buffer, (TYPE)size); \
@@ -340,23 +337,19 @@ INLINE int64 \
 CAT(FUNC, 64)(void *buffer, int64 size, int64 n, FILE *file) { \
     size_t rw; \
     if ((size_t)size >= (SIZE_MAX/(size_t)n)) { \
-        error("Error in %s: Overflow (%lld*%lld)\n", \
-              __func__, (llong)size, (llong)n); \
+        error("Error: Overflow (%lld*%lld)\n", (llong)size, (llong)n); \
         fatal(EXIT_FAILURE); \
     } \
     if ((size <= 0) || (n <= 0)) { \
-        error("Error in %s: Invalid size(%lld) or n(%lld)\n", \
-              __func__, (llong)size, (llong)n); \
+        error("Error: Invalid size(%lld) or n(%lld)\n", (llong)size, (llong)n); \
         fatal(EXIT_FAILURE); \
     } \
     if ((ullong)size >= (ullong)SIZE_MAX) { \
-        error("Error in %s: Size (%lld) is bigger than SIZEMAX\n", \
-              __func__, (llong)size); \
+        error("Error: Size (%lld) is bigger than SIZEMAX\n", (llong)size); \
         fatal(EXIT_FAILURE); \
     } \
     if ((ullong)n >= (ullong)SIZE_MAX) { \
-        error("Error in %s: Number (%lld) is bigger than SIZEMAX\n", \
-              __func__, (llong)size); \
+        error("Error: Number (%lld) is bigger than SIZEMAX\n", (llong)size); \
         fatal(EXIT_FAILURE); \
     } \
     rw = FUNC(buffer, (size_t)size, (size_t)n, file); \
@@ -373,23 +366,19 @@ qsort64(void *base, int64 n, int64 size,
         int (*compar)(const void *, const void *)) {
     if (DEBUGGING) {
         if ((size_t)size >= (SIZE_MAX / (size_t)n)) {
-            error("Error in %s: Overflow (%lld*%lld)\n",
-                  __func__, (llong)size, (llong)n);
+            error("Error: Overflow (%lld*%lld)\n", (llong)size, (llong)n);
             fatal(EXIT_FAILURE);
         }
         if ((size <= 0) || (n <= 0)) {
-            error("Error in %s: Invalid size(%lld) or n(%lld)\n",
-                  __func__, (llong)size, (llong)n);
+            error("Error: Invalid size(%lld) or n(%lld)\n", (llong)size, (llong)n);
             fatal(EXIT_FAILURE);
         }
         if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error in %s: Size (%lld) is bigger than SIZEMAX\n",
-                  __func__, (llong)size);
+            error("Error: Size (%lld) is bigger than SIZEMAX\n", (llong)size);
             fatal(EXIT_FAILURE);
         }
         if ((ullong)n >= (ullong)SIZE_MAX) {
-            error("Error in %s: Number (%lld) is bigger than SIZEMAX\n",
-                  __func__, (llong)size);
+            error("Error: Number (%lld) is bigger than SIZEMAX\n", (llong)size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -530,7 +519,7 @@ itoa2(char *str, int32 size, llong num) {
     }
 
     // this is here because of gcc -fanalyzer
-    assert(i < 22);
+    ASSERT(i < 22);
 
     return i;
 }
@@ -842,8 +831,7 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
     if (n >= m) {
         if (RELEASING) {
             m = n + 1;
-            big_buffer = malloc((size_t)m);
-            assert(big_buffer);
+            big_buffer = xmalloc(m);
             n = vsnprintf(big_buffer, (size_t)m, format, args);
             pbuffer = big_buffer;
         } else {
@@ -1072,9 +1060,7 @@ util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
     int32 left = copy_files->nfds;
 
     if (copy_files->nfds >= LENGTH(copy_files->pipes)) {
-        error("Error in %s:"
-              " too many files for UtilCopyFilesAsync definition.\n",
-              __func__);
+        error("Error too many files for UtilCopyFilesAsync definition.\n");
         fatal(EXIT_FAILURE);
     }
 

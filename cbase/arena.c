@@ -494,6 +494,7 @@ arena_functions_sink(void) {
 #endif
 
 #if TESTING_arena
+// flags: -lm
 #include "assert.c"
 #include <stdio.h>
 #include "util.c"
