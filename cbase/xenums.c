@@ -180,7 +180,7 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
         int64 final_len = (int64)(buffer_ptr - buffer) + 1;
         char *copy;
 
-        if ((copy = xarena_push(global_arena, final_len))) {
+        if ((copy = malloc2(final_len))) {
             memcpy64(copy, buffer, final_len);
         }
 
@@ -226,15 +226,12 @@ main(void) {
 
     s = TEST_FLAGS_str(TEST_FLAGS_READ);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ");
-    ASSERT(arena_decr(global_arena, s));
 
     s = TEST_FLAGS_str(TEST_FLAGS_READ | TEST_FLAGS_EXEC);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_EXEC");
-    ASSERT(arena_decr(global_arena, s));
 
     s = TEST_FLAGS_str(TEST_FLAGS_READ | TEST_FLAGS_WRITE | TEST_FLAGS_EXEC);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_WRITE|TEST_FLAGS_EXEC");
-    ASSERT(arena_decr(global_arena, s));
 
     ASSERT_EQUAL(TEST_FLAGS_str(0), "NONE");
 
