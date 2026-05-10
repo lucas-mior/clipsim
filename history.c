@@ -184,7 +184,7 @@ history_save(void) {
     }
 
     if (nfds > 0) {
-        UtilCopyFilesAsync *copy_files = xmalloc(sizeof(*copy_files));
+        UtilCopyFilesAsync *copy_files = malloc2(sizeof(*copy_files));
 
         memcpy64(copy_files->pipes, pipes, sizeof(pipes));
         memcpy64(copy_files->dests, dests, sizeof(dests));
