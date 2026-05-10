@@ -28,7 +28,7 @@
 #include <time.h>
 
 #include "rapidhash.h"
-#include "util.c"
+#include "util.h"
 #include "assert.c"
 #include "arena.c"
 
@@ -102,6 +102,9 @@ typedef struct Bucket {
 #else
     HASH_KEY_TYPE *key;
     int32 key_len;
+#endif
+#if defined(HASH_PADDING_TYPE2)
+    HASH_PADDING_TYPE2 padding3;
 #endif
 #if defined(HASH_VALUE_TYPE)
     HASH_VALUE_TYPE value;
@@ -230,6 +233,7 @@ CAT(hash_create_, HASH_TYPE)(uint32 length, char *name) {
     int64 array_size;
     uint32 capacity = 1;
     uint32 power = 0;
+    int64 name_len;
 
     if (length > (UINT32_MAX / 4)) {
         length = UINT32_MAX / 4;
@@ -244,8 +248,10 @@ CAT(hash_create_, HASH_TYPE)(uint32 length, char *name) {
 
     array_size = capacity*sizeof(Bucket);
 
-    map = malloc2(sizeof(*map));
-    map->name = xstrdup(name);
+    map = xmalloc(sizeof(*map));
+    name_len = strlen32(name);
+    map->name = xmalloc(name_len + 1);
+    memcpy64(map->name, name, name_len + 1);
     map->array = xmmap_commit(&array_size);
     map->capacity = capacity;
     map->bitmask = (1 << power) - 1;
@@ -274,7 +280,7 @@ CAT(hash_destroy_, HASH_TYPE)(struct Map *map) {
     arena_destroy(map->arena_keys);
 #endif
     xmunmap(map->array, map->size);
-    free2(map, sizeof(*map));
+    free(map);
     return;
 }
 
@@ -287,10 +293,10 @@ CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
     Bucket *old_array = map->array;
     uint32 old_capacity = map->capacity;
 
-    if (DEBUGGING) {
-        error("Resizing hash table \"%s\"... %u -> %u\n",
-              map->name, old_capacity, new_capacity);
-    }
+    /* if (DEBUGGING) { */
+    /*     error("Resizing hash table \"%s\"... %u -> %u\n", */
+    /*           map->name, old_capacity, new_capacity); */
+    /* } */
 
     for (uint32 j = 0; j < old_capacity; j += 1) {
         Bucket *iterator = &old_array[j];
@@ -358,9 +364,9 @@ CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
     map->size = new_size;
     map->occupied = map->length;
 
-    if (DEBUGGING) {
-        error("Hash table resized.\n");
-    }
+    /* if (DEBUGGING) { */
+    /*     error("Hash table resized.\n"); */
+    /* } */
 
     return;
 }
@@ -797,6 +803,7 @@ hash_expected_collisions(void *map) {
 
 #include <assert.h>
 #include "arena.c"
+#include "util.c"
 
 // Have to add these declarations so that clangd does not complain
 struct Hash_map_by_value;
@@ -852,7 +859,7 @@ main(void) {
     struct timespec t1;
     struct Hash_map *map = hash_create_map(100, "strings_map");
     Arena *arena = arena_create(NBYTES*NSTRINGS, "strings_arena");
-    String *strings = malloc2(NSTRINGS*sizeof(*strings));
+    String *strings = malloc(NSTRINGS*sizeof(*strings));
     String str1 = {.s = "aaaaaaaaaaaaaaaa", .value = 10};
     String str2 = {.s = "bbbbbbbbbbbbbbb", .value = 20};
     uint32 initial_capacity;
@@ -920,7 +927,7 @@ main(void) {
     ASSERT_EQUAL(hash_length(map), 10);
 
     hash_destroy_map(map);
-    free2(strings, NSTRINGS*sizeof(*strings));
+    free(strings);
 
     {
         struct Hash_map_by_value *map2;

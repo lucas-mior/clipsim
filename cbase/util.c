@@ -48,11 +48,6 @@
 #define TESTING_util 0
 #endif
 
-static int32 snprintf2(char *buffer, int64 size, char *format, ...);
-static void __attribute__((format(printf, 3, 4)))
-    error_impl(char *file, int32 line, char *format, ...);
-#define error(...) error_impl(__FILE__, __LINE__, __VA_ARGS__)
-
 #if !TESTING_util
 static char *program;
 #else
@@ -62,18 +57,6 @@ static int32 program_len __attribute__((unused));
 
 static bool timezone_initialized = false;
 static time_t timezone_offset = 0;
-
-#if !defined(SNPRINTF)
-#define SNPRINTF(BUFFER, FORMAT, ...) \
-    snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)
-#endif
-#if !defined(STRFTIME)
-#define STRFTIME(BUFFER, FORMAT, TIME) \
-    strftime2(BUFFER, sizeof(BUFFER), FORMAT, TIME)
-#endif
-
-#define STRUCT_ARRAY_SIZE(struct_object, ArrayType, array_length) \
-    (int64)(SIZEOF(*(struct_object)) + ((array_length)*SIZEOF(ArrayType)))
 
 #define STRING_FROM_ARRAY(BUFFER, SEP, ARRAY, LENGTH) \
 _Generic((ARRAY), \
@@ -262,6 +245,26 @@ begins_with(char *string, char *literal, int32 length) {
 #define BEGINS_WITH_3(LONG, SHORT, LEN) \
         begins_with(LONG, SHORT, LEN)
 #define BEGINS_WITH(...) SELECT_ON_NUM_ARGS(BEGINS_WITH_, __VA_ARGS__)
+
+INLINE char *
+ends_with(char *string, char *literal, int32 length) {
+    int32 string_len = strlen32(string);
+    if (string_len < length) {
+        return NULL;
+    }
+    string += (string_len - length);
+    if (strncmp32(literal, string, length) == 0) {
+        return string;
+    } else {
+        return NULL;
+    }
+}
+
+#define ENDS_WITH_2(LONG, SHORT) \
+        ends_with(LONG, SHORT, strlen32(SHORT))
+#define ENDS_WITH_3(LONG, SHORT, LEN) \
+        ends_with(LONG, SHORT, LEN)
+#define ENDS_WITH(...) SELECT_ON_NUM_ARGS(ENDS_WITH_, __VA_ARGS__)
 
 INLINE int
 memcmp64(void *left, void *right, int64 size) {
@@ -910,7 +913,8 @@ void
 fatal(int status) {
     if (DEBUGGING) {
         (void)status;
-        TRAP();
+        raise(SIGILL);
+        exit(status);
     } else {
         exit(status);
     }
@@ -1525,11 +1529,28 @@ print_timings(char *file, int32 line, char *func,
     printf("%gs = %gus per item.\n\n", total_seconds, micros_per);
     return;
 }
-#define PRINT_TIMINGS_3(N, T0, T1) \
-        print_timings(__FILE__, __LINE__, (char *)__func__, N, T0, T1)
-#define PRINT_TIMINGS_4(N, T0, T1, NAME) \
-        print_timings(__FILE__, __LINE__, NAME, N, T0, T1)
-#define PRINT_TIMINGS(...) SELECT_ON_NUM_ARGS(PRINT_TIMINGS_, __VA_ARGS__)
+
+static void
+catfile(int where, char *file) {
+    int fd;
+    char buffer[4096];
+    int64 r;
+
+    if ((fd = open(file, O_RDONLY)) < 0) {
+        error("Error opening %s: %s.\n", file, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+
+    printf("\n");
+    while ((r = read64(fd, buffer, SIZEOF(buffer))) > 0) {
+        write_all(where, buffer, r);
+    }
+    if (r < 0) {
+        error("Error reading %s: %s.\n", file, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
 
 #if OS_UNIX
 
@@ -1624,22 +1645,6 @@ timezone_init(void) {
     return;
 }
 #endif
-
-static ullong here_counter = 0;
-
-#define HERE do { \
-    fprintf(stderr, "\n===== HERE(%llu): %s:%d (%s)\n", \
-                    here_counter++, __FILE__, __LINE__, __func__); \
-} while (0)
-
-#define NCALLS(INTERVAL) do { \
-    static int64 ncalls_ncalls = 1; \
-    if ((ncalls_ncalls % INTERVAL) == 0) { \
-        fprintf(stderr, "%s:%d:%s: called %lld times\n", \
-                        __FILE__, __LINE__, __func__, (llong)ncalls_ncalls); \
-    } \
-    ncalls_ncalls += 1; \
-} while (0)
 
 #if 0 == TESTING_util
 static inline void
@@ -1914,18 +1919,20 @@ main(int argc, char **argv) {
             "./",              "..",          "./",        "a/",
         };
         for (int64 i = 0; i < LENGTH(paths); i += 1) {
+            int32 path_len0 = strlen32(paths[i]);
             char *path = xstrdup(paths[i]);
             char *base = bases[i];
             int32 path_len = strlen32(path);
             ASSERT_EQUAL(basename2(path, &path_len, NULL), base);
-            free2(path, path_len + 1);
+            free2(path, path_len0 + 1);
         }
         for (int64 i = 0; i < LENGTH(paths); i += 1) {
             char *copy = xstrdup(paths[i]);
             int len = strlen32(copy);
+            int len0 = strlen32(copy);
             normalize(copy, &len);
             ASSERT_EQUAL(copy, normalized[i]);
-            free2(copy, len + 1);
+            free2(copy, len0 + 1);
         }
 
         for (int64 i = 0; i < LENGTH(paths); i += 1) {
