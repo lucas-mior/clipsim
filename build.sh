@@ -58,6 +58,7 @@ LDFLAGS="$LDFLAGS $(pkg-config x11 --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config xfixes --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config xi --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config libmagic --libs)"
+LDFLAGS="$LDFLAGS -lm"
 
 CC=${CC:-cc}
 

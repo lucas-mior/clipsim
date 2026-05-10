@@ -3,9 +3,9 @@
 
 #include "primitives.h"
 
-static void __attribute__((format(printf, 3, 4)))
-    error_impl(char *file, int32 line, char *format, ...);
-#define error(...) error_impl(__FILE__, __LINE__, __VA_ARGS__)
+static void __attribute__((format(printf, 4, 5)))
+    error_impl(char *file, int32 line, char *func, char *format, ...);
+#define error(...) error_impl(__FILE__, __LINE__, (char *)__func__, __VA_ARGS__)
 static int32 snprintf2(char *buffer, int64 size, char *format, ...);
 
 static void fatal(int status);

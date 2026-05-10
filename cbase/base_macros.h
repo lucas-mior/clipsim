@@ -51,6 +51,9 @@ _Generic((SIZE), \
 )
 
 #define ALIGNMENT 16ul
+#if defined(ALIGN)
+#undef ALIGN
+#endif
 #define ALIGN(x) ALIGN_POWER_OF_2(x, ALIGNMENT)
 
 #if defined(__GNUC__)
