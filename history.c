@@ -716,15 +716,10 @@ main(void) {
     }
 
     {
-        pthread_t thread = 0;
-
         history.name = "/tmp/clipsim_test_cache/clipsim/history";
         mkdir("/tmp/clipsim_test_cache/clipsim", 0770);
 
-        thread = history_save();
-        if (thread != 0) {
-            xpthread_join(&thread, NULL);
-        }
+        ASSERT(history_save());
 
         history_length = 0;
         memset64(length_counts, 0, sizeof(length_counts));
