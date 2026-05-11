@@ -732,16 +732,21 @@ main(void) {
     }
 
     {
-        char *text1 = malloc2(10);
-        char *text2 = malloc2(10);
+        char *testing12 = "testing12";
+        char *testing34 = "testing34";
+        int32 len12 = strlen32(testing12);
+        int32 len34 = strlen32(testing34);
+        char *text1 = malloc2(ENTRY_MAX_LENGTH);
+        char *text2 = malloc2(ENTRY_MAX_LENGTH);
 
-        memcpy64(text1, "testing12", 10);
-        history_append(text1, 9, false);
+        memcpy64(text1, testing12, len12 + 1);
+        history_append(text1, len12, true);
+        ASSERT_EQUAL(entries[0].content_length, len12);
         ASSERT_EQUAL(history_length, 1);
-        ASSERT_EQUAL(entries[0].content_length, 9);
 
-        memcpy64(text2, "testing34", 10);
-        history_append(text2, 9, false);
+        memcpy64(text2, testing34, len34 + 1);
+        history_append(text2, len34, true);
+        ASSERT_EQUAL(entries[0].content_length, len34);
         ASSERT_EQUAL(history_length, 2);
     }
 
@@ -781,7 +786,7 @@ main(void) {
         res = stat(img_content, &st);
         ASSERT_NOT_EQUAL(res, 0);
 
-        free(img_content);
+        free2(img_content, 256);
     }
 
     {

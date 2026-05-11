@@ -179,6 +179,9 @@ case "$target" in
         if echo "$src" | grep -q "stc/"; then
             continue
         fi
+        if echo "$src" | grep -q "tests/"; then
+            continue
+        fi
         name=$(echo "$name" | sed 's/\.c//')
         test_exe="/tmp/${name}_test"
 
@@ -215,7 +218,7 @@ case "$target" in
                 if ! $test_exe; then
                     gdb --quiet \
                         -ex run -ex backtrace -ex quit \
-                        $test_exe 2>&1 | xsel -b
+                        $test_exe 2>&1 | tee /dev/tty | xsel -b
                     exit 1
                 fi
             else
