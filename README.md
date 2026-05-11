@@ -119,6 +119,7 @@ $ sudo ./build.sh install
 
 ## Configuration
 Edit `clipsim.h` and recompile.
+By default, clipsim will only store data up to 1MB in size.
 
 ### Environment variables
 ```
@@ -138,9 +139,6 @@ equal to "0" or "false".
 ## Bugs
 Clipsim *might* have an weird behavior if you use it with applications that do
 not use UTF-8.
-Additionally, incremental buffer reading is not implemented,
-which means that if an application is to use that so called "feature",
-clipsim won't save that text to history.
 
 ## Rationale
 There are many other clipboard managers for X,
