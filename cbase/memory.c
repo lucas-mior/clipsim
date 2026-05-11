@@ -370,7 +370,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
 
     if (new_capacity <= 0) {
         error_impl(file, line, func,
-                   "Error: invalid object size = %lld.\n", (llong)new_capacity);
+                   "Error: invalid new capacity = %lld.\n", (llong)new_capacity);
         fatal(EXIT_FAILURE);
     }
 
