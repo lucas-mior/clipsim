@@ -112,7 +112,7 @@ content_check_content(uchar *data, int32 length) {
                   magic_error(magic));
             break;
         }
-        if (!strncmp(mime_type, "image/", 6)) {
+        if (BEGINS_WITH((char *)mime_type, "image/")) {
             return CLIPBOARD_IMAGE;
         }
     } while (0);
