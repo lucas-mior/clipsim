@@ -33,7 +33,7 @@ static int32 content_check_content(uchar *, int);
 
 void
 content_remove_newline(char *text, int32 *length) {
-    /* DEBUG_PRINT("%s, %d", text, *length) */
+    DEBUG_PRINT("%s, %d", text, *length)
     text[*length] = '\0';
     while (text[*length - 1] == '\n') {
         text[*length - 1] = '\0';
@@ -45,8 +45,8 @@ content_remove_newline(char *text, int32 *length) {
 void
 content_trim_spaces(int32 *trimmed, int32 *trimmed_length,
                     char *content, int32 length) {
-    /* DEBUG_PRINT("%p, %p, %s, %d", (void *)trimmed, (void *)trimmed_length, */
-    /*             content, length) */
+    DEBUG_PRINT("%p, %p, %s, %d", (void *)trimmed, (void *)trimmed_length,
+                content, length)
     char *out;
     char temp = '\0';
     char *in = content;
@@ -86,8 +86,7 @@ content_trim_spaces(int32 *trimmed, int32 *trimmed_length,
 
 int32
 content_check_content(uchar *data, int32 length) {
-    /* DEBUG_PRINT("%s, %d", data, length) */
-    DEBUG_PRINT("%d", length)
+    DEBUG_PRINT("%.50s, %d", data, length)
 
     if (length <= 0) {
         error("Content length is equal or less than zero.\n");
