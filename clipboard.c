@@ -230,14 +230,13 @@ clipboard_get_clipboard(char **save, ulong *length, bool *incr) {
 
 Atom
 clipboard_check_target(Atom target) {
+    int32 retries = 50;
+    struct timespec pause;
     DEBUG_PRINT("%lu", target)
 
     XEvent xevent;
 
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA, window, CurrentTime);
-
-    int32 retries = 50;
-    struct timespec pause;
     
     pause.tv_sec = 0;
     pause.tv_nsec = 1000 * 1000 * 10;
