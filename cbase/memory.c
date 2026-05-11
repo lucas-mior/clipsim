@@ -26,6 +26,10 @@ static int64 memory_page_size = 0;
 #define MEMORY_CHECK_USE_AFTER_FREE 1
 #endif
 
+#if !defined(MEMORY_LEAK_EVERYTHING_TO_AVOID_UB)
+#define MEMORY_LEAK_EVERYTHING_TO_AVOID_UB 1
+#endif
+
 #if !defined(MEMORY_CHECK_USE_AFTER_FREE)
 #define MEMORY_CHECK_USE_AFTER_FREE 0
 #endif
@@ -531,7 +535,16 @@ free_debug(char *file, int32 line, char *func,
         if (MEMORY_CHECK_USE_AFTER_FREE) {
             memset64(pointer, 0xCD, size);
         } else {
-            free(pointer);
+            // Note: it is undefined behaviour to use a pointer value whose
+            // object it points to has been freed.
+            // How to avoid memory leaks in this case?
+            // I guess the answer is praying that the compiler
+            // does not explore this UB when optimizations are disabled.
+            // The same is true of realloc, but currently the old pointers are
+            // not kept in the allocations hash table so its not a problem.
+            if (!MEMORY_LEAK_EVERYTHING_TO_AVOID_UB) {
+                free(pointer);
+            }
         }
     } else {
         error_impl(file, line, func,
