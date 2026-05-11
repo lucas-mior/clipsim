@@ -71,12 +71,19 @@ clipboard_daemon_watch(void) {
     char *CLIPSIM_SIGNAL_NUMBER;
     char *CLIPSIM_SIGNAL_PROGRAM;
     int32 signal_number = 0;
+    int32 xfixes_event_base;
+    int32 xfixes_error_base;
 
     pause.tv_sec = 0;
     pause.tv_nsec = 1000*1000*10;
 
     if ((display = XOpenDisplay(NULL)) == NULL) {
         error("Error opening X display.");
+        exit(EXIT_FAILURE);
+    }
+
+    if (!XFixesQueryExtension(display, &xfixes_event_base, &xfixes_error_base)) {
+        error("XFixes extension not available.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -123,7 +130,6 @@ clipboard_daemon_watch(void) {
         ulong length;
 
         (void)XNextEvent(display, &xevent);
-        (void)event_names;
         if (DEBUGGING) {
             if (xevent.type < LENGTH(event_names)) {
                 error("X event: %s\n", event_names[xevent.type]);
@@ -132,7 +138,7 @@ clipboard_daemon_watch(void) {
             }
         }
 
-        if (xevent.type == PropertyNotify) {
+        if (xevent.type != (xfixes_event_base + XFixesSelectionNotify)) {
             continue;
         }
         nanosleep(&pause, NULL);
@@ -222,43 +228,27 @@ clipboard_check_target(Atom target) {
     DEBUG_PRINT("%lu", target)
 
     XEvent xevent;
-    int32 nevents = 0;
 
-    XConvertSelection(display, CLIPBOARD, target, XSEL_DATA, window,
-                      CurrentTime);
-    do {
-        if (DEBUGGING) {
-            error("[%d] Inside %s loop...\n", nevents, __func__);
-        }
-        if (nevents >= CHECK_TARGET_MAX_EVENTS) {
-            return 0;
-        }
+    XConvertSelection(display, CLIPBOARD, target, XSEL_DATA, window, CurrentTime);
 
-        {
-            int32 retries = 50;
-            struct timespec pause;
-            
-            pause.tv_sec = 0;
-            pause.tv_nsec = 1000 * 1000 * 10;
+    int32 retries = 50;
+    struct timespec pause;
+    
+    pause.tv_sec = 0;
+    pause.tv_nsec = 1000 * 1000 * 10;
 
-            while (XPending(display) == 0) {
-                retries -= 1;
-                if (retries <= 0) {
-                    return 0;
-                }
-                nanosleep(&pause, NULL);
+    while (true) {
+        if (XCheckTypedWindowEvent(display, window, SelectionNotify, &xevent)) {
+            if (xevent.xselection.selection == CLIPBOARD) {
+                return xevent.xselection.property;
             }
         }
-
-        (void)XNextEvent(display, &xevent);
-        nevents += 1;
-    } while ((xevent.type != SelectionNotify)
-             || (xevent.xselection.selection != CLIPBOARD));
-    if (DEBUGGING) {
-        error("Outside %s loop...\n", __func__);
+        retries -= 1;
+        if (retries <= 0) {
+            return 0;
+        }
+        nanosleep(&pause, NULL);
     }
-
-    return xevent.xselection.property;
 }
 
 void
@@ -286,11 +276,31 @@ clipboard_incremental_case(char **save, ulong *length) {
 
     while (true) {
         XEvent event;
-        do {
-            XNextEvent(display, &event);
-        } while ((event.type != PropertyNotify)
-                 || (event.xproperty.state != PropertyNewValue)
-                 || (event.xproperty.atom != XSEL_DATA));
+        bool got_event = false;
+        int32 retries = 100;
+        struct timespec pause;
+        
+        pause.tv_sec = 0;
+        pause.tv_nsec = 1000 * 1000 * 10;
+
+        while (true) {
+            if (XCheckTypedWindowEvent(display, window, PropertyNotify, &event)) {
+                if ((event.xproperty.state == PropertyNewValue) && (event.xproperty.atom == XSEL_DATA)) {
+                    got_event = true;
+                    break;
+                }
+            }
+            retries -= 1;
+            if (retries <= 0) {
+                break;
+            }
+            nanosleep(&pause, NULL);
+        }
+
+        if (!got_event) {
+            exceeded = true;
+            break;
+        }
 
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX / 4, False,
                            AnyPropertyType, &actual_type_return,
@@ -388,6 +398,7 @@ main(void) {
                 Atom tgt;
 
                 mock_event.type = SelectionNotify;
+                mock_event.xselection.requestor = window;
                 mock_event.xselection.selection = CLIPBOARD;
                 mock_event.xselection.target = UTF8_STRING;
                 mock_event.xselection.property = UTF8_STRING;
@@ -401,6 +412,7 @@ main(void) {
                 XEvent mock_event2;
 
                 mock_event2.type = SelectionNotify;
+                mock_event2.xselection.requestor = window;
                 mock_event2.xselection.selection = CLIPBOARD;
                 mock_event2.xselection.target = UTF8_STRING;
                 mock_event2.xselection.property = UTF8_STRING;
