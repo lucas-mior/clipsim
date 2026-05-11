@@ -214,6 +214,7 @@ fi
 kill -SIGKILL $unresponsive_pid 2>/dev/null
 sleep $interval
 
-echo "All tests passed successfully!"
-
 reset
+
+printf "Resetted terminal after random garbage.\n"
+printf "All tests passed successfully!\n"
