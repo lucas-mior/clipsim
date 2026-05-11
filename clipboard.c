@@ -264,11 +264,6 @@ clipboard_incremental_case(char **save, ulong *length) {
     char *final_buffer;
 
     final_buffer = malloc2(ENTRY_MAX_LENGTH);
-    if (final_buffer == NULL) {
-        *save = NULL;
-        *length = 0;
-        return;
-    }
 
     XSelectInput(display, window, PropertyChangeMask);
     XDeleteProperty(display, window, XSEL_DATA);
