@@ -568,13 +568,17 @@ free2_(void *pointer, int64 size) {
 
 #if DEBUGGING_MEMORY
 #define malloc2(size) \
-    malloc_debug(__FILE__, __LINE__, (char *)__func__, size)
+    malloc_debug(__FILE__, __LINE__, (char *)__func__, \
+                 size)
 #define realloc2(old, old_capacity, new_capacity, obj_size) \
-    realloc_debug(__FILE__, __LINE__, (char *)__func__, old, old_capacity, new_capacity, obj_size)
+    realloc_debug(__FILE__, __LINE__, (char *)__func__, \
+                  old, old_capacity, new_capacity, obj_size)
 #define realloc_flex(old, old_capacity, new_capacity, obj_size) \
-    realloc_flex_debug(__FILE__, __LINE__, (char *)__func__, old, SIZEOF(*old), old_capacity, new_capacity, obj_size)
+    realloc_flex_debug(__FILE__, __LINE__, (char *)__func__, \
+                       old, SIZEOF(*old), old_capacity, new_capacity, obj_size)
 #define free2(pointer, size) \
-    free_debug(__FILE__, __LINE__, (char *)__func__, pointer, size)
+    free_debug(__FILE__, __LINE__, (char *)__func__, \
+               pointer, size)
 #else
 #define malloc2(size) \
     xmalloc(size)
