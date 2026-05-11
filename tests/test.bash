@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 alias trace_on='set -x'
 alias trace_off='{ set +x; } 2>/dev/null'
 

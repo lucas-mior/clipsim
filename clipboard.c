@@ -514,7 +514,7 @@ main(void) {
                     ASSERT_EQUAL(small_len, 15);
                     ASSERT_EQUAL(memcmp64(small_save, "small_incr_test", 15), 0);
                     if (small_save != NULL) {
-                        free(small_save);
+                        free2(small_save, ENTRY_MAX_LENGTH);
                     }
                     wait(NULL);
                 }
