@@ -59,6 +59,19 @@ static void history_remove(int32);
 static void history_exit(int) __attribute__((noreturn));
 
 static int32
+history_text_allocation_size(Entry *e) {
+    int32 size;
+
+    if (e->content_length >= TRIMMED_SIZE) {
+        size = e->content_length + 1 + TRIMMED_SIZE + 1;
+    } else {
+        size = (e->content_length + 1)*2;
+    }
+
+    return size;
+}
+
+static int32
 history_callback_delete(const char *path, const struct stat *stat,
                         int32 typeflag, struct FTW *ftwbuf) {
     (void)stat;
@@ -317,12 +330,7 @@ history_read(void) {
             e->content = malloc2(e->content_length + 1);
             memcpy64(e->content, begin, e->content_length + 1);
         } else {
-            int32 size;
-            if (e->content_length >= TRIMMED_SIZE) {
-                size = e->content_length + 1 + TRIMMED_SIZE + 1;
-            } else {
-                size = (e->content_length + 1)*2;
-            }
+            int32 size = history_text_allocation_size(e);
             e->content = malloc2(size);
             memcpy64(e->content, begin, e->content_length + 1);
 
@@ -433,7 +441,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
     if (recovered) {
         recovered = false;
         if (incr_buffer) {
-            free(content);
+            free2(content, ENTRY_MAX_LENGTH);
         } else {
             XFree(content);
         }
@@ -448,7 +456,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
     case CLIPBOARD_IMAGE:
         if (history_save_image(&content, &length) < 0) {
             if (incr_buffer) {
-                free(content);
+                free2(content, ENTRY_MAX_LENGTH);
             } else {
                 XFree(content);
             }
@@ -457,7 +465,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
         break;
     default:
         if (incr_buffer) {
-            free(content);
+            free2(content, ENTRY_MAX_LENGTH);
         } else {
             XFree(content);
         }
@@ -469,7 +477,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
             history_reorder(oldindex);
         }
         if (incr_buffer) {
-            free2(content, length + 1);
+            free2(content, ENTRY_MAX_LENGTH);
         } else {
             XFree(content);
         }
@@ -482,12 +490,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
 
     switch (kind) {
     case CLIPBOARD_TEXT:
-        if (e->content_length >= TRIMMED_SIZE) {
-            size = e->content_length + 1 + TRIMMED_SIZE + 1;
-        } else {
-            size = (e->content_length + 1)*2;
-        }
-
+        size = history_text_allocation_size(e);
         if (incr_buffer) {
             e->content = realloc2(content,
                                   ENTRY_MAX_LENGTH, size,
@@ -672,9 +675,10 @@ history_free_entry(Entry *e, int32 index) {
         if (unlink(e->content) < 0) {
             error("Error deleting %s: %s.\n", e->content, strerror(errno));
         }
+        free2(e->content, e->content_length + 1);
+    } else {
+        free2(e->content, history_text_allocation_size(e));
     }
-    free(e->content);
-
     return;
 }
 
@@ -728,8 +732,8 @@ main(void) {
     }
 
     {
-        char *text1 = malloc(10);
-        char *text2 = malloc(10);
+        char *text1 = malloc2(10);
+        char *text2 = malloc2(10);
 
         memcpy64(text1, "testing12", 10);
         history_append(text1, 9, false);
@@ -762,7 +766,7 @@ main(void) {
     }
 
     {
-        char *img_content = malloc(256);
+        char *img_content = malloc2(256);
         int32 img_len = 15;
         int32 res = 0;
         struct stat st;
