@@ -191,7 +191,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
                            &bytes_after_return, (uchar **)save);
         if (actual_type_return == INCR) {
             clipboard_incremental_case(save, length);
-            if (*length == 0 || *length > ENTRY_MAX_LENGTH) {
+            if ((*length <= 0) || (*length >= ENTRY_MAX_LENGTH)) {
                 return CLIPBOARD_LARGE;
             }
             return CLIPBOARD_TEXT;
@@ -207,7 +207,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
                            &bytes_after_return, (uchar **)save);
         if (actual_type_return == INCR) {
             clipboard_incremental_case(save, length);
-            if (*length == 0 || *length > ENTRY_MAX_LENGTH) {
+            if ((*length <= 0) || (*length >= ENTRY_MAX_LENGTH)) {
                 return CLIPBOARD_LARGE;
             }
             return CLIPBOARD_IMAGE;
@@ -263,7 +263,7 @@ clipboard_incremental_case(char **save, ulong *length) {
     ulong current_size = 0;
     char *final_buffer;
 
-    final_buffer = malloc(ENTRY_MAX_LENGTH + 1);
+    final_buffer = malloc2(ENTRY_MAX_LENGTH);
     if (final_buffer == NULL) {
         *save = NULL;
         *length = 0;
@@ -314,10 +314,11 @@ clipboard_incremental_case(char **save, ulong *length) {
         }
 
         if (!exceeded) {
-            if ((current_size + nitems_return) > ENTRY_MAX_LENGTH) {
+            if ((current_size + nitems_return) >= ENTRY_MAX_LENGTH) {
                 exceeded = true;
             } else {
-                memcpy64(final_buffer + current_size, buffer, nitems_return);
+                memcpy64(final_buffer + current_size, buffer,
+                         (int64)nitems_return);
                 current_size += nitems_return;
             }
         }
@@ -330,13 +331,13 @@ clipboard_incremental_case(char **save, ulong *length) {
     XFlush(display);
 
     if (exceeded) {
-        free(final_buffer);
+        free2(final_buffer, ENTRY_MAX_LENGTH);
         *save = NULL;
         *length = 0;
     } else {
         final_buffer[current_size] = '\0';
         *save = realloc2(final_buffer,
-                         ENTRY_MAX_LENGTH + 1, (int64)current_size + 1,
+                         ENTRY_MAX_LENGTH, (int64)current_size + 1,
                          SIZEOF(char));
         *length = current_size;
     }
