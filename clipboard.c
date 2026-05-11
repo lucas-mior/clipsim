@@ -155,7 +155,7 @@ clipboard_daemon_watch(void) {
                   " Clipsim only works with UTF-8 and images.\n");
             break;
         case CLIPBOARD_LARGE:
-            error("Buffer is too large and INCR reading is not implemented yet."
+            error("Buffer is too large."
                   " This data won't be saved to history.\n");
             break;
         case CLIPBOARD_ERROR:
@@ -185,7 +185,10 @@ clipboard_get_clipboard(char **save, ulong *length) {
                            &bytes_after_return, (uchar **)save);
         if (actual_type_return == INCR) {
             clipboard_incremental_case(save, length);
-            return CLIPBOARD_LARGE;
+            if (*length == 0 || *length > ENTRY_MAX_LENGTH) {
+                return CLIPBOARD_LARGE;
+            }
+            return CLIPBOARD_TEXT;
         }
 
         *length = nitems_return;
@@ -198,7 +201,10 @@ clipboard_get_clipboard(char **save, ulong *length) {
                            &bytes_after_return, (uchar **)save);
         if (actual_type_return == INCR) {
             clipboard_incremental_case(save, length);
-            return CLIPBOARD_LARGE;
+            if (*length == 0 || *length > ENTRY_MAX_LENGTH) {
+                return CLIPBOARD_LARGE;
+            }
+            return CLIPBOARD_IMAGE;
         }
 
         *length = nitems_return;
@@ -257,15 +263,23 @@ clipboard_check_target(Atom target) {
 
 void
 clipboard_incremental_case(char **save, ulong *length) {
-    DEBUG_PRINT("%p, %ln", (void *)save, length)
+    DEBUG_PRINT("%p, %p", (void *)save, (void *)length)
     int32 actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
     Atom actual_type_return;
     char *buffer;
-    *length = 0;
+    bool exceeded = false;
+    ulong current_size = 0;
+    char *final_buffer;
 
-    (void)save;
+    final_buffer = malloc(ENTRY_MAX_LENGTH + 1);
+    if (final_buffer == NULL) {
+        *save = NULL;
+        *length = 0;
+        return;
+    }
+
     XSelectInput(display, window, PropertyChangeMask);
     XDeleteProperty(display, window, XSEL_DATA);
     XFlush(display);
@@ -275,23 +289,28 @@ clipboard_incremental_case(char **save, ulong *length) {
         do {
             XNextEvent(display, &event);
         } while ((event.type != PropertyNotify)
-                 || (event.xproperty.state != PropertyNewValue));
-        XGetWindowProperty(display, window, XSEL_DATA, 0, 0, False,
+                 || (event.xproperty.state != PropertyNewValue)
+                 || (event.xproperty.atom != XSEL_DATA));
+
+        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX / 4, False,
                            AnyPropertyType, &actual_type_return,
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **)&buffer);
-        XFree(buffer);
-        if (bytes_after_return == 0) {
+
+        if (nitems_return == 0) {
+            XFree(buffer);
             XDeleteProperty(display, window, XSEL_DATA);
-            XNextEvent(display, &event);
-            XFlush(display);
             break;
         }
 
-        XGetWindowProperty(
-            display, window, XSEL_DATA, 0, (long)bytes_after_return, False,
-            AnyPropertyType, &actual_type_return, &actual_format_return,
-            &nitems_return, &bytes_after_return, (uchar **)&buffer);
+        if (!exceeded) {
+            if ((current_size + nitems_return) > ENTRY_MAX_LENGTH) {
+                exceeded = true;
+            } else {
+                memcpy64(final_buffer + current_size, buffer, nitems_return);
+                current_size += nitems_return;
+            }
+        }
 
         XFree(buffer);
         XDeleteProperty(display, window, XSEL_DATA);
@@ -299,6 +318,17 @@ clipboard_incremental_case(char **save, ulong *length) {
     }
     XSelectInput(display, window, NoEventMask);
     XFlush(display);
+
+    if (exceeded) {
+        free(final_buffer);
+        *save = NULL;
+        *length = 0;
+    } else {
+        final_buffer[current_size] = '\0';
+        *save = final_buffer;
+        *length = current_size;
+    }
+
     return;
 }
 
@@ -386,29 +416,94 @@ main(void) {
             }
 
             {
-                char *dummy_save = NULL;
-                ulong dummy_len = 0;
-                XEvent prop_event1;
-                XEvent prop_event2;
+                char *large_save = NULL;
+                ulong large_len = 0;
+                pid_t pid = fork();
 
-                prop_event1.type = PropertyNotify;
-                prop_event1.xproperty.window = window;
-                prop_event1.xproperty.atom = XSEL_DATA;
-                prop_event1.xproperty.state = PropertyNewValue;
+                if (pid == 0) {
+                    Display *d2;
+                    XEvent event;
+                    char *big_chunk;
+                    
+                    d2 = XOpenDisplay(NULL);
+                    big_chunk = malloc(ENTRY_MAX_LENGTH + 10);
+                    memset64(big_chunk, 'B', ENTRY_MAX_LENGTH + 10);
+                    
+                    XSelectInput(d2, window, PropertyChangeMask);
+                    XChangeProperty(d2, window, XSEL_DATA, INCR, 32, PropModeReplace, NULL, 0);
+                    XFlush(d2);
 
-                prop_event2.type = PropertyNotify;
-                prop_event2.xproperty.window = window;
-                prop_event2.xproperty.atom = XSEL_DATA;
-                prop_event2.xproperty.state = PropertyNewValue;
+                    do {
+                        XNextEvent(d2, &event);
+                    } while (event.type != PropertyNotify || event.xproperty.state != PropertyDelete || event.xproperty.atom != XSEL_DATA);
+                    
+                    XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
+                                    PropModeReplace, (uchar *)big_chunk, ENTRY_MAX_LENGTH + 10);
+                    XFlush(d2);
+                    
+                    do {
+                        XNextEvent(d2, &event);
+                    } while (event.type != PropertyNotify || event.xproperty.state != PropertyDelete || event.xproperty.atom != XSEL_DATA);
+                    
+                    XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
+                                    PropModeReplace, NULL, 0);
+                    XFlush(d2);
+                    XCloseDisplay(d2);
+                    free(big_chunk);
+                    exit(0);
+                } else {
+                    usleep(100000);
+                    clipboard_incremental_case(&large_save, &large_len);
+                    ASSERT_EQUAL(large_len, 0);
+                    if (large_save != NULL) {
+                        free(large_save);
+                    }
+                    wait(NULL);
+                }
+            }
 
-                XChangeProperty(display, window, XSEL_DATA, INCR, 8,
-                                PropModeReplace, NULL, 0);
+            {
+                char *small_save = NULL;
+                ulong small_len = 0;
+                pid_t pid = fork();
 
-                XPutBackEvent(display, &prop_event2);
-                XPutBackEvent(display, &prop_event1);
+                if (pid == 0) {
+                    Display *d2;
+                    XEvent event;
+                    char *small_chunk = "small_incr_test";
+                    
+                    d2 = XOpenDisplay(NULL);
+                    XSelectInput(d2, window, PropertyChangeMask);
+                    XChangeProperty(d2, window, XSEL_DATA, INCR, 32, PropModeReplace, NULL, 0);
+                    XFlush(d2);
 
-                clipboard_incremental_case(&dummy_save, &dummy_len);
-                ASSERT_EQUAL(dummy_len, 0);
+                    do {
+                        XNextEvent(d2, &event);
+                    } while (event.type != PropertyNotify || event.xproperty.state != PropertyDelete || event.xproperty.atom != XSEL_DATA);
+                    
+                    XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
+                                    PropModeReplace, (uchar *)small_chunk, 15);
+                    XFlush(d2);
+                                    
+                    do {
+                        XNextEvent(d2, &event);
+                    } while (event.type != PropertyNotify || event.xproperty.state != PropertyDelete || event.xproperty.atom != XSEL_DATA);
+                    
+                    XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
+                                    PropModeReplace, NULL, 0);
+                    XFlush(d2);
+                    XCloseDisplay(d2);
+                    exit(0);
+                } else {
+                    usleep(100000);
+                    clipboard_incremental_case(&small_save, &small_len);
+                    ASSERT_EQUAL(small_len, 15);
+                    ASSERT_EQUAL(memcmp64(small_save, "small_incr_test", 15), 0);
+                    if (small_save != NULL) {
+                        free(small_save);
+                    }
+                    wait(NULL);
+                }
             }
         }
         XCloseDisplay(display);
