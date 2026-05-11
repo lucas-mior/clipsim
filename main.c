@@ -123,10 +123,10 @@ main_check_cmdline(char *pid) {
         return false;
     }
     if ((r = read64(cmdline, command, sizeof(command))) <= 0) {
-        close(cmdline);
+        XCLOSE(&cmdline);
         return false;
     }
-    close(cmdline);
+    XCLOSE(&cmdline);
 
     switch (r) {
     case sizeof(cmd1):
