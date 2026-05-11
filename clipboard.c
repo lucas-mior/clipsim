@@ -193,6 +193,7 @@ clipboard_get_clipboard(char **save, ulong *length, bool *incr) {
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **)save);
         if (actual_type_return == INCR) {
+            XFree(*save);
             clipboard_incremental_case(save, length);
             if ((*length <= 0) || (*length >= ENTRY_MAX_LENGTH)) {
                 return CLIPBOARD_LARGE;
@@ -210,6 +211,7 @@ clipboard_get_clipboard(char **save, ulong *length, bool *incr) {
                            &actual_format_return, &nitems_return,
                            &bytes_after_return, (uchar **)save);
         if (actual_type_return == INCR) {
+            XFree(*save);
             clipboard_incremental_case(save, length);
             if ((*length <= 0) || (*length >= ENTRY_MAX_LENGTH)) {
                 return CLIPBOARD_LARGE;
@@ -469,7 +471,7 @@ main(void) {
                     clipboard_incremental_case(&large_save, &large_len);
                     ASSERT_EQUAL(large_len, 0);
                     if (large_save != NULL) {
-                        free(large_save);
+                        free2(large_save, ENTRY_MAX_LENGTH);
                     }
                     wait(NULL);
                 }
