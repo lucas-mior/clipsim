@@ -86,7 +86,8 @@ content_trim_spaces(int16 *trimmed, int16 *trimmed_length,
 
 int32
 content_check_content(uchar *data, int32 length) {
-    DEBUG_PRINT("%s, %d", data, length)
+    /* DEBUG_PRINT("%s, %d", data, length) */
+    DEBUG_PRINT("%d", length)
 
     if (length <= 0) {
         error("Content length is equal or less than zero.\n");
