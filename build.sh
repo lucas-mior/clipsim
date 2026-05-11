@@ -2,6 +2,8 @@
 
 # shellcheck disable=SC2086
 
+set -e
+
 alias trace_on='set -x'
 alias trace_off='{ set +x; } 2>/dev/null'
 
@@ -67,7 +69,11 @@ LDFLAGS="$LDFLAGS $(pkg-config xi --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config libmagic --libs)"
 LDFLAGS="$LDFLAGS -lm"
 
-CC=${CC:-cc}
+if [ "$target" = "test" ] && [ -z "$CC" ] && command tcc; then
+    CC=tcc
+else
+    CC="${CC:-cc}"
+fi
 
 case "$target" in
 "fast_feedback")

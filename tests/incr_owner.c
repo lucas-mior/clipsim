@@ -63,10 +63,10 @@ int main(int argc, char **argv) {
                     }
                 } else {
                     int size = ENTRY_MAX_LENGTH * 2;
-                    char *buf = malloc(size);
+                    char *buf = malloc2(size);
                     memset(buf, 'A', size);
                     XChangeProperty(d, req->requestor, req->property, utf8, 8, PropModeReplace, (unsigned char*)buf, size);
-                    free(buf);
+                    free2(buf, size);
                     while (1) {
                         XNextEvent(d, &pe);
                         if (pe.type == PropertyNotify && pe.xproperty.state == PropertyDelete && pe.xproperty.atom == req->property) break;
