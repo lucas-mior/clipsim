@@ -527,19 +527,21 @@ history_append(char *content, int32 length, bool incr_buffer) {
 
     history_length += 1;
     if (history_length >= HISTORY_BUFFER_SIZE) {
-        for (int32 i = 0; i < HISTORY_KEEP_SIZE; i += 1) {
+        int32 to_remove = history_length - HISTORY_KEEP_SIZE;
+        
+        for (int32 i = 0; i < to_remove; i += 1) {
             history_free_entry(&entries[i], i);
         }
 
-        memcpy64(&entries[0], &entries[HISTORY_KEEP_SIZE],
+        memcpy64(&entries[0], &entries[to_remove],
                  HISTORY_KEEP_SIZE*sizeof(*entries));
         memset64(&entries[HISTORY_KEEP_SIZE], 0,
-                 HISTORY_KEEP_SIZE*sizeof(*entries));
+                 to_remove*sizeof(*entries));
 
-        memcpy64(&is_image[0], &is_image[HISTORY_KEEP_SIZE],
+        memcpy64(&is_image[0], &is_image[to_remove],
                  HISTORY_KEEP_SIZE*sizeof(*is_image));
         memset64(&is_image[HISTORY_KEEP_SIZE], 0,
-                 HISTORY_KEEP_SIZE*sizeof(*is_image));
+                 to_remove*sizeof(*is_image));
 
         history_length = HISTORY_KEEP_SIZE;
     }
@@ -635,14 +637,15 @@ history_remove(int32 id) {
 
     history_free_entry(&entries[id], id);
 
-    if (id < history_length) {
+    if (id < (history_length - 1)) {
         memmove64(&entries[id], &entries[id + 1],
-                  (history_length - id)*SIZEOF(*entries));
-        memset64(&entries[history_length - 1], 0, sizeof(*entries));
+                  (history_length - 1 - id)*SIZEOF(*entries));
         memmove64(&is_image[id], &is_image[id + 1],
-                  (history_length - id)*SIZEOF(*is_image));
-        memset64(&is_image[history_length - 1], 0, sizeof(*is_image));
+                  (history_length - 1 - id)*SIZEOF(*is_image));
     }
+    
+    memset64(&entries[history_length - 1], 0, sizeof(*entries));
+    memset64(&is_image[history_length - 1], 0, sizeof(*is_image));
     history_length -= 1;
 
     return;
@@ -653,13 +656,14 @@ history_reorder(int32 oldindex) {
     DEBUG_PRINT("%d", oldindex)
     Entry aux = entries[oldindex];
     bool aux2 = is_image[oldindex];
-    int32 n = history_length - oldindex;
+    int32 n = history_length - 1 - oldindex;
 
-    memmove64(&entries[oldindex], &entries[oldindex + 1], n*SIZEOF(*entries));
+    if (n > 0) {
+        memmove64(&entries[oldindex], &entries[oldindex + 1], n*SIZEOF(*entries));
+        memmove64(&is_image[oldindex], &is_image[oldindex + 1], n*SIZEOF(*is_image));
+    }
+    
     memmove64(&entries[history_length - 1], &aux, SIZEOF(*entries));
-
-    memmove64(&is_image[oldindex], &is_image[oldindex + 1],
-              n*SIZEOF(*is_image));
     memmove64(&is_image[history_length - 1], &aux2, SIZEOF(*is_image));
     return;
 }
