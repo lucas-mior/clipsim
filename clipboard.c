@@ -59,7 +59,7 @@ static Atom TARGETS;
 
 static void clipboard_incremental_case(char **, ulong *);
 static Atom clipboard_check_target(Atom);
-static int32 clipboard_get_clipboard(char **, ulong *);
+static int32 clipboard_get_clipboard(char **, ulong *, bool *);
 
 static int clipboard_daemon_watch(void) __attribute__((noreturn));
 
@@ -128,6 +128,7 @@ clipboard_daemon_watch(void) {
         XEvent xevent;
         char *save = NULL;
         ulong length;
+        bool incr;
 
         (void)XNextEvent(display, &xevent);
         if (DEBUGGING) {
@@ -149,12 +150,12 @@ clipboard_daemon_watch(void) {
 
         xpthread_mutex_lock(&lock);
 
-        switch (clipboard_get_clipboard(&save, &length)) {
+        switch (clipboard_get_clipboard(&save, &length, &incr)) {
         case CLIPBOARD_TEXT:
-            history_append(save, (int32)length);
+            history_append(save, (int32)length, incr);
             break;
         case CLIPBOARD_IMAGE:
-            history_append(save, (int32)length);
+            history_append(save, (int32)length, incr);
             break;
         case CLIPBOARD_OTHER:
             error("Unsupported format."
@@ -177,12 +178,14 @@ clipboard_daemon_watch(void) {
 }
 
 int32
-clipboard_get_clipboard(char **save, ulong *length) {
+clipboard_get_clipboard(char **save, ulong *length, bool *incr) {
     DEBUG_PRINT("%p, %p", (void *)save, (void *)length)
     int32 actual_format_return;
     ulong nitems_return;
     ulong bytes_after_return;
     Atom actual_type_return;
+
+    *incr = false;
 
     if (clipboard_check_target(UTF8_STRING)) {
         XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX / 4, False,
@@ -194,6 +197,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
             if ((*length <= 0) || (*length >= ENTRY_MAX_LENGTH)) {
                 return CLIPBOARD_LARGE;
             }
+            *incr = true;
             return CLIPBOARD_TEXT;
         }
 
@@ -210,6 +214,7 @@ clipboard_get_clipboard(char **save, ulong *length) {
             if ((*length <= 0) || (*length >= ENTRY_MAX_LENGTH)) {
                 return CLIPBOARD_LARGE;
             }
+            *incr = true;
             return CLIPBOARD_IMAGE;
         }
 
@@ -376,6 +381,7 @@ main(void) {
             ulong len = 0;
             char *res_save = NULL;
             int32 res_clip;
+            bool incr;
 
             CLIPBOARD = XInternAtom(display, "CLIPBOARD", False);
             XSEL_DATA = XInternAtom(display, "XSEL_DATA", False);
@@ -416,7 +422,7 @@ main(void) {
                 mock_event2.xselection.property = UTF8_STRING;
                 XPutBackEvent(display, &mock_event2);
 
-                res_clip = clipboard_get_clipboard(&res_save, &len);
+                res_clip = clipboard_get_clipboard(&res_save, &len, &incr);
                 ASSERT_EQUAL(res_clip, CLIPBOARD_TEXT);
                 ASSERT_MORE(len, 0);
 
