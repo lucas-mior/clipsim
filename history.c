@@ -52,7 +52,7 @@ static void history_free_entry(Entry *, int32);
 static void history_reorder(int32);
 static int32 history_save_image(char **, int32 *);
 
-static void history_append(char *, int);
+static void history_append(char *, int, bool);
 static int history_save(void);
 static void history_recover(int32);
 static void history_remove(int32);
@@ -417,7 +417,7 @@ history_save_image(char **content, int32 *length) {
 }
 
 void
-history_append(char *content, int32 length) {
+history_append(char *content, int32 length, bool incr_buffer) {
     /* DEBUG_PRINT("%s, %d", content, length) */
     DEBUG_PRINT("%d", length)
     int32 oldindex;
@@ -487,7 +487,9 @@ history_append(char *content, int32 length) {
         error("Unexpected default case.\n");
         exit(EXIT_FAILURE);
     }
-    XFree(content);
+    if (!incr_buffer) {
+        XFree(content);
+    }
 
     history_length += 1;
     if (history_length >= HISTORY_BUFFER_SIZE) {
@@ -697,12 +699,12 @@ main(void) {
         char *text2 = malloc(10);
 
         memcpy64(text1, "testing12", 10);
-        history_append(text1, 9);
+        history_append(text1, 9, false);
         ASSERT_EQUAL(history_length, 1);
         ASSERT_EQUAL(entries[0].content_length, 9);
 
         memcpy64(text2, "testing34", 10);
-        history_append(text2, 9);
+        history_append(text2, 9, false);
         ASSERT_EQUAL(history_length, 2);
     }
 
