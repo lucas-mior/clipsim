@@ -5,9 +5,16 @@
 alias trace_on='set -x'
 alias trace_off='{ set +x; } 2>/dev/null'
 
-. ./targets
+if [ -n "$BASH_VERSION" ]; then
+    # shellcheck disable=SC3044
+    shopt -s expand_aliases
+fi
 
 dir=$(dirname "$(readlink -f "$0")")
+cd "$dir" || exit
+
+. ./targets
+
 cbase="cbase"
 CPPFLAGS="$CPPFLAGS -I "$dir/$cbase""
 
