@@ -361,8 +361,7 @@ history_read(void) {
 
 int32
 history_repeated_index(char *content, int32 length) {
-    /* DEBUG_PRINT("%s, %d", content, length) */
-    DEBUG_PRINT("%d", length)
+    DEBUG_PRINT("%.50s, %d", content, length)
     int32 candidates = length_counts[length];
     if (candidates == 0) {
         return -1;
@@ -426,8 +425,7 @@ history_save_image(char **content, int32 *length) {
 
 void
 history_append(char *content, int32 length, bool incr_buffer) {
-    /* DEBUG_PRINT("%s, %d", content, length) */
-    DEBUG_PRINT("%d", length)
+    DEBUG_PRINT("%.50s, %d", content, length)
     int32 oldindex;
     int32 kind;
     int32 size;
@@ -668,7 +666,8 @@ history_reorder(int32 oldindex) {
 
 void
 history_free_entry(Entry *e, int32 index) {
-    DEBUG_PRINT("{\n    %s,\n    %d\n}", e->content, e->content_length)
+    DEBUG_PRINT("{content=%.50s,length=%d}, index=%d",
+                e->content, e->content_length, index)
     length_counts[e->content_length] -= 1;
 
     if (is_image[index]) {

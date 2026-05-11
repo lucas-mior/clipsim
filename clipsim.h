@@ -44,7 +44,7 @@
 #define DEBUG_PRINT(...) \
 do { \
     char debug_buffer[4096]; \
-    int32 debug_len = SNPRINTF(debug_buffer, __VA_ARGS__); \
+    int32 debug_len = snprintf2(debug_buffer, sizeof(debug_buffer), __VA_ARGS__); \
     if (debug_len > 0) { \
         int32 debug_limit = 0; \
         if (debug_len < (int32)sizeof(debug_buffer)) { \
