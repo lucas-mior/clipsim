@@ -432,6 +432,11 @@ history_append(char *content, int32 length, bool incr_buffer) {
     }
     if (recovered) {
         recovered = false;
+        if (incr_buffer) {
+            free(content);
+        } else {
+            XFree(content);
+        }
         return;
     }
 
@@ -442,11 +447,20 @@ history_append(char *content, int32 length, bool incr_buffer) {
         break;
     case CLIPBOARD_IMAGE:
         if (history_save_image(&content, &length) < 0) {
-            XFree(content);
+            if (incr_buffer) {
+                free(content);
+            } else {
+                XFree(content);
+            }
             return;
         }
         break;
     default:
+        if (incr_buffer) {
+            free(content);
+        } else {
+            XFree(content);
+        }
         return;
     }
 
@@ -454,7 +468,11 @@ history_append(char *content, int32 length, bool incr_buffer) {
         if (oldindex != (history_length - 1)) {
             history_reorder(oldindex);
         }
-        XFree(content);
+        if (incr_buffer) {
+            free2(content, length + 1);
+        } else {
+            XFree(content);
+        }
         return;
     }
 
@@ -469,8 +487,15 @@ history_append(char *content, int32 length, bool incr_buffer) {
         } else {
             size = (e->content_length + 1)*2;
         }
-        e->content = malloc2(size);
-        memcpy64(e->content, content, e->content_length + 1);
+
+        if (incr_buffer) {
+            e->content = realloc2(content,
+                                  ENTRY_MAX_LENGTH, size,
+                                  SIZEOF(char));
+        } else {
+            e->content = malloc2(size);
+            memcpy64(e->content, content, e->content_length + 1);
+        }
 
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length), e->content,
                             e->content_length);
@@ -479,8 +504,16 @@ history_append(char *content, int32 length, bool incr_buffer) {
     case CLIPBOARD_IMAGE:
         e->trimmed = 0;
         e->trimmed_length = (int16)e->content_length;
-        e->content = malloc2(length + 1);
-        memcpy64(e->content, content, length + 1);
+
+        if (incr_buffer) {
+            e->content = realloc2(content,
+                                  ENTRY_MAX_LENGTH, length + 1,
+                                  SIZEOF(char));
+        } else {
+            e->content = malloc2(length + 1);
+            memcpy64(e->content, content, length + 1);
+        }
+        
         is_image[history_length] = true;
         break;
     default:

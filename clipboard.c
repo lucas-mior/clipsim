@@ -336,9 +336,7 @@ clipboard_incremental_case(char **save, ulong *length) {
         *length = 0;
     } else {
         final_buffer[current_size] = '\0';
-        *save = realloc2(final_buffer,
-                         ENTRY_MAX_LENGTH, (int64)current_size + 1,
-                         SIZEOF(char));
+        *save = final_buffer;
         *length = current_size;
     }
 
