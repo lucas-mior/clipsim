@@ -88,8 +88,8 @@ typedef uint64_t uint64;
 typedef struct Entry {
     char *content;
     int32 content_length;
-    int16 trimmed_length;
     int16 trimmed;
+    int16 trimmed_length;
 } Entry;
 
 typedef struct File {
