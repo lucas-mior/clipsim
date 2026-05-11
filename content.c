@@ -28,7 +28,7 @@
 #endif
 
 static void content_remove_newline(char *, int *);
-static void content_trim_spaces(int16 *, int16 *, char *, int32);
+static void content_trim_spaces(int32 *, int32 *, char *, int32);
 static int32 content_check_content(uchar *, int);
 
 void
@@ -43,7 +43,7 @@ content_remove_newline(char *text, int32 *length) {
 }
 
 void
-content_trim_spaces(int16 *trimmed, int16 *trimmed_length,
+content_trim_spaces(int32 *trimmed, int32 *trimmed_length,
                     char *content, int32 length) {
     /* DEBUG_PRINT("%p, %p, %s, %d", (void *)trimmed, (void *)trimmed_length, */
     /*             content, length) */
@@ -51,7 +51,7 @@ content_trim_spaces(int16 *trimmed, int16 *trimmed_length,
     char temp = '\0';
     char *in = content;
 
-    *trimmed = (int16)length + 1;
+    *trimmed = length + 1;
     out = &content[*trimmed];
 
     if (length >= TRIMMED_SIZE) {
@@ -72,7 +72,7 @@ content_trim_spaces(int16 *trimmed, int16 *trimmed_length,
         in += 1;
     }
     *out = '\0';
-    *trimmed_length = (int16)(out - &content[*trimmed]);
+    *trimmed_length = (int32)(out - &content[*trimmed]);
 
     if (temp) {
         content[TRIMMED_SIZE] = temp;
@@ -151,8 +151,8 @@ main(void) {
 
     {
         char content[512] = "  hello   world ";
-        int16 trimmed;
-        int16 trimmed_length;
+        int32 trimmed;
+        int32 trimmed_length;
         int32 orig_length = strlen32(content);
         content_trim_spaces(&trimmed, &trimmed_length, content, orig_length);
         PRINTLN(content + trimmed);
