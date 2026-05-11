@@ -146,4 +146,47 @@ if [ "$NEW_LINES" -ge "$OLD_LINES" ]; then
     exit 1
 fi
 
+echo "Triggering unresponsive application holding the clipboard..."
+unresponsive_c="$TEST_DIR/unresponsive.c"
+unresponsive_bin="$TEST_DIR/unresponsive"
+
+cat << 'EOF' > "$unresponsive_c"
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <unistd.h>
+
+int main() {
+    Display *d = XOpenDisplay(NULL);
+    Window w;
+    Atom clip;
+
+    if (!d) {
+        return 1;
+    }
+
+    w = XCreateSimpleWindow(d, DefaultRootWindow(d), 0, 0, 1, 1, 0, 0, 0);
+    clip = XInternAtom(d, "CLIPBOARD", False);
+
+    XSetSelectionOwner(d, clip, w, CurrentTime);
+    XFlush(d);
+    pause();
+    
+    return 0;
+}
+EOF
+
+gcc -O2 "$unresponsive_c" -lX11 -o "$unresponsive_bin"
+"$unresponsive_bin" &
+unresponsive_pid=$!
+sleep 1
+
+if ! timeout 2 $clipsim_bin -i 0 > /dev/null 2>&1; then
+    echo "FAIL: Daemon deadlocked trying to read from unresponsive clipboard owner."
+    kill -SIGKILL $unresponsive_pid 2>/dev/null
+    exit 1
+fi
+
+kill -SIGKILL $unresponsive_pid 2>/dev/null
+sleep $interval
+
 echo "All tests passed successfully!"
