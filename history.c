@@ -21,7 +21,6 @@
 #include "clipsim.h"
 #include "cbase/util.c"
 #include "content.c"
-#include "cbase/arena.c"
 
 #include <poll.h>
 #include <X11/X.h>
@@ -47,7 +46,6 @@ static char xdg_cache_home_buffer[256];
 static char *HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 static char *tmp_directory = "/tmp/clipsim";
-static Arena *arena;
 
 static int32 history_repeated_index(char *, int32);
 static void history_free_entry(Entry *, int32);
@@ -243,8 +241,6 @@ history_read(void) {
         exit(EXIT_FAILURE);
     }
 
-    arena = arena_create(SIZEMB(2), "arena");
-
     {
         char *clipsim_dir;
         char buffer[PATH_MAX];
@@ -318,7 +314,7 @@ history_read(void) {
             e->trimmed = 0;
             e->trimmed_length = (int16)e->content_length;
             is_image[history_length] = true;
-            e->content = xarena_push(arena, (e->content_length + 1));
+            e->content = malloc2(e->content_length + 1);
             memcpy64(e->content, begin, e->content_length + 1);
         } else {
             int32 size;
@@ -327,7 +323,7 @@ history_read(void) {
             } else {
                 size = (e->content_length + 1)*2;
             }
-            e->content = xarena_push(arena, size);
+            e->content = malloc2(size);
             memcpy64(e->content, begin, e->content_length + 1);
 
             content_trim_spaces(&e->trimmed, &e->trimmed_length, e->content,
@@ -473,7 +469,7 @@ history_append(char *content, int32 length) {
         } else {
             size = (e->content_length + 1)*2;
         }
-        e->content = xarena_push(arena, size);
+        e->content = malloc2(size);
         memcpy64(e->content, content, e->content_length + 1);
 
         content_trim_spaces(&(e->trimmed), &(e->trimmed_length), e->content,
@@ -483,7 +479,7 @@ history_append(char *content, int32 length) {
     case CLIPBOARD_IMAGE:
         e->trimmed = 0;
         e->trimmed_length = (int16)e->content_length;
-        e->content = xarena_push(arena, length + 1);
+        e->content = malloc2(length + 1);
         memcpy64(e->content, content, length + 1);
         is_image[history_length] = true;
         break;
@@ -642,7 +638,7 @@ history_free_entry(Entry *e, int32 index) {
             error("Error deleting %s: %s.\n", e->content, strerror(errno));
         }
     }
-    assert(arena_decr(arena, e->content));
+    free(e->content);
 
     return;
 }
@@ -652,7 +648,6 @@ int
 main(void) {
     char *test_dir = "/tmp/clipsim_test_cache";
 
-    arena = arena_create(SIZEMB(2), "arena");
     setenv("XDG_CACHE_HOME", test_dir, 1);
     mkdir(test_dir, 0770);
     tmp_directory = "/tmp/clipsim_test_tmp";
