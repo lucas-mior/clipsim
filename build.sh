@@ -218,7 +218,7 @@ case "$target" in
         fi
         trace_off
     done
-    ./test.bash
+    tests/test.bash
     exit
     ;;
 "test_all")
