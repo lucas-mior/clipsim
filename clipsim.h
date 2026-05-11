@@ -140,6 +140,7 @@ static magic_t magic = 0;
 
 static int32 fifo_open(File *file, int32 flag);
 static void util_close(File *file);
+static void main_reopen_magic(void);
 
 int32
 fifo_open(File *file, int32 flag) {
@@ -168,4 +169,21 @@ util_close(File *file) {
     }
     return;
 }
+
+static void
+reopen_magic(void) {
+    if (magic) {
+        magic_close(magic);
+    }
+    if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
+        error("Error in magic_open(MAGIC_MIME_TYPE): %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    if (magic_load(magic, NULL) != 0) {
+        error("Error in magic_load(): %s\n", magic_error(magic));
+        exit(EXIT_FAILURE);
+    }
+    return;
+}
+
 #endif /* CLIPSIM_H */

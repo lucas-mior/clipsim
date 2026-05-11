@@ -176,22 +176,6 @@ main_check_running(void) {
     return false;
 }
 
-static void
-main_reopen_magic(void) {
-    if (magic) {
-        magic_close(magic);
-    }
-    if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
-        error("Error in magic_open(MAGIC_MIME_TYPE): %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-    if (magic_load(magic, NULL) != 0) {
-        error("Error in magic_load(): %s\n", magic_error(magic));
-        exit(EXIT_FAILURE);
-    }
-    return;
-}
-
 void
 main_launch_daemon(void) {
     DEBUG_PRINT("void")
@@ -207,7 +191,7 @@ main_launch_daemon(void) {
 
     history_read();
 
-    main_reopen_magic();
+    reopen_magic();
 
     pthread_create(&ipc_thread, NULL, ipc_daemon_listen_fifo, NULL);
 
