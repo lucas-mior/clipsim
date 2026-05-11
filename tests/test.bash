@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 
+alias trace_on='set -x'
+alias trace_off='{ set +x; } 2>/dev/null'
+
+if [ -n "$BASH_VERSION" ]; then
+    # shellcheck disable=SC3044
+    shopt -s expand_aliases
+fi
+
+# shellcheck disable=2317
+# shellcheck disable=2086
+
 old_xdg_cache_home="$XDG_CACHE_HOME"
 interval=0.3
 
@@ -9,13 +20,21 @@ if killall -SIGTERM clipsim 2>/dev/null; then
     sleep $interval
     killall -SIGKILL clipsim
 fi
+if killall -SIGTERM clipsim_debug 2>/dev/null; then
+    clipsim_was_running=true
+    sleep $interval
+    killall -SIGKILL clipsim_debug
+fi
 
 set -e
 
-clipsim_bin="bin/clipsim_debug"
+dir=$(dirname "$(realpath "$0")")
+cd "$dir" || exit
+
+clipsim_bin="../bin/clipsim_debug"
 TEST_DIR="/tmp/clipsim_test_bash"
 XDG_CACHE_HOME="$TEST_DIR/.cache"
-./build.sh debug || exit 1
+../build.sh debug || exit 1
 
 rm -rf "$TEST_DIR"
 mkdir -p "$XDG_CACHE_HOME"
@@ -63,10 +82,37 @@ xclip -selection clipboard -t application/x-custom-format $TEST_DIR/some_binary_
 od $TEST_DIR/some_binary_format > $TEST_DIR/some_binary_format.txt
 sleep $interval
 
-echo "Triggering large clipboard data (INCR)..."
-large_file="$TEST_DIR/large_file.txt"
-dd if=/dev/zero of="$large_file" bs=1M count=2 2>/dev/null
-xclip -selection clipboard -i "$large_file"
+echo "Compiling explicit INCR tests mock owner..."
+incr_owner_c="./incr_owner.c"
+incr_owner_bin="./incr_owner"
+
+trace_on
+gcc -I../cbase -I../ -O2 $incr_owner_c -lX11 -lm -o $incr_owner_bin
+trace_off
+
+echo "Triggering normal INCR..."
+$incr_owner_bin 0 &
+pid_incr_small=$!
+sleep 1
+
+$clipsim_bin -p > "$TEST_DIR/incr_normal_dump"
+if ! grep -q "small_incr_test" "$TEST_DIR/incr_normal_dump"; then
+    echo "FAIL: Normal INCR transfer was not saved to history."
+    exit 1
+fi
+wait $pid_incr_small 2>/dev/null || true
+
+echo "Triggering too large INCR..."
+$incr_owner_bin 1 &
+pid_incr_large=$!
+sleep 1
+
+$clipsim_bin -p > "$TEST_DIR/incr_large_dump"
+if grep -q "AAAAAA" "$TEST_DIR/incr_large_dump"; then
+    echo "FAIL: Large INCR transfer exceeded ENTRY_MAX_LENGTH but was incorrectly saved."
+    exit 1
+fi
+wait $pid_incr_large 2>/dev/null || true
 sleep $interval
 
 echo "recovery_target" | xclip -quiet -selection clipboard &
@@ -147,37 +193,16 @@ if [ "$NEW_LINES" -ge "$OLD_LINES" ]; then
 fi
 
 echo "Triggering unresponsive application holding the clipboard..."
-unresponsive_c="$TEST_DIR/unresponsive.c"
-unresponsive_bin="$TEST_DIR/unresponsive"
+unresponsive_c="./unresponsive_owner.c"
+unresponsive_bin="./unresponsive_owner"
 
-cat << 'EOF' > "$unresponsive_c"
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
-#include <unistd.h>
+trace_on
 
-int main() {
-    Display *d = XOpenDisplay(NULL);
-    Window w;
-    Atom clip;
-
-    if (!d) {
-        return 1;
-    }
-
-    w = XCreateSimpleWindow(d, DefaultRootWindow(d), 0, 0, 1, 1, 0, 0, 0);
-    clip = XInternAtom(d, "CLIPBOARD", False);
-
-    XSetSelectionOwner(d, clip, w, CurrentTime);
-    XFlush(d);
-    pause();
-    
-    return 0;
-}
-EOF
-
-gcc -O2 "$unresponsive_c" -lX11 -o "$unresponsive_bin"
-"$unresponsive_bin" &
+gcc -O2 $unresponsive_c -lX11 -lm -o $unresponsive_bin
+$unresponsive_bin &
 unresponsive_pid=$!
+
+trace_off
 sleep 1
 
 if ! timeout 2 $clipsim_bin -i 0 > /dev/null 2>&1; then
@@ -190,3 +215,5 @@ kill -SIGKILL $unresponsive_pid 2>/dev/null
 sleep $interval
 
 echo "All tests passed successfully!"
+
+reset
