@@ -227,6 +227,23 @@ clipboard_check_target(Atom target) {
         if (nevents >= CHECK_TARGET_MAX_EVENTS) {
             return 0;
         }
+
+        {
+            int32 retries = 50;
+            struct timespec pause;
+            
+            pause.tv_sec = 0;
+            pause.tv_nsec = 1000 * 1000 * 10;
+
+            while (XPending(display) == 0) {
+                retries -= 1;
+                if (retries <= 0) {
+                    return 0;
+                }
+                nanosleep(&pause, NULL);
+            }
+        }
+
         (void)XNextEvent(display, &xevent);
         nevents += 1;
     } while ((xevent.type != SelectionNotify)
@@ -234,12 +251,6 @@ clipboard_check_target(Atom target) {
     if (DEBUGGING) {
         error("Outside %s loop...\n", __func__);
     }
-    /* if (DEBUGGING) { */
-    /*     if (xevent.xselection.property) { */
-    /*         error("X clipboard target: %s.\n", XGetAtomName(display,
-     * target)); */
-    /*     } */
-    /* } */
 
     return xevent.xselection.property;
 }

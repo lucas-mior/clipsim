@@ -389,7 +389,7 @@ _Generic((VAR), \
 )
 
 #define PRINTLN(VAR) do { \
-    fprintf(stderr, "%s:%d ", __FILE__, __LINE__); \
+    fprintf(stderr, "%s:%d %s():", __FILE__, __LINE__, __func__); \
     PRINT(VAR); \
     fprintf(stderr, "\n"); \
 } while (0)
