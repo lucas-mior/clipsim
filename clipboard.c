@@ -228,7 +228,7 @@ clipboard_check_target(Atom target) {
                       CurrentTime);
     do {
         if (DEBUGGING) {
-            error("Inside %s loop...\n", __func__);
+            error("[%d] Inside %s loop...\n", nevents, __func__);
         }
         if (nevents >= CHECK_TARGET_MAX_EVENTS) {
             return 0;

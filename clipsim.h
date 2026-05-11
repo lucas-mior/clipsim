@@ -40,17 +40,17 @@
 #define DEBUGGING 0
 #endif
 
-#if DEBUGGING
-#define DEBUG_PRINT(...) \
-do { \
-    dprintf(STDERR_FILENO, \
-            "%s:%d -> %s(", __FILE__, __LINE__, __func__); \
-    dprintf(STDERR_FILENO, __VA_ARGS__); \
-    dprintf(STDERR_FILENO, ")\n"); \
-} while (0);
-#else
+/* #if DEBUGGING */
+/* #define DEBUG_PRINT(...) \ */
+/* do { \ */
+/*     dprintf(STDERR_FILENO, \ */
+/*             "%s:%d -> %s(", __FILE__, __LINE__, __func__); \ */
+/*     dprintf(STDERR_FILENO, __VA_ARGS__); \ */
+/*     dprintf(STDERR_FILENO, ")\n"); \ */
+/* } while (0); */
+/* #else */
 #define DEBUG_PRINT(...)
-#endif
+/* #endif */
 
 #define IS_SPACE(x) ((x == ' ') || (x == '\t') || (x == '\n') || (x == '\r'))
 

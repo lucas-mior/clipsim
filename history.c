@@ -357,7 +357,8 @@ history_read(void) {
 
 int32
 history_repeated_index(char *content, int32 length) {
-    DEBUG_PRINT("%s, %d", content, length)
+    /* DEBUG_PRINT("%s, %d", content, length) */
+    DEBUG_PRINT("%d", length)
     int32 candidates = length_counts[length];
     if (candidates == 0) {
         return -1;
@@ -421,7 +422,8 @@ history_save_image(char **content, int32 *length) {
 
 void
 history_append(char *content, int32 length) {
-    DEBUG_PRINT("%s, %d", content, length)
+    /* DEBUG_PRINT("%s, %d", content, length) */
+    DEBUG_PRINT("%d", length)
     int32 oldindex;
     int32 kind;
     int32 size;
