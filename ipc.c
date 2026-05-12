@@ -122,7 +122,7 @@ ipc_client_speak_fifo(int32 command, int32 id) {
     }
 
     w = write64(command_fifo.fd, &command, sizeof(*(&command)));
-    util_close(&command_fifo);
+    XCLOSE(&command_fifo.fd, command_fifo.name);
     if (w < SIZEOF(*(&command))) {
         error("Error writing command to %s: %s\n", command_fifo.name,
               strerror(errno));
@@ -172,7 +172,7 @@ ipc_daemon_history_save(void) {
         error("Error sending save result to client.\n");
     }
 
-    util_close(&content_fifo);
+    XCLOSE(&content_fifo.fd, content_fifo.name);
     return;
 }
 
@@ -286,7 +286,7 @@ ipc_daemon_pipe_id(int32 id) {
     dprintf(content_fifo.fd, "%s", e->content);
 
 close:
-    util_close(&content_fifo);
+    XCLOSE(&content_fifo.fd, content_fifo.name);
     return;
 }
 
@@ -313,7 +313,7 @@ ipc_client_print_entries(void) {
         }
         error(".\n");
 
-        util_close(&content_fifo);
+        XCLOSE(&content_fifo.fd, content_fifo.name);
         exit(EXIT_FAILURE);
     }
 
@@ -328,13 +328,12 @@ ipc_client_print_entries(void) {
         if (r == 1) {
             r = read64(content_fifo.fd, buffer + 1, sizeof(buffer) - 1);
             if (r <= 0) {
-                util_die_notify("Error reading image name from %s.\n",
-                                content_fifo.name);
+                error("Error reading image name from %s.\n", content_fifo.name);
             }
         }
-        util_close(&content_fifo);
+        XCLOSE(&content_fifo.fd, content_fifo.name);
         if ((test = open(buffer + 1, O_RDONLY)) >= 0) {
-            close(test);
+            XCLOSE(&test, buffer + 1);
         } else {
             error("Error opening %s: %s\n", buffer + 1, strerror(errno));
             return;
@@ -351,7 +350,7 @@ ipc_client_print_entries(void) {
         }
     }
 
-    util_close(&content_fifo);
+    XCLOSE(&content_fifo.fd, content_fifo.name);
     return;
 }
 
@@ -514,8 +513,8 @@ main(void) {
         if (pid == 0) {
             int32 nullfd = open("/dev/null", O_WRONLY);
 
-            dup2(nullfd, STDOUT_FILENO);
-            close(nullfd);
+            xdup2(nullfd, STDOUT_FILENO);
+            XCLOSE(&nullfd);
 
             ipc_client_print_entries();
             _exit(EXIT_SUCCESS);
@@ -542,8 +541,8 @@ main(void) {
         if (pid == 0) {
             int32 nullfd = open("/dev/null", O_WRONLY);
 
-            dup2(nullfd, STDOUT_FILENO);
-            close(nullfd);
+            xdup2(nullfd, STDOUT_FILENO);
+            XCLOSE(&nullfd);
 
             ipc_client_print_entries();
             _exit(EXIT_SUCCESS);
@@ -574,8 +573,8 @@ main(void) {
             if (pid == 0) {
                 int32 nullfd = open("/dev/null", O_WRONLY);
 
-                dup2(nullfd, STDOUT_FILENO);
-                close(nullfd);
+                xdup2(nullfd, STDOUT_FILENO);
+                XCLOSE(&nullfd);
                 ipc_client_speak_fifo(COMMAND_PRINT, 0);
                 _exit(EXIT_SUCCESS);
             } else {
