@@ -42,7 +42,7 @@ static volatile bool recovered = false;
 static int32 history_length;
 static File history = {.file = NULL, .fd = -1, .name = NULL};
 static char *XDG_CACHE_HOME = NULL;
-static char xdg_cache_home_buffer[256];
+static char xdg_cache_home_buffer[4096];
 static char *HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 static char *tmp_directory = "/tmp/clipsim";
@@ -237,10 +237,10 @@ history_read(void) {
     char *clipsim = "clipsim/history";
     int64 length;
 
-    if ((XDG_CACHE_HOME = getenv("XDG_CACHE_HOME")) == NULL) {
-        error("XDG_CACHE_HOME is not set, using HOME...\n");
-        if ((HOME = getenv("HOME")) == NULL) {
-            error("HOME is not set.\n");
+    GETENV(XDG_CACHE_HOME);
+    if (XDG_CACHE_HOME == NULL) {
+        GETENV(HOME);
+        if (HOME == NULL) {
             exit(EXIT_FAILURE);
         }
         SNPRINTF(xdg_cache_home_buffer, "%s/%s", HOME, ".cache");
