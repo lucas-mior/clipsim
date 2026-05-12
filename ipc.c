@@ -98,6 +98,7 @@ ipc_daemon_listen_fifo(void *unused) {
             break;
         default:
             error("Invalid command received: '%c'\n", command);
+            break;
         }
 
         xpthread_mutex_unlock(&lock);
