@@ -1637,6 +1637,12 @@ timezone_init(void) {
 }
 #endif
 
+#define GETENV(VAR) do { \
+    if ((VAR = getenv(#VAR)) == NULL) { \
+        error(RED("%s") "is not defined.", #VAR); \
+    } \
+} while (0)
+
 #if 0 == TESTING_util
 static inline void
 util_functions_sink(void) {

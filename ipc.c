@@ -339,7 +339,7 @@ ipc_client_print_entries(void) {
             return;
         }
 
-        CLIPSIM_IMAGE_PREVIEW = getenv("CLIPSIM_IMAGE_PREVIEW");
+        GETENV(CLIPSIM_IMAGE_PREVIEW);
         if (CLIPSIM_IMAGE_PREVIEW == NULL) {
             CLIPSIM_IMAGE_PREVIEW = "chafa";
         }
