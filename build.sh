@@ -92,6 +92,10 @@ case "$target" in
     CFLAGS="$CFLAGS -g -O0 -ftree-vectorize"
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
+"callgrind")
+    CFLAGS="$CFLAGS -g3 -O2 -ftree-vectorize"
+    CPPFLAGS="$CPPFLAGS"
+    ;;
 "check")
     CC=gcc
     CFLAGS="$CFLAGS -fanalyzer"
@@ -252,6 +256,14 @@ case "$target" in
 
     trace_on
     valgrind $vg_flags -s --tool=memcheck $dir/bin/clipsim -d
+    trace_off
+    exit
+    ;;
+"callgrind")
+    trace_on
+    out="callgrind-$(date +%s).callgrind"
+    valgrind --tool=callgrind --callgrind-out-file="$out" bin/clipsim --daemon
+    kcachegrind "$out"
     trace_off
     exit
     ;;
