@@ -115,11 +115,10 @@ void
 ipc_client_speak_fifo(int32 command, int32 id) {
     DEBUG_PRINT("%u, %d", command, id)
     int64 w;
-    if (fifo_open(&command_fifo, O_WRONLY | O_NONBLOCK) < 0) {
+    if ((command_fifo.fd = open(command_fifo.name, O_WRONLY | O_NONBLOCK)) < 0) {
         error("Could not open Fifo for sending command to daemon. "
-              "Is `%s daemon` running?\n",
-              "clipsim");
-        exit(EXIT_FAILURE);
+              "Is `clipsim --daemon` running?\n");
+        fatal(EXIT_FAILURE);
     }
 
     w = write64(command_fifo.fd, &command, sizeof(*(&command)));
@@ -127,7 +126,7 @@ ipc_client_speak_fifo(int32 command, int32 id) {
     if (w < SIZEOF(*(&command))) {
         error("Error writing command to %s: %s\n", command_fifo.name,
               strerror(errno));
-        exit(EXIT_FAILURE);
+        fatal(EXIT_FAILURE);
     }
 
     switch (command) {
@@ -158,8 +157,12 @@ ipc_daemon_history_save(void) {
     DEBUG_PRINT("void")
     char saved;
     int64 saved_size = sizeof(*(&saved));
+
     error("Trying to save history...\n");
-    if (fifo_open(&content_fifo, O_WRONLY) < 0) {
+
+    if ((content_fifo.fd = open(content_fifo.name, O_WRONLY)) < 0) {
+        error("Error opening %s for writing: %s.\n",
+              content_fifo.name, strerror(errno));
         return;
     }
 
@@ -246,7 +249,12 @@ ipc_daemon_pipe_id(int32 id) {
     Entry *e;
     int64 tag_size = sizeof(*(&IMAGE_TAG));
 
-    if (fifo_open(&content_fifo, O_WRONLY) < 0) {
+    if ((content_fifo.fd = open(content_fifo.name, O_WRONLY)) < 0) {
+        error("Error opening %s for writing: %s.\n",
+              command_fifo.name, strerror(errno));
+        if (errno == ENOENT) {
+            fatal(EXIT_FAILURE);
+        }
         return;
     }
 
@@ -288,7 +296,12 @@ ipc_client_print_entries(void) {
     static char buffer[BUFSIZ];
     int64 r;
 
-    if (fifo_open(&content_fifo, O_RDONLY) < 0) {
+    if ((content_fifo.fd = open(content_fifo.name, O_RDONLY)) < 0) {
+        error("Error opening %s for reading: %s.\n",
+              command_fifo.name, strerror(errno));
+        if (errno == ENOENT) {
+            fatal(EXIT_FAILURE);
+        }
         return;
     }
 
