@@ -137,8 +137,17 @@ add it yourself).
 equal to "0" or "false".
 
 ## Bugs
-Clipsim *might* have an weird behavior if you use it with applications that do
-not use UTF-8.
+- Clipsim *might* have an weird behavior if you use it with applications that do
+  not use UTF-8.
+- If you copy anything larger than 1MB, and you close the window responsible for
+  that copy, you will loose that data since clipsim will not be able to restore
+  it.
+- Copying large amounts of data (> 200KB) will noticeably block clipsim until it
+  gets all that data through X11. So avoid asking the daemon for data
+  immediately after copying large amounts of data. Yes, technically 200KB is
+  barely any data but coordinating it through the X11 protocol makes it slow
+  because there are a lot of blocking calls needed to make sure that everything
+  works as expected.
 
 ## Rationale
 There are many other clipboard managers for X,
