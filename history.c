@@ -498,8 +498,8 @@ history_append(char *content, int32 length, bool incr_buffer) {
             memcpy64(e->content, content, e->content_length + 1);
         }
 
-        content_trim_spaces(&e->trimmed, &e->trimmed_length, e->content,
-                            e->content_length);
+        content_trim_spaces(&e->trimmed, &e->trimmed_length,
+                            e->content, e->content_length);
         is_image[history_length] = false;
         break;
     case CLIPBOARD_IMAGE:
