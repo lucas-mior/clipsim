@@ -325,7 +325,7 @@ history_read(void) {
 
         if (type == IMAGE_TAG) {
             e->trimmed = 0;
-            e->trimmed_length = (int16)e->content_length;
+            e->trimmed_length = e->content_length;
             is_image[history_length] = true;
             e->content = malloc2(e->content_length + 1);
             memcpy64(e->content, begin, e->content_length + 1);
@@ -504,7 +504,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
         break;
     case CLIPBOARD_IMAGE:
         e->trimmed = 0;
-        e->trimmed_length = (int16)e->content_length;
+        e->trimmed_length = e->content_length;
 
         if (incr_buffer) {
             e->content = realloc2(content,
