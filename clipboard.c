@@ -87,10 +87,13 @@ clipboard_daemon_watch(void) {
         exit(EXIT_FAILURE);
     }
 
-    if ((CLIPSIM_SIGNAL_PROGRAM = getenv("CLIPSIM_SIGNAL_PROGRAM")) == NULL) {
+    GETENV(CLIPSIM_SIGNAL_PROGRAM);
+    if (CLIPSIM_SIGNAL_PROGRAM == NULL) {
         error("CLIPSIM_SIGNAL_PROGRAM is not defined.\n");
     }
-    if ((CLIPSIM_SIGNAL_NUMBER = getenv("CLIPSIM_SIGNAL_NUMBER")) == NULL) {
+
+    GETENV(CLIPSIM_SIGNAL_NUMBER);
+    if (CLIPSIM_SIGNAL_NUMBER == NULL) {
         error("CLIPSIM_SIGNAL_NUMBER is not defined.\n");
     }
     if (CLIPSIM_SIGNAL_PROGRAM && CLIPSIM_SIGNAL_NUMBER) {
