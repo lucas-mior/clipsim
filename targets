@@ -5,6 +5,7 @@ fast_feedback
 # install
 # uninstall
 # valgrind
+# callgrind
 # test_all
 # check
 cross aarch64-linux-gnu
