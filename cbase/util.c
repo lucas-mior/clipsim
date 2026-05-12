@@ -274,6 +274,9 @@ memcmp64(void *left, void *right, int64 size) {
         return 0;
     }
     if (DEBUGGING) {
+        if (size < 0) {
+            error("Error: size=%lld < 0.\n", (llong)size);
+        }
         if ((ullong)size >= (ullong)SIZE_MAX) {
             error("Error: Size (%lld) is bigger than SIZEMAX\n", (llong)size);
             fatal(EXIT_FAILURE);

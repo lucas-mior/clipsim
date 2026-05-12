@@ -30,7 +30,7 @@ fi
 
 optional_stuff_for_development() {
     if command -v ctags; then
-        ctags -o tags --kinds-C=+l+d ./*.h ./*.c
+        ctags -o tags --kinds-C=+l+d cbase/*.h cbase/*.c ./*.h ./*.c
         if command -v vtags.sed; then
             vtags.sed tags | sort | uniq > .tags.vim
         fi
