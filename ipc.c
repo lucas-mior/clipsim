@@ -211,7 +211,8 @@ ipc_daemon_pipe_entries(void) {
     static char buffer[BUFSIZ];
 
     if ((content_fifo.file = fopen(content_fifo.name, "w")) == NULL) {
-        error("Error opening %s: %s.\n", content_fifo.name, strerror(errno));
+        error("Error opening %s for writing: %s.\n",
+              content_fifo.name, strerror(errno));
         exit(EXIT_FAILURE);
     }
     setvbuf(content_fifo.file, buffer, _IOFBF, BUFSIZ);
