@@ -179,8 +179,13 @@ ipc_client_check_save(void) {
     char saved = 0;
 
     error("Trying to save history...\n");
-    if (fifo_open(&content_fifo, O_RDONLY) < 0) {
-        exit(EXIT_FAILURE);
+
+    if ((content_fifo.fd = open(content_fifo.name, O_RDONLY)) < 0) {
+        error("Error opening %s for reading: %s.\n",
+              content_fifo.name, strerror(errno));
+        if (errno == ENOENT) {
+            fatal(EXIT_FAILURE);
+        }
     }
 
     if (read64(content_fifo.fd, &saved, sizeof(*(&saved))) > 0) {
