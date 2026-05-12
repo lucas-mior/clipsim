@@ -136,12 +136,12 @@ history_save(void) {
             n = SNPRINTF(image_save,
                          "%s/clipsim/%s",
                          XDG_CACHE_HOME, basename2(e->content,
-                                                   &(e->content_length), NULL));
+                                                   &e->content_length, NULL));
 
             if (strcmp(image_save, e->content)) {
                 if ((pipes[nfds].fd
                         = util_copy_file_async(image_save, e->content,
-                                               &(dests[nfds]))) < 0) {
+                                               &dests[nfds])) < 0) {
                     error("Error copying %s to %s: %s.\n",
                           e->content, image_save, strerror(errno));
                     history_remove(i);
@@ -498,7 +498,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
             memcpy64(e->content, content, e->content_length + 1);
         }
 
-        content_trim_spaces(&(e->trimmed), &(e->trimmed_length), e->content,
+        content_trim_spaces(&e->trimmed, &e->trimmed_length, e->content,
                             e->content_length);
         is_image[history_length] = false;
         break;
