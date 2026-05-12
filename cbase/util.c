@@ -269,7 +269,6 @@ ends_with(char *string, int32 string_len, char *literal, int32 length) {
 
 INLINE int
 memcmp64(void *left, void *right, int64 size) {
-    int result;
     if (size == 0) {
         return 0;
     }
@@ -282,8 +281,7 @@ memcmp64(void *left, void *right, int64 size) {
             fatal(EXIT_FAILURE);
         }
     }
-    result = memcmp(left, right, (size_t)size);
-    return result;
+    return memcmp(left, right, (size_t)size);
 }
 
 #define X64(FUNC, TYPE) \
