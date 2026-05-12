@@ -231,38 +231,40 @@ strncmp32(char *left, char *right, int64 size) {
 }
 
 INLINE char *
-begins_with(char *string, char *literal, int32 length) {
-    if (strncmp32(literal, string, length) == 0) {
+begins_with(char *string, int32 string_len, char *literal, int32 length) {
+    if (string_len < length) {
+        return NULL;
+    }
+    if (!memcmp64(string, literal, length)) {
         return string + length;
     } else {
         return NULL;
     }
 }
 
-#define BEGINS_WITH_2(LONG, SHORT) \
-        begins_with(LONG, SHORT, strlen32(SHORT))
-#define BEGINS_WITH_3(LONG, SHORT, LEN) \
-        begins_with(LONG, SHORT, LEN)
+#define BEGINS_WITH_3(LONG, LONG_LEN, SHORT) \
+        begins_with(LONG, LONG_LEN, SHORT, strlen32(SHORT))
+#define BEGINS_WITH_4(LONG, LONG_LEN, SHORT, LEN) \
+        begins_with(LONG, LONG_LEN, SHORT, LEN)
 #define BEGINS_WITH(...) SELECT_ON_NUM_ARGS(BEGINS_WITH_, __VA_ARGS__)
 
 INLINE char *
-ends_with(char *string, char *literal, int32 length) {
-    int32 string_len = strlen32(string);
+ends_with(char *string, int32 string_len, char *literal, int32 length) {
     if (string_len < length) {
         return NULL;
     }
     string += (string_len - length);
-    if (strncmp32(literal, string, length) == 0) {
+    if (!memcmp64(string, literal, length)) {
         return string;
     } else {
         return NULL;
     }
 }
 
-#define ENDS_WITH_2(LONG, SHORT) \
-        ends_with(LONG, SHORT, strlen32(SHORT))
-#define ENDS_WITH_3(LONG, SHORT, LEN) \
-        ends_with(LONG, SHORT, LEN)
+#define ENDS_WITH_3(LONG, LONG_LEN, SHORT) \
+        ends_with(LONG, LONG_LEN, SHORT, strlen32(SHORT))
+#define ENDS_WITH_4(LONG, LONG_LEN, SHORT, LEN) \
+        ends_with(LONG, LONG_LEN, SHORT, LEN)
 #define ENDS_WITH(...) SELECT_ON_NUM_ARGS(ENDS_WITH_, __VA_ARGS__)
 
 INLINE int
@@ -1765,8 +1767,15 @@ main(int argc, char **argv) {
     (void)argv;
     (void)here_counter;
 
-    ASSERT(BEGINS_WITH(s1, "aaaa"));
-    ASSERT(BEGINS_WITH(s1, "aaaabbbb"));
+    ASSERT(BEGINS_WITH(s1, strlen32(s1), "aaaa"));
+    ASSERT(BEGINS_WITH(s1, strlen32(s1), "aaaabbbb"));
+    ASSERT(!BEGINS_WITH(s1, strlen32(s1), "bbbb"));
+    ASSERT(!BEGINS_WITH(s1, strlen32(s1), "aaaabbbbb"));
+
+    ASSERT(ENDS_WITH(s1, strlen32(s1), "bbbb"));
+    ASSERT(ENDS_WITH(s1, strlen32(s1), "aaaabbbb"));
+    ASSERT(!ENDS_WITH(s1, strlen32(s1), "aaaa"));
+    ASSERT(!ENDS_WITH(s1, strlen32(s1), "aaaaabbbbb"));
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
 #if OS_UNIX
