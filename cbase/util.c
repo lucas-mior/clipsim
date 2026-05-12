@@ -1640,6 +1640,11 @@ timezone_init(void) {
 #define GETENV(VAR) do { \
     if ((VAR = getenv(#VAR)) == NULL) { \
         error(RED("%s") " is not defined.", #VAR); \
+    } else { \
+        int32 len = strlen32(VAR); \
+        char *copy = malloc2(len + 1); \
+        memcpy64(copy, VAR, len + 1); \
+        VAR = copy; \
     } \
 } while (0)
 
