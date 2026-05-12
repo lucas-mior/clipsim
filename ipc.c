@@ -77,7 +77,7 @@ ipc_daemon_listen_fifo(void *unused) {
         }
 
         r = read64(command_fifo.fd, &command, sizeof(*(&command)));
-        util_close(&command_fifo);
+        XCLOSE(&command_fifo.fd, command_fifo.name);
         if (r < SIZEOF(*(&command))) {
             error("Error reading command from %s: %s\n",
                   command_fifo.name, strerror(errno));
