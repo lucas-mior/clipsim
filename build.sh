@@ -138,6 +138,7 @@ if [ "$CC" = "clang" ]; then
     CFLAGS="$CFLAGS -Wno-implicit-void-ptr-cast"
     CFLAGS="$CFLAGS -Wno-format-pedantic"
     CFLAGS="$CFLAGS -Wno-pre-c11-compat"
+    CFLAGS="$CFLAGS -Wno-cast-function-type-strict"
 fi
 
 case "$target" in

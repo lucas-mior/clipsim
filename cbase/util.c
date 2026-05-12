@@ -366,7 +366,9 @@ X64(fread)
 
 static void
 qsort64(void *base, int64 n, int64 size,
-        int (*compar)(const void *, const void *)) {
+        int (*compar)(void *, void *)) {
+    int (*compar_consted)(const void *, const void *);
+    compar_consted = (int (*)(const void *, const void *))compar;
     if (DEBUGGING) {
         if ((size_t)size >= (SIZE_MAX / (size_t)n)) {
             error("Error: Overflow (%lld*%lld)\n", (llong)size, (llong)n);
@@ -385,7 +387,7 @@ qsort64(void *base, int64 n, int64 size,
             fatal(EXIT_FAILURE);
         }
     }
-    qsort(base, (size_t)n, (size_t)size, compar);
+    qsort(base, (size_t)n, (size_t)size, compar_consted);
     return;
 }
 
