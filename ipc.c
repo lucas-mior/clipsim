@@ -198,7 +198,7 @@ ipc_client_check_save(void) {
         error("Error reading saving result from daemon.\n");
     }
 
-    util_close(&content_fifo);
+    XCLOSE(&content_fifo.fd, content_fifo.name);
     if (!saved) {
         exit(EXIT_FAILURE);
     }
