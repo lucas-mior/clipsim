@@ -1639,7 +1639,7 @@ timezone_init(void) {
 
 #define GETENV(VAR) do { \
     if ((VAR = getenv(#VAR)) == NULL) { \
-        error(RED("%s") "is not defined.", #VAR); \
+        error(RED("%s") " is not defined.", #VAR); \
     } \
 } while (0)
 
