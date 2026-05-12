@@ -108,12 +108,14 @@ content_check_content(uchar *data, int32 length) {
     do {
         const char *mime_type;
         int32 mime_type_len;
+
         if ((mime_type = magic_buffer(magic, data, (size_t)length)) == NULL) {
             error("Error in magic_buffer(%.*s): %s.\n", 30, data,
                   magic_error(magic));
             break;
         }
         mime_type_len = strlen32((char *)mime_type);
+
         if (BEGINS_WITH((char *)mime_type, mime_type_len, "image/")) {
             return CLIPBOARD_IMAGE;
         }
