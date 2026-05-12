@@ -195,10 +195,8 @@ main_launch_daemon(void) {
 
     pthread_create(&ipc_thread, NULL, ipc_daemon_listen_fifo, NULL);
 
-    if ((CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE
-         = getenv("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE"))
-        == NULL) {
-        error("CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE is not defined.\n");
+    GETENV(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE);
+    if (CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE == NULL) {
         error("Primary selection will not be cleared"
               " When pressing the middle mouse button.\n");
     } else {
