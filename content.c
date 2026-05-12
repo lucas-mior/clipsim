@@ -113,7 +113,7 @@ content_check_content(uchar *data, int32 length) {
                   magic_error(magic));
             break;
         }
-        mime_type_len = strlen32(mime_type);
+        mime_type_len = strlen32((char *)mime_type);
         if (BEGINS_WITH((char *)mime_type, mime_type_len, "image/")) {
             return CLIPBOARD_IMAGE;
         }
