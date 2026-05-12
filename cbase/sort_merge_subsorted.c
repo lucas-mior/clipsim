@@ -64,7 +64,7 @@ sort_shuffle(void *array, int64 n, int64 size) {
 
 static void
 sort_heapify(HeapNode *heap, int32 p, int32 i,
-             int32 (*compare_func)(const void *a, const void *b)) {
+             int32 (*compare_func)(void *a, void *b)) {
     (void)compare_func;
     while (true) {
         int32 smallest = i;
@@ -100,7 +100,7 @@ sort_heapify(HeapNode *heap, int32 p, int32 i,
 static void
 sort_merge_subsorted(void *array, int32 n, int32 p, int64 obj_size,
                      void *dummy_last,
-                     int32 (*compare)(const void *a, const void *b)) {
+                     int32 (*compare)(void *a, void *b)) {
     HeapNode heap[MAX_NTHREADS];
     int32 n_sub[MAX_NTHREADS];
     int32 indices[MAX_NTHREADS] = {0};
@@ -174,7 +174,7 @@ static int32 possibleN[] = {31, 32, 33, 50};
 static int32 possibleP[] = {1, 2, 3, 8};
 
 static int32
-compare_int(const void *a, const void *b) {
+compare_int(void *a, void *b) {
     const int32 *aa = a;
     const int32 *bb = b;
     return *aa - *bb;

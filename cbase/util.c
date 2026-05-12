@@ -1748,7 +1748,7 @@ signal_handler(int signal_number) {
 }
 
 static int
-util_test_qsort_cmp(const void *a, const void *b) {
+util_test_qsort_cmp(void *a, void *b) {
     int32 va = *(const int32 *)a;
     int32 vb = *(const int32 *)b;
     if (va < vb) {
