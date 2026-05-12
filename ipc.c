@@ -66,15 +66,21 @@ ipc_daemon_listen_fifo(void *unused) {
             error("ipc_daemon_listen_fifo loop...\n");
         }
         nanosleep(&pause, NULL);
-        if (fifo_open(&command_fifo, O_RDONLY) < 0) {
+
+        if ((command_fifo.fd = open(command_fifo.name, O_RDONLY)) < 0) {
+            error("Error opening %s for reading: %s.\n",
+                  command_fifo.name, strerror(errno));
+            if (errno == ENOENT) {
+                fatal(EXIT_FAILURE);
+            }
             continue;
         }
 
         r = read64(command_fifo.fd, &command, sizeof(*(&command)));
         util_close(&command_fifo);
         if (r < SIZEOF(*(&command))) {
-            error("Error reading command from %s: %s\n", command_fifo.name,
-                  strerror(errno));
+            error("Error reading command from %s: %s\n",
+                  command_fifo.name, strerror(errno));
             continue;
         }
 
