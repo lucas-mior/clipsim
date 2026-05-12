@@ -143,19 +143,6 @@ static int32 fifo_open(File *file, int32 flag);
 static void util_close(File *file);
 static void main_reopen_magic(void);
 
-int32
-fifo_open(File *file, int32 flag) {
-    if ((file->fd = open(file->name, flag)) < 0) {
-        fprintf(stderr, "Error opening %s: %s\n", file->name, strerror(errno));
-        if (errno == ENOENT) {
-            fatal(EXIT_FAILURE);
-        }
-        return -1;
-    } else {
-        return 0;
-    }
-}
-
 void
 util_close(File *file) {
     if (file->fd >= 0) {
