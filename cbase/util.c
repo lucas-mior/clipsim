@@ -214,6 +214,22 @@ strlen32(char *string) {
     return length;
 }
 
+INLINE char *
+strncpy32(char *dest, char *source, int64 space) {
+    if (DEBUGGING) {
+        if (space <= 0) {
+            error("Error: string (%.*s ...) is too long.\n", 50, source);
+            fatal(EXIT_FAILURE);
+        }
+        if ((ullong)space >= SIZE_MAX) {
+            error("Error: space is too large.\n");
+            fatal(EXIT_FAILURE);
+        }
+    }
+
+    return strncpy(dest, source, (size_t)space);
+}
+
 INLINE int
 strncmp32(char *left, char *right, int64 size) {
     int result;
@@ -765,6 +781,12 @@ util_command(int argc, char **argv) {
     pid_t child;
     int status;
     (void)argc;
+
+    if (DEBUGGING) {
+        char cmd[4096];
+        STRING_FROM_ARRAY(cmd, " ", argv, argc);
+        error("Executing\n%s\n", cmd);
+    }
 
     switch (child = fork()) {
     case 0:
@@ -1517,7 +1539,7 @@ print_timings(char *file, int32 line, char *func,
     double micros_per = 1e6*(total_seconds / (double)nitems);
 
     printf("\ntime elapsed %s:%d:%s\n", file, line, func);
-    printf("%gs = %gus per item.\n\n", total_seconds, micros_per);
+    printf("%gs = %gus per item.\n", total_seconds, micros_per);
     return;
 }
 
