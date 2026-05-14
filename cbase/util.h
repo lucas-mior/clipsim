@@ -20,7 +20,7 @@ static void
 print_timings(char *file, int32 line, char *func,
               int64 nitems, struct timespec t0, struct timespec t1);
 
-static void *xmalloc(int64 size);
+static void *xmalloc(int64 size, bool zero);
 
 #define SNPRINTF(BUFFER, FORMAT, ...) \
     snprintf2(BUFFER, sizeof(BUFFER), FORMAT, __VA_ARGS__)

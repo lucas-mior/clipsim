@@ -818,6 +818,7 @@ util_command(int argc, char **argv) {
 
 static int
 util_command_launch(int argc, char **argv) {
+    char cmd[4096];
     (void)argc;
 
     switch (fork()) {
@@ -826,11 +827,8 @@ util_command_launch(int argc, char **argv) {
             error("Error in setsid: %s.\n", strerror(errno));
         }
         execvp(argv[0], argv);
-        error("\nError executing '%s", argv[0]);
-        for (int j = 1; j < argc; j += 1) {
-            error(" %s", argv[j]);
-        }
-        error("': %s.\n", strerror(errno));
+        STRING_FROM_ARRAY(cmd, " ", argv, argc);
+        error("\nError executing\n%s\n%s.", cmd, strerror(errno));
         return -1;
     case -1:
         error("Error forking: %s.\n", strerror(errno));
@@ -858,7 +856,7 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
     if (n >= m) {
         if (RELEASING) {
             m = n + 1;
-            big_buffer = xmalloc(m);
+            big_buffer = xmalloc(m, false);
             n = vsnprintf(big_buffer, (size_t)m, format, args);
             pbuffer = big_buffer;
         } else {

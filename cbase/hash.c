@@ -248,9 +248,9 @@ CAT(hash_create_, HASH_TYPE)(uint32 length, char *name) {
 
     array_size = capacity*sizeof(Bucket);
 
-    map = xmalloc(sizeof(*map));
+    map = xmalloc(sizeof(*map), false);
     name_len = strlen32(name);
-    map->name = xmalloc(name_len + 1);
+    map->name = xmalloc(name_len + 1, false);
     memcpy64(map->name, name, name_len + 1);
     map->array = xmmap_commit(&array_size);
     map->capacity = capacity;

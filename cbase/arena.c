@@ -159,7 +159,7 @@ arena_create(int64 size, char *name) {
     arena = p;
     if (name) {
         int64 len = strlen32(name);
-        arena->name = xmalloc(len + 1);
+        arena->name = xmalloc(len + 1, false);
         memcpy64(arena->name, name, len + 1);
     }
     arena->begin = (char *)arena + ALIGN(sizeof(*arena));
