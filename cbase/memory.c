@@ -104,11 +104,14 @@ memset64(void *buffer, int value, int64 size) {
 }
 
 INLINE void *
-xmalloc(int64 size) {
+xmalloc(int64 size, bool zero) {
     void *p;
     if ((p = malloc((size_t)size)) == NULL) {
         error("Failed to allocate %lld bytes.\n", (llong)size);
         fatal(EXIT_FAILURE);
+    }
+    if (zero) {
+        memset64(p, 0, size);
     }
     return p;
 }
@@ -136,8 +139,8 @@ memory_check(void) {
             for (int32 j = 0; j < 8; j += 1) {
                 if (p[-8 + j] != 0xDC) {
                     error_impl(bucket->value.file, bucket->value.line, bucket->value.func,
-                               "Memory underflow detected in pointer %p (size %lld).\n",
-                               (void *)p, (llong)size);
+                               "Memory underflow detected (size %lld).\n",
+                               (llong)size);
                     fatal(EXIT_FAILURE);
                 }
             }
@@ -145,8 +148,8 @@ memory_check(void) {
             for (int32 j = 0; j < 8; j += 1) {
                 if (p[size + j] != 0xDC) {
                     error_impl(bucket->value.file, bucket->value.line, bucket->value.func,
-                               "Memory overflow detected in pointer %p (size %lld).\n",
-                               (void *)p, (llong)size);
+                               "Memory overflow detected (size %lld).\n",
+                               (llong)size);
                     fatal(EXIT_FAILURE);
                 }
             }
@@ -156,8 +159,8 @@ memory_check(void) {
                 for (int64 j = 0; j < size; j += 1) {
                     if (p[j] != 0xCD) {
                         error_impl(bucket->value.file, bucket->value.line, bucket->value.func,
-                                   "Use after free detected in pointer %p (size %lld).\n",
-                                   (void *)p, (llong)size);
+                                   "Use after free detected (size %lld).\n",
+                                   (llong)size);
                         fatal(EXIT_FAILURE);
                     }
                 }
@@ -169,7 +172,7 @@ memory_check(void) {
 }
 
 static void *
-malloc_debug(char *file, int32 line, char *func, int64 size) {
+malloc_debug(char *file, int32 line, char *func, int64 size, bool zero) {
     void *p;
     uchar *ptr;
     void *base_p;
@@ -190,7 +193,7 @@ malloc_debug(char *file, int32 line, char *func, int64 size) {
         fatal(EXIT_FAILURE);
     }
 
-    base_p = xmalloc(size + 16);
+    base_p = xmalloc(size + 16, false);
     ptr = (uchar *)base_p;
 
     for (int32 j = 0; j < 8; j += 1) {
@@ -217,6 +220,10 @@ malloc_debug(char *file, int32 line, char *func, int64 size) {
         }
         hash_insert_alloc_map(allocations, &p, info);
         pthread_mutex_unlock(&allocations_mutex);
+    }
+
+    if (zero) {
+        memset64(p, 0, size);
     }
 
     return p;
@@ -286,7 +293,7 @@ realloc_debug(char *file, int32 line, char *func,
 
         if ((old != NULL) && (allocations == NULL)) {
             error_impl(file, line, func,
-                       "Reallocating invalid pointer %p.", old);
+                       "Tried to reallocate invalid pointer: %p.", old);
             fatal(EXIT_FAILURE);
         } else if (allocations == NULL) {
             allocations = hash_create_alloc_map(1024, "DebugAllocations");
@@ -295,12 +302,12 @@ realloc_debug(char *file, int32 line, char *func,
             DebugAllocInfo old_info;
             if (!hash_lookup_alloc_map(allocations, &old, &old_info)) {
                 error_impl(file, line, func,
-                           "Reallocating invalid pointer %p.\n", old);
+                           "Tried to reallocate invalid pointer: %p.\n", old);
                 fatal(EXIT_FAILURE);
             }
             if (old_info.reallocated == -1) {
                 error_impl(file, line, func,
-                           "Reallocating freed pointer %p.\n", old);
+                           "Tried to reallocate freed pointer: %p.\n", old);
                 fatal(EXIT_FAILURE);
             }
             if (old_info.size != old_size) {
@@ -391,7 +398,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
 
         if ((old != NULL) && (allocations == NULL)) {
             error_impl(file, line, func,
-                       "Reallocating invalid pointer %p.", old);
+                       "Tried to reallocate invalid pointer: %p.\n", old);
             fatal(EXIT_FAILURE);
         } else if (allocations == NULL) {
             allocations = hash_create_alloc_map(1024, "DebugAllocations");
@@ -400,12 +407,12 @@ realloc_flex_debug(char *file, int32 line, char *func,
             DebugAllocInfo old_info;
             if (!hash_lookup_alloc_map(allocations, &old, &old_info)) {
                 error_impl(file, line, func,
-                           "Reallocating invalid pointer %p.\n", old);
+                           "Tried to reallocate invalid pointer: %p.\n", old);
                 fatal(EXIT_FAILURE);
             }
             if (old_info.reallocated == -1) {
                 error_impl(file, line, func,
-                           "Reallocating freed pointer %p.\n", old);
+                           "Tried to reallocate freed pointer: %p.\n", old);
                 fatal(EXIT_FAILURE);
             }
             if (old_info.size != old_size) {
@@ -567,9 +574,12 @@ free2_(void *pointer, int64 size) {
 }
 
 #if DEBUGGING_MEMORY
+#define malloc2_zero(size) \
+    malloc_debug(__FILE__, __LINE__, (char *)__func__, \
+                 size, true)
 #define malloc2(size) \
     malloc_debug(__FILE__, __LINE__, (char *)__func__, \
-                 size)
+                 size, false)
 #define realloc2(old, old_capacity, new_capacity, obj_size) \
     realloc_debug(__FILE__, __LINE__, (char *)__func__, \
                   old, old_capacity, new_capacity, obj_size)
@@ -580,8 +590,10 @@ free2_(void *pointer, int64 size) {
     free_debug(__FILE__, __LINE__, (char *)__func__, \
                pointer, size)
 #else
+#define malloc2_zero(size) \
+    xmalloc(size, true)
 #define malloc2(size) \
-    xmalloc(size)
+    xmalloc(size, false)
 #define realloc2(old, old_capacity, new_capacity, obj_size) \
     realloc4(old, old_capacity, new_capacity, obj_size)
 #define realloc_flex(old, old_capacity, new_capacity, obj_size) \
