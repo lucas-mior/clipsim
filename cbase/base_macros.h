@@ -43,6 +43,8 @@
 #define ALIGN_POWER_OF_2_(SIZE, A) (int64)(((SIZE) + ((A) - 1)) & ~((A) - 1))
 #define ALIGN16(x) (((x) + 15) & ~15)
 
+#define BETWEEN(x, a, b)    ((a) <= (x) && (x) <= (b))
+
 #define ALIGN_POWER_OF_2(SIZE, A) \
 _Generic((SIZE), \
     ullong: ALIGN_POWER_OF_2_((ullong)SIZE, (ullong)A), \
