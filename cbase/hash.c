@@ -55,7 +55,9 @@ INLINE uint64 hash_function(void *key, int32 key_length);
 INLINE uint32 hash_normal(void *map, uint64 hash);
 INLINE uint32 hash_capacity(void *map);
 INLINE uint32 hash_length(void *map);
+#if DEBUGGING
 uint32 hash_expected_collisions(void *map);
+#endif
 
 #define HASH_PRINT_SUMMARY_map(MAP) hash_print_summary_map(MAP, QUOTE(MAP))
 #define HASH_PRINT_SUMMARY_set(MAP) hash_print_summary_set(MAP, QUOTE(MAP))
@@ -143,18 +145,21 @@ CHECK_COMMON_MAP(occupied);
 
 static void
 CAT(hash_print_summary_, HASH_TYPE)(struct Map *map) {
-    fprintf(stderr, "struct Hash%s {\n", QUOTE(HASH_TYPE));
-    fprintf(stderr, "  name: %s\n", map->name);
-    fprintf(stderr, "  size: %lldB\n", (llong)map->size);
-    fprintf(stderr, "  capacity: %u\n", map->capacity);
-    fprintf(stderr, "  bitmask: %u\n", map->bitmask);
-    fprintf(stderr, "  length: %u\n", map->length);
-#if HASH_DUPLICATE_KEYS
-    fprintf(stderr, "  arena:\n");
-    arena_print(map->arena_keys);
+    (void)map;
+    /* fprintf(stderr, "struct Hash%s {\n", QUOTE(HASH_TYPE)); */
+    /* fprintf(stderr, "  name: %s\n", map->name); */
+    /* fprintf(stderr, "  size: %lldB\n", (llong)map->size); */
+    /* fprintf(stderr, "  capacity: %u\n", map->capacity); */
+    /* fprintf(stderr, "  bitmask: 0x%X\n", map->bitmask); */
+    /* fprintf(stderr, "  length: %u\n", map->length); */
+/* #if HASH_DUPLICATE_KEYS */
+    /* fprintf(stderr, "  arena:\n"); */
+    /* arena_print(map->arena_keys); */
+/* #endif */
+#if DEBUGGING
+    /* fprintf(stderr, "  expected collisions: %u\n", hash_expected_collisions(map)); */
 #endif
-    fprintf(stderr, "  expected collisions: %u\n", hash_expected_collisions(map));
-    fprintf(stderr, "}\n");
+    /* fprintf(stderr, "}\n"); */
     return;
 }
 
@@ -783,6 +788,7 @@ hash_length(void *map) {
     return map2->length;
 }
 
+#if DEBUGGING
 uint32
 hash_expected_collisions(void *map) {
     CommonMap *map2 = map;
@@ -791,6 +797,7 @@ hash_expected_collisions(void *map) {
     double result = n - m*(1 - pow((m - 1) / m, n));
     return (uint32)(round(result));
 }
+#endif
 
 #endif /* HASH_H2 */
 

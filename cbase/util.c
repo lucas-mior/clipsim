@@ -41,6 +41,7 @@
 #include "base_macros.h"
 #include "assert.c"
 #include "memory.c"
+#include "utf8.c"
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_util 1
@@ -298,6 +299,34 @@ memcmp64(void *left, void *right, int64 size) {
         }
     }
     return memcmp(left, right, (size_t)size);
+}
+
+static int32
+random_ascii_string(char *buffer, int32 capacity, int32 min_len) {
+    int32 max_len = capacity - 1;
+    int32 len = min_len;
+    int32 range;
+
+    if (capacity <= 0) {
+        return 0;
+    }
+
+    if (len > max_len) {
+        len = max_len;
+    }
+
+    range = max_len - len + 1;
+    if (range > 1) {
+        len = len + (rand() % range);
+    }
+
+    for (int32 i = 0; i < len; i += 1) {
+        int32 ascii_val = 32 + (rand() % 95);
+        buffer[i] = (char)ascii_val;
+    }
+    buffer[len] = '\0';
+
+    return len;
 }
 
 #define X64(FUNC, TYPE) \
@@ -1539,6 +1568,14 @@ print_timings(char *file, int32 line, char *func,
     printf("\ntime elapsed %s:%d:%s\n", file, line, func);
     printf("%gs = %gus per item.\n", total_seconds, micros_per);
     return;
+}
+
+static double
+timediff(struct timespec t0, struct timespec t1) {
+    double t0_f = (double)t0.tv_sec + (double)t0.tv_nsec*1e-9;
+    double t1_f = (double)t1.tv_sec + (double)t1.tv_nsec*1e-9;
+    double t = t1_f - t0_f;
+    return t;
 }
 
 static void

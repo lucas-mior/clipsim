@@ -12,8 +12,15 @@
 #include "base_macros.h"
 #include "primitives.h"
 #include "rapidhash.h"
+#include "util.h"
 
 static int64 memory_page_size = 0;
+
+#if !defined(ALIGNMENT)
+#define ALIGNMENT 16
+#endif
+
+#define MEMORY_PADDING ((int32)ALIGNMENT)
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_memory 1
@@ -24,14 +31,22 @@ static int64 memory_page_size = 0;
 #if TESTING_memory
 #define DEBUGGING_MEMORY 1
 #define MEMORY_CHECK_USE_AFTER_FREE 1
-#endif
-
-#if !defined(MEMORY_LEAK_EVERYTHING_TO_AVOID_UB)
-#define MEMORY_LEAK_EVERYTHING_TO_AVOID_UB 1
+#define MEMORY_CHECK_DOUBLE_FREE 1
 #endif
 
 #if !defined(MEMORY_CHECK_USE_AFTER_FREE)
+// this option makes every pointer leak and makes things extremely slow
 #define MEMORY_CHECK_USE_AFTER_FREE 0
+#endif
+
+#if MEMORY_CHECK_USE_AFTER_FREE
+// we are already leaking, might as well check double free
+#define MEMORY_CHECK_DOUBLE_FREE 1
+#endif
+
+#if !defined(MEMORY_CHECK_DOUBLE_FREE)
+// this option makes every pointer leak
+#define MEMORY_CHECK_DOUBLE_FREE 1
 #endif
 
 #if !defined(DEBUGGING_MEMORY)
@@ -50,7 +65,7 @@ typedef struct DebugAllocInfo {
                         * and so on */
 } DebugAllocInfo;
 
-#define HASH_KEY_TYPE void *
+#define HASH_KEY_TYPE intptr_t
 #define HASH_KEY_FIXED_LEN 1
 #define HASH_VALUE_TYPE DebugAllocInfo
 #define HASH_TYPE alloc_map
@@ -126,41 +141,41 @@ memory_check(void) {
     if (allocations) {
         for (uint32 i = 0; i < allocations->capacity; i += 1) {
             Bucket_alloc_map *bucket = &allocations->array[i];
+            DebugAllocInfo info;
             uchar *p;
-            int64 size;
 
             if (bucket->slot_state != HASH_SLOT_USED) {
                 continue;
             }
 
+            info = bucket->value;
             p = (uchar *)bucket->key;
-            size = bucket->value.size;
 
-            for (int32 j = 0; j < 8; j += 1) {
-                if (p[-8 + j] != 0xDC) {
-                    error_impl(bucket->value.file, bucket->value.line, bucket->value.func,
+            for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+                if (p[-MEMORY_PADDING + j] != 0xDC) {
+                    error_impl(info.file, info.line, info.func,
                                "Memory underflow detected (size %lld).\n",
-                               (llong)size);
+                               (llong)info.size);
                     fatal(EXIT_FAILURE);
                 }
             }
 
-            for (int32 j = 0; j < 8; j += 1) {
-                if (p[size + j] != 0xDC) {
-                    error_impl(bucket->value.file, bucket->value.line, bucket->value.func,
+            for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+                if (p[info.size + j] != 0xDC) {
+                    error_impl(info.file, info.line, info.func,
                                "Memory overflow detected (size %lld).\n",
-                               (llong)size);
+                               (llong)info.size);
                     fatal(EXIT_FAILURE);
                 }
             }
 
             if (MEMORY_CHECK_USE_AFTER_FREE
-                    && (bucket->value.reallocated == -1)) {
-                for (int64 j = 0; j < size; j += 1) {
+                    && (info.reallocated == -1)) {
+                for (int64 j = 0; j < info.size; j += 1) {
                     if (p[j] != 0xCD) {
-                        error_impl(bucket->value.file, bucket->value.line, bucket->value.func,
+                        error_impl(info.file, info.line, info.func,
                                    "Use after free detected (size %lld).\n",
-                                   (llong)size);
+                                   (llong)info.size);
                         fatal(EXIT_FAILURE);
                     }
                 }
@@ -183,31 +198,33 @@ malloc_debug(char *file, int32 line, char *func, int64 size, bool zero) {
 
     if (size <= 0) {
         error_impl(file, line, func,
-                   "Error: invalid size = %lld.\n", (llong)size);
+                   "Invalid allocation size = %lld.\n", (llong)size);
         fatal(EXIT_FAILURE);
     }
     if ((ullong)size >= (ullong)SIZE_MAX) {
         error_impl(file, line, func,
-                   "Error: Number (%lld) is bigger than SIZEMAX\n",
+                   "Allocation size (%lld) is bigger than SIZEMAX\n",
                    (llong)size);
         fatal(EXIT_FAILURE);
     }
 
-    base_p = xmalloc(size + 16, false);
+    base_p = xmalloc(size + 2 * MEMORY_PADDING, false);
     ptr = (uchar *)base_p;
 
-    for (int32 j = 0; j < 8; j += 1) {
+    for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
         ptr[j] = 0xDC;
     }
-    for (int32 j = 0; j < 8; j += 1) {
-        ptr[8 + size + j] = 0xDC;
+    for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+        ptr[MEMORY_PADDING + size + j] = 0xDC;
     }
 
-    p = ptr + 8;
+    p = ptr + MEMORY_PADDING;
     memset64(p, 0xCD, size);
 
     {
         DebugAllocInfo info;
+        intptr_t key = (intptr_t)p;
+
         info.size = size;
         info.file = file;
         info.line = line;
@@ -218,7 +235,7 @@ malloc_debug(char *file, int32 line, char *func, int64 size, bool zero) {
         if (allocations == NULL) {
             allocations = hash_create_alloc_map(1024, "DebugAllocations");
         }
-        hash_insert_alloc_map(allocations, &p, info);
+        hash_insert_alloc_map(allocations, &key, info);
         pthread_mutex_unlock(&allocations_mutex);
     }
 
@@ -253,7 +270,8 @@ realloc4(void *old, int64 old_capacity, int64 new_capacity, int64 obj_size) {
 
 static void *
 realloc_debug(char *file, int32 line, char *func,
-              void *old, int64 old_capacity, int64 new_capacity, int64 obj_size) {
+              void *old, int64 old_capacity, int64 new_capacity,
+              int64 obj_size) {
     int64 old_size;
     int64 new_size;
     void *p;
@@ -268,13 +286,18 @@ realloc_debug(char *file, int32 line, char *func,
 
     if (obj_size <= 0) {
         error_impl(file, line, func,
-                   "Error: invalid object size = %lld.\n", (llong)obj_size);
+                   "realloc: invalid object size = %lld.\n", (llong)obj_size);
         fatal(EXIT_FAILURE);
     }
-    if ((ullong)SIZE_MAX / (ullong)obj_size < (ullong)new_capacity) {
+    if (new_capacity < 0) {
         error_impl(file, line, func,
-                   "Error: Number (%lld) is bigger than SIZEMAX\n",
-                   (llong)obj_size);
+                   "realloc: invalid capacity = %lld.\n", (llong)new_capacity);
+        fatal(EXIT_FAILURE);
+    }
+    if (((ullong)SIZE_MAX / (ullong)obj_size) < (ullong)new_capacity) {
+        error_impl(file, line, func,
+                   "realloc: allocation size (%lld) is bigger than "
+                   "SIZEMAX\n", (llong)new_capacity);
         fatal(EXIT_FAILURE);
     }
 
@@ -283,6 +306,8 @@ realloc_debug(char *file, int32 line, char *func,
 
     {
         DebugAllocInfo info;
+        intptr_t p_key;
+
         info.size = new_size;
         info.file = file;
         info.line = line;
@@ -300,14 +325,19 @@ realloc_debug(char *file, int32 line, char *func,
         }
         if (old != NULL) {
             DebugAllocInfo old_info;
-            if (!hash_lookup_alloc_map(allocations, &old, &old_info)) {
+            intptr_t old_key = (intptr_t)old;
+
+            if (!hash_lookup_alloc_map(allocations, &old_key, &old_info)) {
                 error_impl(file, line, func,
                            "Tried to reallocate invalid pointer: %p.\n", old);
                 fatal(EXIT_FAILURE);
             }
             if (old_info.reallocated == -1) {
+                ASSERT(MEMORY_CHECK_DOUBLE_FREE);
                 error_impl(file, line, func,
-                           "Tried to reallocate freed pointer: %p.\n", old);
+                           "Tried to reallocate freed pointer.\n");
+                error_impl(old_info.file, old_info.line, old_info.func,
+                           "Freed here.\n");
                 fatal(EXIT_FAILURE);
             }
             if (old_info.size != old_size) {
@@ -319,20 +349,20 @@ realloc_debug(char *file, int32 line, char *func,
                 fatal(EXIT_FAILURE);
             }
 
-            for (int32 j = 0; j < 8; j += 1) {
-                if (((uchar *)old)[-8 + j] != 0xDC) {
+            for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+                if (((uchar *)old)[-MEMORY_PADDING + j] != 0xDC) {
                     error_impl(file, line, func,
-                               "Memory underflow detected before realloc in %p.\n", old);
+                               "Memory underflow detected before realloc.\n");
                     error_impl(old_info.file, old_info.line, old_info.func,
                                "Allocated here (old size = %lld bytes).\n",
                                (llong)old_size);
                     fatal(EXIT_FAILURE);
                 }
             }
-            for (int32 j = 0; j < 8; j += 1) {
+            for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
                 if (((uchar *)old)[old_size + j] != 0xDC) {
                     error_impl(file, line, func,
-                               "Memory overflow detected before realloc in %p.\n", old);
+                               "Memory overflow detected before realloc.\n");
                     error_impl(old_info.file, old_info.line, old_info.func,
                                "Allocated here (old size = %lld bytes).\n",
                                (llong)old_size);
@@ -341,22 +371,48 @@ realloc_debug(char *file, int32 line, char *func,
             }
 
             info.reallocated = old_info.reallocated + 1;
-            hash_remove_alloc_map(allocations, &old);
+            hash_remove_alloc_map(allocations, &old_key);
+
+            if (MEMORY_CHECK_DOUBLE_FREE || MEMORY_CHECK_USE_AFTER_FREE) {
+                int64 copy_size = old_size;
+                base_p = xmalloc(new_size + 2 * MEMORY_PADDING, false);
+
+                if (new_size < old_size) {
+                    copy_size = new_size;
+                }
+                if (copy_size > 0) {
+                    memcpy64((uchar *)base_p + MEMORY_PADDING, old, copy_size);
+                }
+
+                old_info.file = file;
+                old_info.line = line;
+                old_info.func = func;
+                old_info.reallocated = -1;
+                hash_insert_alloc_map(allocations, &old_key, old_info);
+                if (MEMORY_CHECK_USE_AFTER_FREE) {
+                    memset64(old, 0xCD, old_info.size);
+                }
+            } else {
+                old_base = ((uchar *)old - MEMORY_PADDING);
+                base_p = xrealloc(old_base, new_size + 2 * MEMORY_PADDING);
+            }
+        } else {
+            old_base = NULL;
+            base_p = xrealloc(old_base, new_size + 2 * MEMORY_PADDING);
         }
 
-        old_base = old ? ((uchar *)old - 8) : NULL;
-        base_p = xrealloc(old_base, new_size + 16);
         ptr = (uchar *)base_p;
 
-        for (int32 j = 0; j < 8; j += 1) {
+        for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
             ptr[j] = 0xDC;
         }
-        for (int32 j = 0; j < 8; j += 1) {
-            ptr[8 + new_size + j] = 0xDC;
+        for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+            ptr[MEMORY_PADDING + new_size + j] = 0xDC;
         }
 
-        p = ptr + 8;
-        hash_insert_alloc_map(allocations, &p, info);
+        p = ptr + MEMORY_PADDING;
+        p_key = (intptr_t)p;
+        hash_insert_alloc_map(allocations, &p_key, info);
 
         pthread_mutex_unlock(&allocations_mutex);
     }
@@ -372,21 +428,47 @@ realloc_flex_debug(char *file, int32 line, char *func,
     void *old_base;
     void *base_p;
     uchar *ptr;
-    int64 total_size = struct_size + new_capacity*obj_size;
-    int64 old_size = struct_size + old_capacity*obj_size;
+    int64 total_size;
+    int64 old_size;
+    (void)old_capacity;
 
     if (RUNNING_ON_VALGRIND) {
-        return realloc(old, (size_t)total_size);
+        return realloc(old, (size_t)(struct_size + new_capacity*obj_size));
     }
 
+    if (obj_size <= 0) {
+        error_impl(file, line, func,
+                   "Invalid object size = %lld.\n", (llong)obj_size);
+        fatal(EXIT_FAILURE);
+    }
+    if (struct_size < 0) {
+        error_impl(file, line, func,
+                   "Invalid struct size = %lld.\n", (llong)struct_size);
+        fatal(EXIT_FAILURE);
+    }
     if (new_capacity <= 0) {
         error_impl(file, line, func,
-                   "Error: invalid new capacity = %lld.\n", (llong)new_capacity);
+                   "Invalid new capacity = %lld.\n", (llong)new_capacity);
+        fatal(EXIT_FAILURE);
+    }
+    if (((ullong)SIZE_MAX / (ullong)obj_size) < (ullong)new_capacity) {
+        error_impl(file, line, func,
+                   "Flex allocation capacity overflows SIZEMAX.\n");
+        fatal(EXIT_FAILURE);
+    }
+    if (((ullong)SIZE_MAX - (ullong)struct_size) <
+        (ullong)(new_capacity * obj_size)) {
+        error_impl(file, line, func,
+                   "Total flex allocation size overflows SIZEMAX.\n");
         fatal(EXIT_FAILURE);
     }
 
+    total_size = struct_size + new_capacity*obj_size;
+    old_size = struct_size + old_capacity*obj_size;
+
     {
         DebugAllocInfo info;
+        intptr_t p_key;
 
         info.size = total_size;
         info.file = file;
@@ -405,14 +487,19 @@ realloc_flex_debug(char *file, int32 line, char *func,
         }
         if (old != NULL) {
             DebugAllocInfo old_info;
-            if (!hash_lookup_alloc_map(allocations, &old, &old_info)) {
+            intptr_t old_key = (intptr_t)old;
+
+            if (!hash_lookup_alloc_map(allocations, &old_key, &old_info)) {
                 error_impl(file, line, func,
                            "Tried to reallocate invalid pointer: %p.\n", old);
                 fatal(EXIT_FAILURE);
             }
             if (old_info.reallocated == -1) {
+                ASSERT(MEMORY_CHECK_DOUBLE_FREE);
                 error_impl(file, line, func,
-                           "Tried to reallocate freed pointer: %p.\n", old);
+                           "Tried to reallocate freed pointer.\n");
+                error_impl(old_info.file, old_info.line, old_info.func,
+                           "Freed here.\n");
                 fatal(EXIT_FAILURE);
             }
             if (old_info.size != old_size) {
@@ -424,20 +511,20 @@ realloc_flex_debug(char *file, int32 line, char *func,
                 fatal(EXIT_FAILURE);
             }
 
-            for (int32 j = 0; j < 8; j += 1) {
-                if (((uchar *)old)[-8 + j] != 0xDC) {
+            for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+                if (((uchar *)old)[-MEMORY_PADDING + j] != 0xDC) {
                     error_impl(file, line, func,
-                               "Memory underflow detected before realloc in %p.\n", old);
+                               "Memory underflow detected before realloc\n");
                     error_impl(old_info.file, old_info.line, old_info.func,
                                "Allocated here (old size = %lld bytes).\n",
                                (llong)old_size);
                     fatal(EXIT_FAILURE);
                 }
             }
-            for (int32 j = 0; j < 8; j += 1) {
+            for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
                 if (((uchar *)old)[old_size + j] != 0xDC) {
                     error_impl(file, line, func,
-                               "Memory overflow detected before realloc in %p.\n", old);
+                               "Memory overflow detected before realloc.\n");
                     error_impl(old_info.file, old_info.line, old_info.func,
                                "Allocated here (old size = %lld bytes).\n",
                                (llong)old_size);
@@ -446,22 +533,48 @@ realloc_flex_debug(char *file, int32 line, char *func,
             }
 
             info.reallocated = old_info.reallocated + 1;
-            hash_remove_alloc_map(allocations, &old);
+            hash_remove_alloc_map(allocations, &old_key);
+
+            if (MEMORY_CHECK_DOUBLE_FREE || MEMORY_CHECK_USE_AFTER_FREE) {
+                int64 copy_size = old_size;
+                base_p = xmalloc(total_size + 2 * MEMORY_PADDING, false);
+
+                if (total_size < old_size) {
+                    copy_size = total_size;
+                }
+                if (copy_size > 0) {
+                    memcpy64((uchar *)base_p + MEMORY_PADDING, old, copy_size);
+                }
+
+                old_info.file = file;
+                old_info.line = line;
+                old_info.func = func;
+                old_info.reallocated = -1;
+                hash_insert_alloc_map(allocations, &old_key, old_info);
+                if (MEMORY_CHECK_USE_AFTER_FREE) {
+                    memset64(old, 0xCD, old_info.size);
+                }
+            } else {
+                old_base = ((uchar *)old - MEMORY_PADDING);
+                base_p = xrealloc(old_base, total_size + 2 * MEMORY_PADDING);
+            }
+        } else {
+            old_base = NULL;
+            base_p = xrealloc(old_base, total_size + 2 * MEMORY_PADDING);
         }
 
-        old_base = old ? ((uchar *)old - 8) : NULL;
-        base_p = xrealloc(old_base, total_size + 16);
         ptr = (uchar *)base_p;
 
-        for (int32 j = 0; j < 8; j += 1) {
+        for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
             ptr[j] = 0xDC;
         }
-        for (int32 j = 0; j < 8; j += 1) {
-            ptr[8 + total_size + j] = 0xDC;
+        for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+            ptr[MEMORY_PADDING + total_size + j] = 0xDC;
         }
 
-        p = ptr + 8;
-        hash_insert_alloc_map(allocations, &p, info);
+        p = ptr + MEMORY_PADDING;
+        p_key = (intptr_t)p;
+        hash_insert_alloc_map(allocations, &p_key, info);
 
         pthread_mutex_unlock(&allocations_mutex);
     }
@@ -473,6 +586,7 @@ static void
 free_debug(char *file, int32 line, char *func,
            void *pointer, int64 size) {
     DebugAllocInfo info;
+    intptr_t pointer_key = (intptr_t)pointer;
 
     if (RUNNING_ON_VALGRIND) {
         free(pointer);
@@ -497,18 +611,20 @@ free_debug(char *file, int32 line, char *func,
                    "Called free without having called malloc or realloc.\n");
         fatal(EXIT_FAILURE);
     }
-    if (hash_lookup_alloc_map(allocations, &pointer, &info)) {
+    if (hash_lookup_alloc_map(allocations, &pointer_key, &info)) {
         uchar *ptr;
 
         if (info.reallocated == -1) {
-            error_impl(file, line, func,
-                       "Error: double free of pointer %p.\n", pointer);
+            ASSERT(MEMORY_CHECK_DOUBLE_FREE);
+            error_impl(file, line, func, "Double free.\n");
+            error_impl(info.file, info.line, info.func,
+                       "Freed here.\n");
             fatal(EXIT_FAILURE);
         }
         if (info.size != size) {
             error_impl(file, line, func,
-                       "Error: size mismatch freeing %p. Expected %lld, got %lld.\n",
-                       pointer, (llong)info.size, (llong)size);
+                       "Allocation size mismatch: Expected %lld, got %lld.\n",
+                       (llong)info.size, (llong)size);
             error_impl(info.file, info.line, info.func,
                        "Memory was allocated here. (reallocated = %d)\n",
                        info.reallocated);
@@ -517,17 +633,17 @@ free_debug(char *file, int32 line, char *func,
 
         ptr = (uchar *)pointer;
 
-        for (int32 j = 0; j < 8; j += 1) {
-            if (ptr[-8 + j] != 0xDC) {
+        for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+            if (ptr[-MEMORY_PADDING + j] != 0xDC) {
                 error_impl(info.file, info.line, info.func,
-                           "Memory underflow detected during free of %p.\n", pointer);
+                           "Memory underflow detected during free.\n");
                 fatal(EXIT_FAILURE);
             }
         }
-        for (int32 j = 0; j < 8; j += 1) {
+        for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
             if (ptr[size + j] != 0xDC) {
                 error_impl(info.file, info.line, info.func,
-                           "Memory overflow detected during free of %p.\n", pointer);
+                           "Memory overflow detected during free.\n");
                 fatal(EXIT_FAILURE);
             }
         }
@@ -536,22 +652,15 @@ free_debug(char *file, int32 line, char *func,
         info.line = line;
         info.func = func;
         info.reallocated = -1;
-        hash_remove_alloc_map(allocations, &pointer);
-        hash_insert_alloc_map(allocations, &pointer, info);
+        hash_remove_alloc_map(allocations, &pointer_key);
         
-        if (MEMORY_CHECK_USE_AFTER_FREE) {
-            memset64(pointer, 0xCD, size);
-        } else {
-            // Note: it is undefined behaviour to use a pointer value whose
-            // object it points to has been freed.
-            // How to avoid memory leaks in this case?
-            // I guess the answer is praying that the compiler
-            // does not explore this UB when optimizations are disabled.
-            // The same is true of realloc, but currently the old pointers are
-            // not kept in the allocations hash table so its not a problem.
-            if (!MEMORY_LEAK_EVERYTHING_TO_AVOID_UB) {
-                free(pointer);
+        if (MEMORY_CHECK_DOUBLE_FREE || MEMORY_CHECK_USE_AFTER_FREE) {
+            hash_insert_alloc_map(allocations, &pointer_key, info);
+            if (MEMORY_CHECK_USE_AFTER_FREE) {
+                 memset64(pointer, 0xCD, size);
             }
+        } else {
+            free(ptr - MEMORY_PADDING);
         }
     } else {
         error_impl(file, line, func,
@@ -585,7 +694,8 @@ free2_(void *pointer, int64 size) {
                   old, old_capacity, new_capacity, obj_size)
 #define realloc_flex(old, old_capacity, new_capacity, obj_size) \
     realloc_flex_debug(__FILE__, __LINE__, (char *)__func__, \
-                       old, SIZEOF(*old), old_capacity, new_capacity, obj_size)
+                       old, SIZEOF(*old), old_capacity, \
+                       new_capacity, obj_size)
 #define free2(pointer, size) \
     free_debug(__FILE__, __LINE__, (char *)__func__, \
                pointer, size)
@@ -743,16 +853,24 @@ typedef struct TestFlex {
     int64 items[];
 } TestFlex;
 
+typedef struct TestString {
+    char *s;
+    int32 len;
+} TestString;
+
 #define ASSERT_EXPECTED_FATAL(BLOCK) do { \
     caught_expected_fail = false; \
     if (sigsetjmp(test_jump_env, 1) == 0) { \
         BLOCK; \
-        fprintf(stderr, "Error: Code block at %s:%d did not fail as expected.\n", \
+        fprintf(stderr, \
+                "Error: Code block at %s:%d " \
+                "did not fail as expected.\n", \
                 __FILE__, __LINE__); \
         exit(EXIT_FAILURE); \
     } \
     ASSERT(caught_expected_fail); \
-    printf("Successfully caught expected failure at %s:%d\n", __FILE__, __LINE__); \
+    printf("Successfully caught expected failure at %s:%d\n", \
+           __FILE__, __LINE__); \
 } while (0)
 
 int main(void) {
@@ -865,7 +983,77 @@ int main(void) {
         free2(mem_dup, len);
     }
 
+    {
+        int32 iterations = 2500;
+        void **ptrs = malloc2(iterations * SIZEOF(void *));
+
+        printf("\n--- Starting High-Volume Stress Tests ---\n");
+
+        for (int32 i = 0; i < iterations; i += 1) {
+            ptrs[i] = malloc2(1 * SIZEOF(int64));
+            ((int64 *)ptrs[i])[0] = (int64)i;
+        }
+        memory_check();
+
+        for (int32 i = 0; i < iterations; i += 1) {
+            ptrs[i] = realloc2(ptrs[i], 1, 2, SIZEOF(int64));
+            ASSERT(((int64 *)ptrs[i])[0] == (int64)i);
+            ((int64 *)ptrs[i])[1] = (int64)(i * 2);
+        }
+        memory_check();
+
+        for (int32 i = 0; i < iterations; i += 1) {
+            ASSERT(((int64 *)ptrs[i])[0] == (int64)i);
+            ASSERT(((int64 *)ptrs[i])[1] == (int64)(i * 2));
+            free2(ptrs[i], 2 * SIZEOF(int64));
+        }
+        free2(ptrs, iterations * SIZEOF(void *));
+        printf("High-volume tracking and validation successful.\n");
+    }
+
+    {
+        int32 num_strings = 2000;
+        TestString *v_strings;
+
+        printf("Starting High-Volume Variable String Stress Tests.\n");
+        v_strings = malloc2(num_strings * SIZEOF(*v_strings));
+
+        srand(1337);
+        for (int32 i = 0; i < num_strings; i += 1) {
+            char stack_buf[128];
+            int32 v_len = random_ascii_string(stack_buf,
+                                              SIZEOF(stack_buf), 8);
+
+            v_strings[i].len = v_len;
+            v_strings[i].s = malloc2(v_len + 1);
+            memcpy64(v_strings[i].s, stack_buf, v_len + 1);
+        }
+        memory_check();
+
+        for (int32 i = 0; i < num_strings; i += 1) {
+            int32 old_len = v_strings[i].len;
+            int32 new_len = old_len + 16;
+
+            v_strings[i].s = realloc2(v_strings[i].s, old_len + 1,
+                                      new_len + 1, SIZEOF(char));
+            for (int32 j = old_len; j < new_len; j += 1) {
+                v_strings[i].s[j] = 'A';
+            }
+            v_strings[i].s[new_len] = '\0';
+            v_strings[i].len = new_len;
+        }
+        memory_check();
+
+        for (int32 i = 0; i < num_strings; i += 1) {
+            free2(v_strings[i].s, v_strings[i].len + 1);
+        }
+        free2(v_strings, num_strings * SIZEOF(*v_strings));
+        printf("High-volume variable string tests successful.\n");
+    }
+
 #if OS_LINUX
+    // this block has to execute last,
+    // because it leaves garbage still to be detected
     printf("\n--- Starting Failure Case Tests ---\n");
 
     {
@@ -883,7 +1071,7 @@ int main(void) {
             free2(p, size + 1); // Incorrect size
         });
         pthread_mutex_unlock(&allocations_mutex);
-        free(p - 8); 
+        free(p - MEMORY_PADDING); 
     }
 
     {
@@ -894,7 +1082,7 @@ int main(void) {
             free2(p, size); // Double free
         });
         pthread_mutex_unlock(&allocations_mutex);
-        free(p - 8);
+        free(p - MEMORY_PADDING);
     }
 
     {
@@ -937,11 +1125,11 @@ int main(void) {
         int64 size = 64;
         uchar *p = malloc2(size);
         ASSERT_EXPECTED_FATAL({
-            p[-8] = 0x00; // Corrupt underflow canary
+            p[-MEMORY_PADDING] = 0x00; // Corrupt underflow canary
             memory_check();
         });
         pthread_mutex_unlock(&allocations_mutex);
-        free(p - 8); 
+        free(p - MEMORY_PADDING); 
     }
 
     {
@@ -952,7 +1140,7 @@ int main(void) {
             memory_check();
         });
         pthread_mutex_unlock(&allocations_mutex);
-        free(p - 8); 
+        free(p - MEMORY_PADDING); 
     }
 
     {
@@ -963,7 +1151,7 @@ int main(void) {
             free2(p, size);
         });
         pthread_mutex_unlock(&allocations_mutex);
-        free(p - 8);
+        free(p - MEMORY_PADDING);
     }
 
     {
@@ -974,7 +1162,7 @@ int main(void) {
             free2(p, size);
         });
         pthread_mutex_unlock(&allocations_mutex);
-        free(p - 8);
+        free(p - MEMORY_PADDING);
     }
 
     {
@@ -986,7 +1174,7 @@ int main(void) {
             memory_check();
         });
         pthread_mutex_unlock(&allocations_mutex);
-        free(p - 8);
+        free(p - MEMORY_PADDING);
     }
 #endif
 
