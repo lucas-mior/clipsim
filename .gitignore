@@ -14,3 +14,4 @@ clipsim-git
 temp_delete_me
 *.callgrind
 tests/incr_owner
+tests/unresponsive_owner
