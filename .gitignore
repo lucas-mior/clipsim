@@ -13,3 +13,4 @@ clipsim-git
 .SRCINFO
 temp_delete_me
 *.callgrind
+tests/incr_owner
