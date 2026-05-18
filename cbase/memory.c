@@ -717,11 +717,10 @@ static void *
 xmmap_commit(int64 *size) {
     void *p;
 
-    if (RUNNING_ON_VALGRIND) {
-        p = malloc2(*size);
-        memset64(p, 0, *size);
-        return p;
-    }
+    /* if (RUNNING_ON_VALGRIND) { */
+    /*     p = malloc2(*size); */
+    /*     return p; */
+    /* } */
     if (memory_page_size == 0) {
         long aux;
         if ((aux = sysconf(_SC_PAGESIZE)) <= 0) {
@@ -754,10 +753,10 @@ xmmap_commit(int64 *size) {
 }
 static void
 xmunmap(void *p, int64 size) {
-    if (RUNNING_ON_VALGRIND) {
-        free2(p, size);
-        return;
-    }
+    /* if (RUNNING_ON_VALGRIND) { */
+    /*     free2(p, size); */
+    /*     return; */
+    /* } */
     if (munmap(p, (size_t)size) < 0) {
         error("Error in munmap(%p, %lld): %s.\n",
               p, (llong)size, strerror(errno));

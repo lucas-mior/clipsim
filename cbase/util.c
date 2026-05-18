@@ -1572,10 +1572,10 @@ print_timings(char *file, int32 line, char *func,
 
 static double
 timediff(struct timespec t0, struct timespec t1) {
-    double t0_f = (double)t0.tv_sec + (double)t0.tv_nsec*1e-9;
-    double t1_f = (double)t1.tv_sec + (double)t1.tv_nsec*1e-9;
-    double t = t1_f - t0_f;
-    return t;
+    llong sec = t1.tv_sec - t0.tv_sec;
+    llong nsec = t1.tv_nsec - t0.tv_nsec;
+    double diff = (double)sec + (double)nsec*1e-9;
+    return diff;
 }
 
 static void
