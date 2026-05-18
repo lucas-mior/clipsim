@@ -33,8 +33,6 @@
 #define TESTING_clipboard 0
 #endif
 
-#define CHECK_TARGET_MAX_EVENTS 10
-
 static char *event_names[LASTEvent] = {
     "ProtocolError",  "ProtocolReply",  "KeyPress",         "KeyRelease",
     "ButtonPress",    "ButtonRelease",  "MotionNotify",     "EnterNotify",
