@@ -52,6 +52,8 @@ static Atom CLIPBOARD;
 static Atom XSEL_DATA;
 static Atom INCR;
 static Atom UTF8_STRING;
+static Atom STRING;
+static Atom TEXT;
 static Atom image_png;
 static Atom TARGETS;
 
@@ -112,6 +114,8 @@ clipboard_daemon_watch(void) {
     XSEL_DATA = XInternAtom(display, "XSEL_DATA", False);
     INCR = XInternAtom(display, "INCR", False);
     UTF8_STRING = XInternAtom(display, "UTF8_STRING", False);
+    STRING = XInternAtom(display, "STRING", False);
+    TEXT = XInternAtom(display, "TEXT", False);
     image_png = XInternAtom(display, "image/png", False);
     TARGETS = XInternAtom(display, "TARGETS", False);
 
@@ -223,6 +227,42 @@ clipboard_get_clipboard(char **save, ulong *length, bool *incr) {
 
         *length = nitems_return;
         return CLIPBOARD_IMAGE;
+    }
+    if (clipboard_check_target(STRING)) {
+        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX / 4, False,
+                           AnyPropertyType, &actual_type_return,
+                           &actual_format_return, &nitems_return,
+                           &bytes_after_return, (uchar **)save);
+        if (actual_type_return == INCR) {
+            XFree(*save);
+            clipboard_incremental_case(save, length);
+            if ((*length <= 0) || (*length >= ENTRY_MAX_LENGTH)) {
+                return CLIPBOARD_LARGE;
+            }
+            *incr = true;
+            return CLIPBOARD_TEXT;
+        }
+
+        *length = nitems_return;
+        return CLIPBOARD_TEXT;
+    }
+    if (clipboard_check_target(TEXT)) {
+        XGetWindowProperty(display, window, XSEL_DATA, 0, LONG_MAX / 4, False,
+                           AnyPropertyType, &actual_type_return,
+                           &actual_format_return, &nitems_return,
+                           &bytes_after_return, (uchar **)save);
+        if (actual_type_return == INCR) {
+            XFree(*save);
+            clipboard_incremental_case(save, length);
+            if ((*length <= 0) || (*length >= ENTRY_MAX_LENGTH)) {
+                return CLIPBOARD_LARGE;
+            }
+            *incr = true;
+            return CLIPBOARD_TEXT;
+        }
+
+        *length = nitems_return;
+        return CLIPBOARD_TEXT;
     }
     if (clipboard_check_target(TARGETS)) {
         return CLIPBOARD_OTHER;
