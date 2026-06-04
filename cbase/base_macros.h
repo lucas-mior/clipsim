@@ -6,10 +6,12 @@
 #define QUOTE_(x) #x
 #define QUOTE(x) QUOTE_(x)
 
-#define CAT_(a, b)     a##b
-#define CAT3_(a, b, c) a##b##c
-#define CAT(a, b)      CAT_(a, b)
-#define CAT3(a, b, c)  CAT3_(a, b, c)
+#define CAT_(a, b)        a ## b
+#define CAT3_(a, b, c)    a ## b ## c
+#define CAT4_(a, b, c, d) a ## b ## c ## d
+#define CAT(a, b)         CAT_(a, b)
+#define CAT3(a, b, c)     CAT3_(a, b, c)
+#define CAT4(a, b, c, d)  CAT4_(a, b, c, d)
 
 #define NUM_ARGS_(_1, _2, _3, _4, _5, _6, _7, _8, n, ...) n
 #define NUM_ARGS(...) NUM_ARGS_(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1, x)
@@ -24,10 +26,18 @@
 #endif
 
 #define RESET     "\x1b[0m"
-#define RED(S)    "\x1b[31m"   S RESET
-#define GREEN(S)  "\x1b[32m"   S RESET
-#define YELLOW(S) "\x1b[33m"   S RESET
-#define BLUE(S)   "\x1b[1;34m" S RESET
+
+#define RED(S)    "\x1b[0;31m"  S RESET
+#define GREEN(S)  "\x1b[0;32m"  S RESET
+#define YELLOW(S) "\x1b[0;33m"  S RESET
+#define BLUE(S)   "\x1b[0;34m"  S RESET
+#define CYAN(S)   "\x1b[0;35m"  S RESET
+
+#define BRED(S)    "\x1b[1;31m" S RESET
+#define BGREEN(S)  "\x1b[1;32m" S RESET
+#define BYELLOW(S) "\x1b[1;33m" S RESET
+#define BBLUE(S)   "\x1b[1;34m" S RESET
+#define BCYAN(S)   "\x1b[1;35m" S RESET
 
 #define SIZEKB(X) ((int64)(X)*1024ll)
 #define SIZEMB(X) ((int64)(X)*1024ll*1024ll)
@@ -103,6 +113,12 @@ _Generic((SIZE), \
 
 #if !defined(MAP_POPULATE)
 #define MAP_POPULATE 0
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define UNUSED __attribute__((unused))
+#else
+#define UNUSED
 #endif
 
 #endif /* BASE_MACROS_H */

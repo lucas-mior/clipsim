@@ -22,7 +22,10 @@
 #define OS_BSD 0
 #define OS_WINDOWS 1
 #else
-#error "Unsupported OS.\n"
+#define OS_LINUX 0
+#define OS_MAC 0
+#define OS_BSD 0
+#define OS_WINDOWS 0
 #endif
 
 #define OS_UNIX (OS_LINUX || OS_MAC || OS_BSD)

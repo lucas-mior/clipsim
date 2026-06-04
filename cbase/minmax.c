@@ -270,6 +270,8 @@ minmax_functions_sink(void) {
 
 #if TESTING_minmax
 
+#include "util.c"
+
 int
 main(void) {
     {
@@ -282,54 +284,54 @@ main(void) {
         ASSERT_EQUAL(min11, 1);
         ASSERT_EQUAL(max11, 1);
         ASSERT_EQUAL(max01, 1);
-    }{
+    } {
         int a = 1;
         int b = 1;
         long min = MIN(a, b);
         long max = MAX(a, b);
         ASSERT_EQUAL(min, a);
         ASSERT_EQUAL(max, a);
-    }{
+    } {
         int a = 1;
         uint b = 2;
         long min = MIN(a, b);
         long max = MAX(a, b);
         ASSERT_EQUAL(min, a);
         ASSERT_EQUAL(max, b);
-    }{
+    } {
         long a = -1;
         ulong b = 0;
         ldouble min = MIN(a, b);
         ldouble max = MAX(a, b);
         ASSERT_EQUAL(min, a);
         ASSERT_EQUAL(max, b);
-    }{
+    } {
         long a = MINOF(a);
         ulong b = MAXOF(b);
         ldouble min = MIN(a, b);
         ullong max = (ullong)MAX(a, b);
         ASSERT_EQUAL((long)min, a);
         ASSERT_EQUAL(max, b);
-    }{
+    } {
         ulong a = MINOF(a);
         long b = MAXOF(b);
         long min = MIN(a, b);
         long max = MAX(a, b);
         ASSERT_EQUAL(min, a);
         ASSERT_EQUAL(max, b);
-    }{
+    } {
         long a = -1;
         long min = MIN(a, 0);
         long max = MAX(a, 0);
         ASSERT_EQUAL(min, -1);
         ASSERT_EQUAL(max, 0);
-    }{
+    } {
         double a = 0.123;
         ldouble min = MIN(a, 0);
         ldouble max = MAX(a, 0);
         ASSERT_EQUAL(min, 0.0);
         ASSERT_EQUAL(max, a);
-    }{
+    } {
         int array[100];
         void *a = &array[0];
         void *b = &array[1];
