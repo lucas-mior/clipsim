@@ -50,6 +50,149 @@
 #include "primitives.h"
 #include "base_macros.h"
 
+#include <assert.h>
+#include <stdarg.h>
+#include <string.h>
+
+static int strlen2(char *string) {
+    return (int)strlen(string);
+}
+
+#if !defined(GENERIC_S_BSZ)
+#define GENERIC_S_BSZ 64
+#endif
+
+#if !defined(S_BSZ)
+#define S_BSZ GENERIC_S_BSZ
+#endif
+
+#if !defined(MACRO_NAME)
+#define MACRO_NAME(X) #X
+#endif
+#if !defined(MACRO_VALUE)
+#define MACRO_VALUE(X) MACRO_NAME(X)
+#endif
+
+static inline int
+fprint_0(FILE *restrict fp, ... /* strings, NULL */) {
+    int count = 0;
+    char *s;
+
+    va_list ap;
+    va_start(ap, fp);
+
+    while ((s = (char *)va_arg(ap, char *))) {
+        int64 slen;
+        if (fputs(s, fp) == EOF) {
+            va_end(ap);
+            return -1;
+        }
+
+        slen = strlen2(s);
+        if ((int64)INT_MAX - (int64)count < slen) {
+            count = INT_MAX;
+        } else {
+            count += slen;
+        }
+    }
+
+    va_end(ap);
+    return count;
+}
+
+static inline int
+snprint_0(char *restrict buf, int64 bufSize, ... /* strings, NULL */) {
+    va_list ap;
+    int64 remainingLen;
+    int64 requiredLen = 0;
+    char *dst = buf;
+    char *s;
+
+    if (bufSize) {
+        remainingLen = bufSize - 1;
+    } else {
+        remainingLen = 0;
+    }
+
+    va_start(ap, bufSize);
+
+    if (buf && bufSize) {
+        buf[0] = '\0';
+    }
+
+    while ((s = va_arg(ap, char *))) {
+        int64 sLen = strlen2(s);
+        requiredLen += sLen;
+
+        if (dst && remainingLen) {
+            int64 copyLen;
+            if (remainingLen < sLen) {
+                copyLen = remainingLen;
+            } else {
+                copyLen = sLen;
+            }
+            memcpy(dst, s, (size_t)copyLen);
+            dst += copyLen;
+            remainingLen -= copyLen;
+            *dst = '\0';
+        }
+    }
+
+    va_end(ap);
+    if (requiredLen > (int64)INT_MAX) {
+        return INT_MAX;
+    }
+    return (int)requiredLen;
+}
+
+/* Like snprintf but returns a pointer to the buffer. */
+static inline char *
+toString(char *restrict buf, int64 bufSize, char *restrict fmt, ...) {
+    va_list ap;
+
+    assert(buf);
+    assert(bufSize);
+    assert(fmt);
+
+    va_start(ap, fmt);
+    vsnprintf(buf, (size_t)bufSize, fmt, ap);
+    va_end(ap);
+    return buf;
+}
+
+#define fprint(FP, ...) fprint_0((FP), __VA_ARGS__, (char *)0)
+#define snprint(BUF, BSZ, ...) snprint_0((BUF), (BSZ), __VA_ARGS__, (char *)0)
+#define print0(...) fprint_0(stdout, __VA_ARGS__, (char *)0)
+
+#define S(X) toString((char[S_BSZ]){ "" }, S_BSZ, _Generic((X), \
+    void *: "%p", \
+    char *: "%s", \
+    bool: "%i", \
+    char: "%c", \
+    schar: "%hhi", \
+    short: "%hi", \
+    int: "%i", \
+    long: "%li", \
+    llong: "%lli", \
+    uchar: "%hhu", \
+    ushort: "%hu", \
+    uint: "%u", \
+    ulong: "%lu", \
+    ullong: "%llu", \
+    float: "%." MACRO_VALUE(FLT_DIG) "g", \
+    double: "%." MACRO_VALUE(DBL_DIG) "g", \
+    default: _Generic((X), \
+        ldouble: "%." MACRO_VALUE(LDBL_DIG) "Lg", \
+        default: "%p" \
+    ) \
+), (X))
+
+#define V(X) "", S(X), ""
+#define W(X) "", (X), ""
+#define SF(F, X) toString((char[S_BSZ]){ "" }, S_BSZ, (F), (X))
+#define VF(F, X) "", SF((F), (X)), ""
+
+
 #define TYPENAME(VAR)        \
 _Generic((VAR),              \
     void*:   "void*",        \
@@ -142,19 +285,45 @@ ldouble_from_char(char x) {
     TRAP();
     return (ldouble)0.0;
 }
-static ldouble ldouble_from_schar  (schar x)   { return (ldouble)x; }
-static ldouble ldouble_from_short  (short x)   { return (ldouble)x; }
-static ldouble ldouble_from_int    (int x)     { return (ldouble)x; }
-static ldouble ldouble_from_long   (long x)    { return (ldouble)x; }
-static ldouble ldouble_from_llong  (llong x)   { return (ldouble)x; }
-static ldouble ldouble_from_uchar  (uchar x)   { return (ldouble)x; }
-static ldouble ldouble_from_ushort (ushort x)  { return (ldouble)x; }
-static ldouble ldouble_from_uint   (uint x)    { return (ldouble)x; }
-static ldouble ldouble_from_ulong  (ulong x)   { return (ldouble)x; }
-static ldouble ldouble_from_ullong (ullong x)  { return (ldouble)x; }
-static ldouble ldouble_from_float  (float x)   { return (ldouble)x; }
-static ldouble ldouble_from_double (double x)  { return (ldouble)x; }
-static ldouble ldouble_from_ldouble(ldouble x) { return x;          }
+static ldouble ldouble_from_schar  (schar x)   {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_short  (short x)   {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_int    (int x)     {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_long   (long x)    {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_llong  (llong x)   {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_uchar  (uchar x)   {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_ushort (ushort x)  {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_uint   (uint x)    {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_ulong  (ulong x)   {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_ullong (ullong x)  {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_float  (float x)   {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_double (double x)  {
+    return (ldouble)x;
+}
+static ldouble ldouble_from_ldouble(ldouble x) {
+    return x;
+}
 
 enum Type {
     TYPE_VOIDP = 1,
@@ -202,22 +371,22 @@ _Generic((VAR), \
 )
 
 union Primitive {
-    void*   avoidp;
-    char*   acharp;
-    bool    abool;
-    char    achar;
-    schar   aschar;
-    short   ashort;
-    int     aint;
-    long    along;
-    llong   allong;
-    uchar   auchar;
-    ushort  aushort;
-    uint    auint;
-    ulong   aulong;
-    ullong  aullong;
-    float   afloat;
-    double  adouble;
+    void* avoidp;
+    char* acharp;
+    bool abool;
+    char achar;
+    schar aschar;
+    short ashort;
+    int aint;
+    long along;
+    llong allong;
+    uchar auchar;
+    ushort aushort;
+    uint auint;
+    ulong aulong;
+    ullong aullong;
+    float afloat;
+    double adouble;
     ldouble aldouble;
 };
 
@@ -314,26 +483,26 @@ void UNSUPPORTED_TYPE_FOR_LDOUBLE_GET_GENERIC(void);
 
 #define LDOUBLE_GET(x) \
 _Generic((x), \
-    void*:   ldouble_from_voidp,                          \
-    char*:   ldouble_from_charp,                          \
-    bool:    ldouble_from_bool,                           \
-    char:    ldouble_from_char,                           \
-    schar:   ldouble_from_schar,                          \
-    short:   ldouble_from_short,                          \
-    int:     ldouble_from_int,                            \
-    long:    ldouble_from_long,                           \
-    llong:   ldouble_from_llong,                          \
-    uchar:   ldouble_from_uchar,                          \
-    ushort:  ldouble_from_ushort,                         \
-    uint:    ldouble_from_uint,                           \
-    ulong:   ldouble_from_ulong,                          \
-    ullong:  ldouble_from_ullong,                         \
-    float:   ldouble_from_float,                          \
-    double:  ldouble_from_double,                         \
-    default: _Generic((x),                                \
-        ldouble: ldouble_from_ldouble,                    \
+    void*:   ldouble_from_voidp,                                  \
+    char*:   ldouble_from_charp,                                  \
+    bool:    ldouble_from_bool,                                   \
+    char:    ldouble_from_char,                                   \
+    schar:   ldouble_from_schar,                                  \
+    short:   ldouble_from_short,                                  \
+    int:     ldouble_from_int,                                    \
+    long:    ldouble_from_long,                                   \
+    llong:   ldouble_from_llong,                                  \
+    uchar:   ldouble_from_uchar,                                  \
+    ushort:  ldouble_from_ushort,                                 \
+    uint:    ldouble_from_uint,                                   \
+    ulong:   ldouble_from_ulong,                                  \
+    ullong:  ldouble_from_ullong,                                 \
+    float:   ldouble_from_float,                                  \
+    double:  ldouble_from_double,                                 \
+    default: _Generic((x),                                        \
+        ldouble: ldouble_from_ldouble,                            \
         default: UNSUPPORTED_TYPE_FOR_LDOUBLE_GET_GENERIC \
-    )                                                     \
+    )                                                             \
 )(x)
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -575,6 +744,74 @@ main(void) {
 
         PRINTLN(*var_string);
         PRINTLN(var_uint - (uint)var_int);
+    }
+
+    {
+        char a = 'i';
+        char *b = "able";
+        int c = 1;
+        ldouble d = (ldouble)8.0;
+        char *e = "a long string that won't fit in the compound literal buffer. "
+                  "You can print it using the W(X) macro.";
+        char buf[512];
+        char expected[512];
+        char small[8];
+        FILE *fp;
+        int n;
+
+        assert(!strcmp(S(a), "i"));
+        assert(!strcmp(S(b), "able"));
+        assert(!strcmp(S(c), "1"));
+        assert(!strcmp(S((uint)42), "42"));
+        assert(!strcmp(S((long)-42), "-42"));
+        assert(!strcmp(S((ullong)42), "42"));
+        assert(!strcmp(S(true), "1"));
+        assert(!strcmp(S(false), "0"));
+        assert(!strcmp(SF("0x%02x", 10), "0x0a"));
+
+        n = snprint(buf, sizeof(buf),
+                    "Now you can insert var" V(a) V(b) "s in situ:\n"
+                    V(c) " divided by " V(d) " equals " V(c/d) "\n");
+        assert(n == strlen2("Now you can insert variables in situ:\n"
+                            "1 divided by 8 equals 0.125\n"));
+
+
+        assert(!strcmp(buf, "Now you can insert variables in situ:\n"
+                            "1 divided by 8 equals 0.125\n"));
+
+        n = snprint(buf, sizeof(buf),
+                    "This is " W(e) " It's " V(strlen(e)) " characters long\n");
+        snprintf(expected, sizeof(expected),
+                 "This is %s It's %lu characters long\n",
+                 e, (ulong)strlen(e));
+        assert(n == strlen2(expected));
+        assert(!strcmp(buf, expected));
+
+        n = snprint(buf, sizeof(buf),
+                    "custom " VF("%04i", c) " " VF("%c", a) "\n");
+        assert(n == strlen2("custom 0001 i\n"));
+        assert(!strcmp(buf, "custom 0001 i\n"));
+
+        n = snprint(small, sizeof(small), "prefix-" W(e));
+        assert(n == (int)(strlen("prefix-") + strlen(e)));
+        assert(!strcmp(small, "prefix-"));
+
+        fp = tmpfile();
+        assert(fp);
+        n = fprint(fp, "file ", V(c), " ", VF("%04i", c), "\n");
+        assert(n == strlen2("file 1 0001\n"));
+        rewind(fp);
+        assert(fgets(buf, sizeof(buf), fp));
+        assert(!strcmp(buf, "file 1 0001\n"));
+        fclose(fp);
+
+        n = print0("print ", V(a), " ", W(b), "\n");
+        assert(n == strlen2("print i able\n"));
+        {
+            char buffer[16];
+            assert((print0(V(c), "\n")
+                    == snprintf(buffer, sizeof(buffer), "%d\n", c)));
+        }
     }
 }
 

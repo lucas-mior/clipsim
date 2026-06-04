@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#if !defined(SORT_MERGE_SUBSORTED_C)
-#define SORT_MERGE_SUBSORTED_C
+#if !defined(SORT_C)
+#define SORT_C
 
 #include <stdlib.h>
 
 #include "util.c"
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
-#define TESTING_sort_merge_subsorted 1
-#elif !defined(TESTING_sort_merge_subsorted)
-#define TESTING_sort_merge_subsorted 0
+#define TESTING_sort 1
+#elif !defined(TESTING_sort)
+#define TESTING_sort 0
 #endif
 
-#if !defined(SORT_MERGE_SUBSORTED_COMPARE)
-#define SORT_MERGE_SUBSORTED_COMPARE(A, B) compare_func(A, B)
+#if !defined(SORT_COMPARE)
+#define SORT_COMPARE(A, B) compare_func(A, B)
 #endif
 
 #ifndef MAX_NTHREADS
@@ -75,11 +75,11 @@ sort_heapify(HeapNode *heap, int32 p, int32 i,
             break;
         }
 
-        if (SORT_MERGE_SUBSORTED_COMPARE(heap[left].value, heap[smallest].value) < 0) {
+        if (SORT_COMPARE(heap[left].value, heap[smallest].value) < 0) {
             smallest = left;
         }
         if ((right < p)
-            && SORT_MERGE_SUBSORTED_COMPARE(heap[right].value, heap[smallest].value) < 0) {
+            && SORT_COMPARE(heap[right].value, heap[smallest].value) < 0) {
             smallest = right;
         }
 
@@ -157,7 +157,7 @@ sort_merge_subsorted(void *array, int32 n, int32 p, int64 obj_size,
     return;
 }
 
-#if 0 == TESTING_sort_merge_subsorted
+#if 0 == TESTING_sort
 static inline void
 sort_functions_sink(void) {
     (void)sort_shuffle;
@@ -167,7 +167,7 @@ sort_functions_sink(void) {
 }
 #endif
 
-#if TESTING_sort_merge_subsorted
+#if TESTING_sort
 
 #define MAXI 10000
 static int32 possibleN[] = {31, 32, 33, 50};
@@ -239,6 +239,6 @@ main(void) {
     exit(EXIT_SUCCESS);
 }
 
-#endif /* TESTING_sort_merge_subsorted */
+#endif /* TESTING_sort */
 
-#endif /* SORT_MERGE_SUBSORTED_C */
+#endif /* SORT_C */

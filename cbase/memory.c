@@ -144,7 +144,7 @@ memory_check(void) {
             DebugAllocInfo info;
             uchar *p;
 
-            if (bucket->slot_state != HASH_SLOT_USED) {
+            if (allocations->slot_states[i] != HASH_SLOT_USED) {
                 continue;
             }
 
@@ -196,7 +196,7 @@ malloc_debug(char *file, int32 line, char *func, int64 size, bool zero) {
         return malloc((size_t)size);
     }
 
-    if (size <= 0) {
+    if (size < 0) {
         error_impl(file, line, func,
                    "Invalid allocation size = %lld.\n", (llong)size);
         fatal(EXIT_FAILURE);
@@ -653,11 +653,11 @@ free_debug(char *file, int32 line, char *func,
         info.func = func;
         info.reallocated = -1;
         hash_remove_alloc_map(allocations, &pointer_key);
-        
+
         if (MEMORY_CHECK_DOUBLE_FREE || MEMORY_CHECK_USE_AFTER_FREE) {
             hash_insert_alloc_map(allocations, &pointer_key, info);
             if (MEMORY_CHECK_USE_AFTER_FREE) {
-                 memset64(pointer, 0xCD, size);
+                memset64(pointer, 0xCD, size);
             }
         } else {
             free(ptr - MEMORY_PADDING);
@@ -734,7 +734,7 @@ xmmap_commit(int64 *size) {
         if ((*size >= SIZEMB(2)) && FLAGS_HUGE_PAGES) {
             p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
                      MAP_ANONYMOUS | MAP_PRIVATE | MAP_POPULATE
-                         | FLAGS_HUGE_PAGES,
+                     | FLAGS_HUGE_PAGES,
                      -1, 0);
             if (p != MAP_FAILED) {
                 *size = ALIGN_POWER_OF_2(*size, SIZEMB(2));
@@ -764,7 +764,7 @@ xmunmap(void *p, int64 size) {
     }
     return;
 }
-#else
+#elif OS_WINDOWS
 static void *
 xmmap_commit(int64 *size) {
     void *p;
@@ -805,6 +805,20 @@ xmunmap(void *p, int64 size) {
     }
     return;
 }
+#else
+static void *
+xmmap_commit(int64 *size) {
+    void *p;
+
+    p = malloc2(*size);
+    memset64(p, 0, *size);
+    return p;
+}
+static void
+xmunmap(void *p, int64 size) {
+    free2(p, (int64)size);
+    return;
+}
 #endif
 
 static void *
@@ -828,6 +842,14 @@ xstrdup(char *string) {
 
     memcpy64(p, string, length);
     return p;
+}
+
+static char *
+xstrndup(char *s, int64 n) {
+    char *out = xmalloc(n + 1, 0);
+    memcpy64(out, s, n);
+    out[n] = 0;
+    return out;
 }
 
 #if TESTING_memory
@@ -1070,7 +1092,7 @@ int main(void) {
             free2(p, size + 1); // Incorrect size
         });
         pthread_mutex_unlock(&allocations_mutex);
-        free(p - MEMORY_PADDING); 
+        free(p - MEMORY_PADDING);
     }
 
     {
@@ -1128,7 +1150,7 @@ int main(void) {
             memory_check();
         });
         pthread_mutex_unlock(&allocations_mutex);
-        free(p - MEMORY_PADDING); 
+        free(p - MEMORY_PADDING);
     }
 
     {
@@ -1139,7 +1161,7 @@ int main(void) {
             memory_check();
         });
         pthread_mutex_unlock(&allocations_mutex);
-        free(p - MEMORY_PADDING); 
+        free(p - MEMORY_PADDING);
     }
 
     {

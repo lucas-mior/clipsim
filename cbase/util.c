@@ -54,7 +54,7 @@ static char *program;
 #else
 static char *program = __FILE__;
 #endif
-static int32 program_len __attribute__((unused));
+static int32 program_len UNUSED;
 
 static bool timezone_initialized = false;
 static time_t timezone_offset = 0;
@@ -413,7 +413,7 @@ static void
 qsort64(void *base, int64 n, int64 size,
         int (*compar)(void *, void *)) {
     int (*compar_consted)(const void *, const void *);
-    compar_consted = (int (*)(const void *, const void *))compar;
+    compar_consted = (int (*)(const void *, const void *)) compar;
     if (DEBUGGING) {
         if ((size_t)size >= (SIZE_MAX / (size_t)n)) {
             error("Error: Overflow (%lld*%lld)\n", (llong)size, (llong)n);
@@ -696,7 +696,7 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
     return 0;
 }
 
-#define XCLOSE_1(FD)       xclose(__FILE__, __LINE__, FD, #FD, NULL)
+#define XCLOSE_1(FD) xclose(__FILE__, __LINE__, FD, #FD, NULL)
 #define XCLOSE_2(FD, NAME) xclose(__FILE__, __LINE__, FD, #FD, NAME)
 #define XCLOSE(...) SELECT_ON_NUM_ARGS(XCLOSE_, __VA_ARGS__)
 
@@ -804,7 +804,7 @@ util_command(int argc, char **argv) {
 
     return (int)exit_code;
 }
-#else
+#elif OS_UNIX
 static int
 util_command(int argc, char **argv) {
     pid_t child;
@@ -1029,8 +1029,8 @@ util_copy_file_sync(char *destination, char *source) {
     }
 
     if ((destination_fd
-             = open(destination,
-                    O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
+         = open(destination,
+                O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
         error("Error opening %s for writing: %s.\n",
               destination, strerror(errno));
         XCLOSE(&source_fd, source);
@@ -1600,7 +1600,7 @@ catfile(int where, char *file) {
     return;
 }
 
-#if OS_UNIX
+#if !OS_WINDOWS
 
 #define XSIGNAL(NAME) [NAME] = #NAME
 static char *signal_names[] = {
@@ -1663,7 +1663,8 @@ xkill(pid_t pid, int signum) {
     }
     return;
 }
-#endif
+
+#endif /* !OS_WINDOWS */
 
 #if OS_UNIX
 static void
@@ -1696,7 +1697,9 @@ timezone_init(void) {
 
 #define GETENV(VAR) do { \
     if ((VAR = getenv(#VAR)) == NULL) { \
-        error(RED("%s") " is not defined.", #VAR); \
+        if (DEBUGGING) { \
+            error(RED("%s") " is not defined.", #VAR); \
+        } \
     } else { \
         int32 len = strlen32(VAR); \
         char *copy = malloc2(len + 1); \
@@ -1705,6 +1708,196 @@ timezone_init(void) {
     } \
 } while (0)
 
+static char *
+read_entire_file(char *path, int32 *file_len) {
+    FILE *fp;
+    int64 len;
+    char *data;
+    int64 r;
+
+    if ((fp = fopen(path, "rb")) == NULL) {
+        error("Error opening %s for reading: %s", path, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    if (fseek(fp, 0, SEEK_END)) {
+        error("Error seeking end of %s: %s.\n", path, strerror(errno));
+        fclose(fp);
+        fatal(EXIT_FAILURE);
+    }
+    if ((len = ftell(fp)) < 0) {
+        error("Error in ftell(%s): %s.\n", path, strerror(errno));
+        fclose(fp);
+        fatal(EXIT_FAILURE);
+    }
+    if (fseek(fp, 0, SEEK_SET)) {
+        error("Error rewinding %s: %s.\n", path, strerror(errno));
+        fclose(fp);
+        fatal(EXIT_FAILURE);
+    }
+
+    data = xmalloc(len + 1, 0);
+    if (len > 0) {
+        r = fread64(data, 1, len, fp);
+        if (r != len) {
+            error("Error reading %s: %s.\n", path, strerror(errno));
+            fatal(EXIT_FAILURE);
+        }
+    } else {
+        r = 0;
+    }
+    data[r] = '\0';
+    if (fclose(fp)) {
+        error("Error closing %s: %s.\n", path, strerror(errno));
+    }
+
+    if (r >= MAXOF(*file_len)) {
+        error("Only files up to 2GB are supported.\n");
+        fatal(EXIT_FAILURE);
+    }
+    *file_len = (int32)r;
+    return data;
+}
+
+static void
+write_entire_file(char *path, char *text, int64 text_len) {
+    FILE *f;
+
+    if ((f = fopen(path, "wb")) == NULL) {
+        error("Error opening %s for writing: %s", path, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+
+    if (fwrite64(text, 1, text_len, f) != text_len) {
+        error("Error writing %lld bytes to %s: %s.",
+              (llong)text_len, path, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    if (fclose(f)) {
+        error("Error closing %s: %s.", path, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+}
+
+void
+sb_reserve(StrBuilder *str_builder, int32 extra) {
+    int64 need = str_builder->len + extra + 1;
+    int32 cap;
+
+    if (need <= str_builder->cap) {
+        return;
+    }
+    if (need >= MAXOF(str_builder->cap)) {
+        error("StrBuilder only supports up to 2GB strings.\n");
+        fatal(EXIT_FAILURE);
+    }
+
+    if (str_builder->cap) {
+        cap = str_builder->cap;
+    } else {
+        cap = 256;
+    }
+    while (cap < need) {
+        cap *= 2;
+    }
+    str_builder->data = xrealloc(str_builder->data, cap);
+    str_builder->cap = cap;
+    return;
+}
+
+void
+sb_append(StrBuilder *str_builder, char *s, int32 n) {
+    sb_reserve(str_builder, n);
+    memcpy64(str_builder->data + str_builder->len, s, n);
+    str_builder->len += n;
+    str_builder->data[str_builder->len] = 0;
+}
+
+#define SB_APPEND_2(LONG, SHORT) \
+        sb_append(LONG, SHORT, strlen32(SHORT))
+#define SB_APPEND_3(LONG, SHORT, LEN) \
+        sb_append(LONG, SHORT, (int32)LEN)
+#define SB_APPEND(...) SELECT_ON_NUM_ARGS(SB_APPEND_, __VA_ARGS__)
+
+void
+sb_printf(StrBuilder *str_builder, char *fmt, ...) {
+    va_list ap;
+    va_list ap2;
+    int32 n;
+
+    va_start(ap, fmt);
+    va_copy(ap2, ap);
+    n = vsnprintf(NULL, 0, fmt, ap);
+    va_end(ap);
+
+    if (n < 0) {
+        va_end(ap2);
+        error("Error formatting \"%s\".", fmt);
+        fatal(EXIT_FAILURE);
+    }
+
+    sb_reserve(str_builder, n);
+    vsnprintf(str_builder->data + str_builder->len, (size_t)n + 1, fmt, ap2);
+    va_end(ap2);
+    str_builder->len += n;
+    return;
+}
+
+char *
+sb_steal(StrBuilder *str_builder) {
+    char *out;
+
+    if (!str_builder->data) {
+        return xstrdup("");
+    }
+
+    out = str_builder->data;
+    str_builder->data = NULL;
+    str_builder->len = 0;
+    str_builder->cap = 0;
+    return out;
+}
+
+static bool
+parse_option(char **parsed, char *arg, char *option_name) {
+    char name_equal[256];
+    char *tmp;
+    int32 length = SNPRINTF(name_equal, "%s=", option_name);
+    int32 arg_len;
+    if (arg == NULL) {
+        return false;
+    }
+    arg_len = strlen32(arg);
+
+    if ((tmp = BEGINS_WITH(arg, arg_len, name_equal, length))) {
+        *parsed = tmp;
+        return true;
+    }
+    return false;
+}
+
+static void
+warn(char *fmt, ...) {
+    va_list ap;
+
+    fprintf(stderr, "%s: "RED ("warning:"), program);
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    fprintf(stderr, "\n");
+
+    return;
+}
+
+static bool
+strequal(char *s1, char *s2) {
+    return !strcmp(s1, s2);
+}
+
+#define PARSE_OPTION(arg, name) \
+    if (parse_option(&name, arg, #name)) { \
+        continue; \
+    }
+
 #if 0 == TESTING_util
 static inline void
 util_functions_sink(void) {
@@ -1712,7 +1905,6 @@ util_functions_sink(void) {
     (void)util_segv_handler;
     (void)util_nthreads;
     (void)util_filename_from;
-    (void)util_command;
     (void)util_string_int32;
     (void)util_die_notify;
 #if OS_UNIX
@@ -2116,6 +2308,7 @@ main(int argc, char **argv) {
 
     (void)fwrite64;
     (void)fread64;
+    (void)program_len;
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
     PRINT_TIMINGS(1, t0, t1);

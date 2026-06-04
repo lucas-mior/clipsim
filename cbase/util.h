@@ -2,10 +2,11 @@
 #define UTIL_H
 
 #include <stdbool.h>
+#include <time.h>
 #include "primitives.h"
 
 static void __attribute__((format(printf, 4, 5)))
-    error_impl(char *file, int32 line, char *func, char *format, ...);
+error_impl(char *file, int32 line, char *func, char *format, ...);
 #define error(...) error_impl(__FILE__, __LINE__, (char *)__func__, __VA_ARGS__)
 static int32 snprintf2(char *buffer, int64 size, char *format, ...);
 
@@ -74,5 +75,19 @@ static ullong here_counter = 0;
 #define PRINT_TIMINGS_4(N, T0, T1, NAME) \
         print_timings(__FILE__, __LINE__, NAME, N, T0, T1)
 #define PRINT_TIMINGS(...) SELECT_ON_NUM_ARGS(PRINT_TIMINGS_, __VA_ARGS__)
+
+typedef struct StrBuilder {
+    char *data;
+    int32 len;
+    int32 cap;
+} StrBuilder;
+
+void sb_reserve(StrBuilder *sb, int32 extra);
+void sb_append(StrBuilder *sb, char *s, int32 n);
+void sb_printf(StrBuilder *sb, char *fmt, ...) __attribute__((format(printf, 2, 3)));
+char *sb_steal(StrBuilder *sb);
+
+static void *memmem64(void *haystack, int64 hay_len,
+                      void *needle, int64 needle_len);
 
 #endif /* UTIL_H */

@@ -1,7 +1,10 @@
 #if !defined(UTF8_C)
 #define UTF8_C
 
-#include "util.c"
+#include <stdlib.h>
+#include "util.h"
+#include "base_macros.h"
+
 #define UTF_INVALID 0xFFFD
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
@@ -28,7 +31,7 @@ utf8_decode_byte(char c, int32 *i) {
 
 static char
 utf8_encode_byte(uint32 u, int32 i) {
-    return (char)(utf8_byte[i] | (u & (uint32)~utf8_mask[i]));
+    return (char)(utf8_byte[i] | (u & (uint32) ~utf8_mask[i]));
 }
 
 static int32
@@ -168,6 +171,7 @@ random_utf8_string(char *buffer, int32 capacity, int32 min_len) {
 #include <string.h>
 
 #include "assert.c"
+#include "util.c"
 
 int
 main(void) {
@@ -208,7 +212,7 @@ main(void) {
 
     /* String Traversal Test with Multi-codepoint Emoji */
     {
-        /* 
+        /*
          * String contains:
          * 'A'      (U+0041)
          * 'ñ'      (U+00F1)
@@ -218,10 +222,10 @@ main(void) {
          */
         char *test_str = "Añ€😊🇩🇪";
         uint32 expected[] = {
-            0x41, 
-            0xF1, 
-            0x20AC, 
-            0x1F60A, 
+            0x41,
+            0xF1,
+            0x20AC,
+            0x1F60A,
             0x1F1E9, // Regional Indicator D
             0x1F1EA  // Regional Indicator E
         };
@@ -235,13 +239,13 @@ main(void) {
 
             len = utf8_decode(test_str + consumed_total, &u,
                               str_len - consumed_total);
-            
+
             ASSERT_EQUAL(u, expected[expected_idx]);
-            
+
             consumed_total += len;
             expected_idx += 1;
         }
-        
+
         ASSERT_EQUAL(expected_idx, 6);
         ASSERT_EQUAL(consumed_total, str_len);
     }

@@ -189,10 +189,112 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
 #endif
 }
 
+
+static int32
+CAT(ENUM_PREFIX_, token_equals)(char *token, int32 token_len, char *name) {
+    int32 name_len = strlen32(name);
+    if (token_len != name_len) {
+        return 0;
+    }
+    return strncmp(token, name, (size_t)token_len) == 0;
+}
+
+static int32
+CAT(ENUM_PREFIX_, is_ident_char)(char c) {
+    return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+            || (c >= '0' && c <= '9') || c == '_');
+}
+
+static enum ENUM_NAME
+CAT(ENUM_PREFIX_, parse)(char *string) {
+    uint32 result = 0;
+    char *p = string;
+
+    if (p == NULL) {
+        return (enum ENUM_NAME)0;
+    }
+
+    while (*p != '\0') {
+        char *token;
+        int32 token_len;
+        int32 matched = 0;
+
+        while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r'
+               || *p == '|' || *p == '(' || *p == ')') {
+            p += 1;
+        }
+        if (*p == '\0') {
+            break;
+        }
+
+        if (*p >= '0' && *p <= '9') {
+            char *end = NULL;
+            unsigned long value = strtoul(p, &end, 0);
+            result |= (uint32)value;
+            p = end;
+            continue;
+        }
+
+        token = p;
+        while (CAT(ENUM_PREFIX_, is_ident_char)(*p)) {
+            p += 1;
+        }
+        token_len = (int32)(p - token);
+        if (token_len <= 0) {
+            error2("Error: invalid enum parse character '%c' in %s.\n", *p,
+                   string);
+            TRAP();
+        }
+
+#if ENUM_BITFLAGS
+        if (CAT(ENUM_PREFIX_, token_equals)(token, token_len,
+                                            QUOTE(ENUM_PREFIX_) "NONE")
+            || CAT(ENUM_PREFIX_, token_equals)(token, token_len, "NONE")) {
+            matched = 1;
+        }
+#endif
+
+        if (CAT(ENUM_PREFIX_, token_equals)(token, token_len,
+                                            QUOTE(ENUM_PREFIX_) "LAST")
+            || CAT(ENUM_PREFIX_, token_equals)(token, token_len, "LAST")) {
+            result |= (uint32)CAT(ENUM_PREFIX_, LAST);
+            matched = 1;
+        }
+
+        #define XENUM_PARSE_ONE(e) \
+            if (!matched \
+                && (CAT(ENUM_PREFIX_, token_equals)(token, token_len, \
+                                                    QUOTE(ENUM_PREFIX_) #e) \
+                    || CAT(ENUM_PREFIX_, token_equals)(token, token_len, #e))) { \
+                result |= (uint32)CAT(ENUM_PREFIX_, e); \
+                matched = 1; \
+            }
+        #define XENUM_PARSE_1(e)    XENUM_PARSE_ONE(e)
+        #define XENUM_PARSE_2(e, v) XENUM_PARSE_ONE(e)
+        #define X(...)              SELECT_ON_NUM_ARGS(XENUM_PARSE_, __VA_ARGS__)
+
+        ENUM_FIELDS
+
+        #undef X
+        #undef XENUM_PARSE_1
+        #undef XENUM_PARSE_2
+        #undef XENUM_PARSE_ONE
+
+        if (!matched) {
+            error2("Error: unknown enum token '%.*s' while parsing %s.\n",
+                   token_len, token, string);
+            TRAP();
+        }
+    }
+
+    return (enum ENUM_NAME)result;
+}
+
 #if 0 == TESTING_xenums
 static inline void
 CAT(ENUM_PREFIX_, functions_sink)(void) {
     (void)CAT(ENUM_PREFIX_, str);
+    (void)CAT(ENUM_PREFIX_, parse);
     return;
 }
 #endif
@@ -235,6 +337,13 @@ main(void) {
 
     ASSERT_EQUAL(TEST_FLAGS_str(0), "NONE");
 
+    ASSERT_EQUAL((uint32)TEST_FLAGS_parse("TEST_FLAGS_READ"), TEST_FLAGS_READ);
+    ASSERT_EQUAL((uint32)TEST_FLAGS_parse("TEST_FLAGS_READ | TEST_FLAGS_EXEC"),
+                 TEST_FLAGS_READ | TEST_FLAGS_EXEC);
+    ASSERT_EQUAL((uint32)TEST_FLAGS_parse("READ|WRITE"),
+                 TEST_FLAGS_READ | TEST_FLAGS_WRITE);
+    ASSERT_EQUAL((uint32)TEST_FLAGS_parse("NONE"), TEST_FLAGS_NONE);
+
     s = TEST_NORMAL_str(TEST_NORMAL_APPLE);
     ASSERT_EQUAL(s, "TEST_NORMAL_APPLE");
 
@@ -243,6 +352,10 @@ main(void) {
 
     s = TEST_NORMAL_str(TEST_NORMAL_CHERRY);
     ASSERT_EQUAL(s, "TEST_NORMAL_CHERRY");
+
+    ASSERT_EQUAL((uint32)TEST_NORMAL_parse("TEST_NORMAL_APPLE"), TEST_NORMAL_APPLE);
+    ASSERT_EQUAL((uint32)TEST_NORMAL_parse("BANANA"), TEST_NORMAL_BANANA);
+    ASSERT_EQUAL((uint32)TEST_NORMAL_parse("TEST_NORMAL_CHERRY"), TEST_NORMAL_CHERRY);
 
     s = TEST_NORMAL_str(999);
     ASSERT_EQUAL(s, "Unknown value");

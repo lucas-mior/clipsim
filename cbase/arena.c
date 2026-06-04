@@ -30,9 +30,9 @@
 #endif
 
 #if OS_UNIX
+#include <pthread.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <pthread.h>
 #endif
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
@@ -41,32 +41,14 @@
 #define TESTING_arena 0
 #endif
 
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
 #include <assert.h>
-#include <time.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-typedef unsigned char uchar;
-typedef unsigned short ushort;
-typedef unsigned int uint;
-typedef unsigned long ulong;
-typedef unsigned long long ullong;
-
-typedef long long llong;
-typedef uintptr_t uintptr;
-
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 typedef struct Arena {
     char *name;
@@ -226,7 +208,7 @@ arena_free(Arena *arena) {
     }
     return true;
 }
-#else
+#elif OS_WINDOWS
 void *
 arena_allocate(int64 *size) {
     void *p;
@@ -241,9 +223,8 @@ arena_allocate(int64 *size) {
         }
     }
 
-    if ((p
-         = VirtualAlloc(NULL, (size_t)*size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE))
-        == NULL) {
+    if ((p = VirtualAlloc(NULL, (size_t)*size, MEM_COMMIT | MEM_RESERVE,
+                          PAGE_READWRITE)) == NULL) {
         error2("Error in VirtualAlloc(%lld): %lu.\n", (llong)*size,
                GetLastError());
         return NULL;
@@ -257,6 +238,20 @@ arena_free(Arena *arena) {
         error2("Error in VirtualFree(%p): %lu.\n", arena, GetLastError());
         return false;
     }
+    return true;
+}
+#else
+void *
+arena_allocate(int64 *size) {
+    void *p;
+    *size = ALIGN_POWER_OF_2(*size, 4096);
+    p = malloc(*size);
+    assert(p);
+    return p;
+}
+bool
+arena_free(Arena *arena) {
+    free(arena);
     return true;
 }
 #endif
@@ -341,7 +336,8 @@ xarena_push(Arena *arena, int64 size) {
     }
 
     if ((p = arena_push(arena, size)) == NULL) {
-        error2("Error allocating %lld bytes: %s.\n", (llong)size, arena_strerror(errno));
+        error2("Error allocating %lld bytes: %s.\n",
+               (llong)size, arena_strerror(errno));
         exit(EXIT_FAILURE);
     }
     return p;
@@ -496,8 +492,8 @@ arena_functions_sink(void) {
 #if TESTING_arena
 // flags: -lm
 #include "assert.c"
-#include <stdio.h>
 #include "util.c"
+#include <stdio.h>
 
 #if !defined(UTIL_C)
 static void
