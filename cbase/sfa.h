@@ -27,7 +27,7 @@
 
 static int32 snprintf2(char *buffer, int64 size, char *format, ...);
 
-static void
+static int32
 CAT(string_from_, SFA_NAME)(char *buffer, int32 size,
                             char *sep, SFA_TYPE *array, int32 array_length) {
     int32 n = 0;
@@ -39,9 +39,9 @@ CAT(string_from_, SFA_NAME)(char *buffer, int32 size,
     {
         int32 i = array_length - 1;
         int32 space = size - n;
-        snprintf2(buffer + n, space, SFA_FORMAT, array[i]);
+        n += snprintf2(buffer + n, space, SFA_FORMAT, array[i]);
     }
-    return;
+    return n;
 }
 
 #undef SFA_TYPE

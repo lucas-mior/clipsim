@@ -44,9 +44,9 @@
 #define ENUM_PREFIX_ TEST_FLAGS_
 #define ENUM_BITFLAGS 1
 #define ENUM_FIELDS \
-    X(READ) \
-    X(WRITE) \
-    X(EXEC)
+    X(TEST_FLAGS_READ) \
+    X(TEST_FLAGS_WRITE) \
+    X(TEST_FLAGS_EXEC)
 #endif
 
 #if !defined(__INCLUDE_LEVEL__) || (__INCLUDE_LEVEL__ >= 1) || (TESTING_xenums == 0)
@@ -66,8 +66,8 @@
 
 #if ENUM_BITFLAGS
 enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE {
-    #define X_IDX_1(e)    CAT3(ENUM_PREFIX_, e, _BIT_IDX),
-    #define X_IDX_2(e, v) CAT3(ENUM_PREFIX_, e, _BIT_IDX),
+    #define X_IDX_1(e)    CAT(e, _BIT_IDX),
+    #define X_IDX_2(e, v) CAT(e, _BIT_IDX),
     #define X(...)        SELECT_ON_NUM_ARGS(X_IDX_, __VA_ARGS__)
 
     ENUM_FIELDS
@@ -81,11 +81,11 @@ enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE {
 
 enum ENUM_NAME ENUM_UNDERLYING_TYPE {
 #if ENUM_BITFLAGS == 0
-    #define XENUM_DEF_1(e)    CAT(ENUM_PREFIX_, e),
-    #define XENUM_DEF_2(e, v) CAT(ENUM_PREFIX_, e) = v,
+    #define XENUM_DEF_1(e)    e,
+    #define XENUM_DEF_2(e, v) e = v,
 #else
-    #define XENUM_DEF_1(e)    CAT(ENUM_PREFIX_, e) = 1 << CAT3(ENUM_PREFIX_, e, _BIT_IDX),
-    #define XENUM_DEF_2(e, v) CAT(ENUM_PREFIX_, e) = v,
+    #define XENUM_DEF_1(e)    e = 1 << CAT(e, _BIT_IDX),
+    #define XENUM_DEF_2(e, v) e = v,
 #endif
     #define X(...)            SELECT_ON_NUM_ARGS(XENUM_DEF_, __VA_ARGS__)
 
@@ -110,10 +110,10 @@ static char *
 CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
 #if ENUM_BITFLAGS == 0
     switch (val) {
-        #define XENUM_ST_1(e)    case CAT(ENUM_PREFIX_, e): \
-                                     return QUOTE(ENUM_PREFIX_) #e;
-        #define XENUM_ST_2(e, v) case CAT(ENUM_PREFIX_, e): \
-                                     return QUOTE(ENUM_PREFIX_) #e;
+        #define XENUM_ST_1(e)    case e: \
+                                     return #e;
+        #define XENUM_ST_2(e, v) case e: \
+                                     return #e;
         #define X(...)           SELECT_ON_NUM_ARGS(XENUM_ST_, __VA_ARGS__)
 
         ENUM_FIELDS
@@ -137,8 +137,8 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
     int32 is_first = 1;
 
     #define XENUM(e) \
-        if (val & CAT(ENUM_PREFIX_, e)) { \
-            char *name = QUOTE(ENUM_PREFIX_) #e; \
+        if (val & e) { \
+            char *name = #e; \
             int32 len = (int32)strlen32(name); \
             if (is_first == 0) { \
                 if (buffer_ptr < (buffer_end - 1)) { \
@@ -197,6 +197,22 @@ CAT(ENUM_PREFIX_, token_equals)(char *token, int32 token_len, char *name) {
         return 0;
     }
     return strncmp(token, name, (size_t)token_len) == 0;
+}
+
+static int32
+CAT(ENUM_PREFIX_, token_equals_enum_name)(char *token, int32 token_len,
+                                          char *name) {
+    char *prefix = QUOTE(ENUM_PREFIX_);
+    int32 prefix_len = strlen32(prefix);
+
+    if (CAT(ENUM_PREFIX_, token_equals)(token, token_len, name)) {
+        return 1;
+    }
+    if (strncmp(name, prefix, (size_t)prefix_len) != 0) {
+        return 0;
+    }
+    return CAT(ENUM_PREFIX_, token_equals)(token, token_len,
+                                           name + prefix_len);
 }
 
 static int32
@@ -263,10 +279,9 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
 
         #define XENUM_PARSE_ONE(e) \
             if (!matched \
-                && (CAT(ENUM_PREFIX_, token_equals)(token, token_len, \
-                                                    QUOTE(ENUM_PREFIX_) #e) \
-                    || CAT(ENUM_PREFIX_, token_equals)(token, token_len, #e))) { \
-                result |= (uint32)CAT(ENUM_PREFIX_, e); \
+                && CAT(ENUM_PREFIX_, token_equals_enum_name)(token, token_len, \
+                                                            #e)) { \
+                result |= (uint32)e; \
                 matched = 1; \
             }
         #define XENUM_PARSE_1(e)    XENUM_PARSE_ONE(e)
@@ -313,9 +328,9 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #define ENUM_PREFIX_ TEST_NORMAL_
 #define ENUM_BITFLAGS 0
 #define ENUM_FIELDS \
-    X(APPLE) \
-    X(BANANA) \
-    X(CHERRY, 10)
+    X(TEST_NORMAL_APPLE) \
+    X(TEST_NORMAL_BANANA) \
+    X(TEST_NORMAL_CHERRY, 10)
 #include "xenums.c"
 
 int

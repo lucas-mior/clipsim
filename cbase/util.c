@@ -75,6 +75,19 @@ _Generic((ARRAY), \
 #define SFA_FORMAT "%f"
 #include "sfa.h"
 
+#define CLAMP(VAR, VMIN, VMAX) \
+_Generic((VAR), \
+    float: clamp_double, \
+    double: clamp_double, \
+    default: clamp_int64 \
+)(VAR, VMIN, VMAX)
+
+#define CLAMP_TYPE double
+#include "clamp.h"
+
+#define CLAMP_TYPE int64
+#include "clamp.h"
+
 #if !defined(DEBUGGING)
 #define DEBUGGING 0
 #endif
@@ -105,6 +118,7 @@ static int32 itoa2(char *, int32, llong);
 static long atoi2(char *);
 INLINE void *memchr64(void *pointer, int32 value, int64 size);
 INLINE int memcmp64(void *left, void *right, int64 size);
+static char *basename2(char *path, int32 *full_length, int32 *base_len);
 
 #if OS_WINDOWS
 static void *
@@ -170,6 +184,35 @@ memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
     result = memmem(haystack, (size_t)hay_len, needle, (size_t)needle_len);
     return result;
 }
+
+#define MEMMEM_3(LONG, LONG_LEN, SHORT) \
+        memmem64(LONG, LONG_LEN, SHORT, strlen32(SHORT))
+#define MEMMEM_4(LONG, LONG_LEN, SHORT, LEN) \
+        memmem64(LONG, LONG_LEN, SHORT, LEN)
+#define MEMMEM(...) SELECT_ON_NUM_ARGS(MEMMEM_, __VA_ARGS__)
+
+static bool
+strequal(char *s1, char *s2) {
+    return !strcmp(s1, s2);
+}
+
+static bool
+strequal2(char *a, int32 a_len, char *b, int32 b_len) {
+    if (a_len != b_len) {
+        return false;
+    }
+    if (memcmp64(a, b, a_len)) {
+        return false;
+    }
+
+    return true;
+}
+
+#define strequal2_3(A, A_LEN, B) \
+        strequal2(A, A_LEN, B, strlen32(B))
+#define strequal2_4(A, A_LEN, B, B_LEN) \
+        strequal2(A, A_LEN, B, B_LEN)
+#define STREQUAL(...) SELECT_ON_NUM_ARGS(strequal2_, __VA_ARGS__)
 
 INLINE void *
 memchr64(void *pointer, int32 value, int64 size) {
@@ -301,6 +344,46 @@ memcmp64(void *left, void *right, int64 size) {
     return memcmp(left, right, (size_t)size);
 }
 
+static char *
+remove_escape_sequences(char *data, int32 *data_len) {
+    int32 old_len = *data_len;
+    int32 read_index = 0;
+    int32 write_index = 0;
+
+    while (read_index < old_len) {
+        if (data[read_index] != '\033') {
+            data[write_index++] = data[read_index++];
+            continue;
+        }
+
+        read_index += 1;
+
+        if (read_index >= old_len) {
+            break;
+        }
+
+        if (data[read_index] == '[') {
+            read_index += 1;
+
+            while (read_index < old_len) {
+                uchar c = (uchar)data[read_index++];
+
+                if ((c >= 0x40) && (c <= 0x7e)) {
+                    break;
+                }
+            }
+        } else {
+            read_index += 1;
+        }
+    }
+
+    data[write_index] = '\0';
+    *data_len = write_index;
+    data = realloc2(data, old_len + 1, *data_len + 1, SIZEOF(*data));
+
+    return data;
+}
+
 static int32
 random_ascii_string(char *buffer, int32 capacity, int32 min_len) {
     int32 max_len = capacity - 1;
@@ -352,9 +435,11 @@ CAT(FUNC, 64)(int fd, void *buffer, int64 size) { \
 #if OS_WINDOWS
 X64(write, uint)
 X64(read, uint)
+#define RW_CAST uint
 #else
 X64(write, size_t)
 X64(read, size_t)
+#define RW_CAST size_t
 #endif
 
 #undef X64
@@ -365,12 +450,7 @@ write_all(int fd, char *buffer, int64 left) {
     int64 w;
 
     while (left > 0) {
-#if OS_WINDOWS
-        if ((w = write(fd, buffer + written, (uint)left)) <= 0)
-#else
-        if ((w = write(fd, buffer + written, (size_t)left)) <= 0)
-#endif
-        {
+        if ((w = write(fd, buffer + written, (RW_CAST)left)) <= 0) {
             fprintf(stderr, "Error writing: %s.\n", strerror(errno));
             fatal(EXIT_FAILURE);
         }
@@ -439,8 +519,7 @@ qsort64(void *base, int64 n, int64 size,
 #if OS_WINDOWS
 static int32
 util_nthreads(void) {
-    SYSTEM_INFO sysinfo;
-    memset64(&sysinfo, 0, SIZEOF(sysinfo));
+    SYSTEM_INFO sysinfo = {0};
     GetSystemInfo(&sysinfo);
     return (int32)sysinfo.dwNumberOfProcessors;
 }
@@ -878,19 +957,31 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
     int32 m = SIZEOF(buffer);
     int32 p;
     char fileline[256];
+    char file2[4096];
+    int32 file_len = strlen32(file);
+    int32 base_len;
+
+    if (file_len >= SIZEOF(file2)) {
+        error2("File name is too long.\n");
+        fatal(EXIT_FAILURE);
+    }
+    memcpy(file2, file, (size_t)(file_len + 1));
+
+    file = basename2(file2, &file_len, &base_len);
 
     va_start(args, format);
     n = vsnprintf(buffer, (size_t)m, format, args);
 
     if (n >= m) {
-        if (RELEASING) {
+        if (1) {
             m = n + 1;
             big_buffer = xmalloc(m, false);
             n = vsnprintf(big_buffer, (size_t)m, format, args);
             pbuffer = big_buffer;
         } else {
-            fprintf(stderr, "Error in vsnprintf(\"%s\") (n = %lld).\n",
-                            format, (llong)n);
+            fprintf(stderr,
+                    "%s:%d %s(): Error in vsnprintf(\"%s\") (n = %lld).\n",
+                    file, line, func, format, (llong)n);
             fatal(EXIT_FAILURE);
         }
     }
@@ -898,8 +989,9 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
     va_end(args);
 
     if ((n < 0) || (n >= m)) {
-        fprintf(stderr, "Error in vsnprintf(\"%s\") (n = %lld).\n",
-                        format, (llong)n);
+        fprintf(stderr,
+                "%s:%d %s(): Error in vsnprintf(\"%s\") (n = %lld).\n",
+                file, line, func, format, (llong)n);
         fatal(EXIT_FAILURE);
     }
 
@@ -951,7 +1043,7 @@ error_async_safe(char *message) {
     return;
 }
 
-void
+void __attribute((noreturn))
 fatal(int status) {
     if (DEBUGGING) {
         (void)status;
@@ -1519,6 +1611,18 @@ basename2(char *path, int32 *full_length, int32 *base_len) {
     return path;
 }
 
+static char *
+path_basename(char *path, int32 path_len) {
+    int32 slash = -1;
+    for (int32 i = 0; i < path_len; i += 1) {
+        if (path[i] == '/') {
+            slash = i;
+        }
+    }
+    int32 start = slash + 1;
+    return xstrndup(path + start, path_len - start);
+}
+
 static int32
 dirname2(char *buffer, char *path, int32 *path_len) {
     char *last_slash;
@@ -1716,7 +1820,8 @@ read_entire_file(char *path, int32 *file_len) {
     int64 r;
 
     if ((fp = fopen(path, "rb")) == NULL) {
-        error("Error opening %s for reading: %s", path, strerror(errno));
+        error("Error opening "RED("%s")" for reading: %s",
+              path, strerror(errno));
         fatal(EXIT_FAILURE);
     }
     if (fseek(fp, 0, SEEK_END)) {
@@ -1735,11 +1840,11 @@ read_entire_file(char *path, int32 *file_len) {
         fatal(EXIT_FAILURE);
     }
 
-    data = xmalloc(len + 1, 0);
+    data = malloc2(len + 1);
     if (len > 0) {
         r = fread64(data, 1, len, fp);
         if (r != len) {
-            error("Error reading %s: %s.\n", path, strerror(errno));
+            error("Error reading "RED("%s")": %s.\n", path, strerror(errno));
             fatal(EXIT_FAILURE);
         }
     } else {
@@ -1781,6 +1886,7 @@ write_entire_file(char *path, char *text, int64 text_len) {
 void
 sb_reserve(StrBuilder *str_builder, int32 extra) {
     int64 need = str_builder->len + extra + 1;
+    int32 old_cap = str_builder->cap;
     int32 cap;
 
     if (need <= str_builder->cap) {
@@ -1791,15 +1897,17 @@ sb_reserve(StrBuilder *str_builder, int32 extra) {
         fatal(EXIT_FAILURE);
     }
 
-    if (str_builder->cap) {
-        cap = str_builder->cap;
-    } else {
+    if (str_builder->cap <= 0) {
         cap = 256;
+    } else {
+        cap = str_builder->cap;
     }
+
     while (cap < need) {
         cap *= 2;
     }
-    str_builder->data = xrealloc(str_builder->data, cap);
+
+    str_builder->data = realloc2(str_builder->data, old_cap, cap, 1);
     str_builder->cap = cap;
     return;
 }
@@ -1812,10 +1920,17 @@ sb_append(StrBuilder *str_builder, char *s, int32 n) {
     str_builder->data[str_builder->len] = 0;
 }
 
-#define SB_APPEND_2(LONG, SHORT) \
-        sb_append(LONG, SHORT, strlen32(SHORT))
-#define SB_APPEND_3(LONG, SHORT, LEN) \
-        sb_append(LONG, SHORT, (int32)LEN)
+static void
+sb_free(StrBuilder *str_builder) {
+    free2(str_builder->data, str_builder->cap);
+    memset64(str_builder, 0, SIZEOF(*str_builder));
+    return;
+}
+
+#define SB_APPEND_2(BUILER, STRING) \
+        sb_append(BUILER, STRING, strlen32(STRING))
+#define SB_APPEND_3(BUILER, STRING, LEN) \
+        sb_append(BUILER, STRING, (int32)LEN)
 #define SB_APPEND(...) SELECT_ON_NUM_ARGS(SB_APPEND_, __VA_ARGS__)
 
 void
@@ -1843,14 +1958,23 @@ sb_printf(StrBuilder *str_builder, char *fmt, ...) {
 }
 
 char *
-sb_steal(StrBuilder *str_builder) {
+sb_steal(StrBuilder *str_builder, int32 *len) {
     char *out;
+    (void)len;
 
     if (!str_builder->data) {
+        if (len) {
+            *len = 0;
+        }
         return xstrdup("");
     }
 
-    out = str_builder->data;
+    out = xstrdup(str_builder->data);
+    if (len) {
+        *len = str_builder->len;
+    }
+
+    free2(str_builder->data, str_builder->cap);
     str_builder->data = NULL;
     str_builder->len = 0;
     str_builder->cap = 0;
@@ -1888,9 +2012,252 @@ warn(char *fmt, ...) {
     return;
 }
 
+typedef struct Command {
+    char **argv;
+    int32 *argvs_lens;
+    int32 argc;
+    int32 cap;
+} Command;
+
+typedef struct CommandResult {
+    char *output;
+    int32 output_len;
+    int32 status;
+} CommandResult;
+
+static void
+command_print(Command *command) {
+    printf(RED("%s"), command->argv[0]);
+    for (int32 i = 1; i < command->argc; i += 1) {
+        printf(" %s", command->argv[i]);
+    }
+    printf("\n");
+    return;
+}
+
+static char *
+command_str(Command *command, int32 *len) {
+    char buffer[4096];
+    *len = STRING_FROM_ARRAY(buffer, " ", command->argv, command->argc);
+    return xmemdup(buffer, *len + 1);
+}
+
+#if OS_UNIX
 static bool
-strequal(char *s1, char *s2) {
-    return !strcmp(s1, s2);
+command_run_sync(Command *command, int *exit_status) {
+    pid_t child;
+    int32 len;
+    int status;
+
+    switch (child = fork()) {
+    case -1:
+        error("Error forking: %s.\n", strerror(errno));
+        fatal(EXIT_FAILURE);
+    case 0:
+        execvp(command->argv[0], command->argv);
+        error("Error executing "RED("%s")": %s.\n",
+              command_str(command, &len), strerror(errno));
+        _exit(EXIT_FAILURE);
+    default:
+        while (waitpid(child, &status, 0) < 0) {
+            if (errno != EINTR) {
+                error("Error waiting for child: %s.\n", strerror(errno));
+                return false;
+            }
+        }
+    }
+
+    if (exit_status) {
+        if (WIFEXITED(status)) {
+            *exit_status = WEXITSTATUS(status);
+        } else if (WIFSIGNALED(status)) {
+            *exit_status = 128 + WTERMSIG(status);
+        } else {
+            *exit_status = 127;
+        }
+    }
+
+    return true;
+}
+
+static CommandResult
+command_run_capture(Command *command, char *cwd) {
+    int32 pipefd[2];
+    pid_t pid;
+    char *output;
+    int64 len = 0;
+    int64 cap = 4096;
+    int32 status = 127;
+    CommandResult result;
+
+    xpipe(pipefd);
+
+    switch (pid = fork()) {
+    case -1:
+        XCLOSE(&pipefd[0]);
+        XCLOSE(&pipefd[1]);
+        error("Error forking: %s", strerror(errno));
+        fatal(EXIT_FAILURE);
+    case 0:
+        XCLOSE(&pipefd[0]);
+
+        if (cwd && chdir(cwd) != 0) {
+            perror("chdir");
+            _exit(127);
+        }
+
+        xdup2(pipefd[1], STDOUT_FILENO);
+        xdup2(pipefd[1], STDERR_FILENO);
+        XCLOSE(&pipefd[1]);
+
+        execvp(command->argv[0], command->argv);
+        perror("execvp");
+        _exit(127);
+    default:
+        XCLOSE(&pipefd[1]);
+        break;
+    }
+
+    output = malloc2(cap);
+    for (;;) {
+        int64 nread;
+
+        if (len >= (cap/2)) {
+            int64 old_cap = cap;
+
+            cap *= 2;
+            output = realloc2(output, old_cap, cap, SIZEOF(*output));
+        }
+
+        if ((nread = read64(pipefd[0], output + len, cap - len - 1)) > 0) {
+            len += nread;
+            continue;
+        }
+        if (nread == 0) {
+            break;
+        }
+        if (errno == EINTR) {
+            continue;
+        }
+
+        free2(output, cap);
+        XCLOSE(&pipefd[0]);
+        error("read from child failed: %s", strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    output[len] = '\0';
+    if (len + 1 != cap) {
+        output = realloc2(output, cap, len + 1, SIZEOF(output[0]));
+    }
+    XCLOSE(&pipefd[0]);
+
+    if (waitpid(pid, &status, 0) < 0) {
+        free2(output, len + 1);
+        error("waitpid failed: %s", strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+
+    if (WIFEXITED(status)) {
+        status = WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+        status = 128 + WTERMSIG(status);
+    } else {
+        status = 127;
+    }
+
+    if (len >= MAXOF(result.output_len)) {
+        error("Output is too long.\n");
+        fatal(EXIT_FAILURE);
+    }
+
+    return (CommandResult){
+        .output = output,
+        .output_len = (int32)len,
+        .status = status,
+    };
+}
+#endif
+
+static void
+command_result_free(CommandResult *result) {
+    if (result->output) {
+        free2(result->output, result->output_len + 1);
+    }
+
+    result->output = NULL;
+    result->output_len = 0;
+    result->status = 0;
+
+    return;
+}
+
+
+static void
+command_push(Command *command, char *argument) {
+
+    if (command->cap <= command->argc + 1) {
+        int32 oldcap = command->cap;
+
+        command->cap += 16;
+        command->argv = realloc2(command->argv,
+                                 oldcap, command->cap,
+                                 SIZEOF(*command->argv));
+    }
+    command->argv[command->argc++] = xstrdup(argument);
+    command->argv[command->argc] = NULL;
+    return;
+}
+
+static void
+command_argv0_set(Command *command, char *argument) {
+    free2(command->argv[0], strlen32(command->argv[0]) + 1);
+    command->argv[0] = xstrdup(argument);
+    return;
+}
+
+static void
+command_reset(Command *command) {
+    for (int32 i = 0; i < command->argc; i += 1) {
+        free2(command->argv[i], strlen32(command->argv[i]) + 1);
+    }
+    command->argc = 0;
+    return;
+}
+
+static void
+command_free(Command *command) {
+    command_reset(command);
+    free2(command->argv, command->cap*SIZEOF(*command->argv));
+    return;
+}
+
+static void
+command_printf(Command *command, char *fmt, ...) {
+    va_list ap;
+    va_list ap2;
+    int32 n;
+    char *argument;
+
+    va_start(ap, fmt);
+    va_copy(ap2, ap);
+    n = vsnprintf(NULL, 0, fmt, ap);
+    va_end(ap);
+
+    if (n < 0) {
+        va_end(ap2);
+        error("Error formatting \"%s\".", fmt);
+        fatal(EXIT_FAILURE);
+    }
+
+    argument = malloc2(n + 1);
+    vsnprintf(argument, (size_t)n + 1, fmt, ap2);
+    va_end(ap2);
+
+    command_push(command, argument);
+
+    free2(argument, n + 1);
+
+    return;
 }
 
 #define PARSE_OPTION(arg, name) \
@@ -1902,6 +2269,14 @@ strequal(char *s1, char *s2) {
 static inline void
 util_functions_sink(void) {
     (void)here_counter;
+    (void)strequal;
+    (void)read_entire_file;
+    (void)write_entire_file;
+    (void)sb_printf;
+    (void)command_result_free;
+    (void)command_argv0_set;
+    (void)command_free;
+    (void)command_printf;
     (void)util_segv_handler;
     (void)util_nthreads;
     (void)util_filename_from;
@@ -1922,6 +2297,8 @@ util_functions_sink(void) {
     (void)send_signal;
     (void)atoi2;
 #if OS_UNIX
+    (void)command_run_capture;
+    (void)command_run_sync;
     (void)timezone_init;
 #endif
     (void)dirname2;
@@ -1949,6 +2326,20 @@ util_functions_sink(void) {
     (void)xpthread_mutex_destroy;
     (void)xpthread_create;
     (void)xpthread_join;
+
+    (void)random_ascii_string;
+    (void)strncpy32;
+    (void)ends_with;
+#if OS_WINDOWS || OS_UNIX
+    (void)util_command;
+#endif
+    (void)rad2deg;
+    (void)deg2rad;
+    (void)path_basename;
+    (void)timediff;
+    (void)catfile;
+    (void)parse_option;
+    (void)command_print;
     return;
 }
 #endif
@@ -1959,13 +2350,13 @@ util_functions_sink(void) {
 #define ENUM_BITFLAGS 0
 #define ENUM_PREFIX_ WEEK_DAY_
 #define ENUM_FIELDS \
-    X(SUNDAY, 0)                   \
-    X(MONDAY)                      \
-    X(TUESDAY, 10)                 \
-    X(WEDNESDAY)                   \
-    X(THURSDAY)                    \
-    X(FRIDAY, 5)                   \
-    X(SATURDAY, 20)
+    X(WEEK_DAY_SUNDAY, 0)          \
+    X(WEEK_DAY_MONDAY)             \
+    X(WEEK_DAY_TUESDAY, 10)        \
+    X(WEEK_DAY_WEDNESDAY)          \
+    X(WEEK_DAY_THURSDAY)           \
+    X(WEEK_DAY_FRIDAY, 5)          \
+    X(WEEK_DAY_SATURDAY, 20)
 #include "xenums.c"
 
 
@@ -1973,12 +2364,12 @@ util_functions_sink(void) {
 #define ENUM_BITFLAGS 1
 #define ENUM_PREFIX_ POWER_OF2_
 #define ENUM_FIELDS \
-    X(ONE)          \
-    X(TWO)          \
-    X(FOUR)         \
-    X(EIGHT)        \
-    X(SIXTEEN)      \
-    X(THIRTY2)
+    X(POWER_OF2_ONE)     \
+    X(POWER_OF2_TWO)     \
+    X(POWER_OF2_FOUR)    \
+    X(POWER_OF2_EIGHT)   \
+    X(POWER_OF2_SIXTEEN) \
+    X(POWER_OF2_THIRTY2)
 #include "xenums.c"
 
 
@@ -2275,6 +2666,53 @@ main(int argc, char **argv) {
     ASSERT_EQUAL(deg2rad(180.0), 3.141592653589793);
     ASSERT_EQUAL(rad2deg(3.141592653589793), 180.0);
     ASSERT_MORE(util_nthreads(), 0);
+
+    ASSERT_EQUAL(CLAMP(0.0, -0.1, 0.1),   0.0);
+    ASSERT_EQUAL(CLAMP(0.2, -0.1, 0.1),   0.1);
+    ASSERT_EQUAL(CLAMP(-0.2, -0.1, 0.1), -0.1);
+
+    ASSERT_EQUAL(CLAMP(+0, -1, +1), +0);
+    ASSERT_EQUAL(CLAMP(+2, -1, +1), +1);
+    ASSERT_EQUAL(CLAMP(-2, -1, +1), -1);
+
+    {
+        Command cmd = {0};
+        CommandResult result;
+        int32 len;
+
+        command_push(&cmd, "echo");
+        command_printf(&cmd, "--val=%d", 123);
+        command_push(&cmd, "test");
+
+        ASSERT_EQUAL(cmd.argc, 3);
+        ASSERT_EQUAL(cmd.argv[0], "echo");
+        ASSERT_EQUAL(cmd.argv[1], "--val=123");
+        ASSERT_EQUAL(cmd.argv[2], "test");
+        ASSERT_EQUAL(command_str(&cmd, &len), "echo --val=123 test");
+        command_print(&cmd);
+
+        command_reset(&cmd);
+        ASSERT_EQUAL(cmd.argc, 0);
+
+        command_push(&cmd, "sh");
+        command_push(&cmd, "-c");
+        command_push(&cmd, "printf stdout; printf stderr >&2; exit 7");
+        result = command_run_capture(&cmd, NULL);
+        ASSERT_EQUAL(result.output, "stdoutstderr");
+        ASSERT_EQUAL(result.output_len, 12);
+        ASSERT_EQUAL(result.status, 7);
+        command_result_free(&result);
+        ASSERT_EQUAL(result.output, NULL);
+        ASSERT_EQUAL(result.output_len, 0);
+        ASSERT_EQUAL(result.status, 0);
+
+        command_reset(&cmd);
+        ASSERT_EQUAL(cmd.argc, 0);
+
+        if (cmd.cap > 0) {
+            free2(cmd.argv, cmd.cap * SIZEOF(*cmd.argv));
+        }
+    }
 
     NCALLS(1);
 

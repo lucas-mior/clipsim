@@ -6,17 +6,40 @@
 #define QUOTE_(x) #x
 #define QUOTE(x) QUOTE_(x)
 
-#define CAT_(a, b)        a ## b
-#define CAT3_(a, b, c)    a ## b ## c
-#define CAT4_(a, b, c, d) a ## b ## c ## d
-#define CAT(a, b)         CAT_(a, b)
-#define CAT3(a, b, c)     CAT3_(a, b, c)
-#define CAT4(a, b, c, d)  CAT4_(a, b, c, d)
+#define STRLIT_LEN(s) ((int32)(sizeof(s) - 1))
+#define STRLIT_ARGS(s) s, STRLIT_LEN(s)
 
-#define NUM_ARGS_(_1, _2, _3, _4, _5, _6, _7, _8, n, ...) n
-#define NUM_ARGS(...) NUM_ARGS_(__VA_ARGS__, 8, 7, 6, 5, 4, 3, 2, 1, x)
+#define CAT_(a, b) a ## b
+#define CAT_SELECT(a, b) CAT_(a, b)
+
+#define CAT1_(a) a
+#define CAT2_(a, b) a ## b
+#define CAT3_(a, b, c) a ## b ## c
+#define CAT4_(a, b, c, d) a ## b ## c ## d
+#define CAT5_(a, b, c, d, e) a ## b ## c ## d ## e
+#define CAT6_(a, b, c, d, e, f) a ## b ## c ## d ## e ## f
+#define CAT7_(a, b, c, d, e, f, g) a ## b ## c ## d ## e ## f ## g
+#define CAT8_(a, b, c, d, e, f, g, h) a ## b ## c ## d ## e ## f ## g ## h
+#define CAT9_(a, b, c, d, e, f, g, h, i) a ## b ## c ## d ## e ## f ## g ## h ## i
+
+#define CAT1(a) CAT1_(a)
+#define CAT2(a, b) CAT2_(a, b)
+#define CAT3(a, b, c) CAT3_(a, b, c)
+#define CAT4(a, b, c, d) CAT4_(a, b, c, d)
+#define CAT5(a, b, c, d, e) CAT5_(a, b, c, d, e)
+#define CAT6(a, b, c, d, e, f) CAT6_(a, b, c, d, e, f)
+#define CAT7(a, b, c, d, e, f, g) CAT7_(a, b, c, d, e, f, g)
+#define CAT8(a, b, c, d, e, f, g, h) CAT8_(a, b, c, d, e, f, g, h)
+#define CAT9(a, b, c, d, e, f, g, h, i) CAT9_(a, b, c, d, e, f, g, h, i)
+
+#define NUM_ARGS_(_1, _2, _3, _4, _5, _6, _7, _8, _9, n, ...) n
+#define NUM_ARGS(...) NUM_ARGS_(__VA_ARGS__, 9, 8, 7, 6, 5, 4, 3, 2, 1, x)
 #define SELECT_ON_NUM_ARGS(macro, ...) \
-  CAT(macro, NUM_ARGS(__VA_ARGS__))(__VA_ARGS__)
+  CAT_SELECT(macro, NUM_ARGS(__VA_ARGS__))(__VA_ARGS__)
+
+#define CAT_SELECT_ON_NUM_ARGS(macro, ...) \
+  CAT_SELECT(macro, NUM_ARGS(__VA_ARGS__))(__VA_ARGS__)
+#define CAT(...) CAT_SELECT_ON_NUM_ARGS(CAT, __VA_ARGS__)
 
 #include <stddef.h>
 #if !defined(offsetof)
@@ -32,6 +55,7 @@
 #define YELLOW(S) "\x1b[0;33m"  S RESET
 #define BLUE(S)   "\x1b[0;34m"  S RESET
 #define CYAN(S)   "\x1b[0;35m"  S RESET
+#define PURPLE(S) "\x1b[0;36m"  S RESET
 
 #define BRED(S)    "\x1b[1;31m" S RESET
 #define BGREEN(S)  "\x1b[1;32m" S RESET
@@ -120,5 +144,7 @@ _Generic((SIZE), \
 #else
 #define UNUSED
 #endif
+
+#define π 3.14159265358979323846264338327950288
 
 #endif /* BASE_MACROS_H */

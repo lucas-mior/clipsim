@@ -743,6 +743,8 @@ CAT(hash_functions_sink_, HASH_TYPE)(void) {
     (void)CAT(hash_print_summary_, HASH_TYPE);
     (void)CAT(hash_print_, HASH_TYPE);
     (void)CAT(hash_ndeleted_, HASH_TYPE);
+    (void)hash_capacity;
+    (void)hash_length;
     return;
 }
 
