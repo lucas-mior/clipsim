@@ -65,7 +65,7 @@ typedef struct DebugAllocInfo {
                         * and so on */
 } DebugAllocInfo;
 
-#define HASH_KEY_TYPE intptr_t
+#define HASH_KEY_TYPE intptr
 #define HASH_KEY_FIXED_LEN 1
 #define HASH_VALUE_TYPE DebugAllocInfo
 #define HASH_TYPE alloc_map
@@ -121,6 +121,9 @@ memset64(void *buffer, int value, int64 size) {
 INLINE void *
 xmalloc(int64 size, bool zero) {
     void *p;
+    if (size == 0) {
+        size = 1;
+    }
     if ((p = malloc((size_t)size)) == NULL) {
         error("Failed to allocate %lld bytes.\n", (llong)size);
         fatal(EXIT_FAILURE);
@@ -193,7 +196,14 @@ malloc_debug(char *file, int32 line, char *func, int64 size, bool zero) {
     void *base_p;
 
     if (RUNNING_ON_VALGRIND) {
-        return malloc((size_t)size);
+        if (size == 0) {
+            size = 1;
+        }
+        p = malloc((size_t)size);
+        if (zero) {
+            memset64(p, 0, size);
+        }
+        return p;
     }
 
     if (size < 0) {
@@ -223,7 +233,7 @@ malloc_debug(char *file, int32 line, char *func, int64 size, bool zero) {
 
     {
         DebugAllocInfo info;
-        intptr_t key = (intptr_t)p;
+        intptr key = (intptr)p;
 
         info.size = size;
         info.file = file;
@@ -280,10 +290,6 @@ realloc_debug(char *file, int32 line, char *func,
     uchar *ptr;
     (void)old_capacity;
 
-    if (RUNNING_ON_VALGRIND) {
-        return realloc(old, (size_t)(new_capacity*obj_size));
-    }
-
     if (obj_size <= 0) {
         error_impl(file, line, func,
                    "realloc: invalid object size = %lld.\n", (llong)obj_size);
@@ -296,9 +302,16 @@ realloc_debug(char *file, int32 line, char *func,
     }
     if (((ullong)SIZE_MAX / (ullong)obj_size) < (ullong)new_capacity) {
         error_impl(file, line, func,
-                   "realloc: allocation size (%lld) is bigger than "
-                   "SIZEMAX\n", (llong)new_capacity);
+                   "realloc: allocation size (%lld) is bigger than SIZEMAX\n",
+                   (llong)new_capacity);
         fatal(EXIT_FAILURE);
+    }
+
+    if (RUNNING_ON_VALGRIND) {
+        if (new_capacity == 0) {
+            new_capacity = 1;
+        }
+        return realloc(old, (size_t)(new_capacity*obj_size));
     }
 
     old_size = old_capacity*obj_size;
@@ -306,7 +319,7 @@ realloc_debug(char *file, int32 line, char *func,
 
     {
         DebugAllocInfo info;
-        intptr_t p_key;
+        intptr p_key;
 
         info.size = new_size;
         info.file = file;
@@ -325,7 +338,7 @@ realloc_debug(char *file, int32 line, char *func,
         }
         if (old != NULL) {
             DebugAllocInfo old_info;
-            intptr_t old_key = (intptr_t)old;
+            intptr old_key = (intptr)old;
 
             if (!hash_lookup_alloc_map(allocations, &old_key, &old_info)) {
                 error_impl(file, line, func,
@@ -411,7 +424,7 @@ realloc_debug(char *file, int32 line, char *func,
         }
 
         p = ptr + MEMORY_PADDING;
-        p_key = (intptr_t)p;
+        p_key = (intptr)p;
         hash_insert_alloc_map(allocations, &p_key, info);
 
         pthread_mutex_unlock(&allocations_mutex);
@@ -432,10 +445,6 @@ realloc_flex_debug(char *file, int32 line, char *func,
     int64 old_size;
     (void)old_capacity;
 
-    if (RUNNING_ON_VALGRIND) {
-        return realloc(old, (size_t)(struct_size + new_capacity*obj_size));
-    }
-
     if (obj_size <= 0) {
         error_impl(file, line, func,
                    "Invalid object size = %lld.\n", (llong)obj_size);
@@ -446,7 +455,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
                    "Invalid struct size = %lld.\n", (llong)struct_size);
         fatal(EXIT_FAILURE);
     }
-    if (new_capacity <= 0) {
+    if (new_capacity < 0) {
         error_impl(file, line, func,
                    "Invalid new capacity = %lld.\n", (llong)new_capacity);
         fatal(EXIT_FAILURE);
@@ -463,12 +472,20 @@ realloc_flex_debug(char *file, int32 line, char *func,
         fatal(EXIT_FAILURE);
     }
 
+    if (RUNNING_ON_VALGRIND) {
+        if (new_capacity == 0) {
+            new_capacity = 1;
+        }
+        return realloc(old, (size_t)(struct_size + new_capacity*obj_size));
+    }
+
+
     total_size = struct_size + new_capacity*obj_size;
     old_size = struct_size + old_capacity*obj_size;
 
     {
         DebugAllocInfo info;
-        intptr_t p_key;
+        intptr p_key;
 
         info.size = total_size;
         info.file = file;
@@ -487,7 +504,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
         }
         if (old != NULL) {
             DebugAllocInfo old_info;
-            intptr_t old_key = (intptr_t)old;
+            intptr old_key = (intptr)old;
 
             if (!hash_lookup_alloc_map(allocations, &old_key, &old_info)) {
                 error_impl(file, line, func,
@@ -573,7 +590,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
         }
 
         p = ptr + MEMORY_PADDING;
-        p_key = (intptr_t)p;
+        p_key = (intptr)p;
         hash_insert_alloc_map(allocations, &p_key, info);
 
         pthread_mutex_unlock(&allocations_mutex);
@@ -586,7 +603,7 @@ static void
 free_debug(char *file, int32 line, char *func,
            void *pointer, int64 size) {
     DebugAllocInfo info;
-    intptr_t pointer_key = (intptr_t)pointer;
+    intptr pointer_key = (intptr)pointer;
 
     if (RUNNING_ON_VALGRIND) {
         free(pointer);
@@ -717,10 +734,14 @@ static void *
 xmmap_commit(int64 *size) {
     void *p;
 
-    /* if (RUNNING_ON_VALGRIND) { */
-    /*     p = malloc2(*size); */
-    /*     return p; */
-    /* } */
+    if (RUNNING_ON_VALGRIND) {
+        if (*size == 0) {
+            *size = 1;
+        }
+        p = malloc((size_t)*size);
+        memset64(p, 0, *size);
+        return p;
+    }
     if (memory_page_size == 0) {
         long aux;
         if ((aux = sysconf(_SC_PAGESIZE)) <= 0) {
@@ -753,10 +774,10 @@ xmmap_commit(int64 *size) {
 }
 static void
 xmunmap(void *p, int64 size) {
-    /* if (RUNNING_ON_VALGRIND) { */
-    /*     free2(p, size); */
-    /*     return; */
-    /* } */
+    if (RUNNING_ON_VALGRIND) {
+        free(p);
+        return;
+    }
     if (munmap(p, (size_t)size) < 0) {
         error("Error in munmap(%p, %lld): %s.\n",
               p, (llong)size, strerror(errno));
@@ -770,7 +791,10 @@ xmmap_commit(int64 *size) {
     void *p;
 
     if (RUNNING_ON_VALGRIND) {
-        p = malloc2(*size);
+        if (*size == 0) {
+            *size = 1;
+        }
+        p = malloc((size_t)*size);
         memset64(p, 0, *size);
         return p;
     }
@@ -797,7 +821,7 @@ static void
 xmunmap(void *p, int64 size) {
     (void)size;
     if (RUNNING_ON_VALGRIND) {
-        free2(p, (int64)size);
+        free(p);
         return;
     }
     if (!VirtualFree(p, 0, MEM_RELEASE)) {
@@ -846,11 +870,22 @@ xstrdup(char *string) {
 
 static char *
 xstrndup(char *s, int64 n) {
-    char *out = xmalloc(n + 1, 0);
+    char *out = malloc2(n + 1);
     memcpy64(out, s, n);
     out[n] = 0;
     return out;
 }
+
+#if 0 == TESTING_memory
+static inline void
+memory_functions_sink(void) {
+    (void)memory_check;
+    (void)realloc4;
+    (void)free2_;
+    (void)realloc_flex_debug;
+    return;
+}
+#endif
 
 #if TESTING_memory
 // flags: -lm
@@ -895,8 +930,7 @@ typedef struct TestString {
 } while (0)
 
 int main(void) {
-    struct sigaction sa;
-    memset(&sa, 0, SIZEOF(sa));
+    struct sigaction sa = {0};
     sa.sa_handler = test_expected_fail_handler;
     sigemptyset(&sa.sa_mask);
 

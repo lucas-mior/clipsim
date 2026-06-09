@@ -164,6 +164,15 @@ random_utf8_string(char *buffer, int32 capacity, int32 min_len) {
     return current_byte_len;
 }
 
+#if 0 == TESTING_utf8
+static inline void
+utf8_functions_sink(void) {
+    (void)utf8_decode;
+    (void)random_utf8_string;
+    return;
+}
+#endif
+
 #if TESTING_utf8
 
 #include <stdbool.h>

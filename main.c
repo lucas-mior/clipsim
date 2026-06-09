@@ -22,13 +22,13 @@
 #include "clipboard.c"
 #include "xi.c"
 
-typedef struct Command {
+typedef struct ClipsimCommand {
     char *shortname;
     char *longname;
     char *description;
-} Command;
+} ClipsimCommand;
 
-static Command commands[] = {
+static ClipsimCommand commands[] = {
     [COMMAND_PRINT]  = {"-p", "--print",  "print entire history, with trimmed whitespace"},
     [COMMAND_INFO]   = {"-i", "--info",   "print entry number <n>, with original whitespace"},
     [COMMAND_COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace"},
