@@ -116,8 +116,6 @@ typedef struct Bucket {
 #endif
 } Bucket;
 
-// TODO: Struct `Map` is not typedef'd. Per your codebase rules ("do typedef
-// structs"), define it as `typedef struct Map { ... } Map;`.
 struct Map {
     char *name;
     int64 size;
@@ -252,7 +250,7 @@ CAT(hash_init_, HASH_TYPE)(struct Map *map, uint32 length, char *name) {
     map->slot_states = xmmap_commit(&slot_states_size);
     memset64(map->slot_states, 0, capacity*sizeof(*map->slot_states));
     map->capacity = capacity;
-    map->bitmask = (1 << power) - 1;
+    map->bitmask = (1u << power) - 1;
     map->size = array_size;
     map->slot_states_size = slot_states_size;
     map->length = 0;
@@ -321,6 +319,11 @@ CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
     int64 old_slot_states_size = map->slot_states_size;
     uint32 old_capacity = map->capacity;
 
+    if (new_capacity < map->capacity) {
+        error("Hash table %s is too big.\n", map->name);
+        fatal(EXIT_FAILURE);
+    }
+
     memset64(new_slot_states, 0, new_capacity*sizeof(*new_slot_states));
 
     /* if (DEBUGGING) { */
@@ -331,11 +334,9 @@ CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
     for (uint32 j = 0; j < old_capacity; j += 1) {
         Bucket *iterator = &old_array[j];
         int8 slot_state = old_slot_states[j];
-        // TODO: Initialize `rehash_base` and `rehash_probe` at declaration
-        // below to reduce uninitialized state branching.
         uint32 rehash_base;
         uint32 rehash_probe;
-        uint32 rehash_step = 0;
+        uint32 rehash_step;
 
         if (slot_state == HASH_SLOT_FREE) {
             continue;
@@ -346,6 +347,7 @@ CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
 
         rehash_base = iterator->hash & new_bitmask;
         rehash_probe = rehash_base;
+        rehash_step = 0;
 
         while (rehash_step < new_capacity) {
             if (new_slot_states[rehash_probe] == HASH_SLOT_FREE) {
@@ -442,7 +444,6 @@ CAT(hash_probe_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
     return false;
 }
 
-
 static bool
 CAT(hash_insert_pre_calc_, HASH_TYPE)(struct Map *map,
                                       HASH_KEY_TYPE *key
@@ -481,7 +482,8 @@ CAT(hash_insert_pre_calc_, HASH_TYPE)(struct Map *map,
 #else
   #if HASH_DUPLICATE_KEYS
     target->key = xarena_push(map->arena_keys, key_length + 1);
-    memcpy64(target->key, key, key_length + 1);
+    memcpy64(target->key, key, key_length);
+    ((char *)target->key)[key_length] = '\0';
   #else
     target->key = key;
   #endif
@@ -523,7 +525,6 @@ CAT(hash_insert_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
                                                  );
 }
 
-
 #if defined(HASH_VALUE_TYPE)
 /* only define overwrite functions for HashMaps, not for HashSets */
 
@@ -563,7 +564,8 @@ CAT(hash_overwrite_pre_calc_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
 #else
   #if HASH_DUPLICATE_KEYS
     target->key = xarena_push(map->arena_keys, key_length + 1);
-    memcpy64(target->key, key, key_length + 1);
+    memcpy64(target->key, key, key_length);
+    ((char *)target->key)[key_length] = '\0';
   #else
     target->key = key;
   #endif
@@ -651,7 +653,6 @@ CAT(hash_lookup_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
                                                  );
 }
 
-
 static bool
 CAT(hash_remove_pre_calc_, HASH_TYPE)(struct Map *map,
                                       HASH_KEY_TYPE *key
@@ -674,8 +675,8 @@ CAT(hash_remove_pre_calc_, HASH_TYPE)(struct Map *map,
     if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash, base_index, &target_idx))
 #endif
     {
-        target = &map->array[target_idx];
 #if !HASH_KEY_FIXED_LEN
+        target = &map->array[target_idx];
   #if HASH_DUPLICATE_KEYS
         arena_decr(map->arena_keys, target->key);
   #endif
@@ -830,6 +831,7 @@ static bool hash_remove_map_by_value(struct Hash_map_by_value *, int64 *);
 #define HASH_VALUE_TYPE int32
 #define HASH_VALUE_FORMATTER "%d"
 #define HASH_TYPE map_by_value
+#define HASH_PADDING_TYPE uint32
 #define HASH_DUPLICATE_KEYS 0
 #include "hash.c"
 

@@ -29,8 +29,8 @@ enum TokenizeFlags {
 };
 
 typedef struct Token {
-    enum TokenKind kind;
     char *text;
+    enum TokenKind kind;
     int32 len;
     int32 column;
     int32 offset;
@@ -72,20 +72,22 @@ token_is_ptr_len(Token *token, char *what, int32 what_len) {
 
 typedef struct Tokenization {
     char *text;
-    int32 text_len;
-
     Token *tokens;
+
+    int32 text_len;
     int32 token_count;
     int32 token_capacity;
+    int32 padding;
 } Tokenization;
 
 typedef struct Line {
-    char *text;
-    int32 len;
-
     Token *tokens;
+    char *text;
+
+    int32 len;
     int32 token_count;
     int32 token_capacity;
+    int32 padding;
 } Line;
 
 typedef struct Document {

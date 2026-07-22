@@ -98,19 +98,37 @@ sort_heapify(HeapNode *heap, int32 p, int32 i,
 }
 
 static void
-sort_merge_subsorted(void *array, int32 n, int32 p, int64 obj_size,
-                     void *dummy_last,
-                     int32 (*compare)(void *a, void *b)) {
+sort_merge_subsorted(
+    void *array,
+    int32 n,
+    int32 p,
+    int64 obj_size,
+    int32 (*compare)(void *a, void *b)
+) {
     HeapNode heap[MAX_NTHREADS];
     int32 n_sub[MAX_NTHREADS];
     int32 indices[MAX_NTHREADS] = {0};
     int32 offsets[MAX_NTHREADS];
-    int64 memory_size = obj_size*n;
-    char *output = malloc2(memory_size);
+    int32 heap_length;
+    int64 memory_size;
+    char *output;
     char *array2 = array;
-    if (p == 1) {
+
+    ASSERT(n >= 0);
+    ASSERT(p >= 1);
+    ASSERT(p <= MAX_NTHREADS);
+
+    if ((n <= 1) || (p == 1)) {
         return;
     }
+
+    ASSERT(p <= n);
+    ASSERT(obj_size > 0);
+    ASSERT(array);
+    ASSERT(compare);
+
+    memory_size = obj_size*n;
+    output = malloc2(memory_size);
 
     for (int32 k = 0; k < (p - 1); k += 1) {
         n_sub[k] = n / p;
@@ -126,34 +144,38 @@ sort_merge_subsorted(void *array, int32 n, int32 p, int64 obj_size,
     }
 
     for (int32 k = 0; k < p; k += 1) {
-        heap[k].value = malloc2(obj_size);
-        memcpy64(heap[k].value, &array2[offsets[k]*obj_size], obj_size);
+        heap[k].value = &array2[offsets[k]*obj_size];
         heap[k].p_index = k;
     }
 
     for (int32 k = p / 2 - 1; k >= 0; k -= 1) {
-        sort_heapify(heap, p, (int32)k, compare);
+        sort_heapify(heap, p, k, compare);
     }
 
+    heap_length = p;
     for (int32 i = 0; i < n; i += 1) {
         int32 k = heap[0].p_index;
-        int32 i_sub = (indices[k] += 1);
+        int32 i_sub;
 
         memcpy64(&output[i*obj_size], heap[0].value, obj_size);
+        i_sub = (indices[k] += 1);
 
         if (i_sub < n_sub[k]) {
-            memcpy64(heap[0].value, &array2[(offsets[k] + i_sub)*obj_size], obj_size);
+            heap[0].value = &array2[(offsets[k] + i_sub)*obj_size];
         } else {
-            memcpy64(heap[0].value, dummy_last, obj_size);
+            heap_length -= 1;
+            if (heap_length > 0) {
+                heap[0] = heap[heap_length];
+            }
         }
-        sort_heapify(heap, p, 0, compare);
+        if (heap_length > 0) {
+            sort_heapify(heap, heap_length, 0, compare);
+        }
     }
 
-    memcpy64(array2, output, n*obj_size);
+    ASSERT(heap_length == 0);
+    memcpy64(array2, output, memory_size);
     free2(output, memory_size);
-    for (int32 i = 0; i < p; i += 1) {
-        free2(heap[i].value, obj_size);
-    }
     return;
 }
 
@@ -184,7 +206,6 @@ static void
 test_sorting(int32 n, int32 p) {
     int32 *array = malloc2(n*SIZEOF(*array));
     int32 *n_sub = malloc2(p*SIZEOF(*n_sub));
-    int32 dummy = INT32_MAX;
 
     if (n < p*2) {
         fprintf(stderr, "n=%d must be larger than p*2=%d*2\n", n, p);
@@ -206,7 +227,7 @@ test_sorting(int32 n, int32 p) {
         array[i] = rand() % MAXI;
     }
 
-    sort_shuffle(array, n, sizeof(*array));
+    sort_shuffle(array, n, SIZEOF(*array));
 
     {
         int32 offset = 0;
@@ -216,7 +237,7 @@ test_sorting(int32 n, int32 p) {
         }
     }
 
-    sort_merge_subsorted(array, n, p, sizeof(dummy), &dummy, compare_int);
+    sort_merge_subsorted(array, n, p, SIZEOF(*array), compare_int);
 
     for (int32 i = 0; i < n; i += 1) {
         if (i < (n - 1)) {
@@ -229,8 +250,34 @@ test_sorting(int32 n, int32 p) {
     return;
 }
 
+static void
+test_partition_removal(void) {
+    int32 array[] = {
+        4,
+        1,
+        3,
+        2,
+    };
+    int32 expected[] = {
+        1,
+        2,
+        3,
+        4,
+    };
+
+    sort_merge_subsorted(array, LENGTH(array), LENGTH(array),
+                         SIZEOF(*array), compare_int);
+
+    for (int32 i = 0; i < LENGTH(array); i += 1) {
+        ASSERT_EQUAL(array[i], expected[i]);
+    }
+    return;
+}
+
 int
 main(void) {
+    test_partition_removal();
+
     for (int32 in = 0; in < LENGTH(possibleN); in += 1) {
         for (int32 ip = 0; ip < LENGTH(possibleP); ip += 1) {
             test_sorting(possibleN[in], possibleP[ip]);

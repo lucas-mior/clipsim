@@ -20,4 +20,9 @@ CAT(clamp_, CLAMP_TYPE)(CLAMP_TYPE var, CLAMP_TYPE min, CLAMP_TYPE max) {
     return var;
 }
 
+static CLAMP_TYPE
+CAT(square_, CLAMP_TYPE)(CLAMP_TYPE var) {
+    return var*var;
+}
+
 #undef CLAMP_TYPE

@@ -25,12 +25,19 @@
 
 #include "base_macros.h"
 
+#if CC_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc23-extensions"
+#endif
+
 #if !defined(ENUM_UNDERLYING_TYPE)
-  #if __clang__
-    #define ENUM_UNDERLYING_TYPE : uint32
-  #else
-    #define ENUM_UNDERLYING_TYPE
-  #endif
+  #define ENUM_UNDERLYING_TYPE uint32
+#endif
+
+#if CC_CLANG
+  #define ENUM_UNDERLYING_TYPE_SPEC : ENUM_UNDERLYING_TYPE
+#else
+  #define ENUM_UNDERLYING_TYPE_SPEC
 #endif
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
@@ -65,9 +72,9 @@
 #endif
 
 #if ENUM_BITFLAGS
-enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE {
+enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE_SPEC {
     #define X_IDX_1(e)    CAT(e, _BIT_IDX),
-    #define X_IDX_2(e, v) CAT(e, _BIT_IDX),
+    #define X_IDX_2(e, v)
     #define X(...)        SELECT_ON_NUM_ARGS(X_IDX_, __VA_ARGS__)
 
     ENUM_FIELDS
@@ -77,14 +84,25 @@ enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE {
     #undef X_IDX_2
     CAT(ENUM_PREFIX_, BIT_COUNT)
 };
+_Static_assert(CAT(ENUM_PREFIX_, BIT_COUNT)
+               <= (sizeof(ENUM_UNDERLYING_TYPE)*CHAR_BIT),
+               "bit flag enum does not fit in the underlying integer");
 #endif
 
-enum ENUM_NAME ENUM_UNDERLYING_TYPE {
+_Static_assert((ENUM_UNDERLYING_TYPE)-1 > 0,
+               "enum underlying type must be unsigned");
+
+// Note: passing numbers to the X macro second parameter is not allowed for the
+// BITFLAGS case. It will break the API. You can only passing composition of
+// previous enum values.
+//
+// Passing multiple ENUM names for the same value will break compilation.
+enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
 #if ENUM_BITFLAGS == 0
     #define XENUM_DEF_1(e)    e,
     #define XENUM_DEF_2(e, v) e = v,
 #else
-    #define XENUM_DEF_1(e)    e = 1 << CAT(e, _BIT_IDX),
+    #define XENUM_DEF_1(e)    e = (ENUM_UNDERLYING_TYPE)1 << CAT(e, _BIT_IDX),
     #define XENUM_DEF_2(e, v) e = v,
 #endif
     #define X(...)            SELECT_ON_NUM_ARGS(XENUM_DEF_, __VA_ARGS__)
@@ -100,11 +118,14 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE {
     CAT(ENUM_PREFIX_, LAST)
 };
 
-// TODO: When ENUM_BITFLAGS == 1, passing bitwise OR'd integers into a strict
-// `enum ENUM_NAME` type could trigger compiler warnings or undefined behavior
-// in pedantic modes since the result isn't explicitly defined in the enum.
-// Consider changing the parameter type to an integer (e.g., uint32) for
-// bitflags.
+static void
+CAT(ENUM_PREFIX_, str_free)(char *str) {
+    (void)str;
+#if ENUM_BITFLAGS
+    free2(str, optional_strlen32(str) + 1);
+#endif
+    return;
+}
 
 static char *
 CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
@@ -121,42 +142,55 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
         #undef X
         #undef XENUM_ST_1
         #undef XENUM_ST_2
-#if ENUM_BITFLAGS
-        case CAT(ENUM_PREFIX_, NONE):
-            return QUOTE(ENUM_PREFIX_) "NONE";
-#endif
         case CAT(ENUM_PREFIX_, LAST):
             return QUOTE(ENUM_PREFIX_) "LAST";
         default:
-            return "Unknown value";
+            return "Invalid enum value";
     }
 #else
-    char buffer[CAT(ENUM_PREFIX_, BIT_COUNT)*256 + 1];
-    char *buffer_ptr = buffer;
-    char *buffer_end = buffer + sizeof(buffer);
+    char *buffer = NULL;
+    int32 buffer_len = 0;
+    int32 buffer_cap = 0;
     int32 is_first = 1;
 
+    if (val == 0) {
+        return xstrdup("NONE");
+    }
+
+    #define XENUM_EXACT(e) \
+        if (val == e) { \
+            return xstrdup(#e); \
+        }
+    #define XENUM_EXACT_1(e)    XENUM_EXACT(e)
+    #define XENUM_EXACT_2(e, v) XENUM_EXACT(e)
+    #define X(...)              SELECT_ON_NUM_ARGS(XENUM_EXACT_, __VA_ARGS__)
+
+    ENUM_FIELDS
+
+    #undef X
+    #undef XENUM_EXACT_1
+    #undef XENUM_EXACT_2
+    #undef XENUM_EXACT
+
     #define XENUM(e) \
-        if (val & e) { \
+        if (val && ((val & e) == e)) { \
             char *name = #e; \
-            int32 len = (int32)strlen32(name); \
+            int32 len = strlen32(name); \
+            int32 new_cap; \
+            new_cap = buffer_len + len + 1; \
             if (is_first == 0) { \
-                if (buffer_ptr < (buffer_end - 1)) { \
-                    *buffer_ptr = '|'; \
-                    buffer_ptr += 1; \
-                } else { \
-                    error2("Error: enum name is too long.\n"); \
-                    TRAP(); \
-                } \
+                new_cap += 1; \
             } \
-            if (buffer_ptr + len < (buffer_end - 1)) { \
-                memcpy64(buffer_ptr, name, len); \
-                buffer_ptr += len; \
-            } else { \
-                error2("Error: enum name is too long.\n"); \
-                TRAP(); \
+            buffer = realloc2(buffer, buffer_cap, new_cap, SIZEOF(*buffer)); \
+            buffer_cap = new_cap; \
+            if (is_first == 0) { \
+                buffer[buffer_len] = '|'; \
+                buffer_len += 1; \
             } \
+            memcpy64(buffer + buffer_len, name, len); \
+            buffer_len += len; \
             is_first = 0; \
+            val &= ~e; \
         }
 
     #define XENUM_FL_1(e)    XENUM(e)
@@ -170,60 +204,43 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
     #undef XENUM_FL_2
     #undef XENUM
 
-    if (buffer_ptr == buffer) {
-        return "NONE";
+    if (val) {
+        error2("Error: bit flags enum contains invalid bit set.\n");
+        TRAP();
     }
 
-    *buffer_ptr = '\0';
-
-    {
-        int64 final_len = (int64)(buffer_ptr - buffer) + 1;
-        char *copy;
-
-        if ((copy = malloc2(final_len))) {
-            memcpy64(copy, buffer, final_len);
-        }
-
-        return copy;
-    }
+    buffer[buffer_len] = '\0';
+    return buffer;
 #endif
 }
 
-
-static int32
+static bool
 CAT(ENUM_PREFIX_, token_equals)(char *token, int32 token_len, char *name) {
     int32 name_len = strlen32(name);
     if (token_len != name_len) {
-        return 0;
+        return false;
     }
-    return strncmp(token, name, (size_t)token_len) == 0;
+    return !strncmp32(token, name, token_len);
 }
 
-static int32
+static bool
 CAT(ENUM_PREFIX_, token_equals_enum_name)(char *token, int32 token_len,
                                           char *name) {
     char *prefix = QUOTE(ENUM_PREFIX_);
     int32 prefix_len = strlen32(prefix);
 
     if (CAT(ENUM_PREFIX_, token_equals)(token, token_len, name)) {
-        return 1;
+        return true;
     }
-    if (strncmp(name, prefix, (size_t)prefix_len) != 0) {
-        return 0;
+    if (strncmp32(name, prefix, prefix_len)) {
+        return false;
     }
-    return CAT(ENUM_PREFIX_, token_equals)(token, token_len,
-                                           name + prefix_len);
-}
-
-static int32
-CAT(ENUM_PREFIX_, is_ident_char)(char c) {
-    return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
-            || (c >= '0' && c <= '9') || c == '_');
+    return CAT(ENUM_PREFIX_, token_equals)(token, token_len, name + prefix_len);
 }
 
 static enum ENUM_NAME
 CAT(ENUM_PREFIX_, parse)(char *string) {
-    uint32 result = 0;
+    ENUM_UNDERLYING_TYPE result = 0;
     char *p = string;
 
     if (p == NULL) {
@@ -243,16 +260,8 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
             break;
         }
 
-        if (*p >= '0' && *p <= '9') {
-            char *end = NULL;
-            unsigned long value = strtoul(p, &end, 0);
-            result |= (uint32)value;
-            p = end;
-            continue;
-        }
-
         token = p;
-        while (CAT(ENUM_PREFIX_, is_ident_char)(*p)) {
+        while (is_ident_char(*p)) {
             p += 1;
         }
         token_len = (int32)(p - token);
@@ -270,18 +279,20 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
         }
 #endif
 
+#if ENUM_BITFLAGS == 0
         if (CAT(ENUM_PREFIX_, token_equals)(token, token_len,
                                             QUOTE(ENUM_PREFIX_) "LAST")
             || CAT(ENUM_PREFIX_, token_equals)(token, token_len, "LAST")) {
-            result |= (uint32)CAT(ENUM_PREFIX_, LAST);
+            result |= (ENUM_UNDERLYING_TYPE)CAT(ENUM_PREFIX_, LAST);
             matched = 1;
         }
+#endif
 
         #define XENUM_PARSE_ONE(e) \
             if (!matched \
                 && CAT(ENUM_PREFIX_, token_equals_enum_name)(token, token_len, \
                                                             #e)) { \
-                result |= (uint32)e; \
+                result |= (ENUM_UNDERLYING_TYPE)e; \
                 matched = 1; \
             }
         #define XENUM_PARSE_1(e)    XENUM_PARSE_ONE(e)
@@ -309,6 +320,7 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
 static inline void
 CAT(ENUM_PREFIX_, functions_sink)(void) {
     (void)CAT(ENUM_PREFIX_, str);
+    (void)CAT(ENUM_PREFIX_, str_free);
     (void)CAT(ENUM_PREFIX_, parse);
     return;
 }
@@ -318,6 +330,8 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #undef ENUM_PREFIX_
 #undef ENUM_FIELDS
 #undef ENUM_BITFLAGS
+#undef ENUM_UNDERLYING_TYPE
+#undef ENUM_UNDERLYING_TYPE_SPEC
 
 #if TESTING_xenums && !defined(TESTING_xenums_started)
 #define TESTING_xenums_started
@@ -343,14 +357,19 @@ main(void) {
 
     s = TEST_FLAGS_str(TEST_FLAGS_READ);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ");
+    TEST_FLAGS_str_free(s);
 
     s = TEST_FLAGS_str(TEST_FLAGS_READ | TEST_FLAGS_EXEC);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_EXEC");
+    TEST_FLAGS_str_free(s);
 
     s = TEST_FLAGS_str(TEST_FLAGS_READ | TEST_FLAGS_WRITE | TEST_FLAGS_EXEC);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_WRITE|TEST_FLAGS_EXEC");
+    TEST_FLAGS_str_free(s);
 
-    ASSERT_EQUAL(TEST_FLAGS_str(0), "NONE");
+    s = TEST_FLAGS_str(0);
+    ASSERT_EQUAL(s, "NONE");
+    TEST_FLAGS_str_free(s);
 
     ASSERT_EQUAL((uint32)TEST_FLAGS_parse("TEST_FLAGS_READ"), TEST_FLAGS_READ);
     ASSERT_EQUAL((uint32)TEST_FLAGS_parse("TEST_FLAGS_READ | TEST_FLAGS_EXEC"),
@@ -361,22 +380,30 @@ main(void) {
 
     s = TEST_NORMAL_str(TEST_NORMAL_APPLE);
     ASSERT_EQUAL(s, "TEST_NORMAL_APPLE");
+    TEST_NORMAL_str_free(s);
 
     s = TEST_NORMAL_str(TEST_NORMAL_BANANA);
     ASSERT_EQUAL(s, "TEST_NORMAL_BANANA");
+    TEST_NORMAL_str_free(s);
 
     s = TEST_NORMAL_str(TEST_NORMAL_CHERRY);
     ASSERT_EQUAL(s, "TEST_NORMAL_CHERRY");
+    TEST_NORMAL_str_free(s);
 
     ASSERT_EQUAL((uint32)TEST_NORMAL_parse("TEST_NORMAL_APPLE"), TEST_NORMAL_APPLE);
     ASSERT_EQUAL((uint32)TEST_NORMAL_parse("BANANA"), TEST_NORMAL_BANANA);
     ASSERT_EQUAL((uint32)TEST_NORMAL_parse("TEST_NORMAL_CHERRY"), TEST_NORMAL_CHERRY);
 
     s = TEST_NORMAL_str(999);
-    ASSERT_EQUAL(s, "Unknown value");
+    ASSERT_EQUAL(s, "Invalid enum value");
+    TEST_NORMAL_str_free(s);
 
     printf("xenums.c: All tests passed successfully.\n");
     return EXIT_SUCCESS;
 }
 
 #endif /* TESTING_xenums && !defined(TESTING_xenums_started) */
+
+#if CC_CLANG
+#pragma clang diagnostic pop
+#endif

@@ -2,7 +2,9 @@
 #define UTF8_C
 
 #include <stdlib.h>
-#include "util.h"
+#include <wchar.h>
+#include <wctype.h>
+#include "primitives.h"
 #include "base_macros.h"
 
 #define UTF_INVALID 0xFFFD
@@ -13,16 +15,40 @@
 #define TESTING_utf8 0
 #endif
 
-static uchar utf8_byte[] = {0x80, 0, 0xC0, 0xE0, 0xF0};
-static uchar utf8_mask[] = {0xC0, 0x80, 0xE0, 0xF0, 0xF8};
-static uint32 utf8_min[] = {0, 0, 0x80, 0x800, 0x10000};
-static uint32 utf8_max[] = {0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF};
+static uint8 utf8_byte[] = {
+    0x80,
+    0,
+    0xC0,
+    0xE0,
+    0xF0,
+};
+static uint8 utf8_mask[] = {
+    0xC0,
+    0x80,
+    0xE0,
+    0xF0,
+    0xF8,
+};
+static uint32 utf8_min[] = {
+    0,
+    0,
+    0x80,
+    0x800,
+    0x10000,
+};
+static uint32 utf8_max[] = {
+    0x10FFFF,
+    0x7F,
+    0x7FF,
+    0xFFFF,
+    0x10FFFF,
+};
 
 static uint32
 utf8_decode_byte(char c, int32 *i) {
-    for (*i = 0; *i < LENGTH(utf8_mask); ++(*i)) {
-        if (((uchar)c & utf8_mask[*i]) == utf8_byte[*i]) {
-            return (uchar)c & ~utf8_mask[*i];
+    for (*i = 0; *i < LENGTH(utf8_mask); *i += 1) {
+        if (((uint8)c & utf8_mask[*i]) == utf8_byte[*i]) {
+            return (uint8)c & ~utf8_mask[*i];
         }
     }
 
@@ -36,23 +62,24 @@ utf8_encode_byte(uint32 u, int32 i) {
 
 static int32
 utf8_validate(uint32 *u, int32 i) {
-    if (!BETWEEN(*u, utf8_min[i], utf8_max[i]) || BETWEEN(*u, 0xD800, 0xDFFF)) {
+    if (!BETWEEN(*u, utf8_min[i], utf8_max[i])
+        || BETWEEN(*u, 0xD800, 0xDFFF)) {
         *u = UTF_INVALID;
     }
-    for (i = 1; *u > utf8_max[i]; i += 1)
-        ;
+    for (i = 1; *u > utf8_max[i]; i += 1) {
+    }
 
     return i;
 }
 
 static int32
-utf8_decode(char *c, uint32 *u, int32 clen) {
+utf8_decode_raw(char *c, uint32 *u, int32 clen) {
     int32 len;
     int32 type;
     uint32 rune_decoded;
 
     *u = UTF_INVALID;
-    if (!clen) {
+    if (clen <= 0) {
         return 0;
     }
     rune_decoded = utf8_decode_byte(c[0], &len);
@@ -61,7 +88,7 @@ utf8_decode(char *c, uint32 *u, int32 clen) {
     }
     {
         int32 j = 1;
-        for (int32 i = 1; i < clen && j < len; i += 1, j += 1) {
+        for (int32 i = 1; (i < clen) && (j < len); i += 1, j += 1) {
             rune_decoded = (rune_decoded << 6) | utf8_decode_byte(c[i], &type);
             if (type != 0) {
                 return j;
@@ -78,7 +105,7 @@ utf8_decode(char *c, uint32 *u, int32 clen) {
 }
 
 static int32
-utf8_encode(uint32 u, char *c) {
+utf8_encode_raw(uint32 u, char *c) {
     int32 len;
 
     len = utf8_validate(&u, 0);
@@ -86,13 +113,241 @@ utf8_encode(uint32 u, char *c) {
         return 0;
     }
 
-    for (int32 i = len - 1; i != 0; --i) {
+    for (int32 i = len - 1; i != 0; i -= 1) {
         c[i] = utf8_encode_byte(u, 0);
         u >>= 6;
     }
     c[0] = utf8_encode_byte(u, len);
 
     return len;
+}
+
+static int32
+utf8_decode(char *string, int32 string_len, uint32 *rune) {
+    int32 result;
+    uint32 decoded;
+
+    result = utf8_decode_raw(string, &decoded, string_len);
+    if (result <= 0) {
+        result = 1;
+        decoded = '.';
+    }
+    if (rune) {
+        *rune = decoded;
+    }
+
+    return result;
+}
+
+static int32
+utf8_encode(uint32 rune, char *buffer, int32 buffer_capacity) {
+    char encoded[4];
+    int32 result;
+
+    result = utf8_encode_raw(rune, encoded);
+    if (result > buffer_capacity) {
+        return 0;
+    }
+    if (result > 0) {
+        for (int32 i = 0; i < result; i += 1) {
+            buffer[i] = encoded[i];
+        }
+    }
+
+    return result;
+}
+
+#if !OS_WINDOWS
+static int32
+utf8_char_width(uint32 rune) {
+    int32 width;
+    int32 result;
+
+    width = (int32)wcwidth((wchar_t)rune);
+    if (width < 0) {
+        result = 1;
+    } else {
+        result = (int32)width;
+    }
+
+    return result;
+}
+#endif
+
+static int32
+utf8_next_position(char *string, int32 string_len, int32 byte) {
+    int32 length;
+    int32 result;
+    uint32 rune;
+
+    if (byte >= string_len) {
+        return string_len;
+    }
+
+    length = utf8_decode(string + byte, string_len - byte, &rune);
+    result = byte + length;
+    if (result > string_len) {
+        result = string_len;
+    }
+
+    return result;
+}
+
+static int32
+utf8_characters(char *string, int32 string_len) {
+    int32 result;
+    int32 byte;
+
+    result = 0;
+    byte = 0;
+    while (byte < string_len) {
+        byte = utf8_next_position(string, string_len, byte);
+        result += 1;
+    }
+
+    return result;
+}
+
+static int32
+utf8_byte_position(char *string, int32 string_len,
+                   int32 character) {
+    int32 byte;
+
+    if (character <= 0) {
+        return 0;
+    }
+
+    byte = 0;
+    for (int32 i = 0; (i < character) && (byte < string_len); i += 1) {
+        byte = utf8_next_position(string, string_len, byte);
+    }
+
+    return byte;
+}
+
+#if !OS_WINDOWS
+static int32
+utf8_width(char *string, int32 string_len) {
+    int32 result;
+    int32 byte;
+
+    result = 0;
+    byte = 0;
+    while (byte < string_len) {
+        int32 length;
+        uint32 rune;
+
+        length = utf8_decode(string + byte, string_len - byte, &rune);
+        result += utf8_char_width(rune);
+        byte += length;
+    }
+
+    return result;
+}
+#endif
+
+#if !OS_WINDOWS
+static int32
+utf8_suffix_width_position(char *string, int32 string_len,
+                           int32 max_width) {
+    int32 byte;
+    int32 remaining_width;
+
+    if (max_width <= 0) {
+        return string_len;
+    }
+
+    byte = 0;
+    remaining_width = utf8_width(string, string_len);
+    while (byte < string_len) {
+        int32 length;
+        uint32 rune;
+
+        if (remaining_width <= max_width) {
+            return byte;
+        }
+
+        length = utf8_decode(string + byte, string_len - byte, &rune);
+        remaining_width -= utf8_char_width(rune);
+        byte += length;
+    }
+
+    return string_len;
+}
+#endif
+
+#if !OS_WINDOWS
+static int32
+utf8_cut_width(char *string, int32 string_len, int32 max_width) {
+    int32 byte;
+    int32 result_width;
+
+    byte = 0;
+    result_width = 0;
+    while (byte < string_len) {
+        int32 length;
+        int32 next_width;
+        uint32 rune;
+
+        length = utf8_decode(string + byte, string_len - byte, &rune);
+        next_width = result_width + utf8_char_width(rune);
+        if (next_width > max_width) {
+            return byte;
+        }
+
+        result_width = next_width;
+        byte += length;
+    }
+
+    return string_len;
+}
+#endif
+
+static int32
+utf8_capitalize_first_letters(char *string, int32 string_len,
+                              char *buffer, int32 buffer_capacity) {
+    int32 byte;
+    int32 result_len;
+    wchar_t previous;
+
+    byte = 0;
+    previous = 0;
+    result_len = 0;
+    while (byte < string_len) {
+        char encoded[4];
+        int32 encoded_len;
+        int32 length;
+        uint32 rune;
+        wchar_t wc;
+
+        length = utf8_decode(string + byte, string_len - byte, &rune);
+        wc = (wchar_t)rune;
+        if (!iswalpha((wint_t)previous) && (previous != L'\'')) {
+            wc = (wchar_t)towupper((wint_t)wc);
+        }
+
+        encoded_len = utf8_encode((uint32)wc, encoded, SIZEOF(encoded));
+        if (encoded_len <= 0) {
+            encoded_len = length;
+            if ((buffer != NULL)
+                && ((result_len + encoded_len) <= buffer_capacity)) {
+                for (int32 i = 0; i < encoded_len; i += 1) {
+                    buffer[result_len + i] = string[byte + i];
+                }
+            }
+        } else if ((buffer != NULL)
+                   && ((result_len + encoded_len) <= buffer_capacity)) {
+            for (int32 i = 0; i < encoded_len; i += 1) {
+                buffer[result_len + i] = encoded[i];
+            }
+        }
+
+        result_len += encoded_len;
+        previous = wc;
+        byte += length;
+    }
+
+    return result_len;
 }
 
 static int32
@@ -139,7 +394,7 @@ random_utf8_string(char *buffer, int32 capacity, int32 min_len) {
             u = (uint32)(0x10000 + (rand() % (0x10FFFF - 0x10000 + 1)));
         }
 
-        encoded_len = utf8_encode(u, temp_buf);
+        encoded_len = utf8_encode(u, temp_buf, SIZEOF(temp_buf));
 
         if (encoded_len > 0) {
             if (current_byte_len + encoded_len <= max_len) {
@@ -168,6 +423,11 @@ random_utf8_string(char *buffer, int32 capacity, int32 min_len) {
 static inline void
 utf8_functions_sink(void) {
     (void)utf8_decode;
+    (void)utf8_encode;
+    (void)utf8_characters;
+    (void)utf8_byte_position;
+    (void)utf8_next_position;
+    (void)utf8_capitalize_first_letters;
     (void)random_utf8_string;
     return;
 }
@@ -177,6 +437,8 @@ utf8_functions_sink(void) {
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <wchar.h>
+#include <wctype.h>
 #include <string.h>
 
 #include "assert.c"
@@ -190,31 +452,31 @@ main(void) {
         int32 len;
 
         /* Test 1-byte ASCII */
-        len = utf8_encode(0x41, buf);
+        len = utf8_encode(0x41, buf, SIZEOF(buf));
         ASSERT_EQUAL(len, 1);
         ASSERT_EQUAL(buf[0], 'A');
-        len = utf8_decode(buf, &u, 1);
+        len = utf8_decode(buf, 1, &u);
         ASSERT_EQUAL(len, 1);
         ASSERT_EQUAL(u, 0x41);
 
         /* Test 2-byte (e.g. U+00F1 n with tilde) */
-        len = utf8_encode(0xF1, buf);
+        len = utf8_encode(0xF1, buf, SIZEOF(buf));
         ASSERT_EQUAL(len, 2);
-        len = utf8_decode(buf, &u, 2);
+        len = utf8_decode(buf, 2, &u);
         ASSERT_EQUAL(len, 2);
         ASSERT_EQUAL(u, 0xF1);
 
         /* Test 3-byte (e.g. U+20AC Euro sign) */
-        len = utf8_encode(0x20AC, buf);
+        len = utf8_encode(0x20AC, buf, SIZEOF(buf));
         ASSERT_EQUAL(len, 3);
-        len = utf8_decode(buf, &u, 3);
+        len = utf8_decode(buf, 3, &u);
         ASSERT_EQUAL(len, 3);
         ASSERT_EQUAL(u, 0x20AC);
 
         /* Test 4-byte (e.g. U+1F60A Smiling Face) */
-        len = utf8_encode(0x1F60A, buf);
+        len = utf8_encode(0x1F60A, buf, SIZEOF(buf));
         ASSERT_EQUAL(len, 4);
-        len = utf8_decode(buf, &u, 4);
+        len = utf8_decode(buf, 4, &u);
         ASSERT_EQUAL(len, 4);
         ASSERT_EQUAL(u, 0x1F60A);
     }
@@ -238,7 +500,7 @@ main(void) {
             0x1F1E9, // Regional Indicator D
             0x1F1EA  // Regional Indicator E
         };
-        int32 str_len = (int32)strlen(test_str);
+        int32 str_len = strlen32(test_str);
         int32 consumed_total = 0;
         int32 expected_idx = 0;
 
@@ -246,8 +508,8 @@ main(void) {
             uint32 u;
             int32 len;
 
-            len = utf8_decode(test_str + consumed_total, &u,
-                              str_len - consumed_total);
+            len = utf8_decode(test_str + consumed_total,
+                              str_len - consumed_total, &u);
 
             ASSERT_EQUAL(u, expected[expected_idx]);
 
@@ -278,7 +540,7 @@ main(void) {
     /* Test random_utf8_string generation and decoding validation */
     {
         char test_buf[256];
-        srand((uint)time(NULL));
+        srand((uint32)time(NULL));
 
         for (int32 i = 0; i < 50; i += 1) {
             int32 gen_len = random_utf8_string(test_buf, SIZEOF(test_buf), 10);
@@ -290,8 +552,8 @@ main(void) {
 
             while (consumed < gen_len) {
                 uint32 u;
-                int32 dec_len = utf8_decode(test_buf + consumed, &u,
-                                            gen_len - consumed);
+                int32 dec_len = utf8_decode(test_buf + consumed,
+                                            gen_len - consumed, &u);
                 ASSERT(dec_len > 0);
                 ASSERT(u != UTF_INVALID);
                 consumed += dec_len;

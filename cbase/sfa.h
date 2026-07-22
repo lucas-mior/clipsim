@@ -31,6 +31,10 @@ static int32
 CAT(string_from_, SFA_NAME)(char *buffer, int32 size,
                             char *sep, SFA_TYPE *array, int32 array_length) {
     int32 n = 0;
+    if (array_length <= 0) {
+        buffer[0] = '\0';
+        return 0;
+    }
     for (int32 i = 0; i < (array_length - 1); i += 1) {
         int32 space = size - n;
         int32 m = snprintf2(buffer + n, space, SFA_FORMAT "%s", array[i], sep);
