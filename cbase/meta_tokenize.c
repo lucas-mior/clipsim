@@ -6,86 +6,78 @@
 
 #define TOKENIZE_INITIAL_TOKEN_CAPACITY 32
 
+#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+#define TESTING_meta_tokenize 1
+#elif !defined(TESTING_meta_tokenize)
+#define TESTING_meta_tokenize 0
+#endif
+
 static bool
 char_is_alpha(char c) {
-    bool result;
-
-    result = false;
     if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
-        result = true;
+        return true;
     }
-    return result;
+    return false;
 }
 
 static bool
 char_is_digit(char c) {
-    bool result;
-
-    result = false;
     if ((c >= '0') && (c <= '9')) {
-        result = true;
+        return true;
     }
-    return result;
+    return false;
 }
 
 static bool
 token_is_number(Token *token) {
-    bool result;
-
-    result = false;
     if ((token->kind == TOKEN_LITERAL) && (token->len > 0)
-    && (char_is_digit(token->text[0])
-    || ((token->text[0] == '.') && (token->len > 1)
-    && char_is_digit(token->text[1])))) {
-        result = true;
+        && (char_is_digit(token->text[0])
+            || ((token->text[0] == '.') && (token->len > 1)
+                && char_is_digit(token->text[1])))) {
+        return true;
     }
-    return result;
+    return false;
 }
 
 static bool
 char_is_identifier_start(char c) {
-    bool result;
-
-    result = false;
     if (char_is_alpha(c) || (c == '_')) {
-        result = true;
+        return true;
     }
-    return result;
+    return false;
 }
 
 static bool
 char_is_identifier_body(char c) {
-    bool result;
-
-    result = false;
     if (char_is_identifier_start(c) || char_is_digit(c)) {
-        result = true;
+        return true;
     }
-    return result;
+    return false;
 }
 
 static bool
 char_is_horizontal_space(char c) {
-    bool result;
-
-    result = false;
-    if ((c == ' ') || (c == '\t') || (c == '\v') || (c == '\f')
-    || (c == '\r')) {
-        result = true;
+    switch (c) {
+    case ' ': 
+    case '\t': 
+    case '\v': 
+    case '\f':
+    case '\r':
+        return true;
+    default:
+        return false;
     }
-    return result;
 }
 
 static bool
 char_is_number_body(char c) {
-    bool result;
-
-    result = false;
-    if (char_is_identifier_body(c) || char_is_digit(c) || (c == '.')
-    || (c == '\'')) {
-        result = true;
+    if (char_is_identifier_body(c)
+        || char_is_digit(c)
+        || (c == '.')
+        || (c == '\'')) {
+        return true;
     }
-    return result;
+    return false;
 }
 
 static int32
@@ -94,21 +86,19 @@ scan_number_literal(char *text, int32 text_len, int32 start) {
 
     result = 1;
     if ((text[start] == '.') && ((start + 1) < text_len)
-    && char_is_digit(text[start + 1])) {
+        && char_is_digit(text[start + 1])) {
         result = 2;
     }
 
     while ((start + result) < text_len) {
-        char c;
-        char prev;
+        char c = text[start + result];
+        char prev = text[start + result - 1];
 
-        c = text[start + result];
-        prev = text[start + result - 1];
         if (char_is_number_body(c)) {
             result += 1;
         } else if (((c == '+') || (c == '-'))
-        && ((prev == 'e') || (prev == 'E') || (prev == 'p')
-        || (prev == 'P'))) {
+                   && ((prev == 'e') || (prev == 'E') || (prev == 'p')
+                       || (prev == 'P'))) {
             result += 1;
         } else {
             break;
@@ -119,19 +109,16 @@ scan_number_literal(char *text, int32 text_len, int32 start) {
 
 static bool
 line_starts_preprocessor(char *text, int32 len) {
-    bool result;
-
-    result = false;
     for (int32 i = 0; i < len; i += 1) {
         if (char_is_horizontal_space(text[i])) {
             continue;
         }
         if (text[i] == '#') {
-            result = true;
+            return true;
         }
         break;
     }
-    return result;
+    return false;
 }
 
 static void
@@ -155,22 +142,20 @@ line_reserve_tokens(Line *line, int32 extra) {
     }
 
     if (line->tokens) {
-        new_tokens = realloc2(line->tokens, line->token_capacity,
-        new_capacity, SIZEOF(*line->tokens));
+        new_tokens = realloc2(line->tokens, line->token_capacity, new_capacity,
+                              SIZEOF(*line->tokens));
     } else {
         new_tokens = malloc2(new_capacity*SIZEOF(*new_tokens));
     }
+
     line->tokens = new_tokens;
     line->token_capacity = new_capacity;
     return;
 }
 
 static void
-line_add_token(Line *line,
-enum TokenKind category,
-char *text,
-int32 len,
-int32 column) {
+line_add_token(Line *line, enum TokenKind category, char *text, int32 len,
+               int32 column) {
     Token *token;
 
     if (len <= 0) {
@@ -178,36 +163,51 @@ int32 column) {
     }
 
     line_reserve_tokens(line, 1);
+
     token = &line->tokens[line->token_count];
     token->kind = category;
     token->len = len;
     token->column = column;
     token->offset = column;
+
     token->text = malloc2(len + 1);
     memcpy64(token->text, text, len);
     token->text[len] = '\0';
+
     line->token_count += 1;
     return;
 }
 
 static int32
 literal_quote_index(char *text, int32 text_len, int32 start) {
-    int32 result;
+    int32 result = -1;
 
-    result = -1;
-    if ((text[start] == '\'') || (text[start] == '"')) {
+    switch (text[start]) {
+    case '\'':
+    case '"':
         result = start;
-    } else if ((text[start] == 'L') || (text[start] == 'u')
-    || (text[start] == 'U')) {
+        break;
+    case 'L':
+    case 'U':
         if (((start + 1) < text_len)
-        && ((text[start + 1] == '\'') || (text[start + 1] == '"'))) {
+            && ((text[start + 1] == '\'') || (text[start + 1] == '"'))) {
             result = start + 1;
-        } else if ((text[start] == 'u') && ((start + 2) < text_len)
-        && (text[start + 1] == '8')
-        && ((text[start + 2] == '\'') || (text[start + 2] == '"'))) {
+        }
+        break;
+    case 'u':
+        if (((start + 1) < text_len)
+            && ((text[start + 1] == '\'') || (text[start + 1] == '"'))) {
+            result = start + 1;
+        } else if (((start + 2) < text_len)
+                   && (text[start + 1] == '8')
+                   && ((text[start + 2] == '\'') || (text[start + 2] == '"'))) {
             result = start + 2;
         }
+        break;
+    default:
+        break;
     }
+
     return result;
 }
 
@@ -228,7 +228,11 @@ scan_literal_token(char *text, int32 text_len, int32 start) {
     i = quote_index + 1;
     while (i < text_len) {
         if (text[i] == '\\') {
-            i += 2;
+            if ((i + 1) < text_len) {
+                i += 2;
+            } else {
+                i = text_len;
+            }
             continue;
         }
         if (text[i] == quote) {
@@ -240,6 +244,7 @@ scan_literal_token(char *text, int32 text_len, int32 start) {
         }
         i += 1;
     }
+
     result = i - start;
     return result;
 }
@@ -256,10 +261,7 @@ scan_line_comment(char *text, int32 text_len, int32 start) {
 }
 
 static int32
-scan_block_comment(char *text,
-int32 len,
-int32 start,
-bool *in_block_comment) {
+scan_block_comment(char *text, int32 len, int32 start, bool *in_block_comment) {
     int32 i;
 
     i = start;
@@ -278,15 +280,13 @@ bool *in_block_comment) {
         }
         i += 1;
     }
+
     *in_block_comment = true;
     return i - start;
 }
 
 static enum TokenKind
-operator_or_punct_category(char *text,
-int32 len,
-int32 start,
-int32 *out_len) {
+operator_or_punct_category(char *text, int32 len, int32 start, int32 *out_len) {
     enum TokenKind result;
     char a;
     char b;
@@ -309,86 +309,146 @@ int32 *out_len) {
         d = text[start + 3];
     }
 
-    if ((a == '%') && (b == ':') && (c == '%') && (d == ':')) {
-        *out_len = 4;
-    } else if (((a == '<') && (b == '<') && (c == '='))
-    || ((a == '>') && (b == '>') && (c == '='))) {
-        *out_len = 3;
-    } else if ((a == '.') && (b == '.') && (c == '.')) {
-        *out_len = 3;
+    switch (a) {
+    case '%':
+        if ((b == ':') && (c == '%') && (d == ':')) {
+            *out_len = 4;
+        } else if (b == '=') {
+            *out_len = 2;
+        } else if (b == ':') {
+            *out_len = 2;
+        } else if (b == '>') {
+            *out_len = 2;
+            result = TOKEN_PUNCT;
+        }
+        break;
+    case '<':
+        if ((b == '<') && (c == '=')) {
+            *out_len = 3;
+        } else if ((b == '=') || (b == '<')) {
+            *out_len = 2;
+        } else if ((b == ':') || (b == '%')) {
+            *out_len = 2;
+            result = TOKEN_PUNCT;
+        }
+        break;
+    case '>':
+        if ((b == '>') && (c == '=')) {
+            *out_len = 3;
+        } else if ((b == '=') || (b == '>')) {
+            *out_len = 2;
+        }
+        break;
+    case '.':
+        if ((b == '.') && (c == '.')) {
+            *out_len = 3;
+            result = TOKEN_PUNCT;
+        } else {
+            result = TOKEN_PUNCT;
+        }
+        break;
+    case '+':
+        if ((b == '+') || (b == '=')) {
+            *out_len = 2;
+        }
+        break;
+    case '-':
+        if ((b == '-') || (b == '=') || (b == '>')) {
+            *out_len = 2;
+        }
+        break;
+    case '*':
+    case '/':
+    case '=':
+    case '!':
+    case '^':
+        if (b == '=') {
+            *out_len = 2;
+        }
+        break;
+    case '&':
+        if ((b == '&') || (b == '=')) {
+            *out_len = 2;
+        }
+        break;
+    case '|':
+        if ((b == '|') || (b == '=')) {
+            *out_len = 2;
+        }
+        break;
+    case ':':
+        if (b == ':') {
+            *out_len = 2;
+        } else if (b == '>') {
+            *out_len = 2;
+            result = TOKEN_PUNCT;
+        } else {
+            result = TOKEN_PUNCT;
+        }
+        break;
+    case '#':
+        if (b == '#') {
+            *out_len = 2;
+        }
+        break;
+    case ',':
+    case ';':
+    case '(':
+    case ')':
+    case '[':
+    case ']':
+    case '{':
+    case '}':
         result = TOKEN_PUNCT;
-    } else if (((a == '+') && ((b == '+') || (b == '=')))
-    || ((a == '-') && ((b == '-') || (b == '=') || (b == '>')))
-    || ((a == '*') && (b == '='))
-    || ((a == '/') && (b == '='))
-    || ((a == '%') && (b == '='))
-    || ((a == '=') && (b == '='))
-    || ((a == '!') && (b == '='))
-    || ((a == '<') && ((b == '=') || (b == '<')))
-    || ((a == '>') && ((b == '=') || (b == '>')))
-    || ((a == '&') && ((b == '&') || (b == '=')))
-    || ((a == '|') && ((b == '|') || (b == '=')))
-    || ((a == '^') && (b == '='))
-    || ((a == ':') && (b == ':'))
-    || ((a == '#') && (b == '#'))
-    || ((a == '%') && (b == ':'))) {
-        *out_len = 2;
-    } else if (((a == '<') && ((b == ':') || (b == '%')))
-    || ((a == ':') && (b == '>'))
-    || ((a == '%') && (b == '>'))) {
-        *out_len = 2;
-        result = TOKEN_PUNCT;
-    } else if ((a == ':') || (a == '.') || (a == ',') || (a == ';')
-    || (a == '(') || (a == ')') || (a == '[') || (a == ']')
-    || (a == '{') || (a == '}')) {
-        result = TOKEN_PUNCT;
+        break;
+    default:
+        break;
     }
     return result;
 }
 
 static bool
 char_is_operator_or_punct(char c) {
-    bool result;
-
-    result = false;
-    if ((c == '+')
-    || (c == '-')
-    || (c == '*')
-    || (c == '/')
-    || (c == '%')
-    || (c == '=')
-    || (c == '!')
-    || (c == '<')
-    || (c == '>')
-    || (c == '&')
-    || (c == '|')
-    || (c == '^')
-    || (c == '~')
-    || (c == '?')
-    || (c == ':')
-    || (c == '.')
-    || (c == ',')
-    || (c == ';')
-    || (c == '(')
-    || (c == ')')
-    || (c == '[')
-    || (c == ']')
-    || (c == '{')
-    || (c == '}')
-    || (c == '#')) {
-        result = true;
+    switch (c) {
+    case '+':
+    case '-':
+    case '*':
+    case '/':
+    case '%':
+    case '=':
+    case '!':
+    case '<':
+    case '>':
+    case '&':
+    case '|':
+    case '^':
+    case '~':
+    case '?':
+    case ':':
+    case '.':
+    case ',':
+    case ';':
+    case '(':
+    case ')':
+    case '[':
+    case ']':
+    case '{':
+    case '}':
+    case '#':
+        return true;
+    default:
+        return false;
     }
-    return result;
 }
 
 static void
 tokenize_line_with_flags(Line *line, bool *in_block_comment, int32 flags) {
     int32 i;
 
-    if (((flags & TOKENIZE_PREPROCESSOR_LINES) != 0)
-    && line_starts_preprocessor(line->text, line->len)) {
-        line_add_token(line, TOKEN_PREPROC, line->text,
-        line->len, 0);
+    if (!*in_block_comment
+        && (flags & TOKENIZE_PREPROCESSOR_LINES)
+        && line_starts_preprocessor(line->text, line->len)) {
+        line_add_token(line, TOKEN_PREPROC, line->text, line->len, 0);
         return;
     }
 
@@ -400,76 +460,65 @@ tokenize_line_with_flags(Line *line, bool *in_block_comment, int32 flags) {
         if (*in_block_comment) {
             if (line->text[i] == '\n') {
                 if ((flags & TOKENIZE_SKIP_WHITESPACE) == 0) {
-                    line_add_token(line, TOKEN_NEWLINE,
-                    line->text + i, 1, i);
+                    line_add_token(line, TOKEN_NEWLINE, line->text + i, 1, i);
                 }
                 i += 1;
                 continue;
             }
             token_len = scan_block_comment(line->text, line->len, i,
-            in_block_comment);
-            line_add_token(line, TOKEN_COMMENT, line->text + i,
-            token_len, i);
+                                           in_block_comment);
+            line_add_token(line, TOKEN_COMMENT, line->text + i, token_len, i);
             i += token_len;
             continue;
         }
 
         if (line->text[i] == '\n') {
             if ((flags & TOKENIZE_SKIP_WHITESPACE) == 0) {
-                line_add_token(line, TOKEN_NEWLINE, line->text + i,
-                1, i);
+                line_add_token(line, TOKEN_NEWLINE, line->text + i, 1, i);
             }
             i += 1;
         } else if (char_is_horizontal_space(line->text[i])) {
             token_len = 1;
             while (((i + token_len) < line->len)
-            && char_is_horizontal_space(line->text[i + token_len])) {
+                   && char_is_horizontal_space(line->text[i + token_len])) {
                 token_len += 1;
             }
             if ((flags & TOKENIZE_SKIP_WHITESPACE) == 0) {
-                line_add_token(line, TOKEN_SPACE, line->text + i,
-                token_len, i);
+                line_add_token(line, TOKEN_SPACE, line->text + i, token_len, i);
             }
             i += token_len;
-        } else if (((i + 1) < line->len)
-        && (line->text[i] == '/')
-        && (line->text[i + 1] == '/')) {
+        } else if (((i + 1) < line->len) && (line->text[i] == '/')
+                   && (line->text[i + 1] == '/')) {
             token_len = scan_line_comment(line->text, line->len, i);
-            line_add_token(line, TOKEN_COMMENT, line->text + i,
-            token_len, i);
+            line_add_token(line, TOKEN_COMMENT, line->text + i, token_len, i);
             i += token_len;
-        } else if (((i + 1) < line->len)
-        && (line->text[i] == '/')
-        && (line->text[i + 1] == '*')) {
+        } else if (((i + 1) < line->len) && (line->text[i] == '/')
+                   && (line->text[i + 1] == '*')) {
             token_len = scan_block_comment(line->text, line->len, i,
-            in_block_comment);
-            line_add_token(line, TOKEN_COMMENT, line->text + i,
-            token_len, i);
+                                           in_block_comment);
+            line_add_token(line, TOKEN_COMMENT, line->text + i, token_len, i);
             i += token_len;
-        } else if ((token_len = scan_literal_token(line->text, line->len,
-        i)) > 0) {
-            line_add_token(line, TOKEN_LITERAL, line->text + i,
-            token_len, i);
+        } else if ((token_len = scan_literal_token(line->text, line->len, i))
+                   > 0) {
+            line_add_token(line, TOKEN_LITERAL, line->text + i, token_len, i);
             i += token_len;
         } else if (char_is_identifier_start(line->text[i])) {
             token_len = 1;
             while (((i + token_len) < line->len)
-            && char_is_identifier_body(line->text[i + token_len])) {
+                   && char_is_identifier_body(line->text[i + token_len])) {
                 token_len += 1;
             }
-            line_add_token(line, TOKEN_IDENT, line->text + i,
-            token_len, i);
+            line_add_token(line, TOKEN_IDENT, line->text + i, token_len, i);
             i += token_len;
         } else if (char_is_digit(line->text[i])
-        || ((line->text[i] == '.') && ((i + 1) < line->len)
-        && char_is_digit(line->text[i + 1]))) {
+                   || ((line->text[i] == '.') && ((i + 1) < line->len)
+                       && char_is_digit(line->text[i + 1]))) {
             token_len = scan_number_literal(line->text, line->len, i);
-            line_add_token(line, TOKEN_LITERAL, line->text + i,
-            token_len, i);
+            line_add_token(line, TOKEN_LITERAL, line->text + i, token_len, i);
             i += token_len;
         } else if (char_is_operator_or_punct(line->text[i])) {
-            category = operator_or_punct_category(line->text, line->len,
-            i, &token_len);
+            category = operator_or_punct_category(line->text, line->len, i,
+                                                  &token_len);
             line_add_token(line, category, line->text + i, token_len, i);
             i += token_len;
         } else {
@@ -482,13 +531,13 @@ tokenize_line_with_flags(Line *line, bool *in_block_comment, int32 flags) {
 
 static Line
 tokenize_text_with_flags(char *text, int32 text_len, int32 flags) {
-    bool in_block_comment;
+    bool in_block_comment = false;
     Line result = {0};
 
-    in_block_comment = false;
     result.text = text;
     result.len = text_len;
     tokenize_line_with_flags(&result, &in_block_comment, flags);
+
     return result;
 }
 
@@ -501,7 +550,7 @@ tokenize_line(Line *line, bool *in_block_comment) {
 static void
 tokenize_cstyle_line(Line *line, bool *in_block_comment) {
     tokenize_line_with_flags(line, in_block_comment,
-    TOKENIZE_PREPROCESSOR_LINES);
+                             TOKENIZE_PREPROCESSOR_LINES);
     return;
 }
 
@@ -513,32 +562,40 @@ free_line_tokens(Line *line) {
     if (line->tokens) {
         free2(line->tokens, line->token_capacity*SIZEOF(*line->tokens));
     }
+
     line->tokens = NULL;
     line->token_count = 0;
     line->token_capacity = 0;
+
     return;
 }
 
 static bool
 token_is_trivia(Token *token) {
-    bool result;
-
-    result = false;
-    if ((token->kind == TOKEN_SPACE) || (token->kind == TOKEN_NEWLINE)
-    || (token->kind == TOKEN_COMMENT)) {
-        result = true;
+    switch (token->kind) {
+    case TOKEN_SPACE:
+    case TOKEN_NEWLINE:
+    case TOKEN_COMMENT:
+        return true;
+    case TOKEN_UNKNOWN:
+    case TOKEN_IDENT:
+    case TOKEN_LITERAL:
+    case TOKEN_OPERATOR:
+    case TOKEN_PUNCT:
+    case TOKEN_PREPROC:
+    case TOKEN_LAST:
+    default:
+        return false;
     }
-    return result;
 }
 
 static int32
 tokenization_significant_at_or_after(Tokenization *tokenization,
                                      int32 token_index) {
-    int32 result;
-
-    result = token_index;
+    int32 result = token_index;
+    assert(token_index >= 0);
     while ((result < tokenization->token_count)
-    && token_is_trivia(&tokenization->tokens[result])) {
+           && token_is_trivia(&tokenization->tokens[result])) {
         result += 1;
     }
     return result;
@@ -565,9 +622,8 @@ static int32
 tokenization_token_at_or_after_offset(Tokenization *tokenization,
                                       int32 offset) {
     for (int32 i = 0; i < tokenization->token_count; i += 1) {
-        Token *token;
+        Token *token = &tokenization->tokens[i];
 
-        token = &tokenization->tokens[i];
         if (offset < token->offset + token->len) {
             return i;
         }
@@ -616,21 +672,20 @@ tokenization_is_in_preprocessor_define(Tokenization *tokenization,
     }
     line_start_offset = tokenization_logical_line_start_offset(
         tokenization, tokenization->tokens[token_index].offset);
-    i = tokenization_token_at_or_after_offset(tokenization,
-                                               line_start_offset);
+    i = tokenization_token_at_or_after_offset(tokenization, line_start_offset);
     while ((i < tokenization->token_count)
-    && ((tokenization->tokens[i].kind == TOKEN_SPACE)
-    || (tokenization->tokens[i].kind == TOKEN_COMMENT))) {
+           && ((tokenization->tokens[i].kind == TOKEN_SPACE)
+               || (tokenization->tokens[i].kind == TOKEN_COMMENT))) {
         i += 1;
     }
     if ((i >= tokenization->token_count)
-    || !TOKEN_IS(&tokenization->tokens[i], "#")) {
+        || !TOKEN_IS(&tokenization->tokens[i], "#")) {
         return false;
     }
     i += 1;
     while ((i < tokenization->token_count)
-    && ((tokenization->tokens[i].kind == TOKEN_SPACE)
-    || (tokenization->tokens[i].kind == TOKEN_COMMENT))) {
+           && ((tokenization->tokens[i].kind == TOKEN_SPACE)
+               || (tokenization->tokens[i].kind == TOKEN_COMMENT))) {
         i += 1;
     }
     return (i < tokenization->token_count)
@@ -656,7 +711,7 @@ tokenization_find_matching(Tokenization *tokenization, int32 open_index) {
     } else if (TOKEN_IS(&tokenization->tokens[open_index], "{")) {
         close = "}";
     }
-    if (!close) {
+    if (close == NULL) {
         return -1;
     }
 
@@ -698,9 +753,16 @@ tokenize(char *text, int32 text_len) {
 
 static void
 free_tokenization(Tokenization *tokenization) {
-    for (int32 i = 0; i < tokenization->token_count; i += 1) {
-        Token *token = &tokenization->tokens[i];
-        free2(token->text, token->len + 1);
+    if (tokenization == NULL) {
+        return;
+    }
+
+    if (tokenization->tokens) {
+        for (int32 i = 0; i < tokenization->token_count; i += 1) {
+            Token *token = &tokenization->tokens[i];
+
+            free2(token->text, token->len + 1);
+        }
     }
 
     free2(tokenization->tokens,
@@ -797,8 +859,7 @@ test_scan_number_literal(void) {
     ASSERT_EQUAL(scan_number_literal("123 ", strlen32("123 "), 0), 3);
     ASSERT_EQUAL(scan_number_literal(".5f ", strlen32(".5f "), 0), 3);
     ASSERT_EQUAL(scan_number_literal("3.14e+2;", strlen32("3.14e+2;"), 0), 7);
-    ASSERT_EQUAL(scan_number_literal("0x1.fp-2,", strlen32("0x1.fp-2,"), 0),
-                 8);
+    ASSERT_EQUAL(scan_number_literal("0x1.fp-2,", strlen32("0x1.fp-2,"), 0), 8);
     ASSERT_EQUAL(scan_number_literal("1'000u", strlen32("1'000u"), 0), 6);
     return;
 }
@@ -808,15 +869,20 @@ test_literal_scanners(void) {
     char *literal = "\"a\\\"b\" tail";
 
     ASSERT_EQUAL(literal_quote_index("'x'", strlen32("'x'"), 0), 0);
-    ASSERT_EQUAL(literal_quote_index("L\"abc\"", strlen32("L\"abc\""), 0),
-                 1);
-    ASSERT_EQUAL(literal_quote_index("u8\"abc\"", strlen32("u8\"abc\""), 0),
-                 2);
+    ASSERT_EQUAL(literal_quote_index("L\"abc\"", strlen32("L\"abc\""), 0), 1);
+    ASSERT_EQUAL(literal_quote_index("u8\"abc\"", strlen32("u8\"abc\""), 0), 2);
     ASSERT_EQUAL(literal_quote_index("name", strlen32("name"), 0), -1);
     ASSERT_EQUAL(scan_literal_token(literal, strlen32(literal), 0), 6);
-    ASSERT_EQUAL(scan_literal_token("u8\"xy\";", strlen32("u8\"xy\";"), 0),
-                 6);
+    ASSERT_EQUAL(scan_literal_token("u8\"xy\";", strlen32("u8\"xy\";"), 0), 6);
     ASSERT_EQUAL(scan_literal_token("name", strlen32("name"), 0), 0);
+
+    {
+        char trailing_escape[] = {'\"', 'a', '\\'};
+
+        ASSERT_EQUAL(scan_literal_token(trailing_escape,
+                                        LENGTH(trailing_escape), 0),
+                     LENGTH(trailing_escape));
+    }
     return;
 }
 
@@ -824,16 +890,18 @@ static void
 test_comment_scanners(void) {
     bool in_block_comment = false;
 
-    ASSERT_EQUAL(scan_line_comment("// abc\nx", strlen32("// abc\nx"), 0),
-                 6);
-    ASSERT_EQUAL(scan_block_comment("/* abc */x", strlen32("/* abc */x"),
-                                    0, &in_block_comment), 9);
+    ASSERT_EQUAL(scan_line_comment("// abc\nx", strlen32("// abc\nx"), 0), 6);
+    ASSERT_EQUAL(scan_block_comment("/* abc */x", strlen32("/* abc */x"), 0,
+                                    &in_block_comment),
+                 9);
     ASSERT(!in_block_comment);
-    ASSERT_EQUAL(scan_block_comment("/* abc\nx", strlen32("/* abc\nx"),
-                                    0, &in_block_comment), 6);
+    ASSERT_EQUAL(scan_block_comment("/* abc\nx", strlen32("/* abc\nx"), 0,
+                                    &in_block_comment),
+                 6);
     ASSERT(in_block_comment);
-    ASSERT_EQUAL(scan_block_comment("continued */", strlen32("continued */"),
-                                    0, &in_block_comment), 12);
+    ASSERT_EQUAL(scan_block_comment("continued */", strlen32("continued */"), 0,
+                                    &in_block_comment),
+                 12);
     ASSERT(!in_block_comment);
     return;
 }
@@ -867,7 +935,8 @@ test_operator_or_punct_category(void) {
 
 static void
 test_line_starts_preprocessor(void) {
-    ASSERT(line_starts_preprocessor("  #define X\n", strlen32("  #define X\n")));
+    ASSERT(
+        line_starts_preprocessor("  #define X\n", strlen32("  #define X\n")));
     ASSERT(!line_starts_preprocessor("  int x;\n", strlen32("  int x;\n")));
     ASSERT(!line_starts_preprocessor("", 0));
     return;
@@ -947,6 +1016,27 @@ test_tokenize_block_comment_across_lines(void) {
 
     free_line_tokens(&first);
     free_line_tokens(&second);
+
+    first = (Line){0};
+    second = (Line){0};
+    in_block_comment = false;
+
+    first.text = "/* hello\n";
+    first.len = strlen32(first.text);
+    tokenize_cstyle_line(&first, &in_block_comment);
+    ASSERT(in_block_comment);
+
+    second.text = "# still a comment */ int x;\n";
+    second.len = strlen32(second.text);
+    tokenize_cstyle_line(&second, &in_block_comment);
+    ASSERT(!in_block_comment);
+    ASSERT_EQUAL(second.token_count, 7);
+    test_assert_token(&second.tokens[0], TOKEN_COMMENT,
+                      "# still a comment */", 0);
+    test_assert_token(&second.tokens[2], TOKEN_IDENT, "int", 21);
+
+    free_line_tokens(&first);
+    free_line_tokens(&second);
     return;
 }
 
@@ -961,9 +1051,9 @@ test_tokenization_navigation(void) {
     ASSERT_EQUAL(tokenization_next_significant(&tokenization, 0), 4);
     ASSERT_EQUAL(tokenization_previous_significant(&tokenization, 8), 4);
     ASSERT_EQUAL(tokenization_token_at_or_after_offset(&tokenization, 8), 4);
-    ASSERT_EQUAL(tokenization_token_at_or_after_offset(&tokenization,
-                                                       strlen32(text)),
-                 tokenization.token_count);
+    ASSERT_EQUAL(
+        tokenization_token_at_or_after_offset(&tokenization, strlen32(text)),
+        tokenization.token_count);
     ASSERT(token_is_trivia(&tokenization.tokens[1]));
     ASSERT(token_is_trivia(&tokenization.tokens[2]));
     ASSERT(!token_is_trivia(&tokenization.tokens[4]));
@@ -984,7 +1074,8 @@ test_tokenization_preprocessor_define_detection(void) {
     ASSERT(plus >= 0);
     ASSERT(int_token >= 0);
     ASSERT_EQUAL(tokenization_logical_line_start_offset(
-                 &tokenization, tokenization.tokens[plus].offset), 0);
+                     &tokenization, tokenization.tokens[plus].offset),
+                 0);
     ASSERT(tokenization_is_in_preprocessor_define(&tokenization, plus));
     ASSERT(!tokenization_is_in_preprocessor_define(&tokenization, int_token));
     ASSERT(!tokenization_is_in_preprocessor_define(&tokenization, -1));
@@ -1018,8 +1109,8 @@ test_tokenize_with_flags_returns_source_metadata(void) {
     char *text = "x + y";
     Tokenization tokenization;
 
-    tokenization = tokenize_with_flags(text, strlen32(text),
-                                       TOKENIZE_SKIP_WHITESPACE);
+    tokenization
+        = tokenize_with_flags(text, strlen32(text), TOKENIZE_SKIP_WHITESPACE);
     ASSERT(tokenization.text == text);
     ASSERT_EQUAL(tokenization.text_len, strlen32(text));
     ASSERT_EQUAL(tokenization.token_count, 3);

@@ -82,10 +82,39 @@ typedef struct StrBuilder {
     int32 cap;
 } StrBuilder;
 
-void sb_reserve(StrBuilder *sb, int32 extra);
-void sb_append(StrBuilder *sb, char *s, int32 n);
-void sb_printf(StrBuilder *sb, char *fmt, ...) __attribute__((format(printf, 2, 3)));
-char *sb_steal(StrBuilder *sb, int32 *len);
+typedef struct StrBuilderArray {
+    StrBuilder *items;
+    int32 len;
+    int32 cap;
+} StrBuilderArray;
+
+static void sb_init(StrBuilder *str_builder);
+static void sb_free(StrBuilder *str_builder);
+static void sb_clear(StrBuilder *str_builder);
+static bool sb_copy(StrBuilder *dest, StrBuilder *source);
+static void sb_move(StrBuilder *dest, StrBuilder *source);
+static bool sb_set(StrBuilder *str_builder, char *data, int32 data_len);
+static void sb_reserve(StrBuilder *str_builder, int32 extra);
+static void sb_append(StrBuilder *str_builder, char *data, int32 data_len);
+static void sb_append_byte(StrBuilder *str_builder, char byte);
+static void sb_printf(StrBuilder *str_builder, char *fmt, ...)
+    __attribute__((format(printf, 2, 3)));
+static char *sb_steal(StrBuilder *str_builder, int32 *len, int32 *cap);
+static char *sb_steal_exact(StrBuilder *str_builder, int32 *len);
+
+static void str_builder_array_init(StrBuilderArray *array);
+static void str_builder_array_clear(StrBuilderArray *array);
+static void str_builder_array_destroy(StrBuilderArray *array);
+static bool str_builder_array_copy(StrBuilderArray *dest,
+                                   StrBuilderArray *source);
+static void str_builder_array_move(StrBuilderArray *dest,
+                                   StrBuilderArray *source);
+static void str_builder_array_swap(StrBuilderArray *left,
+                                   StrBuilderArray *right);
+static bool str_builder_array_reserve(StrBuilderArray *array, int32 extra);
+static StrBuilder *str_builder_array_append(StrBuilderArray *array);
+static bool str_builder_array_append_copy(StrBuilderArray *array,
+                                          StrBuilder *item);
 
 static void *memmem64(void *haystack, int64 hay_len,
                       void *needle, int64 needle_len);

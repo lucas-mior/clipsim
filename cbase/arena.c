@@ -139,6 +139,7 @@ arena_create(int64 size, char *name) {
     }
 
     arena = p;
+    arena->name = NULL;
     if (name) {
         int64 len = strlen32(name);
         arena->name = xmalloc(len + 1, false);
@@ -169,6 +170,7 @@ arena_destroy(Arena *arena) {
 void *
 arena_allocate(int64 *size) {
     void *p;
+    int64 size_original = *size;
 
     if (arena_page_size == 0) {
         long aux;
@@ -181,16 +183,16 @@ arena_allocate(int64 *size) {
 
     do {
         if ((*size >= SIZEMB(2)) && FLAGS_HUGE_PAGES) {
+            *size = ALIGN_POWER_OF_2(*size, SIZEMB(2));
             p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
                      MAP_ANON | MAP_PRIVATE | FLAGS_HUGE_PAGES, -1, 0);
             if (p != MAP_FAILED) {
-                *size = ALIGN_POWER_OF_2(*size, SIZEMB(2));
                 break;
             }
         }
+        *size = ALIGN_POWER_OF_2(size_original, arena_page_size);
         p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
                  MAP_ANON | MAP_PRIVATE, -1, 0);
-        *size = ALIGN_POWER_OF_2(*size, arena_page_size);
     } while (0);
 
     if (p == MAP_FAILED) {
@@ -201,6 +203,7 @@ arena_allocate(int64 *size) {
 }
 bool
 arena_free(Arena *arena) {
+    free(arena->name);
     if (munmap(arena, (size_t)arena->size) < 0) {
         error2("Error in munmap(%p, %lld): %s.\n", (void *)arena,
                (llong)arena->size, strerror(errno));
@@ -302,6 +305,7 @@ arena_push(Arena *arena, int64 size) {
 
     before = arena->pos;
     if (DEBUGGING) {
+        assert(size >= 0);
         memset64(before, BYTE_PUSHED_UNINITIALIZED, size);
     }
     arena->pos = (char *)arena->pos + size;
@@ -365,7 +369,8 @@ arena_push_index32(Arena *arena, uint32 size) {
     }
 
     if (arena != arena_save) {
-        return EARENA_LINKED;
+        errno = EARENA_LINKED;
+        return UINT32_MAX;
     }
 
     if (arena->size >= UINT32_MAX) {

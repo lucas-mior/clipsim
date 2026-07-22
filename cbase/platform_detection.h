@@ -52,7 +52,7 @@
   #define CC_TCC 0
   #define CC_MSVC 0
 #elif defined(__TINYC__)
-  #define CC_GCC 1
+  #define CC_GCC 0
   #define CC_CLANG 0
   #define CC_TCC 1
   #define CC_MSVC 0
@@ -87,6 +87,12 @@
 #include <sys/param.h>
 #undef MIN
 #undef MAX
+#endif
+
+#if OS_WINDOWS
+#define RW_TYPE uint
+#else
+#define RW_TYPE size_t
 #endif
 
 #endif /* PLATFORM_DETECTION_H */
