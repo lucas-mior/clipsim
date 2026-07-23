@@ -403,6 +403,7 @@ memory_check(void) {
 
 CBASE_API_DEF void *
 malloc_debug(char *file, int32 line, char *func, int64 size, bool zero) {
+    int64 alloc_size;
     void *p;
     uchar *ptr;
     void *base_p;
@@ -425,14 +426,14 @@ malloc_debug(char *file, int32 line, char *func, int64 size, bool zero) {
                    "Allocation size (%lld) is too big.\n", size);
         fatal(EXIT_FAILURE);
     }
-    size = memory_allocation_size(size);
-    if (size >= (MAXOF(size) - 2*MEMORY_PADDING)) {
+    alloc_size = memory_allocation_size(size);
+    if (alloc_size >= (MAXOF(alloc_size) - 2*MEMORY_PADDING)) {
         error_impl(file, line, func,
                    "Allocation size (%lld) is too big.\n", size);
         fatal(EXIT_FAILURE);
     }
 
-    base_p = xmalloc(size + 2*MEMORY_PADDING, false);
+    base_p = xmalloc(alloc_size + 2*MEMORY_PADDING, false);
     ptr = (uchar *)base_p;
 
     for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
@@ -580,20 +581,32 @@ realloc_debug(char *file, int32 line, char *func,
               int64 obj_size) {
     int64 old_size;
     int64 new_size;
+    int64 old_alloc_size;
+    int64 new_alloc_size;
     void *p;
     void *old_base;
     void *base_p;
     uchar *ptr;
-    (void)old_capacity;
 
     if (obj_size <= 0) {
         error_impl(file, line, func,
                    "realloc: invalid object size = %lld.\n", obj_size);
         fatal(EXIT_FAILURE);
     }
+    if (old_capacity < 0) {
+        error_impl(file, line, func,
+                   "realloc: invalid old capacity = %lld.\n", old_capacity);
+        fatal(EXIT_FAILURE);
+    }
     if (new_capacity < 0) {
         error_impl(file, line, func,
                    "realloc: invalid capacity = %lld.\n", new_capacity);
+        fatal(EXIT_FAILURE);
+    }
+    if ((MAXOF(old_size) / obj_size) < old_capacity) {
+        error_impl(file, line, func,
+                   "realloc: %lld objects of size %lld is too much.\n",
+                   old_capacity, obj_size);
         fatal(EXIT_FAILURE);
     }
     if ((MAXOF(new_size) / obj_size) < new_capacity) {
@@ -613,9 +626,11 @@ realloc_debug(char *file, int32 line, char *func,
         return xrealloc(old, old_capacity*obj_size, new_capacity*obj_size);
     }
 
-    old_size = memory_allocation_size(old_capacity*obj_size);
-    new_size = memory_allocation_size(new_capacity*obj_size);
-    ASSERT(new_size <= (MAXOF(new_size) - 2*MEMORY_PADDING));
+    old_size = old_capacity*obj_size;
+    new_size = new_capacity*obj_size;
+    old_alloc_size = memory_allocation_size(old_size);
+    new_alloc_size = memory_allocation_size(new_size);
+    ASSERT(new_alloc_size <= (MAXOF(new_alloc_size) - 2*MEMORY_PADDING));
 
     {
         DebugAllocInfo info;
@@ -688,7 +703,7 @@ realloc_debug(char *file, int32 line, char *func,
 
             if (MEMORY_CHECK_DOUBLE_FREE || MEMORY_CHECK_USE_AFTER_FREE) {
                 int64 copy_size = old_size;
-                base_p = xmalloc(new_size + 2*MEMORY_PADDING, false);
+                base_p = xmalloc(new_alloc_size + 2*MEMORY_PADDING, false);
 
                 if (new_size < old_size) {
                     copy_size = new_size;
@@ -707,12 +722,13 @@ realloc_debug(char *file, int32 line, char *func,
                 }
             } else {
                 old_base = ((uchar *)old - MEMORY_PADDING);
-                base_p = xrealloc(old_base, old_size + 2*MEMORY_PADDING,
-                                  new_size + 2*MEMORY_PADDING);
+                base_p = xrealloc(old_base, old_alloc_size + 2*MEMORY_PADDING,
+                                  new_alloc_size + 2*MEMORY_PADDING);
             }
         } else {
             old_base = NULL;
-            base_p = xrealloc(old_base, 0, new_size + 2*MEMORY_PADDING);
+            base_p = xrealloc(old_base, 0,
+                              new_alloc_size + 2*MEMORY_PADDING);
         }
 
         ptr = (uchar *)base_p;
@@ -746,7 +762,8 @@ realloc_flex_debug(char *file, int32 line, char *func,
     uchar *ptr;
     int64 new_size;
     int64 old_size;
-    (void)old_capacity;
+    int64 new_alloc_size;
+    int64 old_alloc_size;
 
     if (obj_size <= 0) {
         error_impl(file, line, func,
@@ -758,9 +775,26 @@ realloc_flex_debug(char *file, int32 line, char *func,
                    "Invalid struct size = %lld.\n", struct_size);
         fatal(EXIT_FAILURE);
     }
+    if (old_capacity < 0) {
+        error_impl(file, line, func,
+                   "Invalid old capacity = %lld.\n", old_capacity);
+        fatal(EXIT_FAILURE);
+    }
     if (new_capacity < 0) {
         error_impl(file, line, func,
                    "Invalid new capacity = %lld.\n", new_capacity);
+        fatal(EXIT_FAILURE);
+    }
+    if ((INT64_MAX / obj_size) < old_capacity) {
+        error_impl(file, line, func,
+                   "Allocating %lld objects of size %lld is too much.\n",
+                   old_capacity, obj_size);
+        fatal(EXIT_FAILURE);
+    }
+    if ((INT64_MAX - struct_size) < (old_capacity*obj_size)) {
+        error_impl(file, line, func,
+                   "Allocating %lld objects of size %lld is too much.\n",
+                   old_capacity, obj_size);
         fatal(EXIT_FAILURE);
     }
     if ((INT64_MAX / obj_size) < new_capacity) {
@@ -788,9 +822,11 @@ realloc_flex_debug(char *file, int32 line, char *func,
                         struct_size + new_capacity*obj_size);
     }
 
-    old_size = memory_allocation_size(struct_size + old_capacity*obj_size);
-    new_size = memory_allocation_size(struct_size + new_capacity*obj_size);
-    ASSERT(new_size <= (MAXOF(new_size) - 2*MEMORY_PADDING));
+    old_size = struct_size + old_capacity*obj_size;
+    new_size = struct_size + new_capacity*obj_size;
+    old_alloc_size = memory_allocation_size(old_size);
+    new_alloc_size = memory_allocation_size(new_size);
+    ASSERT(new_alloc_size <= (MAXOF(new_alloc_size) - 2*MEMORY_PADDING));
 
     {
         DebugAllocInfo info;
@@ -863,7 +899,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
 
             if (MEMORY_CHECK_DOUBLE_FREE || MEMORY_CHECK_USE_AFTER_FREE) {
                 int64 copy_size = old_size;
-                base_p = xmalloc(new_size + 2*MEMORY_PADDING, false);
+                base_p = xmalloc(new_alloc_size + 2*MEMORY_PADDING, false);
 
                 if (new_size < old_size) {
                     copy_size = new_size;
@@ -883,12 +919,13 @@ realloc_flex_debug(char *file, int32 line, char *func,
                 }
             } else {
                 old_base = ((uchar *)old - MEMORY_PADDING);
-                base_p = xrealloc(old_base, old_size + 2*MEMORY_PADDING,
-                                  new_size + 2*MEMORY_PADDING);
+                base_p = xrealloc(old_base, old_alloc_size + 2*MEMORY_PADDING,
+                                  new_alloc_size + 2*MEMORY_PADDING);
             }
         } else {
             old_base = NULL;
-            base_p = xrealloc(old_base, 0, new_size + 2*MEMORY_PADDING);
+            base_p = xrealloc(old_base, 0,
+                              new_alloc_size + 2*MEMORY_PADDING);
         }
 
         ptr = (uchar *)base_p;
@@ -935,7 +972,6 @@ free_debug(char *file, int32 line, char *func,
                    size);
         fatal(EXIT_FAILURE);
     }
-    size = memory_allocation_size(size);
 
     if (pointer == NULL) {
         return;
@@ -1176,6 +1212,26 @@ typedef struct TestString {
     int32 len;
     int32 padding;
 } TestString;
+
+static void
+test_debug_free_raw(void *p, int64 size) {
+    intptr key;
+
+    if (p == NULL) {
+        return;
+    }
+
+    key = (intptr)p;
+    allocations_lock();
+    if (allocations != NULL) {
+        hash_remove_alloc_map(allocations, &key);
+    }
+    allocations_unlock();
+
+    memory_aligned_free((uchar *)p - MEMORY_PADDING,
+                        memory_allocation_size(size) + 2*MEMORY_PADDING);
+    return;
+}
 
 #define ASSERT_EXPECTED_FATAL(BLOCK) do { \
     caught_expected_fail = false; \
@@ -1432,8 +1488,7 @@ int main(void) {
             free2(p, size + 1); // Incorrect size
         });
         allocations_unlock();
-        memory_aligned_free(p - MEMORY_PADDING,
-                            memory_allocation_size(size) + 2*MEMORY_PADDING);
+        test_debug_free_raw(p, size);
     }
 
     {
@@ -1444,17 +1499,15 @@ int main(void) {
             free2(p, size); // Double free
         });
         allocations_unlock();
-        memory_aligned_free(p - MEMORY_PADDING,
-                            memory_allocation_size(size) + 2*MEMORY_PADDING);
+        test_debug_free_raw(p, size);
     }
 
     {
         int64 count = 10;
-        int64 wrong_count = count + (ALIGNMENT / SIZEOF(int64)) + 1;
         int64 *arr = malloc2(count*SIZEOF(int64));
         ASSERT_EXPECTED_FATAL({
             // Realloc with wrong old size
-            realloc2(arr, wrong_count, 20, SIZEOF(int64));
+            realloc2(arr, count + 5, 20, SIZEOF(int64));
         });
         allocations_unlock();
         free2(arr, count*SIZEOF(int64));
@@ -1493,8 +1546,7 @@ int main(void) {
             memory_check();
         });
         allocations_unlock();
-        memory_aligned_free(p - MEMORY_PADDING,
-                            memory_allocation_size(size) + 2*MEMORY_PADDING);
+        test_debug_free_raw(p, size);
     }
 
     {
@@ -1505,8 +1557,7 @@ int main(void) {
             memory_check();
         });
         allocations_unlock();
-        memory_aligned_free(p - MEMORY_PADDING,
-                            memory_allocation_size(size) + 2*MEMORY_PADDING);
+        test_debug_free_raw(p, size);
     }
 
     {
@@ -1517,8 +1568,7 @@ int main(void) {
             free2(p, size);
         });
         allocations_unlock();
-        memory_aligned_free(p - MEMORY_PADDING,
-                            memory_allocation_size(size) + 2*MEMORY_PADDING);
+        test_debug_free_raw(p, size);
     }
 
     {
@@ -1529,8 +1579,7 @@ int main(void) {
             free2(p, size);
         });
         allocations_unlock();
-        memory_aligned_free(p - MEMORY_PADDING,
-                            memory_allocation_size(size) + 2*MEMORY_PADDING);
+        test_debug_free_raw(p, size);
     }
 
     {
@@ -1542,8 +1591,7 @@ int main(void) {
             memory_check();
         });
         allocations_unlock();
-        memory_aligned_free(p - MEMORY_PADDING,
-                            memory_allocation_size(size) + 2*MEMORY_PADDING);
+        test_debug_free_raw(p, size);
     }
 #endif
 
