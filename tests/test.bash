@@ -89,7 +89,7 @@ incr_owner_c="./incr_owner.c"
 incr_owner_bin="./incr_owner"
 
 trace_on
-gcc -I../cbase -I../ -O2 $incr_owner_c -lX11 -lm -o $incr_owner_bin
+gcc -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -I../cbase -I../ -O2 $incr_owner_c -lX11 -lm -o $incr_owner_bin
 trace_off
 
 echo "Triggering normal INCR..."

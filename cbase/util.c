@@ -1412,6 +1412,46 @@ send_signal(char *executable, int32 signal_number) {
 }
 #endif
 
+#if !OS_WINDOWS
+static bool
+util_file_exists(char *filename) {
+#if defined(O_PATH) && defined(O_NOFOLLOW)
+    // this should be faster than lstat()
+    {
+        int32 fd;
+        if (((fd = open(filename, O_PATH | O_NOFOLLOW)) < 0)
+                && (errno == ENOENT)) {
+            return false;
+        } else {
+            close(fd);
+            return true;
+        }
+    }
+#else
+    {
+        struct stat statbuf;
+        if ((lstat(filename, &statbuf) < 0) && (errno == ENOENT)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+#endif
+}
+#else
+static bool
+util_file_exists(char *filename) {
+    DWORD attributes;
+
+    attributes = GetFileAttributesA(filename);
+    if (attributes == INVALID_FILE_ATTRIBUTES) {
+        return false;
+    }
+
+    return true;
+}
+#endif
+
 static bool
 util_equal_files(char *filename_a, char *filename_b) {
     int fd_a;
