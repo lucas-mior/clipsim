@@ -97,8 +97,14 @@ case "$target" in
     CPPFLAGS="$CPPFLAGS"
     ;;
 "check")
-    CC=gcc
-    CFLAGS="$CFLAGS -fanalyzer"
+    CC=gcc CFLAGS="-fanalyzer -fdiagnostics-color=never" "$0" build
+    CFLAGS="--analyze -Xanalyzer -analyzer-output=text"
+    CFLAGS="$CFLAGS -Xanalyzer -analyzer-werror"
+    CFLAGS="$CFLAGS -Xanalyzer -analyzer-opt-analyze-headers"
+    CFLAGS="$CFLAGS -Wno-unused-command-line-argument"
+    CFLAGS="$CFLAGS -fno-color-diagnostics"
+    CC=clang CFLAGS="$CFLAGS" "$0" build
+    exit
     ;;
 "build")
     CFLAGS="$CFLAGS -O2 -flto -march=native -ftree-vectorize"
@@ -266,11 +272,6 @@ case "$target" in
     valgrind --tool=callgrind --callgrind-out-file="$out" bin/clipsim --daemon
     kcachegrind "$out"
     trace_off
-    exit
-    ;;
-"check")
-    CC=gcc CFLAGS="-fanalyzer" ./build.sh
-    scan-build --view -analyze-headers --status-bugs ./build.sh
     exit
     ;;
 esac
