@@ -219,8 +219,6 @@ static int strncmp32(char *, char *, int64);
 static char *strncpy32(char *, char *, int64);
 static double timediff(struct timespec, struct timespec);
 static void timezone_init(void);
-static int util_command(int, char **);
-static int util_command_launch(int, char **);
 static int32 util_copy_file_sync(char *, char *);
 static void util_die_notify(char *, char *, ...);
 static bool util_equal_files(char *, char *);
@@ -430,6 +428,11 @@ static void command_child_env_apply(Command *);
 static void command_child_exec(
     Command *, enum CommandFlag, int [2], int [2]
 ) __attribute__((noreturn));
+#if OS_WINDOWS
+static void command_windows_command_line(Command *, char *, int64);
+static char *command_windows_argv0(Command *, char *, int32 *);
+static int32 command_windows_run_process(Command *, enum CommandFlag);
+#endif
 static void command_cwd_clear(Command *);
 static void command_cwd_set(Command *, char *);
 static void command_env_clear(Command *);
@@ -446,6 +449,7 @@ static void command_print(Command *);
 static void command_printf(Command *, char *, ...);
 static void command_push(Command *, char *);
 static void command_push_length(Command *, char *, int32);
+static void command_push_array(Command *, int32, char **);
 static void command_push_owned_length(
     char ***,
     int32 **,

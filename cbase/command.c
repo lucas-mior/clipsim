@@ -136,6 +136,143 @@ command_result_append(
     return;
 }
 
+#if OS_WINDOWS
+static char *
+command_windows_argv0(
+    Command *command,
+    char *argv0_windows,
+    int32 *argv0_len
+) {
+    char *exe = ".exe";
+    int64 exe_len = strlen32(exe);
+    int64 len0 = strlen32(command->argv[0]);
+
+    if (len0 >= BUFSIZ) {
+        error("Invalid arguments.\n");
+        fatal(EXIT_FAILURE);
+    }
+
+    *argv0_len = (int32)len0;
+    if (memmem64(command->argv[0], len0 + 1, exe, exe_len + 1) != NULL) {
+        return command->argv[0];
+    }
+
+    if ((len0 + exe_len) >= BUFSIZ) {
+        error("Invalid arguments.\n");
+        fatal(EXIT_FAILURE);
+    }
+    memcpy64(argv0_windows, command->argv[0], len0);
+    memcpy64(argv0_windows + len0, exe, exe_len + 1);
+    *argv0_len = (int32)(len0 + exe_len);
+    return argv0_windows;
+}
+
+static void
+command_windows_command_line(
+    Command *command,
+    char *cmdline,
+    int64 cmdline_len
+) {
+    char argv0_windows[BUFSIZ];
+    int64 j = 0;
+
+    for (int32 i = 0; i < command->argc; i += 1) {
+        char *argument;
+        int32 argument_len;
+
+        if (i == 0) {
+            argument = command_windows_argv0(command,
+                                             argv0_windows,
+                                             &argument_len);
+        } else {
+            argument = command->argv[i];
+            argument_len = command->argvs_lens[i];
+        }
+
+        if ((j + argument_len + 3) >= cmdline_len) {
+            error("Command line is too long.\n");
+            fatal(EXIT_FAILURE);
+        }
+
+        cmdline[j] = '"';
+        memcpy64(&cmdline[j + 1], argument, argument_len);
+        cmdline[j + argument_len + 1] = '"';
+        j += argument_len + 2;
+        if (i < command->argc - 1) {
+            cmdline[j++] = ' ';
+        }
+    }
+    cmdline[j] = '\0';
+    return;
+}
+
+static int32
+command_windows_run_process(Command *command, enum CommandFlag flags) {
+    char cmdline[BUFSIZ] = {0};
+    PROCESS_INFORMATION proc_info = {0};
+    STARTUPINFO startup_info = {0};
+    DWORD exit_code = 0;
+    BOOL success;
+    (void)flags;
+
+    command_windows_command_line(command, cmdline, SIZEOF(cmdline));
+
+    if (freopen("CONIN$", "r", stdin) == NULL) {
+        error("Error reopening stdin: %s.\n", strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+
+    startup_info.cb = sizeof(startup_info);
+    success = CreateProcessA(NULL,
+                             cmdline,
+                             NULL,
+                             NULL,
+                             TRUE,
+                             0,
+                             NULL,
+                             command->cwd,
+                             &startup_info,
+                             &proc_info);
+    if (!success) {
+        DWORD err = GetLastError();
+
+        command_error_set(command, (int32)err);
+        error("Error running '%s': %llu.\n", cmdline, (ullong)err);
+        if (err == ERROR_PATH_NOT_FOUND) {
+            error("Path not found.\n");
+        }
+        return -1;
+    }
+
+    if (WaitForSingleObject(proc_info.hProcess, INFINITE) != WAIT_OBJECT_0) {
+        command_error_set(command, (int32)GetLastError());
+        CloseHandle(proc_info.hThread);
+        CloseHandle(proc_info.hProcess);
+        return -1;
+    }
+
+    if (!GetExitCodeProcess(proc_info.hProcess, &exit_code)) {
+        command_error_set(command, (int32)GetLastError());
+        CloseHandle(proc_info.hThread);
+        CloseHandle(proc_info.hProcess);
+        return -1;
+    }
+
+    if (!CloseHandle(proc_info.hThread)) {
+        command_error_set(command, (int32)GetLastError());
+        CloseHandle(proc_info.hProcess);
+        return -1;
+    }
+
+    if (!CloseHandle(proc_info.hProcess)) {
+        command_error_set(command, (int32)GetLastError());
+        return -1;
+    }
+
+    return (int32)exit_code;
+}
+#endif
+
 #if OS_UNIX
 static void
 command_result_read_captured(Command *command) {
@@ -479,7 +616,7 @@ command_run(Command *command, enum CommandFlag flags) {
         command_error_set(command, ENOSYS);
         return false;
     }
-    command->result.status = util_command(command->argc, command->argv);
+    command->result.status = command_windows_run_process(command, flags);
     command->result.exit_status = command->result.status;
     command->result.exited = true;
     return true;
@@ -625,6 +762,17 @@ command_push_length(Command *command, char *argument, int32 argument_len) {
 static void
 command_push(Command *command, char *argument) {
     command_push_length(command, argument, strlen32(argument));
+    return;
+}
+
+static void
+command_push_array(Command *command, int32 argc, char **argv) {
+    if (argv == NULL) {
+        return;
+    }
+    for (int32 i = 0; (i < argc) && argv[i]; i += 1) {
+        command_push(command, argv[i]);
+    }
     return;
 }
 
@@ -870,6 +1018,16 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(cmd.argv[0], "alpha");
         ASSERT_EQUAL(cmd.argv[1], "beta");
         ASSERT_EQUAL(cmd.argv[2], "gamma");
+        ASSERT_EQUAL(cmd.argv[cmd.argc], NULL);
+
+        command_reset(&cmd);
+        ASSERT_EQUAL(cmd.argc, 0);
+
+        command_push(&cmd, "first");
+        command_push(&cmd, "second");
+        ASSERT_EQUAL(cmd.argc, 2);
+        ASSERT_EQUAL(cmd.argv[0], "first");
+        ASSERT_EQUAL(cmd.argv[1], "second");
         ASSERT_EQUAL(cmd.argv[cmd.argc], NULL);
 
         command_reset(&cmd);
