@@ -4,7 +4,6 @@
 #if !defined(MINMAX_C)
 #define MINMAX_C
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <limits.h>

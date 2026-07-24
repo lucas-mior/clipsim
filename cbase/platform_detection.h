@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
+// this is completely self contained,
+// it does not depend on any other cbase/files
+
 #if !defined(PLATFORM_DETECTION_H)
 #define PLATFORM_DETECTION_H
 
@@ -72,25 +75,6 @@
 #endif
 
 #define CC_TOY !(CC_GCC || CC_CLANG || CC_TCC || CC_MSVC)
-
-#if OS_WINDOWS
-#include <windows.h>
-#endif
-
-#if OS_UNIX
-#include <sys/mman.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <pthread.h>
-#include <poll.h>
-#endif
-
-#if OS_MAC
-#include <sys/param.h>
-#undef MIN
-#undef MAX
-#endif
 
 #if OS_WINDOWS
 #define RW_TYPE uint
