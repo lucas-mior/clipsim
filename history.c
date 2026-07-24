@@ -296,6 +296,7 @@ history_read(void) {
         if (history_size >= MAXOF(left)) {
             error("History file is too big.\n");
             error("Max size is %d bytes.", MAXOF(left));
+            util_close(&history);
             return;
         }
     }
@@ -315,13 +316,27 @@ history_read(void) {
     begin = history_map;
     left = (int32)history_size;
 
-    while ((left > 0) && (p = memchr64(begin, TEXT_TAG, left))) {
+    while ((left > 1) && (p = memchr64(begin, TEXT_TAG, left - 1))) {
         Entry *e;
+        int32 content_length;
+        int32 record_length;
         char type = *(p + 1);
         *p = '\0';
 
+        content_length = (int32)(p - begin);
+        record_length = content_length + 2;
+        if ((content_length <= 0) || (content_length >= ENTRY_MAX_LENGTH)) {
+            error("Skipping invalid history entry with length %d.\n",
+                  content_length);
+            goto next_entry;
+        }
+        if ((type != TEXT_TAG) && (type != IMAGE_TAG)) {
+            error("Skipping history entry with invalid type '%c'.\n", type);
+            goto next_entry;
+        }
+
         e = &entries[history_length];
-        e->content_length = (int32)(p - begin);
+        e->content_length = content_length;
 
         if (type == IMAGE_TAG) {
             e->trimmed = 0;
@@ -338,13 +353,13 @@ history_read(void) {
                                 e->content_length);
             is_image[history_length] = false;
         }
-        p += 1;
-        begin = p + 1;
 
         length_counts[e->content_length] += 1;
         history_length += 1;
 
-        left -= (e->content_length + 1);
+next_entry:
+        begin += record_length;
+        left -= record_length;
 
         if (history_length >= HISTORY_BUFFER_SIZE) {
             break;
@@ -362,7 +377,13 @@ history_read(void) {
 int32
 history_repeated_index(char *content, int32 length) {
     DEBUG_PRINT("%.50s, %d", content, length)
-    int32 candidates = length_counts[length];
+    int32 candidates;
+
+    if ((length <= 0) || (length >= ENTRY_MAX_LENGTH)) {
+        return -1;
+    }
+
+    candidates = length_counts[length];
     if (candidates == 0) {
         return -1;
     }
@@ -405,7 +426,7 @@ history_save_image(char **content, int32 *length) {
     }
 
     do {
-        w = write64(file, *(content + copied), *length);
+        w = write64(file, *content + copied, *length);
         if (w <= 0) {
             break;
         }
@@ -415,9 +436,16 @@ history_save_image(char **content, int32 *length) {
 
     if (w < 0) {
         error("Error writing to %s: %s\n", image_file, strerror(errno));
+        XCLOSE(&file, image_file);
+        return -1;
+    }
+    if (*length > 0) {
+        error("Short write to %s.\n", image_file);
+        XCLOSE(&file, image_file);
         return -1;
     }
 
+    XCLOSE(&file, image_file);
     *length = n;
     memcpy64(*content, image_file, *length + 1);
     return 0;

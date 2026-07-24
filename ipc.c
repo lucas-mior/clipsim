@@ -323,14 +323,23 @@ ipc_client_print_entries(void) {
         } while ((r = read64(content_fifo.fd, buffer, sizeof(buffer))) > 0);
     } else {
         int32 test;
+        int64 image_path_length = r - 1;
         char *CLIPSIM_IMAGE_PREVIEW;
 
         if (r == 1) {
             r = read64(content_fifo.fd, buffer + 1, sizeof(buffer) - 1);
             if (r <= 0) {
                 error("Error reading image name from %s.\n", content_fifo.name);
+                goto close;
             }
+            image_path_length = r;
         }
+        if (image_path_length >= ((int64)sizeof(buffer) - 1)) {
+            error("Image path from %s is too long.\n", content_fifo.name);
+            goto close;
+        }
+        buffer[image_path_length + 1] = '\0';
+
         XCLOSE(&content_fifo.fd, content_fifo.name);
         if ((test = open(buffer + 1, O_RDONLY)) >= 0) {
             XCLOSE(&test, buffer + 1);
@@ -339,17 +348,20 @@ ipc_client_print_entries(void) {
             return;
         }
 
-        GETENV(CLIPSIM_IMAGE_PREVIEW);
+        CLIPSIM_IMAGE_PREVIEW = getenv("CLIPSIM_IMAGE_PREVIEW");
         if (CLIPSIM_IMAGE_PREVIEW == NULL) {
             CLIPSIM_IMAGE_PREVIEW = "chafa";
         }
         if (!strcmp(CLIPSIM_IMAGE_PREVIEW, "stiv_draw")) {
             execlp("stiv_draw", "stiv_draw", buffer + 1, "30", "15", NULL);
+            error("Error executing stiv_draw: %s.\n", strerror(errno));
         } else {
             execlp("chafa", "chafa", buffer + 1, "-s", "40x", NULL);
+            error("Error executing chafa: %s.\n", strerror(errno));
         }
     }
 
+close:
     XCLOSE(&content_fifo.fd, content_fifo.name);
     return;
 }
