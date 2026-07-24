@@ -2416,6 +2416,7 @@ main(int argc, char **argv) {
     for (uint x = 0; x < POWER_OF2_LAST; x += 1) {
         char *value_name = POWER_OF2_str((enum PowerOfTwo)x);
         printf("enum[%d] = %s\n", x, value_name);
+        POWER_OF2_str_free(value_name);
     }
 
     if (OS_LINUX && !DEBUGGING) {
