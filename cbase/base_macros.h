@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
+// this is almost completely self contained,
+// it only depends on platform_detection.h,
+// but not on anything else on cbase/
+
 #if !defined(BASE_MACROS_H)
 #define BASE_MACROS_H
 
@@ -129,28 +133,7 @@ _Generic((SIZE), \
     #define RUNNING_ON_VALGRIND 0
 #endif
 
-#if !defined(FLAGS_HUGE_PAGES)
-#if defined(MAP_HUGETLB) && defined(MAP_HUGE_2MB)
-#define FLAGS_HUGE_PAGES MAP_HUGETLB | MAP_HUGE_2MB
-#else
-#define FLAGS_HUGE_PAGES 0
-#endif
-#endif
-
-#if !defined(MAP_POPULATE)
-#define MAP_POPULATE 0
-#endif
-
-#if !defined(MAP_ANON) && defined(MAP_ANONYMOUS)
-#define MAP_ANON MAP_ANONYMOUS
-#elif !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
-#define MAP_ANONYMOUS MAP_ANON
-#elif !defined(MAP_ANONYMOUS) && !defined(MAP_ANON)
-#define MAP_ANON 0
-#define MAP_ANONYMOUS 0
-#endif
-
-#if defined(__GNUC__) || defined(__clang__)
+#if CC_GCC || CC_CLANG
 #define UNUSED __attribute__((unused))
 #else
 #define UNUSED

@@ -6,7 +6,6 @@
 
 #include <limits.h>
 #include <float.h>
-#include <stdint.h>
 #include <stdbool.h>
 #include <signal.h>
 #include <stdio.h>

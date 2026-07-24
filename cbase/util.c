@@ -18,7 +18,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <stdint.h>
 #include <time.h>
 #include <libgen.h>
 #include <pthread.h>

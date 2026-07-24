@@ -77,7 +77,6 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -86,8 +85,50 @@
 #include <unistd.h>
 
 #include "platform_detection.h"
+
+#if OS_WINDOWS
+#include <windows.h>
+#endif
+
+#if OS_UNIX
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <poll.h>
+#endif
+
+#if OS_MAC
+#include <sys/param.h>
+#undef MIN
+#undef MAX
+#endif
+
 #include "primitives.h"
 #include "base_macros.h"
+
+#if !defined(FLAGS_HUGE_PAGES)
+#if defined(MAP_HUGETLB) && defined(MAP_HUGE_2MB)
+#define FLAGS_HUGE_PAGES MAP_HUGETLB | MAP_HUGE_2MB
+#else
+#define FLAGS_HUGE_PAGES 0
+#endif
+#endif
+
+#if !defined(MAP_POPULATE)
+#define MAP_POPULATE 0
+#endif
+
+#if !defined(MAP_ANON) && defined(MAP_ANONYMOUS)
+#define MAP_ANON MAP_ANONYMOUS
+#elif !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
+#define MAP_ANONYMOUS MAP_ANON
+#elif !defined(MAP_ANONYMOUS) && !defined(MAP_ANON)
+#define MAP_ANON 0
+#define MAP_ANONYMOUS 0
+#endif
+
 #include "i18n.h"
 #include "memory.h"
 
