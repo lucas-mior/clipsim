@@ -760,168 +760,6 @@ xclosedir(DIR *dir, char *dirname) {
     return 0;
 }
 
-#if OS_WINDOWS
-static int
-util_command(int argc, char **argv) {
-    char cmdline[BUFSIZ] = {0};
-    FILE *tty;
-    PROCESS_INFORMATION proc_info = {0};
-    DWORD exit_code = 0;
-
-    int64 len0 = strlen32(argv[0]);
-    char argv0_windows[BUFSIZ];
-    char *argv0 = argv[0];
-
-    if (len0 >= BUFSIZ) {
-        error("Invalid arguments.\n");
-        fatal(EXIT_FAILURE);
-    }
-
-    if (argc == 0 || argv == NULL) {
-        error("Invalid arguments.\n");
-        fatal(EXIT_FAILURE);
-    }
-
-    {
-        char *exe = ".exe";
-        int64 exe_len = strlen32(exe);
-        if (memmem64(argv[0], len0 + 1, exe, exe_len + 1) == NULL) {
-            memcpy64(argv0_windows, argv[0], len0);
-            memcpy64(argv0_windows + len0, exe, exe_len + 1);
-            argv[0] = argv0_windows;
-        }
-    }
-
-    {
-        int64 j = 0;
-        for (int i = 0; i < argc - 1; i += 1) {
-            int64 len2 = strlen32(argv[i]);
-            if ((j + len2) >= SIZEOF(cmdline)) {
-                error("Command line is too long.\n");
-                fatal(EXIT_FAILURE);
-            }
-
-            cmdline[j] = '"';
-            memcpy64(&cmdline[j + 1], argv[i], len2);
-            cmdline[j + len2 + 1] = '"';
-            cmdline[j + len2 + 2] = ' ';
-            j += len2 + 3;
-        }
-        cmdline[j - 1] = '\0';
-    }
-
-    argv[0] = argv0;
-
-    if ((tty = freopen("CONIN$", "r", stdin)) == NULL) {
-        error("Error reopening stdin: %s.\n", strerror(errno));
-        fatal(EXIT_FAILURE);
-    }
-
-    {
-        BOOL success;
-        STARTUPINFO startup_info = {0};
-        startup_info.cb = sizeof(startup_info);
-        success = CreateProcessA(NULL, cmdline, NULL, NULL, TRUE, 0, NULL, NULL,
-                                 &startup_info, &proc_info);
-        if (!success) {
-            DWORD err = GetLastError();
-            error("Error running '%s': %llu.\n", cmdline, (ullong)err);
-            if (err == ERROR_PATH_NOT_FOUND) {
-                error("Path not found.\n");
-            }
-            return -1;
-        }
-    }
-
-    if (WaitForSingleObject(proc_info.hProcess, INFINITE) != WAIT_OBJECT_0) {
-        CloseHandle(proc_info.hThread);
-        CloseHandle(proc_info.hProcess);
-        return -1;
-    }
-
-    if (!GetExitCodeProcess(proc_info.hProcess, &exit_code)) {
-        CloseHandle(proc_info.hThread);
-        CloseHandle(proc_info.hProcess);
-        return -1;
-    }
-
-    if (!CloseHandle(proc_info.hThread)) {
-        CloseHandle(proc_info.hProcess);
-        return -1;
-    }
-
-    if (!CloseHandle(proc_info.hProcess)) {
-        return -1;
-    }
-
-    return (int)exit_code;
-}
-#elif OS_UNIX
-static int
-util_command(int argc, char **argv) {
-    pid_t child;
-    int status;
-    (void)argc;
-
-    if (DEBUGGING) {
-        char cmd[4096];
-        STRING_FROM_ARRAY(cmd, " ", argv, argc);
-        error("Executing\n%s\n", cmd);
-    }
-
-    switch (child = fork()) {
-    case 0:
-        if (!freopen("/dev/tty", "r", stdin)) {
-            error("Error reopening stdin: %s.\n", strerror(errno));
-        }
-        execvp(argv[0], argv);
-        error("\nError executing '%s", argv[0]);
-        for (int j = 1; j < argc; j += 1) {
-            error(" %s", argv[j]);
-        }
-        error("': %s.\n", strerror(errno));
-        _exit(2);
-    case -1:
-        error("Error forking: %s.\n", strerror(errno));
-        fatal(EXIT_FAILURE);
-    default:
-        while (waitpid(child, &status, 0) < 0) {
-            error("Error waiting for the forked child: %s.\n", strerror(errno));
-            if (errno == EINTR) {
-                continue;
-            }
-            fatal(EXIT_FAILURE);
-        }
-        if (!WIFEXITED(status)) {
-            error("Command exited abnormally.\n");
-            return -1;
-        }
-        return WEXITSTATUS(status);
-    }
-}
-
-static int
-util_command_launch(int argc, char **argv) {
-    char cmd[4096];
-    (void)argc;
-
-    switch (fork()) {
-    case -1:
-        error("Error forking: %s.\n", strerror(errno));
-        fatal(EXIT_FAILURE);
-    case 0:
-        if (setsid() < 0) {
-            error("Error in setsid: %s.\n", strerror(errno));
-        }
-        execvp(argv[0], argv);
-        STRING_FROM_ARRAY(cmd, " ", argv, argc);
-        error("\nError executing\n%s\n%s.", cmd, strerror(errno));
-        _exit(EXIT_FAILURE);
-    default:
-        return 0;
-    }
-}
-#endif
 
 void __attribute__((format(printf, 4, 5)))
 error_impl(char *file, int32 line, char *func, char *format, ...) {
@@ -2366,6 +2204,7 @@ util_functions_sink(void) {
     (void)command_printf;
     (void)command_push;
     (void)command_push_length;
+    (void)command_push_array;
     (void)command_push_split;
     (void)command_env_push;
     (void)command_env_push_length;
@@ -2389,7 +2228,6 @@ util_functions_sink(void) {
     (void)util_copy_file_sync;
     (void)util_copy_file_async;
     (void)util_copy_file_async_thread;
-    (void)util_command_launch;
 #endif
     (void)util_equal_files;
 
@@ -2437,9 +2275,6 @@ util_functions_sink(void) {
     (void)random_ascii_string;
     (void)strncpy32;
     (void)ends_with;
-#if OS_WINDOWS || OS_UNIX
-    (void)util_command;
-#endif
     (void)rad2deg;
     (void)deg2rad;
     (void)path_basename;
@@ -2800,14 +2635,12 @@ main(int argc, char **argv) {
     NCALLS(1);
 
     (void)util_segv_handler;
-    (void)util_command;
     (void)util_die_notify;
 #if OS_UNIX
     (void)util_copy_file_sync;
     (void)util_copy_file_async;
     (void)util_copy_file_async_thread;
 #endif
-    (void)util_command_launch;
 
     (void)malloc_debug;
     (void)realloc_debug;
