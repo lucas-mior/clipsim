@@ -173,10 +173,7 @@ malloc_debug(char *file, int32 line, char *func, int64 size, bool zero) {
         if (size == 0) {
             size = 1;
         }
-        p = malloc((size_t)size);
-        if (zero) {
-            memset64(p, 0, size);
-        }
+        p = xmalloc(size, zero);
         return p;
     }
 
@@ -284,7 +281,7 @@ realloc_debug(char *file, int32 line, char *func,
         if (new_capacity == 0) {
             new_capacity = 1;
         }
-        return realloc(old, (size_t)(new_capacity*obj_size));
+        return xrealloc(old, new_capacity*obj_size);
     }
 
     old_size = old_capacity*obj_size;
@@ -690,9 +687,7 @@ xmmap_commit(int64 *size) {
     }
 
     if (RUNNING_ON_VALGRIND) {
-        p = malloc((size_t)*size);
-        memset64(p, 0, *size);
-        return p;
+        return xmalloc(*size, true);
     }
     if (memory_page_size == 0) {
         long aux;
@@ -746,9 +741,7 @@ xmmap_commit(int64 *size) {
         if (*size == 0) {
             *size = 1;
         }
-        p = malloc((size_t)*size);
-        memset64(p, 0, *size);
-        return p;
+        return xmalloc(*size, true);
     }
     if (memory_page_size == 0) {
         SYSTEM_INFO system_info;
