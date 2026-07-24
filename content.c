@@ -136,6 +136,9 @@ content_check_content(uchar *data, int32 length) {
 }
 
 #if TESTING_content
+#define CBASE_IMPLEMENT
+#include "cbase.h"
+
 int
 main(void) {
     {

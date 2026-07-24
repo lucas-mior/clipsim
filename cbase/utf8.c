@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
+
 #if !defined(UTF8_C)
 #define UTF8_C
 
@@ -7,13 +10,13 @@
 #include "primitives.h"
 #include "base_macros.h"
 
-#define UTF_INVALID 0xFFFD
-
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_utf8 1
 #elif !defined(TESTING_utf8)
 #define TESTING_utf8 0
 #endif
+
+#include "cbase.h"
 
 static uint8 utf8_byte[] = {
     0x80,
@@ -434,15 +437,12 @@ utf8_functions_sink(void) {
 #endif
 
 #if TESTING_utf8
+#define CBASE_IMPLEMENT
+#include "cbase.h"
 
-#include <stdbool.h>
-#include <stdlib.h>
 #include <wchar.h>
 #include <wctype.h>
 #include <string.h>
-
-#include "assert.c"
-#include "util.c"
 
 int
 main(void) {

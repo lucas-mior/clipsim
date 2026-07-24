@@ -1,19 +1,5 @@
-/*
- * Copyright (C) 2025 Mior, Lucas;
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the*License,
- * or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
 
 #if !defined(MINMAX_C)
 #define MINMAX_C
@@ -25,10 +11,7 @@
 #include <float.h>
 #include <assert.h>
 #include <signal.h>
-
-#if !defined(error2)
-#define error2(...) fprintf(stderr, __VA_ARGS__)
-#endif
+#include <stdio.h>
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_minmax 1
@@ -36,22 +19,10 @@
 #define TESTING_minmax 0
 #endif
 
-#if 1 == TESTING_minmax
-#define TRAP(...) raise(SIGILL)
-#elif !defined(TRAP)
-#if defined(__GNUC__) || defined(__clang__)
-#define TRAP(...) __builtin_trap()
-#elif defined(_MSC_VER)
-#define TRAP(...) __debugbreak()
-#else
-#define TRAP(...) *(int *)0 = 0
-#endif
-#endif
-
-#include "generic.c"
-#include "assert.c"
-
+#include "platform_detection.h"
 #include "primitives.h"
+#include "base_macros.h"
+#include "generic.c"
 
 #define GENERATE_COMPARE_POINTERS(MODE, SYMBOL) \
 static void * \
@@ -85,14 +56,32 @@ GENERATE_COMPARE_INTEGERS_SAME_SIGN(unsigned, >,  max)
 
 #undef GENERATE_COMPARE_INTEGERS_SAME_SIGN
 
+static int
+minmax_compare_sign_with_unsign(llong signed_value, ullong unsigned_value) {
+    ullong converted;
+
+    if (signed_value < 0) {
+        return -1;
+    }
+
+    converted = (ullong)signed_value;
+    if (converted < unsigned_value) {
+        return -1;
+    }
+    if (converted == unsigned_value) {
+        return 0;
+    }
+    return 1;
+}
+
 #define GENERATE_COMPARE_SIGNED_UNSIGNED(MODE, SYMBOL) \
 static llong \
 get_signed_unsigned_##MODE(llong var1, ullong var2) { \
-    if ((compare_sign_with_unsign(var1, var2) SYMBOL 0)) { \
+    if ((minmax_compare_sign_with_unsign(var1, var2) SYMBOL 0)) { \
         return var1; \
     } else { \
         if (var2 > LLONG_MAX) { \
-            error2("You are working with a too large number.\n"); \
+            fprintf(stderr, "You are working with a too large number.\n"); \
             TRAP(); \
         } \
         return (llong)var2; \
@@ -107,9 +96,9 @@ GENERATE_COMPARE_SIGNED_UNSIGNED(max, >)
 #define GENERATE_COMPARE_UNSIGNED_SIGNED(MODE, SYMBOL) \
 static llong \
 get_unsigned_signed_##MODE(ullong var1, llong var2) { \
-    if (((-compare_sign_with_unsign(var2, var1)) SYMBOL 0)) { \
+    if (((-minmax_compare_sign_with_unsign(var2, var1)) SYMBOL 0)) { \
         if (var1 > LLONG_MAX) { \
-            error2("You are working with a too large number.\n"); \
+            fprintf(stderr, "You are working with a too large number.\n"); \
             TRAP(); \
         } \
         return (llong)var1; \
@@ -138,6 +127,31 @@ GENERATE_COMPARE_DOUBLE(max, >)
 
 #undef GENERATE_COMPARE_DOUBLE
 
+#if 0 == TESTING_minmax
+static inline void
+minmax_functions_sink(void) {
+    (void)get_pointer_min;
+    (void)get_pointer_max;
+    (void)get_both_signed_min;
+    (void)get_both_signed_max;
+    (void)get_both_unsigned_min;
+    (void)get_both_unsigned_max;
+    (void)get_signed_unsigned_min;
+    (void)get_signed_unsigned_max;
+    (void)get_unsigned_signed_min;
+    (void)get_unsigned_signed_max;
+    (void)get_double_min;
+    (void)get_double_max;
+    return;
+}
+#endif
+
+void UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_SIGNED(void);
+void UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_UNSIGNED(void);
+void UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_DOUBLE(void);
+void UNSUPPORTED_TYPE_FOR_GENERIC_MINMAX_COMPARE_VOIDP(void);
+void UNSUPPORTED_TYPE_FOR_GENERIC_MINMAX_COMPARE(void);
+
 #define BOTH_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
     get_both_signed_##MODE((llong)(VAR1), (llong)(VAR2))
 
@@ -160,8 +174,6 @@ _Generic((VAR2), \
     double:  BOTH_DOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
     default: UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_SIGNED() \
 )
-void UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_SIGNED(void);
-
 #define BOTH_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
     get_both_unsigned_##MODE((ullong)(VAR1), (ullong)(VAR2))
 
@@ -184,8 +196,6 @@ _Generic((VAR2), \
     double:  BOTH_DOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
     default: UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_UNSIGNED() \
 )
-void UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_UNSIGNED(void);
-
 #define BOTH_DOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE2) \
     get_double_##MODE(DOUBLE_GET2(VAR1, TYPE1), DOUBLE_GET2(VAR2, TYPE2))
 
@@ -205,13 +215,8 @@ _Generic((VAR2), \
     double:  BOTH_DOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
     default: UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_DOUBLE()        \
 )
-void UNSUPPORTED_TYPE_FOR_GENERIC_FIRST_DOUBLE(void);
-
 #define POINTERS(MODE, VAR1, VAR2) \
     get_pointer_##MODE((void *)(uintptr_t)(VAR1), (void *)(uintptr_t)(VAR2))
-
-void UNSUPPORTED_TYPE_FOR_GENERIC_MINMAX_COMPARE_VOIDP(void);
-void UNSUPPORTED_TYPE_FOR_GENERIC_MINMAX_COMPARE(void);
 
 #define MINMAX_COMPARE(MODE, VAR1, VAR2) \
 _Generic((VAR1), \
@@ -245,28 +250,8 @@ _Generic((VAR1), \
 #define MIN(VAR1, VAR2) MINMAX_COMPARE(min, VAR1, VAR2)
 #define MAX(VAR1, VAR2) MINMAX_COMPARE(max, VAR1, VAR2)
 
-#if 0 == TESTING_minmax
-static inline void
-minmax_functions_sink(void) {
-    (void)get_pointer_min;
-    (void)get_pointer_max;
-    (void)get_both_signed_min;
-    (void)get_both_signed_max;
-    (void)get_both_unsigned_min;
-    (void)get_both_unsigned_max;
-    (void)get_signed_unsigned_min;
-    (void)get_signed_unsigned_max;
-    (void)get_unsigned_signed_min;
-    (void)get_unsigned_signed_max;
-    (void)get_double_min;
-    (void)get_double_max;
-    return;
-}
-#endif
-
 #if TESTING_minmax
-
-#include "util.c"
+#include "assert.c"
 
 int
 main(void) {

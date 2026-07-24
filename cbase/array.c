@@ -1,37 +1,16 @@
-#if !defined(ARRAY_H)
-#define ARRAY_H
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
 
-#include <stddef.h>
+#if !defined(ARRAY_C)
+#define ARRAY_C
 
-#include "base_macros.h"
-#include "util.c"
+#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+#define TESTING_array 1
+#elif !defined(TESTING_array)
+#define TESTING_array 0
+#endif
 
-typedef struct GenericArrayHeader {
-    ldouble alignment;
-    int32 count;
-    int32 cap;
-} GenericArrayHeader;
-
-#define ARRAY_HEADER(array) ((GenericArrayHeader *)(array) - 1)
-#define ARRAY_LEN(array) ((array) ? ARRAY_HEADER(array)->count : 0)
-#define ARRAY_CLEAR(array) do {                         \
-    if (array) {                                        \
-        ARRAY_HEADER(array)->count = 0;                 \
-    }                                                   \
-} while (0)
-#define ARRAY_FREE(array) do {                                           \
-    if (array) {                                                         \
-        GenericArrayHeader *array_header_ = ARRAY_HEADER(array);         \
-        free2(array_header_, SIZEOF(*array_header_)                      \
-              + array_header_->cap*SIZEOF(*(array)));                    \
-        (array) = NULL;                                                  \
-    }                                                                    \
-} while (0)
-#define ARRAY_PUSH(array, ...) \
-    ((array) = generic_array_grow((array), SIZEOF(*(array))), \
-     (array)[ARRAY_HEADER(array)->count++] = (__VA_ARGS__))
-#define ARRAY_INIT(array, cap) \
-    ((array) = generic_array_init((cap), SIZEOF(*(array))))
+#include "cbase.h"
 
 static void *
 generic_array_init(int32 cap, int64 item_size) {
@@ -85,7 +64,7 @@ generic_array_grow(void *array, int64 item_size) {
     old_size = SIZEOF(*header) + old_cap*item_size;
     new_size = SIZEOF(*header) + new_cap*item_size;
     header = realloc2(header, old_size, new_size, 1);
-    if (!array) {
+    if (array == NULL) {
         header->count = 0;
     }
     header->cap = new_cap;
@@ -93,11 +72,22 @@ generic_array_grow(void *array, int64 item_size) {
     return header + 1;
 }
 
-static inline void
+static void
 array_sink(void) {
     (void)generic_array_init;
     (void)generic_array_grow;
     return;
 }
 
-#endif /* ARRAY_H */
+#if TESTING_array
+#define CBASE_IMPLEMENT
+#include "cbase.h"
+
+int
+main(void) {
+    array_sink();
+    exit(EXIT_SUCCESS);
+}
+#endif
+
+#endif /* ARRAY_C */

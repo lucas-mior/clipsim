@@ -1,17 +1,19 @@
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
+
 #if !defined(META_GENERATE_C)
 #define META_GENERATE_C
 
 #include <ctype.h>
 #include <inttypes.h>
 
-#include "meta.h"
-#include "util.c"
-
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_meta_generate 1
 #elif !defined(TESTING_meta_generate)
 #define TESTING_meta_generate 0
 #endif
+
+#include "cbase.h"
 
 static StrBuilder
 c_string_literal(char *value, int32 value_len) {
@@ -296,6 +298,8 @@ c_emit_wrapped_expr(StrBuilder *out, char *indent, char *prefix, char *expr,
 }
 
 #if TESTING_meta_generate
+#define CBASE_IMPLEMENT
+#include "cbase.h"
 
 static void
 test_c_string_literal(void) {

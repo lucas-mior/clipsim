@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
+
 #if !defined(BASE_MACROS_H)
 #define BASE_MACROS_H
 
@@ -156,7 +159,7 @@ _Generic((SIZE), \
 #define π 3.14159265358979323846264338327950288
 
 #if !defined(__has_builtin)
-  #define __has_builtin(x) 0  // Compatibility with older/alternative compilers
+  #define __has_builtin(x) 0
 #endif
 
 #if __has_builtin(__builtin_unreachable)
@@ -167,10 +170,23 @@ _Generic((SIZE), \
   #define UNREACHABLE() do { } while(0)
 #endif
 
-#if CC_CLANG
-#define ENUM_UNDERLYING_TYPE_ : uint32
+#define FUNC__ (char *)__func__
+#define FUNC FUNC__
+
+#if !defined(TESTING)
+#define TESTING 0
+#endif
+
+#if TESTING
+  #define TRAP(...) raise(SIGILL)
 #else
-#define ENUM_UNDERLYING_TYPE_
+  #if defined(__GNUC__) || defined(__clang__)
+    #define TRAP(...) __builtin_trap()
+  #elif defined(_MSC_VER)
+    #define TRAP(...) __debugbreak()
+  #else
+    #define TRAP(...) *(int *)0 = 0
+  #endif
 #endif
 
 #endif /* BASE_MACROS_H */

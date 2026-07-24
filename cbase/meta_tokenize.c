@@ -1,8 +1,8 @@
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
+
 #if !defined(META_TOKENIZE_C)
 #define META_TOKENIZE_C
-
-#include "meta.h"
-#include "util.c"
 
 #define TOKENIZE_INITIAL_TOKEN_CAPACITY 32
 
@@ -11,6 +11,8 @@
 #elif !defined(TESTING_meta_tokenize)
 #define TESTING_meta_tokenize 0
 #endif
+
+#include "cbase.h"
 
 static bool
 char_is_alpha(char c) {
@@ -58,9 +60,9 @@ char_is_identifier_body(char c) {
 static bool
 char_is_horizontal_space(char c) {
     switch (c) {
-    case ' ': 
-    case '\t': 
-    case '\v': 
+    case ' ':
+    case '\t':
+    case '\v':
     case '\f':
     case '\r':
         return true;
@@ -787,6 +789,8 @@ meta_tokenize_sink(void) {
 #endif
 
 #if TESTING_meta_tokenize
+#define CBASE_IMPLEMENT
+#include "cbase.h"
 
 static void
 test_assert_token(Token *token, enum TokenKind kind, char *text, int32 column) {

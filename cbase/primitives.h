@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
+
 #if !defined(PRIMITIVES_H)
 #define PRIMITIVES_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef unsigned char uchar;
 typedef unsigned short ushort;

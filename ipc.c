@@ -436,6 +436,9 @@ ipc_create_fifo(char *name) {
 }
 
 #if TESTING_ipc
+#define CBASE_IMPLEMENT
+#include "cbase.h"
+
 int
 main(void) {
     command_fifo.name = "/tmp/clipsim/test_command.fifo";

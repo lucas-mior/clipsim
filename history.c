@@ -688,6 +688,9 @@ history_free_entry(Entry *e, int32 index) {
 }
 
 #if TESTING_history
+#define CBASE_IMPLEMENT
+#include "cbase.h"
+
 int
 main(void) {
     char *test_dir = "/tmp/clipsim_test_cache";
