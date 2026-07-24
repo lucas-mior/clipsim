@@ -34,8 +34,16 @@ static int32 content_check_content(uchar *, int);
 void
 content_remove_newline(char *text, int32 *length) {
     DEBUG_PRINT("%.50s, %d", text, *length)
+    if (*length <= 0) {
+        if (text) {
+            text[0] = '\0';
+        }
+        *length = 0;
+        return;
+    }
+
     text[*length] = '\0';
-    while (text[*length - 1] == '\n') {
+    while ((*length > 0) && (text[*length - 1] == '\n')) {
         text[*length - 1] = '\0';
         *length -= 1;
     }
@@ -50,6 +58,15 @@ content_trim_spaces(int32 *trimmed, int32 *trimmed_length,
     char *out;
     char temp = '\0';
     char *in = content;
+
+    if (length <= 0) {
+        *trimmed = 0;
+        *trimmed_length = 0;
+        if (content) {
+            content[0] = '\0';
+        }
+        return;
+    }
 
     *trimmed = length + 1;
     out = &content[*trimmed];
