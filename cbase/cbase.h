@@ -557,11 +557,12 @@ static void array_sink(void);
 
 #include "arena.c"
 #include "memory.c"
+#include "array.c"
 #include "utf8.c"
 #include "util.c"
 #include "command.c"
 #include "sort.c"
-#include "array.c"
+#include "cbase.h"
 #include "meta_common.c"
 #include "meta_tokenize.c"
 #include "meta_parse.c"
