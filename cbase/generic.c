@@ -1,19 +1,5 @@
-/*
- * Copyright (C) 2025 Mior, Lucas;
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the*License,
- * or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
 
 #if !defined(GENERIC_C)
 #define GENERIC_C
@@ -25,28 +11,13 @@
 #include <signal.h>
 #include <stdio.h>
 
-#if !defined(error2)
-#define error2(...) fprintf(stderr, __VA_ARGS__)
-#endif
-
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_generic 1
 #elif !defined(TESTING_generic)
 #define TESTING_generic 0
 #endif
 
-#if 1 == TESTING_generic
-  #define TRAP(...) raise(SIGILL)
-#elif !defined(TRAP)
-  #if defined(__GNUC__) || defined(__clang__)
-    #define TRAP(...) __builtin_trap()
-  #elif defined(_MSC_VER)
-    #define TRAP(...) __debugbreak()
-  #else
-    #define TRAP(...) *(int *)0 = 0
-  #endif
-#endif
-
+#include "platform_detection.h"
 #include "primitives.h"
 #include "base_macros.h"
 
@@ -54,24 +25,48 @@
 #include <stdarg.h>
 #include <string.h>
 
+enum Type {
+    TYPE_VOIDP = 1,
+    TYPE_CHARP,
+    TYPE_BOOL,
+    TYPE_CHAR,
+    TYPE_SCHAR,
+    TYPE_SHORT,
+    TYPE_INT,
+    TYPE_LONG,
+    TYPE_LLONG,
+    TYPE_UCHAR,
+    TYPE_USHORT,
+    TYPE_UINT,
+    TYPE_ULONG,
+    TYPE_ULLONG,
+    TYPE_FLOAT,
+    TYPE_DOUBLE,
+    TYPE_OTHER = 0,
+};
+
+union Primitive {
+    void *avoidp;
+    char *acharp;
+    bool abool;
+    char achar;
+    schar aschar;
+    short ashort;
+    int aint;
+    long along;
+    llong allong;
+    uchar auchar;
+    ushort aushort;
+    uint auint;
+    ulong aulong;
+    ullong aullong;
+    float afloat;
+    double adouble;
+};
+
 static int strlen2(char *string) {
     return (int)strlen(string);
 }
-
-#if !defined(GENERIC_S_BSZ)
-#define GENERIC_S_BSZ 64
-#endif
-
-#if !defined(S_BSZ)
-#define S_BSZ GENERIC_S_BSZ
-#endif
-
-#if !defined(MACRO_NAME)
-#define MACRO_NAME(X) #X
-#endif
-#if !defined(MACRO_VALUE)
-#define MACRO_VALUE(X) MACRO_NAME(X)
-#endif
 
 static inline int
 fprint_0(FILE *restrict fp, ... /* strings, NULL */) {
@@ -161,6 +156,189 @@ toString(char *restrict buf, int64 bufSize, char *restrict fmt, ...) {
     return buf;
 }
 
+static double
+double_from_voidp(void* x) {
+    (void)x;
+    TRAP();
+    return (double)0.0;
+}
+static double
+double_from_charp(char* x) {
+    (void)x;
+    TRAP();
+    return (double)0.0;
+}
+static double
+double_from_bool(bool x) {
+    (void)x;
+    TRAP();
+    return (double)0.0;
+}
+static double
+double_from_char(char x) {
+    (void)x;
+    TRAP();
+    return (double)0.0;
+}
+static double double_from_schar  (schar x)   {
+    return (double)x;
+}
+static double double_from_short  (short x)   {
+    return (double)x;
+}
+static double double_from_int    (int x)     {
+    return (double)x;
+}
+static double double_from_long   (long x)    {
+    return (double)x;
+}
+static double double_from_llong  (llong x)   {
+    return (double)x;
+}
+static double double_from_uchar  (uchar x)   {
+    return (double)x;
+}
+static double double_from_ushort (ushort x)  {
+    return (double)x;
+}
+static double double_from_uint   (uint x)    {
+    return (double)x;
+}
+static double double_from_ulong  (ulong x)   {
+    return (double)x;
+}
+static double double_from_ullong (ullong x)  {
+    return (double)x;
+}
+static double double_from_float  (float x)   {
+    return (double)x;
+}
+static double double_from_double (double x)  {
+    return (double)x;
+}
+
+static llong
+typebits(enum Type type) {
+    llong size = 0;
+    union Primitive primitive;
+    void **pointer;
+
+    switch (type) {
+    case TYPE_VOIDP:
+        pointer = &(primitive.avoidp);
+        size = ((char*)(pointer + 1)) - (char*)pointer;
+        break;
+    case TYPE_CHARP:
+        pointer = (void*)&(primitive.acharp);
+        size = ((char*)(pointer + 1)) - (char*)pointer;
+        break;
+    case TYPE_BOOL:    size = sizeof(bool);    break;
+    case TYPE_CHAR:    size = sizeof(char);    break;
+    case TYPE_SCHAR:   size = sizeof(schar);   break;
+    case TYPE_SHORT:   size = sizeof(short);   break;
+    case TYPE_INT:     size = sizeof(int);     break;
+    case TYPE_LONG:    size = sizeof(long);    break;
+    case TYPE_LLONG:   size = sizeof(llong);   break;
+    case TYPE_UCHAR:   size = sizeof(uchar);   break;
+    case TYPE_USHORT:  size = sizeof(ushort);  break;
+    case TYPE_UINT:    size = sizeof(uint);    break;
+    case TYPE_ULONG:   size = sizeof(ulong);   break;
+    case TYPE_ULLONG:  size = sizeof(ullong);  break;
+    case TYPE_FLOAT:   size = sizeof(float);   break;
+    case TYPE_DOUBLE:  size = sizeof(double);  break;
+    case TYPE_OTHER:
+    default: TRAP();
+    }
+    return size*CHAR_BIT;
+}
+
+static char *
+typename(enum Type type) {
+    switch (type) {
+    case TYPE_VOIDP:  return "void*";
+    case TYPE_CHARP:  return "char*";
+    case TYPE_BOOL:   return "bool";
+    case TYPE_CHAR:   return "char";
+    case TYPE_SCHAR:  return "schar";
+    case TYPE_SHORT:  return "short";
+    case TYPE_INT:    return "int";
+    case TYPE_LONG:   return "long";
+    case TYPE_LLONG:  return "llong";
+    case TYPE_UCHAR:  return "uchar";
+    case TYPE_USHORT: return "ushort";
+    case TYPE_UINT:   return "uint";
+    case TYPE_ULONG:  return "ulong";
+    case TYPE_ULLONG: return "ullong";
+    case TYPE_FLOAT:  return "float";
+    case TYPE_DOUBLE: return "double";
+    case TYPE_OTHER:
+    default:           return "unknown type";
+    }
+}
+
+static double
+double_get(union Primitive var, enum Type type) {
+    switch (type) {
+    case TYPE_VOIDP:   TRAP(); break;
+    case TYPE_CHARP:   TRAP(); break;
+    case TYPE_BOOL:    TRAP(); break;
+    case TYPE_CHAR:    TRAP(); break;
+    case TYPE_SCHAR:   return (double)var.aschar;
+    case TYPE_SHORT:   return (double)var.ashort;
+    case TYPE_INT:     return (double)var.aint;
+    case TYPE_LONG:    return (double)var.along;
+    case TYPE_LLONG:   return (double)var.allong;
+    case TYPE_UCHAR:   return (double)var.auchar;
+    case TYPE_USHORT:  return (double)var.aushort;
+    case TYPE_UINT:    return (double)var.auint;
+    case TYPE_ULONG:   return (double)var.aulong;
+    case TYPE_ULLONG:  return (double)var.aullong;
+    case TYPE_FLOAT:   return (double)var.afloat;
+    case TYPE_DOUBLE:  return (double)var.adouble;
+    case TYPE_OTHER:
+    default:           TRAP(); break;
+    }
+    return (double)0.0;
+}
+
+#if 0 == TESTING_generic
+static inline void
+generic_functions_sink(void) {
+    (void)double_from_voidp;
+    (void)double_from_charp;
+    (void)double_from_bool;
+    (void)double_from_char;
+    (void)double_from_schar;
+    (void)double_from_short;
+    (void)double_from_int;
+    (void)double_from_long;
+    (void)double_from_llong;
+    (void)double_from_uchar;
+    (void)double_from_ushort;
+    (void)double_from_uint;
+    (void)double_from_ulong;
+    (void)double_from_ullong;
+    (void)double_from_float;
+    (void)double_from_double;
+
+    (void)typebits;
+    (void)typename;
+    (void)double_get;
+    (void)generic_functions_sink;
+    return;
+}
+#endif
+
+void UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC(void);
+
+#if !defined(GENERIC_S_BSZ)
+#define GENERIC_S_BSZ 64
+#endif
+
+#if !defined(S_BSZ)
+#define S_BSZ GENERIC_S_BSZ
+#endif
+
 #define fprint(FP, ...) fprint_0((FP), __VA_ARGS__, (char *)0)
 #define snprint(BUF, BSZ, ...) snprint_0((BUF), (BSZ), __VA_ARGS__, (char *)0)
 #define print0(...) fprint_0(stdout, __VA_ARGS__, (char *)0)
@@ -180,8 +358,8 @@ toString(char *restrict buf, int64 bufSize, char *restrict fmt, ...) {
     uint: "%u", \
     ulong: "%lu", \
     ullong: "%llu", \
-    float: "%." MACRO_VALUE(FLT_DIG) "g", \
-    double: "%." MACRO_VALUE(DBL_DIG) "g", \
+    float: "%." QUOTE(FLT_DIG) "g", \
+    double: "%." QUOTE(DBL_DIG) "g", \
     default: "%p" \
 ), (X))
 
@@ -249,87 +427,6 @@ _Generic((VARIABLE),              \
     default: 1                    \
 )
 
-static double
-double_from_voidp(void* x) {
-    (void)x;
-    TRAP();
-    return (double)0.0;
-}
-static double
-double_from_charp(char* x) {
-    (void)x;
-    TRAP();
-    return (double)0.0;
-}
-static double
-double_from_bool(bool x) {
-    (void)x;
-    TRAP();
-    return (double)0.0;
-}
-static double
-double_from_char(char x) {
-    (void)x;
-    TRAP();
-    return (double)0.0;
-}
-static double double_from_schar  (schar x)   {
-    return (double)x;
-}
-static double double_from_short  (short x)   {
-    return (double)x;
-}
-static double double_from_int    (int x)     {
-    return (double)x;
-}
-static double double_from_long   (long x)    {
-    return (double)x;
-}
-static double double_from_llong  (llong x)   {
-    return (double)x;
-}
-static double double_from_uchar  (uchar x)   {
-    return (double)x;
-}
-static double double_from_ushort (ushort x)  {
-    return (double)x;
-}
-static double double_from_uint   (uint x)    {
-    return (double)x;
-}
-static double double_from_ulong  (ulong x)   {
-    return (double)x;
-}
-static double double_from_ullong (ullong x)  {
-    return (double)x;
-}
-static double double_from_float  (float x)   {
-    return (double)x;
-}
-static double double_from_double (double x)  {
-    return (double)x;
-}
-
-enum Type {
-    TYPE_VOIDP = 1,
-    TYPE_CHARP,
-    TYPE_BOOL,
-    TYPE_CHAR,
-    TYPE_SCHAR,
-    TYPE_SHORT,
-    TYPE_INT,
-    TYPE_LONG,
-    TYPE_LLONG,
-    TYPE_UCHAR,
-    TYPE_USHORT,
-    TYPE_UINT,
-    TYPE_ULONG,
-    TYPE_ULLONG,
-    TYPE_FLOAT,
-    TYPE_DOUBLE,
-    TYPE_OTHER = 0,
-};
-
 #define TYPEID(VAR) \
 _Generic((VAR), \
     void*:   TYPE_VOIDP,       \
@@ -351,112 +448,7 @@ _Generic((VAR), \
     default: TYPE_OTHER        \
 )
 
-union Primitive {
-    void* avoidp;
-    char* acharp;
-    bool abool;
-    char achar;
-    schar aschar;
-    short ashort;
-    int aint;
-    long along;
-    llong allong;
-    uchar auchar;
-    ushort aushort;
-    uint auint;
-    ulong aulong;
-    ullong aullong;
-    float afloat;
-    double adouble;
-};
-
-static llong
-typebits(enum Type type) {
-    llong size = 0;
-    union Primitive primitive;
-    void **pointer;
-
-    switch (type) {
-    case TYPE_VOIDP:
-        pointer = &(primitive.avoidp);
-        size = ((char*)(pointer + 1)) - (char*)pointer;
-        break;
-    case TYPE_CHARP:
-        pointer = (void*)&(primitive.acharp);
-        size = ((char*)(pointer + 1)) - (char*)pointer;
-        break;
-    case TYPE_BOOL:    size = sizeof(bool);    break;
-    case TYPE_CHAR:    size = sizeof(char);    break;
-    case TYPE_SCHAR:   size = sizeof(schar);   break;
-    case TYPE_SHORT:   size = sizeof(short);   break;
-    case TYPE_INT:     size = sizeof(int);     break;
-    case TYPE_LONG:    size = sizeof(long);    break;
-    case TYPE_LLONG:   size = sizeof(llong);   break;
-    case TYPE_UCHAR:   size = sizeof(uchar);   break;
-    case TYPE_USHORT:  size = sizeof(ushort);  break;
-    case TYPE_UINT:    size = sizeof(uint);    break;
-    case TYPE_ULONG:   size = sizeof(ulong);   break;
-    case TYPE_ULLONG:  size = sizeof(ullong);  break;
-    case TYPE_FLOAT:   size = sizeof(float);   break;
-    case TYPE_DOUBLE:  size = sizeof(double);  break;
-    case TYPE_OTHER:
-    default: TRAP();
-    }
-    return size*CHAR_BIT;
-}
-
 #define TYPEBITS(VAR) (sizeof(VAR)*CHAR_BIT)
-
-static char *
-typename(enum Type type) {
-    switch (type) {
-    case TYPE_VOIDP:  return "void*";
-    case TYPE_CHARP:  return "char*";
-    case TYPE_BOOL:   return "bool";
-    case TYPE_CHAR:   return "char";
-    case TYPE_SCHAR:  return "schar";
-    case TYPE_SHORT:  return "short";
-    case TYPE_INT:    return "int";
-    case TYPE_LONG:   return "long";
-    case TYPE_LLONG:  return "llong";
-    case TYPE_UCHAR:  return "uchar";
-    case TYPE_USHORT: return "ushort";
-    case TYPE_UINT:   return "uint";
-    case TYPE_ULONG:  return "ulong";
-    case TYPE_ULLONG: return "ullong";
-    case TYPE_FLOAT:  return "float";
-    case TYPE_DOUBLE: return "double";
-    case TYPE_OTHER:
-    default:           return "unknown type";
-    }
-}
-
-static double
-double_get(union Primitive var, enum Type type) {
-    switch (type) {
-    case TYPE_VOIDP:   TRAP(); break;
-    case TYPE_CHARP:   TRAP(); break;
-    case TYPE_BOOL:    TRAP(); break;
-    case TYPE_CHAR:    TRAP(); break;
-    case TYPE_SCHAR:   return (double)var.aschar;
-    case TYPE_SHORT:   return (double)var.ashort;
-    case TYPE_INT:     return (double)var.aint;
-    case TYPE_LONG:    return (double)var.along;
-    case TYPE_LLONG:   return (double)var.allong;
-    case TYPE_UCHAR:   return (double)var.auchar;
-    case TYPE_USHORT:  return (double)var.aushort;
-    case TYPE_UINT:    return (double)var.auint;
-    case TYPE_ULONG:   return (double)var.aulong;
-    case TYPE_ULLONG:  return (double)var.aullong;
-    case TYPE_FLOAT:   return (double)var.afloat;
-    case TYPE_DOUBLE:  return (double)var.adouble;
-    case TYPE_OTHER:
-    default:           TRAP(); break;
-    }
-    return (double)0.0;
-}
-
-void UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC(void);
 
 #define DOUBLE_GET(x) \
 _Generic((x), \
@@ -527,34 +519,6 @@ _Generic((VAR), \
     PRINT(VAR); \
     fprintf(stderr, "\n"); \
 } while (0)
-
-#if 0 == TESTING_generic
-static inline void
-generic_functions_sink(void) {
-    (void)double_from_voidp;
-    (void)double_from_charp;
-    (void)double_from_bool;
-    (void)double_from_char;
-    (void)double_from_schar;
-    (void)double_from_short;
-    (void)double_from_int;
-    (void)double_from_long;
-    (void)double_from_llong;
-    (void)double_from_uchar;
-    (void)double_from_ushort;
-    (void)double_from_uint;
-    (void)double_from_ulong;
-    (void)double_from_ullong;
-    (void)double_from_float;
-    (void)double_from_double;
-
-    (void)typebits;
-    (void)typename;
-    (void)double_get;
-    (void)generic_functions_sink;
-    return;
-}
-#endif
 
 #if TESTING_generic
 
@@ -695,7 +659,8 @@ main(void) {
         char *b = "able";
         int c = 1;
         double d = (double)8.0;
-        char *e = "a long string that won't fit in the compound literal buffer. "
+        char *e = "a long string that won't fit in the compound literal "
+                  "buffer. "
                   "You can print it using the W(X) macro.";
         char buf[512];
         char expected[512];

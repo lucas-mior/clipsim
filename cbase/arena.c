@@ -1,26 +1,11 @@
-/*
- * Copyright (C) 2025 Mior, Lucas;
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the*License,
- * or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
 
 #if !defined(ARENA_C)
 #define ARENA_C
 
 #include "base_macros.h"
 #include "platform_detection.h"
-#include "util.h"
 
 #define BYTE_POPED 0xDC
 #define BYTE_PUSHED_UNINITIALIZED 0xCD
@@ -41,6 +26,8 @@
 #define TESTING_arena 0
 #endif
 
+#include "cbase.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -50,30 +37,9 @@
 #include <string.h>
 #include <time.h>
 
-typedef struct Arena {
-    char *name;
-    char *begin;
-    void *pos;
-    int64 size;
-    int64 npushed;
-    struct Arena *next;
-} Arena;
-
 static Arena *global_arena = NULL;
 
-static void *arena_allocate(int64 *);
-static bool arena_free(Arena *);
-static bool arena_decr(Arena *arena, void *p);
-
 static int64 arena_page_size = 0;
-
-#if !defined(error2)
-#define error2(...) fprintf(stderr, __VA_ARGS__)
-#endif
-
-#if !defined(UTIL_C)
-static void memset64(void *buffer, int value, int64 size);
-#endif
 
 static void
 arena_print(Arena *arena) {
@@ -95,15 +61,6 @@ arena_print(Arena *arena) {
     }
     return;
 }
-
-enum ArenaErrors {
-    EARENA_INVALID = 2000000,
-    EARENA_INVALID_OBJECT,
-    EARENA_OBJECT_SIZE,
-    EARENA_MORE_THAN_4GB,
-    EARENA_LINKED,
-    EARENA_SIZE,
-};
 
 static char *
 arena_strerror(int arena_errno) {
@@ -495,9 +452,9 @@ arena_functions_sink(void) {
 #endif
 
 #if TESTING_arena
+#define CBASE_IMPLEMENT
+#include "cbase.h"
 // flags: -lm
-#include "assert.c"
-#include "util.c"
 #include <stdio.h>
 
 #if !defined(UTIL_C)

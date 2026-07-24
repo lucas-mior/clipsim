@@ -1,36 +1,5 @@
-/*
- * Copyright (C) 2025 Mior, Lucas;
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the*License,
- * or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#if !defined(HASH_H)
-#define HASH_H
-
-#include <math.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <time.h>
-
-#include "rapidhash.h"
-#include "util.h"
-#include "assert.c"
-#include "arena.c"
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_hash 1
@@ -38,14 +7,16 @@
 #define TESTING_hash 0
 #endif
 
-#if 1 == TESTING_hash
-#define HASH_KEY_TYPE char
-#define HASH_KEY_FORMATTER "%s"
-#define HASH_VALUE_TYPE int32
-#define HASH_VALUE_FORMATTER "%d"
-#define HASH_TYPE map
-#define HASH_DUPLICATE_KEYS 1
-#endif
+#if !defined(HASH_H)
+#define HASH_H
+
+#include <math.h>
+#include <sys/types.h>
+#include <time.h>
+
+#include "base_macros.h"
+#include "primitives.h"
+#include "rapidhash.h"
 
 #define HASH_SLOT_USED     1
 #define HASH_SLOT_FREE     0
@@ -58,9 +29,6 @@ INLINE uint32 hash_length(void *map);
 #if DEBUGGING
 uint32 hash_expected_collisions(void *map);
 #endif
-
-#define HASH_PRINT_SUMMARY_map(MAP) hash_print_summary_map(MAP, QUOTE(MAP))
-#define HASH_PRINT_SUMMARY_set(MAP) hash_print_summary_set(MAP, QUOTE(MAP))
 
 struct CommonBucket;
 
@@ -77,6 +45,17 @@ typedef struct CommonMap {
 } CommonMap;
 
 #endif /* HASH_H */
+
+#include "cbase.h"
+
+#if 1 == TESTING_hash && !defined(TESTING_hash_started)
+#define HASH_KEY_TYPE char
+#define HASH_KEY_FORMATTER "%s"
+#define HASH_VALUE_TYPE int32
+#define HASH_VALUE_FORMATTER "%d"
+#define HASH_TYPE map
+#define HASH_DUPLICATE_KEYS 1
+#endif
 
 #if !defined(HASH_TYPE)
 #error HASH_TYPE is undefined
@@ -132,8 +111,10 @@ struct Map {
 };
 
 #define CHECK_COMMON_MAP(FIELD) \
-    _Static_assert(OFFSET_OF(struct Map, FIELD) == OFFSET_OF(CommonMap, FIELD), \
-                   "CommonMap and new Map must have the same offset for " #FIELD)
+    _Static_assert( \
+        OFFSET_OF(struct Map, FIELD) == OFFSET_OF(CommonMap, FIELD), \
+        "CommonMap and new Map must have the same offset for " #FIELD \
+    )
 
 CHECK_COMMON_MAP(size);
 CHECK_COMMON_MAP(capacity);
@@ -157,7 +138,8 @@ CAT(hash_print_summary_, HASH_TYPE)(struct Map *map) {
     /* arena_print(map->arena_keys); */
 /* #endif */
 #if DEBUGGING
-    /* fprintf(stderr, "  expected collisions: %u\n", hash_expected_collisions(map)); */
+    /* fprintf(stderr, "  expected collisions: %u\n",
+       hash_expected_collisions(map)); */
 #endif
     /* fprintf(stderr, "}\n"); */
     return;
@@ -369,7 +351,8 @@ CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
             rehash_step += 1;
             rehash_probe = (uint32)(rehash_base
                                     + ((uint64)rehash_step
-                                       + (uint64)rehash_step*rehash_step) / 2) & new_bitmask;
+                                       + (uint64)rehash_step*rehash_step) / 2)
+                           & new_bitmask;
         }
     }
 
@@ -434,7 +417,8 @@ CAT(hash_probe_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
         }
 
         i += 1;
-        probe = (uint32)(base_index + ((uint64)i + (uint64)i*i) / 2) & map->bitmask;
+        probe = (uint32)(base_index + ((uint64)i + (uint64)i*i) / 2)
+              & map->bitmask;
     }
 
     if (first_tombstone >= 0) {
@@ -466,7 +450,8 @@ CAT(hash_insert_pre_calc_, HASH_TYPE)(struct Map *map,
 #if HASH_KEY_FIXED_LEN
     if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
 #else
-    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash, base_index, &target_idx))
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash,
+                                         base_index, &target_idx))
 #endif
     {
         return false;
@@ -533,7 +518,8 @@ CAT(hash_overwrite_pre_calc_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
 #if !HASH_KEY_FIXED_LEN
                                          , int32 key_length
 #endif
-                                         , uint64 hash, uint32 base_index, HASH_VALUE_TYPE value
+                                         , uint64 hash, uint32 base_index
+                                         , HASH_VALUE_TYPE value
                                          ) {
     uint32 target_idx = MAXOF(target_idx);
     Bucket *target;
@@ -546,7 +532,8 @@ CAT(hash_overwrite_pre_calc_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
 #if HASH_KEY_FIXED_LEN
     if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
 #else
-    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash, base_index, &target_idx))
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash,
+                                         base_index, &target_idx))
 #endif
     {
         target = &map->array[target_idx];
@@ -598,7 +585,7 @@ CAT(hash_overwrite_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
                                                     , hash, index, value);
 }
 
-#endif /* HASH_VALUE_TYPE (only define overwrite functions for HashMaps, not for HashSets) */
+#endif /* HASH_VALUE_TYPE: overwrite is only for maps, not sets. */
 
 INLINE bool
 CAT(hash_lookup_pre_calc_, HASH_TYPE)(struct Map *map,
@@ -616,7 +603,8 @@ CAT(hash_lookup_pre_calc_, HASH_TYPE)(struct Map *map,
 #if HASH_KEY_FIXED_LEN
     if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
 #else
-    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash, base_index, &target_idx))
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash,
+                                         base_index, &target_idx))
 #endif
     {
 #if defined(HASH_VALUE_TYPE)
@@ -672,7 +660,8 @@ CAT(hash_remove_pre_calc_, HASH_TYPE)(struct Map *map,
 #if HASH_KEY_FIXED_LEN
     if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
 #else
-    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash, base_index, &target_idx))
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash,
+                                         base_index, &target_idx))
 #endif
     {
 #if !HASH_KEY_FIXED_LEN
@@ -811,8 +800,6 @@ hash_expected_collisions(void *map) {
 #endif
 
 #include <assert.h>
-#include "arena.c"
-#include "util.c"
 
 // Have to add these declarations so that clangd does not complain
 struct Hash_map_by_value;
@@ -821,9 +808,15 @@ static struct Hash_map_by_value hash_create_map_by_value_value(uint32, char *);
 static struct Hash_map_by_value *hash_create_map_by_value(uint32, char *);
 static void hash_destroy_map_by_value(struct Hash_map_by_value *);
 static uint32 hash_ndeleted_map_by_value(struct Hash_map_by_value *);
-static bool hash_insert_map_by_value(struct Hash_map_by_value *, int64 *, int32);
-static bool hash_overwrite_map_by_value(struct Hash_map_by_value *, int64 *, int32);
-static bool hash_lookup_map_by_value(struct Hash_map_by_value *, int64 *, int32 *);
+static bool hash_insert_map_by_value(
+    struct Hash_map_by_value *, int64 *, int32
+);
+static bool hash_overwrite_map_by_value(
+    struct Hash_map_by_value *, int64 *, int32
+);
+static bool hash_lookup_map_by_value(
+    struct Hash_map_by_value *, int64 *, int32 *
+);
 static bool hash_remove_map_by_value(struct Hash_map_by_value *, int64 *);
 
 #define HASH_KEY_TYPE int64
@@ -939,7 +932,9 @@ main(void) {
     ASSERT_EQUAL(hash_length(map), 10);
 
     {
-        struct Hash_map map_value = hash_create_map_value(16, "strings_map_value");
+        struct Hash_map map_value;
+
+        map_value = hash_create_map_value(16, "strings_map_value");
 
         ASSERT(hash_insert_map(&map_value, str1.s, str1.len, str1.value));
         ASSERT(hash_lookup_map(&map_value, str1.s, str1.len, &test));
@@ -992,4 +987,7 @@ main(void) {
     exit(EXIT_SUCCESS);
 }
 
-#endif /* TESTING_hash && !defined(TESTING_hash_started) */
+#define CBASE_IMPLEMENT
+#include "cbase.h"
+
+#endif /* standalone hash tests */

@@ -386,6 +386,8 @@ clipboard_incremental_case(char **save, ulong *length) {
 }
 
 #if TESTING_clipboard
+#define CBASE_IMPLEMENT
+#include "cbase.h"
 
 int
 main(void) {

@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
+
 #if !defined(META_PARSE_C)
 #define META_PARSE_C
-
-#include "meta_tokenize.c"
 
 #define PARSE_INITIAL_LINE_CAPACITY 128
 
@@ -10,6 +11,8 @@
 #elif !defined(TESTING_meta_parse)
 #define TESTING_meta_parse 0
 #endif
+
+#include "cbase.h"
 
 static void
 free_line(Line *line) {
@@ -123,6 +126,8 @@ parse_text(char *text, int32 text_len) {
 }
 
 #if TESTING_meta_parse
+#define CBASE_IMPLEMENT
+#include "cbase.h"
 
 static void
 test_parse_c_text_splits_lines_and_tokens(void) {

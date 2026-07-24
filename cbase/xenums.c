@@ -1,33 +1,31 @@
-/*
- * Copyright (C) 2025 Mior, Lucas;
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the*License,
- * or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
 
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#include "generic.c"
-#include "util.c"
-#include "arena.c"
 
 #include "base_macros.h"
 
 #if CC_CLANG
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc23-extensions"
+#pragma clang diagnostic ignored "-Wfixed-enum-extension"
+#endif
+
+#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+#define TESTING_xenums 1
+#elif !defined(TESTING_xenums)
+#define TESTING_xenums 0
+#endif
+
+#if !defined(CBASE_H)
+  #if defined(ENUM_NAME) || defined(ENUM_PREFIX_) \
+      || defined(ENUM_FIELDS) || defined(ENUM_BITFLAGS) \
+      || defined(ENUM_UNDERLYING_TYPE)
+    #error "include cbase.h before configuring xenums.c"
+  #endif
+#include "cbase.h"
 #endif
 
 #if !defined(ENUM_UNDERLYING_TYPE)
@@ -40,12 +38,6 @@
   #define ENUM_UNDERLYING_TYPE_SPEC
 #endif
 
-#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
-  #define TESTING_xenums 1
-#elif !defined(TESTING_xenums)
-  #define TESTING_xenums 0
-#endif
-
 #if TESTING_xenums && !defined(ENUM_NAME)
 #define ENUM_NAME TestFlags
 #define ENUM_PREFIX_ TEST_FLAGS_
@@ -56,7 +48,8 @@
     X(TEST_FLAGS_EXEC)
 #endif
 
-#if !defined(__INCLUDE_LEVEL__) || (__INCLUDE_LEVEL__ >= 1) || (TESTING_xenums == 0)
+#if !defined(__INCLUDE_LEVEL__) || (__INCLUDE_LEVEL__ >= 1) \
+    || (TESTING_xenums == 0)
   #if !defined(ENUM_NAME)
     #error "ENUM_NAME is not defined"
   #endif
@@ -108,7 +101,7 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
     #define X(...)            SELECT_ON_NUM_ARGS(XENUM_DEF_, __VA_ARGS__)
 
 #if ENUM_BITFLAGS
-	CAT(ENUM_PREFIX_, NONE) = 0,
+    CAT(ENUM_PREFIX_, NONE) = 0,
 #endif
     ENUM_FIELDS
 
@@ -297,7 +290,8 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
             }
         #define XENUM_PARSE_1(e)    XENUM_PARSE_ONE(e)
         #define XENUM_PARSE_2(e, v) XENUM_PARSE_ONE(e)
-        #define X(...)              SELECT_ON_NUM_ARGS(XENUM_PARSE_, __VA_ARGS__)
+        #define X(...) \
+            SELECT_ON_NUM_ARGS(XENUM_PARSE_, __VA_ARGS__)
 
         ENUM_FIELDS
 
@@ -333,10 +327,9 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #undef ENUM_UNDERLYING_TYPE
 #undef ENUM_UNDERLYING_TYPE_SPEC
 
-#if TESTING_xenums && !defined(TESTING_xenums_started)
+#if TESTING_xenums && !defined(TESTING_xenums_started) \
+    && !defined(XENUMS_NO_TESTS)
 #define TESTING_xenums_started
-
-#include "assert.c"
 
 #define ENUM_NAME TestNormal
 #define ENUM_PREFIX_ TEST_NORMAL_
@@ -390,9 +383,11 @@ main(void) {
     ASSERT_EQUAL(s, "TEST_NORMAL_CHERRY");
     TEST_NORMAL_str_free(s);
 
-    ASSERT_EQUAL((uint32)TEST_NORMAL_parse("TEST_NORMAL_APPLE"), TEST_NORMAL_APPLE);
+    ASSERT_EQUAL((uint32)TEST_NORMAL_parse("TEST_NORMAL_APPLE"),
+                 TEST_NORMAL_APPLE);
     ASSERT_EQUAL((uint32)TEST_NORMAL_parse("BANANA"), TEST_NORMAL_BANANA);
-    ASSERT_EQUAL((uint32)TEST_NORMAL_parse("TEST_NORMAL_CHERRY"), TEST_NORMAL_CHERRY);
+    ASSERT_EQUAL((uint32)TEST_NORMAL_parse("TEST_NORMAL_CHERRY"),
+                 TEST_NORMAL_CHERRY);
 
     s = TEST_NORMAL_str(999);
     ASSERT_EQUAL(s, "Invalid enum value");
@@ -402,7 +397,11 @@ main(void) {
     return EXIT_SUCCESS;
 }
 
-#endif /* TESTING_xenums && !defined(TESTING_xenums_started) */
+#define CBASE_IMPLEMENT
+#include "cbase.h"
+
+#endif /* TESTING_xenums && !defined(TESTING_xenums_started)
+          && !defined(XENUMS_NO_TESTS) */
 
 #if CC_CLANG
 #pragma clang diagnostic pop

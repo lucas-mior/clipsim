@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
+
 #if !defined(PLATFORM_DETECTION_H)
 #define PLATFORM_DETECTION_H
 

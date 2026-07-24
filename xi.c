@@ -139,6 +139,9 @@ xi_daemon_loop(void *unused) {
 }
 
 #if TESTING_xi
+#define CBASE_IMPLEMENT
+#include "cbase.h"
+
 int
 main(void) {
     {

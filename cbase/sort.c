@@ -1,26 +1,10 @@
-/*
- * Copyright (C) 2025 Mior, Lucas;
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the*License,
- * or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
 
 #if !defined(SORT_C)
 #define SORT_C
 
 #include <stdlib.h>
-
-#include "util.c"
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_sort 1
@@ -28,19 +12,7 @@
 #define TESTING_sort 0
 #endif
 
-#if !defined(SORT_COMPARE)
-#define SORT_COMPARE(A, B) compare_func(A, B)
-#endif
-
-#ifndef MAX_NTHREADS
-#define MAX_NTHREADS 64
-#endif
-
-typedef struct HeapNode {
-    void *value;
-    int32 p_index;
-    int32 unused;
-} HeapNode;
+#include "cbase.h"
 
 static void
 sort_shuffle(void *array, int64 n, int64 size) {
@@ -190,6 +162,8 @@ sort_functions_sink(void) {
 #endif
 
 #if TESTING_sort
+#define CBASE_IMPLEMENT
+#include "cbase.h"
 
 #define MAXI 10000
 static int32 possibleN[] = {31, 32, 33, 50};

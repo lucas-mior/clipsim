@@ -16,7 +16,10 @@
  */
 
 #include "clipsim.h"
-#include "cbase/util.c"
+
+#define CBASE_IMPLEMENT
+#include "cbase.h"
+
 #include "history.c"
 #include "ipc.c"
 #include "clipboard.c"
