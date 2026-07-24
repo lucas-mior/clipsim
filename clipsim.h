@@ -60,9 +60,6 @@ do { \
 #define MAX_MAGIC_BUFFER_LEN SIZEKB(16)
 #define PRINT_DIGITS 3
 #define TRIMMED_SIZE 255
-#define MAX_FILES_COPY HISTORY_BUFFER_SIZE
-
-#include "util.c"
 
 typedef struct Entry {
     char *content;
