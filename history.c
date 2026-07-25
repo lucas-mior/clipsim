@@ -37,6 +37,7 @@ static char *tmp_directory = tmp_directory_buffer;
 static int32 history_repeated_index(char *, int32);
 static void history_free_entry(Entry *, int32);
 static void history_reorder(int32);
+static void history_prune(void);
 static int32 history_save_image(char **, int32 *);
 static bool history_recover_write(int32, Entry *);
 static void history_prepare_tmp_directory(void);
@@ -402,6 +403,10 @@ history_read(void) {
             error("Skipping history entry with invalid type '%c'.\n", type);
             goto next_entry;
         }
+        if (history_length >= HISTORY_BUFFER_SIZE) {
+            error("History buffer is full; skipping remaining entries.\n");
+            break;
+        }
 
         e = &entries[history_length];
         e->content_length = content_length;
@@ -579,6 +584,10 @@ history_append(char *content, int32 length, bool incr_buffer) {
         return;
     }
 
+    if (history_length >= HISTORY_BUFFER_SIZE) {
+        history_prune();
+    }
+
     e = &entries[history_length];
     e->content_length = length;
     length_counts[length] += 1;
@@ -624,27 +633,42 @@ history_append(char *content, int32 length, bool incr_buffer) {
 
     history_length += 1;
     if (history_length >= HISTORY_BUFFER_SIZE) {
-        int32 to_remove = history_length - HISTORY_KEEP_SIZE;
-        
-        for (int32 i = 0; i < to_remove; i += 1) {
-            history_free_entry(&entries[i], i);
-        }
-
-        memcpy64(&entries[0], &entries[to_remove],
-                 HISTORY_KEEP_SIZE*sizeof(*entries));
-        memset64(&entries[HISTORY_KEEP_SIZE], 0,
-                 to_remove*SIZEOF(*entries));
-
-        memcpy64(&is_image[0], &is_image[to_remove],
-                 HISTORY_KEEP_SIZE*SIZEOF(*is_image));
-        memset64(&is_image[HISTORY_KEEP_SIZE], 0,
-                 to_remove*SIZEOF(*is_image));
-
-        history_length = HISTORY_KEEP_SIZE;
-
-        reopen_magic();
+        history_prune();
     }
 
+    return;
+}
+
+void
+history_prune(void) {
+    int32 to_remove;
+
+    if (history_length < HISTORY_BUFFER_SIZE) {
+        return;
+    }
+
+    to_remove = history_length - HISTORY_KEEP_SIZE;
+    if (to_remove <= 0) {
+        return;
+    }
+
+    for (int32 i = 0; i < to_remove; i += 1) {
+        history_free_entry(&entries[i], i);
+    }
+
+    memcpy64(&entries[0], &entries[to_remove],
+             HISTORY_KEEP_SIZE*SIZEOF(*entries));
+    memset64(&entries[HISTORY_KEEP_SIZE], 0,
+             to_remove*SIZEOF(*entries));
+
+    memcpy64(&is_image[0], &is_image[to_remove],
+             HISTORY_KEEP_SIZE*SIZEOF(*is_image));
+    memset64(&is_image[HISTORY_KEEP_SIZE], 0,
+             to_remove*SIZEOF(*is_image));
+
+    history_length = HISTORY_KEEP_SIZE;
+
+    reopen_magic();
     return;
 }
 
@@ -725,12 +749,8 @@ history_remove(int32 id) {
 
     if (id < 0) {
         id = history_length + id;
-    } else if (id == history_length) {
-        history_recover(-2);
-        history_remove(-2);
-        return;
     }
-    if (id >= history_length) {
+    if ((id < 0) || (id >= history_length)) {
         error("Invalid index %d for deletion.\n", id);
         return;
     }
@@ -743,7 +763,7 @@ history_remove(int32 id) {
         memmove64(&is_image[id], &is_image[id + 1],
                   (history_length - 1 - id)*SIZEOF(*is_image));
     }
-    
+
     memset64(&entries[history_length - 1], 0, sizeof(*entries));
     memset64(&is_image[history_length - 1], 0, sizeof(*is_image));
     history_length -= 1;

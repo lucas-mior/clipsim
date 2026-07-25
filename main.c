@@ -27,8 +27,6 @@ static ClipsimCommand commands[] = {
     [COMMAND_HELP]   = {"-h", "--help",   "print this help message"},
 };
 
-static bool main_check_cmdline(char *);
-static bool main_check_running(void);
 static void main_set_signal(int32, void (*)(int));
 static void main_setup_daemon_signals(void);
 static void main_usage(FILE *) __attribute__((noreturn));
@@ -114,74 +112,7 @@ main_usage(FILE *stream) {
     exit(stream != stdout);
 }
 
-bool
-main_check_cmdline(char *pid) {
-    char buffer[256];
-    char command[256];
-    int64 r;
-    int32 cmdline;
-    char cmd1[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0', '-', 'd', '\0'};
-    char cmd2[] = {'c', 'l', 'i', 'p', 's', 'i', 'm', '\0', '-',
-                   '-', 'd', 'a', 'e', 'm', 'o', 'n', '\0'};
 
-    SNPRINTF(buffer, "/proc/%s/cmdline", pid);
-
-    if ((cmdline = open(buffer, O_RDONLY)) < 0) {
-        return false;
-    }
-    if ((r = read64(cmdline, command, sizeof(command))) <= 0) {
-        XCLOSE(&cmdline);
-        return false;
-    }
-    XCLOSE(&cmdline);
-
-    switch (r) {
-    case sizeof(cmd1):
-        if (!memcmp64(command, cmd1, r)) {
-            return true;
-        }
-        break;
-    case sizeof(cmd2):
-        if (!memcmp64(command, cmd2, r)) {
-            return true;
-        }
-        break;
-    default:
-        break;
-    }
-    return false;
-}
-
-bool
-main_check_running(void) {
-    DEBUG_PRINT("void")
-    DIR *processes;
-    struct dirent *process;
-    pid_t pid_this = getpid();
-
-    if ((processes = opendir("/proc")) == NULL) {
-        error("Error opening /proc: %s\n", strerror(errno));
-        return false;
-    }
-
-    while ((process = readdir(processes))) {
-        pid_t pid;
-        if ((pid = atoi(process->d_name)) <= 0) {
-            continue;
-        }
-
-        if (pid == pid_this) {
-            continue;
-        }
-
-        if (main_check_cmdline(process->d_name)) {
-            closedir(processes);
-            return true;
-        }
-    }
-    closedir(processes);
-    return false;
-}
 
 void
 main_launch_daemon(void) {
@@ -189,10 +120,7 @@ main_launch_daemon(void) {
     pthread_t ipc_thread;
     char *CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE;
 
-    if (main_check_running()) {
-        error("clipsim --daemon is already running.\n");
-        exit(EXIT_FAILURE);
-    }
+    ipc_lock_daemon();
 
     main_setup_daemon_signals();
 

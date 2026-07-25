@@ -8,6 +8,7 @@
 #include "cbase/util.c"
 #include "history.c"
 
+#include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/un.h>
@@ -26,7 +27,9 @@ typedef struct IpcRequest {
 } IpcRequest;
 
 static char ipc_directory[PATH_MAX];
+static char ipc_lock_name[PATH_MAX];
 static char ipc_socket_name[PATH_MAX];
+static File ipc_lock = {.file = NULL, .fd = -1, .name = ipc_lock_name};
 static File ipc_socket = {.file = NULL, .fd = -1, .name = ipc_socket_name};
 
 static void ipc_daemon_history_save(int32);
@@ -40,6 +43,7 @@ static bool ipc_daemon_dprintf(int32, char *, char *, ...)
 static void ipc_client_print_entries(int32 *);
 static void ipc_resolve_socket_name(void);
 static void ipc_make_directory(void);
+static void ipc_lock_daemon(void);
 static bool ipc_set_socket_timeout(int32, char *);
 static int32 ipc_connect_socket(bool);
 static void ipc_make_socket(void);
@@ -65,8 +69,11 @@ ipc_resolve_socket_name(void) {
             n = SNPRINTF(ipc_socket_name, "%s/daemon.sock", ipc_directory);
             if ((n > 0)
                 && (n < (int32)SIZEOF(((struct sockaddr_un *)0)->sun_path))) {
-                resolved = true;
-                return;
+                n = SNPRINTF(ipc_lock_name, "%s/daemon.lock", ipc_directory);
+                if ((n > 0) && (n < (int32)SIZEOF(ipc_lock_name))) {
+                    resolved = true;
+                    return;
+                }
             }
         }
     }
@@ -81,6 +88,12 @@ ipc_resolve_socket_name(void) {
     if ((n <= 0)
         || (n >= (int32)SIZEOF(((struct sockaddr_un *)0)->sun_path))) {
         error("Error resolving ipc socket name.\n");
+        fatal(EXIT_FAILURE);
+    }
+
+    n = SNPRINTF(ipc_lock_name, "%s/daemon.lock", ipc_directory);
+    if ((n <= 0) || (n >= (int32)SIZEOF(ipc_lock_name))) {
+        error("Error resolving ipc lock name.\n");
         fatal(EXIT_FAILURE);
     }
 
@@ -114,6 +127,43 @@ ipc_make_directory(void) {
     if (chmod(ipc_directory, 0700) < 0) {
         error("Error setting permissions on %s: %s.\n",
               ipc_directory, strerror(errno));
+    }
+
+    return;
+}
+
+void
+ipc_lock_daemon(void) {
+    DEBUG_PRINT("%s", ipc_lock.name)
+
+    ipc_make_directory();
+
+    if ((ipc_lock.fd = open(ipc_lock.name,
+                            O_WRONLY | O_CREAT | O_CLOEXEC,
+                            S_IRUSR | S_IWUSR)) < 0) {
+        error("Error opening daemon lock %s: %s.\n",
+              ipc_lock.name, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+
+    if (flock(ipc_lock.fd, LOCK_EX | LOCK_NB) < 0) {
+        if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+            error("clipsim --daemon is already running.\n");
+        } else {
+            error("Error locking daemon lock %s: %s.\n",
+                  ipc_lock.name, strerror(errno));
+        }
+        XCLOSE(&ipc_lock.fd, ipc_lock.name);
+        fatal(EXIT_FAILURE);
+    }
+
+    if (ftruncate(ipc_lock.fd, 0) < 0) {
+        error("Error truncating daemon lock %s: %s.\n",
+              ipc_lock.name, strerror(errno));
+    }
+    if (ipc_daemon_dprintf(ipc_lock.fd, ipc_lock.name, "%lld\n",
+                           (llong)getpid()) == false) {
+        error("Error writing daemon pid to %s.\n", ipc_lock.name);
     }
 
     return;
