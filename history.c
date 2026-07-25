@@ -31,19 +31,56 @@ static char *XDG_CACHE_HOME = NULL;
 static char xdg_cache_home_buffer[4096];
 static char *HOME = NULL;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
-static char *tmp_directory = "/tmp/clipsim";
+static char tmp_directory_buffer[PATH_MAX];
+static char *tmp_directory = tmp_directory_buffer;
 
 static int32 history_repeated_index(char *, int32);
 static void history_free_entry(Entry *, int32);
 static void history_reorder(int32);
 static int32 history_save_image(char **, int32 *);
 static bool history_recover_write(int32, Entry *);
+static void history_prepare_tmp_directory(void);
 
 static void history_append(char *, int, bool);
 static int history_save(void);
 static void history_recover(int32);
 static void history_remove(int32);
 static void history_exit(int) __attribute__((noreturn));
+
+
+static void
+history_prepare_tmp_directory(void) {
+    char *TMPDIR;
+    int32 n;
+
+    if ((tmp_directory == NULL) || (tmp_directory[0] == '\0')) {
+        GETENV(TMPDIR);
+        if ((TMPDIR == NULL) || (TMPDIR[0] == '\0')) {
+            TMPDIR = "/tmp";
+        }
+        n = SNPRINTF(tmp_directory_buffer, "%s/clipsim-images-%lu",
+                     TMPDIR, (unsigned long)getuid());
+        if ((n <= 0) || (n >= (int32)SIZEOF(tmp_directory_buffer))) {
+            error("Error resolving temporary image directory.\n");
+            exit(EXIT_FAILURE);
+        }
+        tmp_directory = tmp_directory_buffer;
+    }
+
+    if (mkdir(tmp_directory, 0700) < 0) {
+        if (errno != EEXIST) {
+            error("Error creating temporary image directory %s: %s.\n",
+                  tmp_directory, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+    }
+    if (chmod(tmp_directory, 0700) < 0) {
+        error("Error setting permissions on %s: %s.\n",
+              tmp_directory, strerror(errno));
+    }
+
+    return;
+}
 
 static int32
 history_text_allocation_size(Entry *e) {
@@ -81,7 +118,7 @@ history_callback_delete(const char *path, const struct stat *stat,
     return 0;
 }
 
-bool
+static bool
 history_recover_write(int32 fd, Entry *e) {
     int64 written = 0;
 
@@ -239,9 +276,17 @@ history_exit(int32 signum) {
 
     history_save();
 
+    history_prepare_tmp_directory();
+
     error("Deleting temporary images...\n");
-    nftw(tmp_directory, history_callback_delete, MAX_OPEN_FD,
-         FTW_DEPTH | FTW_PHYS);
+    errno = 0;
+    if (nftw(tmp_directory, history_callback_delete, MAX_OPEN_FD,
+             FTW_DEPTH | FTW_PHYS) < 0) {
+        if (errno != ENOENT) {
+            error("Error deleting temporary images in %s: %s.\n",
+                  tmp_directory, strerror(errno));
+        }
+    }
 
     _exit(EXIT_SUCCESS);
 }
@@ -257,6 +302,8 @@ history_read(void) {
 
     char *clipsim = "clipsim/history";
     int64 length;
+
+    history_prepare_tmp_directory();
 
     GETENV(XDG_CACHE_HOME);
     if (XDG_CACHE_HOME == NULL) {
@@ -437,6 +484,7 @@ history_save_image(char **content, int32 *length) {
     int64 t = time(NULL);
     int32 n;
 
+    history_prepare_tmp_directory();
     n = SNPRINTF(image_file, "%s/%lld.png", tmp_directory, (llong)t);
 
     if ((file
