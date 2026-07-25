@@ -8,6 +8,7 @@
 #include "cbase/util.c"
 #include "history.c"
 
+#include <fcntl.h>
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -44,7 +45,9 @@ static void ipc_client_print_entries(int32 *);
 static void ipc_resolve_socket_name(void);
 static void ipc_make_directory(void);
 static void ipc_lock_daemon(void);
+static bool ipc_set_close_on_exec(int32, char *);
 static bool ipc_set_socket_timeout(int32, char *);
+static void ipc_shutdown_response(int32, char *);
 static int32 ipc_connect_socket(bool);
 static void ipc_make_socket(void);
 static void ipc_clean_socket(void);
@@ -170,6 +173,25 @@ ipc_lock_daemon(void) {
 }
 
 bool
+ipc_set_close_on_exec(int32 fd, char *name) {
+    int32 flags;
+
+    flags = fcntl(fd, F_GETFD);
+    if (flags < 0) {
+        error("Error reading close-on-exec flag from %s: %s.\n",
+              name, strerror(errno));
+        return false;
+    }
+    if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0) {
+        error("Error setting close-on-exec flag on %s: %s.\n",
+              name, strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
+bool
 ipc_set_socket_timeout(int32 fd, char *name) {
     struct timeval timeout;
 
@@ -263,6 +285,17 @@ ipc_read_all(int32 fd, void *data, int64 size, char *name) {
     return true;
 }
 
+void
+ipc_shutdown_response(int32 fd, char *name) {
+    if (shutdown(fd, SHUT_WR) < 0) {
+        if ((errno != ENOTCONN) && (errno != EPIPE)) {
+            error("Error shutting down response on %s: %s.\n",
+                  name, strerror(errno));
+        }
+    }
+    return;
+}
+
 bool
 ipc_daemon_dprintf(int32 fd, char *name, char *format, ...) {
     char buffer[BUFSIZ];
@@ -311,6 +344,7 @@ ipc_daemon_listen(void *unused) {
             continue;
         }
 
+        ipc_set_close_on_exec(client_fd, ipc_socket.name);
         ipc_set_socket_timeout(client_fd, ipc_socket.name);
         if (!ipc_read_all(client_fd, &request, sizeof(request),
                           ipc_socket.name)) {
@@ -395,6 +429,7 @@ ipc_daemon_history_save(int32 fd) {
     saved = (char)history_save();
 
     ipc_write_all(fd, &saved, saved_size, ipc_socket.name);
+    ipc_shutdown_response(fd, ipc_socket.name);
     return;
 }
 
@@ -428,6 +463,7 @@ ipc_daemon_pipe_entries(int32 fd) {
 
     if (history_length <= 0) {
         error("Clipboard history empty. Start copying text.\n");
+        ipc_shutdown_response(fd, ipc_socket.name);
         return;
     }
 
@@ -445,6 +481,7 @@ ipc_daemon_pipe_entries(int32 fd) {
         }
     }
 
+    ipc_shutdown_response(fd, ipc_socket.name);
     return;
 }
 
@@ -459,6 +496,7 @@ ipc_daemon_pipe_id(int32 fd, int32 id) {
         ipc_daemon_dprintf(fd, ipc_socket.name,
                            "000 Clipboard history empty. "
                            "Start copying text.\n");
+        ipc_shutdown_response(fd, ipc_socket.name);
         return;
     }
 
@@ -467,6 +505,7 @@ ipc_daemon_pipe_id(int32 fd, int32 id) {
     }
     if ((id >= history_length) || (id < 0)) {
         error("Invalid index: %d\n", id);
+        ipc_shutdown_response(fd, ipc_socket.name);
         return;
     }
 
@@ -483,6 +522,7 @@ ipc_daemon_pipe_id(int32 fd, int32 id) {
         }
     }
     ipc_write_all(fd, e->content, e->content_length, ipc_socket.name);
+    ipc_shutdown_response(fd, ipc_socket.name);
     return;
 }
 
@@ -575,6 +615,7 @@ ipc_connect_socket(bool quiet) {
         }
         return -1;
     }
+    ipc_set_close_on_exec(fd, ipc_socket.name);
 
     if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         if (!quiet) {
@@ -609,6 +650,7 @@ ipc_make_socket(void) {
         error("Error creating ipc socket: %s\n", strerror(errno));
         fatal(EXIT_FAILURE);
     }
+    ipc_set_close_on_exec(ipc_socket.fd, ipc_socket.name);
 
     memset64(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
