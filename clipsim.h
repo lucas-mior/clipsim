@@ -87,7 +87,6 @@ static char IMAGE_TAG = (char)0x02;
 static pthread_mutex_t lock;
 static magic_t magic = 0;
 
-static int32 fifo_open(File *file, int32 flag);
 static void util_close(File *file);
 static void main_reopen_magic(void);
 

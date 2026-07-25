@@ -23,7 +23,7 @@ static ClipsimCommand commands[] = {
     [COMMAND_COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace"},
     [COMMAND_REMOVE] = {"-r", "--remove", "remove entry number <n>"},
     [COMMAND_SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history"},
-    [COMMAND_DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command fifo)"},
+    [COMMAND_DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command socket)"},
     [COMMAND_HELP]   = {"-h", "--help",   "print this help message"},
 };
 
@@ -54,7 +54,7 @@ main(int32 argc, char *argv[]) {
             spell_error = false;
             switch (i) {
             case COMMAND_PRINT:
-                ipc_client_speak_fifo(COMMAND_PRINT, 0);
+                ipc_client_speak(COMMAND_PRINT, 0);
                 break;
             case COMMAND_INFO:
             case COMMAND_COPY:
@@ -62,10 +62,10 @@ main(int32 argc, char *argv[]) {
                 if ((argc != 3) || util_string_int32(&id, argv[2]) < 0) {
                     main_usage(stderr);
                 }
-                ipc_client_speak_fifo(i, id);
+                ipc_client_speak(i, id);
                 break;
             case COMMAND_SAVE:
-                ipc_client_speak_fifo(COMMAND_SAVE, 0);
+                ipc_client_speak(COMMAND_SAVE, 0);
                 break;
             case COMMAND_DAEMON:
                 main_launch_daemon();
@@ -202,7 +202,7 @@ main_launch_daemon(void) {
 
     reopen_magic();
 
-    pthread_create(&ipc_thread, NULL, ipc_daemon_listen_fifo, NULL);
+    pthread_create(&ipc_thread, NULL, ipc_daemon_listen, NULL);
 
     GETENV(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE);
     if (CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE == NULL) {
