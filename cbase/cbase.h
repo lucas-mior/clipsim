@@ -53,7 +53,6 @@
 #define TESTING_xenums 0
 #endif
 
-
 #if !defined(DEBUGGING)
 #define DEBUGGING 0
 #endif
@@ -409,17 +408,17 @@ _Generic((VAR), \
 
 #define ENUM_NAME CommandFlag
 #define ENUM_BITFLAGS 1
-#define ENUM_PREFIX_ COMMAND_FLAG_
+#define ENUM_PREFIX_ COMMAND_
 #define ENUM_FIELDS \
-    X(COMMAND_FLAG_CAPTURE_STDOUT)      \
-    X(COMMAND_FLAG_CAPTURE_STDERR)      \
-    X(COMMAND_FLAG_MERGE_STDERR)        \
-    X(COMMAND_FLAG_ASYNC)               \
-    X(COMMAND_FLAG_DETACHED)            \
-    X(COMMAND_FLAG_NEW_SESSION)         \
-    X(COMMAND_FLAG_NEW_PROCESS_GROUP)   \
-    X(COMMAND_FLAG_STDIN_TTY)           \
-    X(COMMAND_FLAG_CLOSE_STDIN)
+    X(COMMAND_CAPTURE_STDOUT)      \
+    X(COMMAND_CAPTURE_STDERR)      \
+    X(COMMAND_MERGE_STDERR)        \
+    X(COMMAND_ASYNC)               \
+    X(COMMAND_DETACHED)            \
+    X(COMMAND_NEW_SESSION)         \
+    X(COMMAND_NEW_PROCESS_GROUP)   \
+    X(COMMAND_STDIN_TTY)           \
+    X(COMMAND_CLOSE_STDIN)
 #define XENUMS_NO_TESTS 1
 #include "xenums.c"
 #undef XENUMS_NO_TESTS
@@ -482,8 +481,6 @@ static void command_env_push(Command *, char *);
 static void command_env_push_length(Command *, char *, int32);
 static void command_error_set(Command *, int32);
 static bool command_flags_capture(enum CommandFlag);
-static bool command_flags_capture_stderr(enum CommandFlag);
-static bool command_flags_capture_stdout(enum CommandFlag);
 static enum CommandFlag command_flags_normalized(enum CommandFlag);
 static void command_free(Command *);
 static void command_print(Command *);
