@@ -29,6 +29,8 @@ static ClipsimCommand commands[] = {
 
 static bool main_check_cmdline(char *);
 static bool main_check_running(void);
+static void main_set_signal(int32, void (*)(int));
+static void main_setup_daemon_signals(void);
 static void main_usage(FILE *) __attribute__((noreturn));
 static void main_launch_daemon(void) __attribute__((noreturn));
 
@@ -41,8 +43,6 @@ main(int32 argc, char *argv[]) {
     program = basename(argv[0]);
 
     signal(SIGSEGV, util_segv_handler);
-    signal(SIGTERM, history_exit);
-    signal(SIGINT, history_exit);
 
     if (argc <= 1 || argc >= 4) {
         main_usage(stderr);
@@ -82,6 +82,24 @@ main(int32 argc, char *argv[]) {
     }
 
     exit(EXIT_SUCCESS);
+}
+
+void
+main_set_signal(int32 signum, void (*handler)(int)) {
+    if (signal(signum, handler) == SIG_ERR) {
+        error("Error installing signal handler for %d: %s.\n",
+              signum, strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    return;
+}
+
+void
+main_setup_daemon_signals(void) {
+    main_set_signal(SIGTERM, history_exit);
+    main_set_signal(SIGINT, history_exit);
+    main_set_signal(SIGPIPE, SIG_IGN);
+    return;
 }
 
 void
@@ -175,6 +193,8 @@ main_launch_daemon(void) {
         error("clipsim --daemon is already running.\n");
         exit(EXIT_FAILURE);
     }
+
+    main_setup_daemon_signals();
 
     pthread_mutex_init(&lock, NULL);
 
