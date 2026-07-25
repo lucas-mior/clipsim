@@ -25,6 +25,9 @@ static void ipc_daemon_history_save(void);
 static void ipc_client_check_save(void);
 static void ipc_daemon_pipe_entries(void);
 static void ipc_daemon_pipe_id(int32);
+static bool ipc_daemon_write_all(int32, void *, int64, char *);
+static bool ipc_daemon_dprintf(int32, char *, char *, ...)
+    __attribute__((format(printf, 3, 4)));
 static void ipc_client_print_entries(void);
 static int32 ipc_daemon_get_id(void);
 static void ipc_client_ask_id(int32);
@@ -34,6 +37,59 @@ static void ipc_create_fifo(char *);
 
 static void *ipc_daemon_listen_fifo(void *) __attribute__((noreturn));
 static void ipc_client_speak_fifo(int32, int32);
+
+bool
+ipc_daemon_write_all(int32 fd, void *data, int64 size, char *name) {
+    int64 written = 0;
+
+    if (size < 0) {
+        error("Error writing negative length to %s.\n", name);
+        return false;
+    }
+
+    while (written < size) {
+        int64 w;
+
+        errno = 0;
+        w = write64(fd, (char *)data + written, size - written);
+        if (w < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            if (errno == EPIPE) {
+                error("Client closed %s before the daemon finished writing.\n",
+                      name);
+            } else {
+                error("Error writing to %s: %s.\n", name, strerror(errno));
+            }
+            return false;
+        }
+        if (w == 0) {
+            error("Error writing to %s: short write.\n", name);
+            return false;
+        }
+        written += w;
+    }
+    return true;
+}
+
+bool
+ipc_daemon_dprintf(int32 fd, char *name, char *format, ...) {
+    char buffer[BUFSIZ];
+    int32 n;
+    va_list args;
+
+    va_start(args, format);
+    n = vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    if ((n < 0) || (n >= (int32)SIZEOF(buffer))) {
+        error("Error formatting daemon fifo response.\n");
+        return false;
+    }
+
+    return ipc_daemon_write_all(fd, buffer, n, name);
+}
 
 void *
 ipc_daemon_listen_fifo(void *unused) {
@@ -154,9 +210,8 @@ ipc_daemon_history_save(void) {
 
     saved = (char)history_save();
 
-    if (write64(content_fifo.fd, &saved, saved_size) < saved_size) {
-        error("Error sending save result to client.\n");
-    }
+    ipc_daemon_write_all(content_fifo.fd, &saved, saved_size,
+                         content_fifo.name);
 
     XCLOSE(&content_fifo.fd, content_fifo.name);
     return;
@@ -197,14 +252,15 @@ ipc_client_check_save(void) {
 void
 ipc_daemon_pipe_entries(void) {
     DEBUG_PRINT("void")
-    static char buffer[BUFSIZ];
 
-    if ((content_fifo.file = fopen(content_fifo.name, "w")) == NULL) {
+    if ((content_fifo.fd = open(content_fifo.name, O_WRONLY)) < 0) {
         error("Error opening %s for writing: %s.\n",
               content_fifo.name, strerror(errno));
-        exit(EXIT_FAILURE);
+        if (errno == ENOENT) {
+            fatal(EXIT_FAILURE);
+        }
+        return;
     }
-    setvbuf(content_fifo.file, buffer, _IOFBF, BUFSIZ);
 
     if (history_length <= 0) {
         error("Clipboard history empty. Start copying text.\n");
@@ -216,13 +272,15 @@ ipc_daemon_pipe_entries(void) {
         int64 size = e->trimmed_length + 1;
         char *trimmed = &e->content[e->trimmed];
 
-        fprintf(content_fifo.file, "%.*d ", PRINT_DIGITS, i);
-        if (fwrite64(trimmed, 1, size, content_fifo.file) < size) {
-            error("Error writing to client fifo.\n");
+        if (!ipc_daemon_dprintf(content_fifo.fd, content_fifo.name,
+                                "%.*d ", PRINT_DIGITS, i)) {
+            break;
+        }
+        if (!ipc_daemon_write_all(content_fifo.fd, trimmed, size,
+                                  content_fifo.name)) {
             break;
         }
     }
-    fflush(content_fifo.file);
 
 close:
     util_close(&content_fifo);
@@ -246,8 +304,9 @@ ipc_daemon_pipe_id(int32 id) {
 
     if (history_length <= -1) {
         error("Clipboard history empty. Start copying text.\n");
-        dprintf(content_fifo.fd,
-                "000 Clipboard history empty. Start copying text.\n");
+        ipc_daemon_dprintf(content_fifo.fd, content_fifo.name,
+                           "000 Clipboard history empty. "
+                           "Start copying text.\n");
         goto close;
     }
 
@@ -261,15 +320,19 @@ ipc_daemon_pipe_id(int32 id) {
 
     e = &entries[id];
     if (is_image[id]) {
-        if (write64(content_fifo.fd, &IMAGE_TAG, tag_size) < tag_size) {
-            dprintf(content_fifo.fd, "Error printing image tag.\n");
+        if (!ipc_daemon_write_all(content_fifo.fd, &IMAGE_TAG, tag_size,
+                                  content_fifo.name)) {
             goto close;
         }
     } else {
-        dprintf(content_fifo.fd, "Length: \033[31;1m%d\n\033[0;m",
-                e->content_length);
+        if (!ipc_daemon_dprintf(content_fifo.fd, content_fifo.name,
+                                "Length: \033[31;1m%d\n\033[0;m",
+                                e->content_length)) {
+            goto close;
+        }
     }
-    dprintf(content_fifo.fd, "%s", e->content);
+    ipc_daemon_write_all(content_fifo.fd, e->content, e->content_length,
+                         content_fifo.name);
 
 close:
     XCLOSE(&content_fifo.fd, content_fifo.name);
