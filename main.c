@@ -29,6 +29,7 @@ static ClipsimCommand commands[] = {
 
 static void main_set_signal(int32, void (*)(int));
 static void main_setup_daemon_signals(void);
+static bool main_block_middle_mouse_paste_enabled(void);
 static void main_usage(FILE *) __attribute__((noreturn));
 static void main_launch_daemon(void) __attribute__((noreturn));
 
@@ -100,6 +101,27 @@ main_setup_daemon_signals(void) {
     return;
 }
 
+bool
+main_block_middle_mouse_paste_enabled(void) {
+    char *CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE;
+
+    GETENV(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE);
+    if (CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE == NULL) {
+        error("Primary selection will not be cleared"
+              " When pressing the middle mouse button.\n");
+        return false;
+    }
+
+    if (!strcmp(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "0")) {
+        return false;
+    }
+    if (!strcmp(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "false")) {
+        return false;
+    }
+
+    return true;
+}
+
 void
 main_usage(FILE *stream) {
     DEBUG_PRINT("%p", (void *)stream)
@@ -118,11 +140,17 @@ void
 main_launch_daemon(void) {
     DEBUG_PRINT("void")
     pthread_t ipc_thread;
-    char *CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE;
+    bool block_middle_mouse_paste;
 
     ipc_lock_daemon();
 
     main_setup_daemon_signals();
+
+    block_middle_mouse_paste = main_block_middle_mouse_paste_enabled();
+    if (block_middle_mouse_paste && !XInitThreads()) {
+        error("Error initializing Xlib thread support.\n");
+        exit(EXIT_FAILURE);
+    }
 
     pthread_mutex_init(&lock, NULL);
 
@@ -132,19 +160,7 @@ main_launch_daemon(void) {
 
     pthread_create(&ipc_thread, NULL, ipc_daemon_listen, NULL);
 
-    GETENV(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE);
-    if (CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE == NULL) {
-        error("Primary selection will not be cleared"
-              " When pressing the middle mouse button.\n");
-    } else {
-        if (!strcmp(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "0")) {
-            CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE = NULL;
-        } else if (!strcmp(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "false")) {
-            CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE = NULL;
-        }
-    }
-
-    if (CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE) {
+    if (block_middle_mouse_paste) {
         pthread_t xi_thread;
         pthread_create(&xi_thread, NULL, xi_daemon_loop, NULL);
     }
