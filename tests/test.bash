@@ -22,18 +22,13 @@ if killall -SIGTERM clipsim 2>/dev/null; then
     sleep $interval
     killall -SIGKILL clipsim
 fi
-if killall -SIGTERM clipsim_debug 2>/dev/null; then
-    clipsim_was_running=true
-    sleep $interval
-    killall -SIGKILL clipsim_debug
-fi
 
 set -e
 
 dir=$(dirname "$(realpath "$0")")
 cd "$dir" || exit
 
-clipsim_bin="../bin/clipsim_debug"
+clipsim_bin="../bin/clipsim"
 TEST_DIR="/tmp/clipsim_test_bash"
 XDG_CACHE_HOME="$TEST_DIR/.cache"
 ../build.sh debug || exit 1
