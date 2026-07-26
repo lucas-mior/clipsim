@@ -71,10 +71,6 @@
 #define XENUMS_LINKAGE CBASE_TEMPLATE
 #endif
 
-#if !defined(XENUMS_PRIVATE)
-#define XENUMS_PRIVATE CBASE_PRIVATE
-#endif
-
 #if XENUMS_FUNCTIONS_ONLY == 0
 #if ENUM_BITFLAGS
 enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE_SPEC {
@@ -225,7 +221,7 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
 #endif
 }
 
-XENUMS_PRIVATE bool
+CBASE_PRIVATE bool
 CAT(ENUM_PREFIX_, token_equals)(char *token, int32 token_len, char *name) {
     int32 name_len = strlen32(name);
     if (token_len != name_len) {
@@ -234,7 +230,7 @@ CAT(ENUM_PREFIX_, token_equals)(char *token, int32 token_len, char *name) {
     return !strncmp32(token, name, token_len);
 }
 
-XENUMS_PRIVATE bool
+CBASE_PRIVATE bool
 CAT(ENUM_PREFIX_, token_equals_enum_name)(char *token, int32 token_len,
                                           char *name) {
     char *prefix = QUOTE(ENUM_PREFIX_);
@@ -329,8 +325,9 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
 }
 
 #if 0 == TESTING_xenums
-XENUMS_PRIVATE void
+static inline void
 CAT(ENUM_PREFIX_, functions_sink)(void) {
+    (void)CAT(ENUM_PREFIX_, functions_sink);
     (void)CAT(ENUM_PREFIX_, str);
     (void)CAT(ENUM_PREFIX_, str_free);
     (void)CAT(ENUM_PREFIX_, parse);
@@ -342,7 +339,6 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #undef XENUMS_DECLARE_ONLY
 #undef XENUMS_FUNCTIONS_ONLY
 #undef XENUMS_LINKAGE
-#undef XENUMS_PRIVATE
 
 #undef ENUM_NAME
 #undef ENUM_PREFIX_

@@ -732,6 +732,9 @@ CAT(hash_functions_sink_, HASH_TYPE)(void) {
     (void)CAT(hash_ndeleted_, HASH_TYPE);
     (void)hash_capacity;
     (void)hash_length;
+#if DEBUGGING
+    (void)hash_expected_collisions;
+#endif
     return;
 }
 
