@@ -30,7 +30,7 @@
 #define QUOTE(x) S(x)
 
 #define STRLIT_LEN(s) ((int32)(sizeof("" s) - 1))
-#define STRLIT_ARGS(s) s, STRLIT_LEN(s)
+#define STRLIT(s) s, STRLIT_LEN(s)
 
 #define CAT_(a, b) a ## b
 #define CAT_SELECT(a, b) CAT_(a, b)
