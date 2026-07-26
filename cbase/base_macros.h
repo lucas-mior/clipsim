@@ -69,6 +69,10 @@
 #define BBLUE(S)   "\x1b[1;34m" S RESET
 #define BCYAN(S)   "\x1b[1;35m" S RESET
 
+#define SECONDS_AS_NANOS(X) ((X)*1000ll*1000ll*1000ll)
+#define MILLIS_AS_NANOS(X)  ((X)*1000ll*1000ll)
+#define MICROS_AS_NANOS(X)  ((X)*1000ll)
+
 #define SIZEKB(X) ((int64)(X)*1024ll)
 #define SIZEMB(X) ((int64)(X)*1024ll*1024ll)
 #define SIZEGB(X) ((int64)(X)*1024ll*1024ll*1024ll)
