@@ -48,8 +48,8 @@ main(int32 argc, char *argv[]) {
     }
 
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
-        if (!strcmp(argv[1], commands[i].shortname)
-            || !strcmp(argv[1], commands[i].longname)) {
+        if (strequal(argv[1], commands[i].shortname)
+            || strequal(argv[1], commands[i].longname)) {
             spell_error = false;
             switch (i) {
             case COMMAND_PRINT:
@@ -112,10 +112,10 @@ main_block_middle_mouse_paste_enabled(void) {
         return false;
     }
 
-    if (!strcmp(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "0")) {
+    if (strequal(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "0")) {
         return false;
     }
-    if (!strcmp(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "false")) {
+    if (strequal(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "false")) {
         return false;
     }
 
