@@ -180,6 +180,7 @@ typedef struct UtilCopyFilesAsync {
     int32 unused;
 } UtilCopyFilesAsync;
 
+static bool util_is_integer(char *string);
 static int32 util_copy_file_async(char *, char *, int *);
 static void util_copy_file_async_parsed(UtilCopyFilesAsync *);
 static void *util_copy_file_async_thread(void *);
