@@ -47,8 +47,8 @@ arena_print(Arena *arena) {
         error2("  name: %s\n", arena->name);
         error2("  begin: %p\n", arena->begin);
         error2("  pos: %p\n", arena->pos);
-        error2("  size: %lld\n", (llong)arena->size);
-        error2("  npushed: %lld\n", (llong)arena->npushed);
+        error2("  size: %lld\n", arena->size);
+        error2("  npushed: %lld\n", arena->npushed);
         error2("  next:    %p\n", (void *)arena->next);
         error2("}");
         if (arena->next) {
@@ -152,7 +152,7 @@ arena_allocate(int64 *size) {
     } while (0);
 
     if (p == MAP_FAILED) {
-        error2("Error in mmap(%lld): %s.\n", (llong)*size, strerror(errno));
+        error2("Error in mmap(%lld): %s.\n", *size, strerror(errno));
         return NULL;
     }
     return p;
@@ -162,7 +162,7 @@ arena_free(Arena *arena) {
     free(arena->name);
     if (munmap(arena, (size_t)arena->size) < 0) {
         error2("Error in munmap(%p, %lld): %s.\n", (void *)arena,
-               (llong)arena->size, strerror(errno));
+               arena->size, strerror(errno));
         return false;
     }
     return true;
@@ -184,7 +184,7 @@ arena_allocate(int64 *size) {
 
     if ((p = VirtualAlloc(NULL, (size_t)*size, MEM_COMMIT | MEM_RESERVE,
                           PAGE_READWRITE)) == NULL) {
-        error2("Error in VirtualAlloc(%lld): %lu.\n", (llong)*size,
+        error2("Error in VirtualAlloc(%lld): %lu.\n", *size,
                GetLastError());
         return NULL;
     }
@@ -297,7 +297,7 @@ xarena_push(Arena *arena, int64 size) {
 
     if ((p = arena_push(arena, size)) == NULL) {
         error2("Error allocating %lld bytes: %s.\n",
-               (llong)size, arena_strerror(errno));
+               size, arena_strerror(errno));
         exit(EXIT_FAILURE);
     }
     return p;
@@ -308,7 +308,7 @@ xarenas_push(Arena **arenas, int32 narenas, int64 size) {
     void *p;
 
     if ((p = arenas_push(arenas, narenas, size)) == NULL) {
-        error2("Error pushing %lld bytes into arenas %p: %s.\n", (llong)size,
+        error2("Error pushing %lld bytes into arenas %p: %s.\n", size,
                (void *)arenas, arena_strerror(errno));
         exit(EXIT_FAILURE);
     }
@@ -379,7 +379,7 @@ arena_decr(Arena *arena, void *p) {
     arena->npushed -= 1;
     if (arena->npushed < 0) {
         error2("Warning: inconsistent arena state (npushed = %lld)\n",
-               (llong)arena->npushed);
+               arena->npushed);
     }
     if (arena->npushed <= 0) {
         arena->pos = arena->begin;

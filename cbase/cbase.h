@@ -373,7 +373,7 @@ _Generic((VAR), \
     static int64 ncalls_ncalls = 1; \
     if ((ncalls_ncalls % (INTERVAL)) == 0) { \
         fprintf(stderr, "%s:%d:%s: called %lld times\n", \
-                __FILE__, __LINE__, __func__, (llong)ncalls_ncalls); \
+                __FILE__, __LINE__, __func__, ncalls_ncalls); \
     } \
     ncalls_ncalls += 1; \
 } while (0)

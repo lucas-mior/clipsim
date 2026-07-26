@@ -357,7 +357,7 @@ history_read(void) {
         }
         history_size = history_stat.st_size;
         if (history_size <= 0) {
-            error("history_size: %lld\n", (llong)history_size);
+            error("history_size: %lld\n", history_size);
             error("History file is empty.\n");
             util_close(&history);
             return;
@@ -440,8 +440,8 @@ next_entry:
     }
 
     if (munmap(history_map, (size_t)history_size) < 0) {
-        error("Error unmapping %p with %lld bytes: %s\n", (void *)history_map,
-              (llong)history_size, strerror(errno));
+        error("Error unmapping %p with %lld bytes: %s\n",
+              (void *)history_map, history_size, strerror(errno));
     }
     util_close(&history);
     return;
@@ -490,7 +490,7 @@ history_save_image(char **content, int32 *length) {
     int32 n;
 
     history_prepare_tmp_directory();
-    n = SNPRINTF(image_file, "%s/%lld.png", tmp_directory, (llong)t);
+    n = SNPRINTF(image_file, "%s/%lld.png", tmp_directory, t);
 
     if ((file
          = open(image_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
