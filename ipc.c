@@ -591,7 +591,7 @@ ipc_client_print_entries(int32 *fd) {
         if (CLIPSIM_IMAGE_PREVIEW == NULL) {
             CLIPSIM_IMAGE_PREVIEW = "chafa";
         }
-        if (!strcmp(CLIPSIM_IMAGE_PREVIEW, "stiv_draw")) {
+        if (strequal(CLIPSIM_IMAGE_PREVIEW, "stiv_draw")) {
             execlp("stiv_draw", "stiv_draw", buffer + 1, "30", "15", NULL);
             error("Error executing stiv_draw: %s.\n", strerror(errno));
         } else {
