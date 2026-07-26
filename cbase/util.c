@@ -1836,6 +1836,9 @@ sb_append(StrBuilder *str_builder, char *data, int32 data_len) {
     if (data_len <= 0) {
         return;
     }
+    if (data == NULL) {
+        return;
+    }
 
     if (data == str_builder->data) {
         aliases = true;
