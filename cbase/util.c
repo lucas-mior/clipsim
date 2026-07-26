@@ -147,7 +147,7 @@ memrchr64(void *pointer, int32 value, int64 size) {
 
     if (DEBUGGING) {
         if (size < 0) {
-            error("Error: Invalid size = %lld\n", (llong)size);
+            error("Error: Invalid size = %lld\n", size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -202,7 +202,7 @@ INLINE void *
 memchr64(void *pointer, int32 value, int64 size) {
     if (DEBUGGING) {
         if (size < 0) {
-            error("Error: Invalid size = %lld\n", (llong)size);
+            error("Error: Invalid size = %lld\n", size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -263,7 +263,7 @@ strncmp32(char *left, char *right, int64 size) {
     }
     if (DEBUGGING) {
         if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error: Size (%lld) is bigger than SIZEMAX\n", (llong)size);
+            error("Error: Size (%lld) is bigger than SIZEMAX\n", size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -303,10 +303,10 @@ memcmp64(void *left, void *right, int64 size) {
     }
     if (DEBUGGING) {
         if (size < 0) {
-            error("Error: size=%lld < 0.\n", (llong)size);
+            error("Error: size=%lld < 0.\n", size);
         }
         if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error: Size (%lld) is bigger than SIZEMAX\n", (llong)size);
+            error("Error: Size (%lld) is bigger than SIZEMAX\n", size);
             fatal(EXIT_FAILURE);
         }
     }
@@ -413,20 +413,19 @@ qsort64(void *base, int64 n, int64 size,
     compar_consted = (int (*)(const void *, const void *)) compar;
     if (DEBUGGING) {
         if ((size <= 0) || (n <= 0)) {
-            error("Error: Invalid size(%lld) or n(%lld)\n",
-                  (llong)size, (llong)n);
+            error("Error: Invalid size(%lld) or n(%lld)\n", size, n);
             fatal(EXIT_FAILURE);
         }
         if ((size_t)size >= (SIZE_MAX / (size_t)n)) {
-            error("Error: Overflow (%lld*%lld)\n", (llong)size, (llong)n);
+            error("Error: Overflow (%lld*%lld)\n", size, n);
             fatal(EXIT_FAILURE);
         }
         if ((ullong)size >= (ullong)SIZE_MAX) {
-            error("Error: Size (%lld) is bigger than SIZEMAX\n", (llong)size);
+            error("Error: Size (%lld) is bigger than SIZEMAX\n", size);
             fatal(EXIT_FAILURE);
         }
         if ((ullong)n >= (ullong)SIZE_MAX) {
-            error("Error: Number (%lld) is bigger than SIZEMAX\n", (llong)n);
+            error("Error: Number (%lld) is bigger than SIZEMAX\n", n);
             fatal(EXIT_FAILURE);
         }
     }
@@ -521,8 +520,7 @@ snprintf2(char *buffer, int64 size, char *format, ...) {
     va_end(args);
 
     if ((n < 0) || (n >= size)) {
-        fprintf(stderr, "Error in vsnprintf(\"%s\") (n = %lld)\n",
-                        format, (llong)n);
+        fprintf(stderr, "Error in vsnprintf(\"%s\") (n = %d)\n", format, n);
         fatal(EXIT_FAILURE);
     }
     return n;
@@ -582,7 +580,7 @@ strftime2(char *buffer, int64 size, char *format, struct tm *time_info) {
 
     n = (int64)strftime(buffer, (size_t)size, format, time_info);
     if ((n <= 0) || (n >= size)) {
-        error("Error in strftime(\"%s\") (n = %lld).\n", format, (llong)n);
+        error("Error in strftime(\"%s\") (n = %lld).\n", format, n);
         fatal(EXIT_FAILURE);
     }
     return n;
@@ -647,7 +645,7 @@ strerror_r(int errnum, char *buffer, size_t size) {
     int32 len = strlen32(error_message);
 
     ASSERT_MORE(size, 0);
-    memcpy64(buffer, error_message, (llong)MIN(len + 1, size - 1));
+    memcpy64(buffer, error_message, MIN(len + 1, size - 1));
     buffer[size - 1] = '\0';
 
     return 0;
@@ -799,8 +797,8 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
 
     if ((n < 0) || (n >= m)) {
         fprintf(stderr,
-                "%s:%d %s(): Error in vsnprintf(\"%s\") (n = %lld).\n",
-                file, line, func, format, (llong)n);
+                "%s:%d %s(): Error in vsnprintf(\"%s\") (n = %d).\n",
+                file, line, func, format, n);
         fatal(EXIT_FAILURE);
     }
 
@@ -1028,8 +1026,8 @@ util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
             continue;
         }
         if (n < 0) {
-            error("Error in poll(nfds=%lld): %s.\n",
-                  (llong)copy_files->nfds, strerror(errno));
+            error("Error in poll(nfds=%d): %s.\n",
+                  copy_files->nfds, strerror(errno));
             break;
         }
         for (int32 i = 0; i < copy_files->nfds; i += 1) {
@@ -1336,7 +1334,7 @@ bytes_pretty(char *buffer, int64 raw) {
     }
 
     if (raw <= 1023) {
-        n = snprintf2(buffer, 16, "%lldB", (llong)raw);
+        n = snprintf2(buffer, 16, "%lldB", raw);
         return n;
     }
 
@@ -1709,7 +1707,7 @@ write_entire_file(char *path, char *text, int64 text_len) {
 
     if (text_len < 0) {
         error("Error writing negative length %lld to %s.",
-              (llong)text_len, path);
+              text_len, path);
         return false;
     }
 
@@ -1720,7 +1718,7 @@ write_entire_file(char *path, char *text, int64 text_len) {
 
     if ((text_len > 0) && (fwrite64(text, 1, text_len, file) != text_len)) {
         error("Error writing %lld bytes to %s: %s.",
-              (llong)text_len, path, strerror(errno));
+              text_len, path, strerror(errno));
         XFCLOSE(file, path);
         return false;
     }
