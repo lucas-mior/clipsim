@@ -12,7 +12,7 @@
 
 #include "cbase.h"
 
-static void *
+CBASE_API_DEF void *
 generic_array_init(int32 cap, int64 item_size) {
     GenericArrayHeader *header;
     int64 size;
@@ -29,7 +29,7 @@ generic_array_init(int32 cap, int64 item_size) {
     return header + 1;
 }
 
-static void *
+CBASE_API_DEF void *
 generic_array_grow(void *array, int64 item_size) {
     GenericArrayHeader *header;
     int32 old_cap;
@@ -72,7 +72,7 @@ generic_array_grow(void *array, int64 item_size) {
     return header + 1;
 }
 
-static void
+CBASE_API_DEF void
 array_sink(void) {
     (void)generic_array_init;
     (void)generic_array_grow;

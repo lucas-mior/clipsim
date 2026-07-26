@@ -4,12 +4,6 @@
 #if !defined(UTF8_C)
 #define UTF8_C
 
-#include <stdlib.h>
-#include <wchar.h>
-#include <wctype.h>
-#include "primitives.h"
-#include "base_macros.h"
-
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_utf8 1
 #elif !defined(TESTING_utf8)
@@ -47,7 +41,7 @@ static uint32 utf8_max[] = {
     0x10FFFF,
 };
 
-static uint32
+CBASE_API_DEF uint32
 utf8_decode_byte(char c, int32 *i) {
     for (*i = 0; *i < LENGTH(utf8_mask); *i += 1) {
         if (((uint8)c & utf8_mask[*i]) == utf8_byte[*i]) {
@@ -58,12 +52,12 @@ utf8_decode_byte(char c, int32 *i) {
     return 0;
 }
 
-static char
+CBASE_API_DEF char
 utf8_encode_byte(uint32 u, int32 i) {
     return (char)(utf8_byte[i] | (u & (uint32) ~utf8_mask[i]));
 }
 
-static int32
+CBASE_API_DEF int32
 utf8_validate(uint32 *u, int32 i) {
     if (!BETWEEN(*u, utf8_min[i], utf8_max[i])
         || BETWEEN(*u, 0xD800, 0xDFFF)) {
@@ -75,7 +69,7 @@ utf8_validate(uint32 *u, int32 i) {
     return i;
 }
 
-static int32
+CBASE_API_DEF int32
 utf8_decode_raw(char *c, uint32 *u, int32 clen) {
     int32 len;
     int32 type;
@@ -107,7 +101,7 @@ utf8_decode_raw(char *c, uint32 *u, int32 clen) {
     return len;
 }
 
-static int32
+CBASE_API_DEF int32
 utf8_encode_raw(uint32 u, char *c) {
     int32 len;
 
@@ -125,7 +119,7 @@ utf8_encode_raw(uint32 u, char *c) {
     return len;
 }
 
-static int32
+CBASE_API_DEF int32
 utf8_decode(char *string, int32 string_len, uint32 *rune) {
     int32 result;
     uint32 decoded;
@@ -142,7 +136,7 @@ utf8_decode(char *string, int32 string_len, uint32 *rune) {
     return result;
 }
 
-static int32
+CBASE_API_DEF int32
 utf8_encode(uint32 rune, char *buffer, int32 buffer_capacity) {
     char encoded[4];
     int32 result;
@@ -161,7 +155,7 @@ utf8_encode(uint32 rune, char *buffer, int32 buffer_capacity) {
 }
 
 #if !OS_WINDOWS
-static int32
+CBASE_API_DEF int32
 utf8_char_width(uint32 rune) {
     int32 width;
     int32 result;
@@ -177,7 +171,7 @@ utf8_char_width(uint32 rune) {
 }
 #endif
 
-static int32
+CBASE_API_DEF int32
 utf8_next_position(char *string, int32 string_len, int32 byte) {
     int32 length;
     int32 result;
@@ -196,7 +190,7 @@ utf8_next_position(char *string, int32 string_len, int32 byte) {
     return result;
 }
 
-static int32
+CBASE_API_DEF int32
 utf8_characters(char *string, int32 string_len) {
     int32 result;
     int32 byte;
@@ -211,7 +205,7 @@ utf8_characters(char *string, int32 string_len) {
     return result;
 }
 
-static int32
+CBASE_API_DEF int32
 utf8_byte_position(char *string, int32 string_len,
                    int32 character) {
     int32 byte;
@@ -229,7 +223,7 @@ utf8_byte_position(char *string, int32 string_len,
 }
 
 #if !OS_WINDOWS
-static int32
+CBASE_API_DEF int32
 utf8_width(char *string, int32 string_len) {
     int32 result;
     int32 byte;
@@ -250,7 +244,7 @@ utf8_width(char *string, int32 string_len) {
 #endif
 
 #if !OS_WINDOWS
-static int32
+CBASE_API_DEF int32
 utf8_suffix_width_position(char *string, int32 string_len,
                            int32 max_width) {
     int32 byte;
@@ -280,7 +274,7 @@ utf8_suffix_width_position(char *string, int32 string_len,
 #endif
 
 #if !OS_WINDOWS
-static int32
+CBASE_API_DEF int32
 utf8_cut_width(char *string, int32 string_len, int32 max_width) {
     int32 byte;
     int32 result_width;
@@ -306,7 +300,7 @@ utf8_cut_width(char *string, int32 string_len, int32 max_width) {
 }
 #endif
 
-static int32
+CBASE_API_DEF int32
 utf8_capitalize_first_letters(char *string, int32 string_len,
                               char *buffer, int32 buffer_capacity) {
     int32 byte;
@@ -353,7 +347,7 @@ utf8_capitalize_first_letters(char *string, int32 string_len,
     return result_len;
 }
 
-static int32
+CBASE_API_DEF int32
 random_utf8_string(char *buffer, int32 capacity, int32 min_len) {
     int32 max_len = capacity - 1;
     int32 target_len = min_len;
@@ -423,7 +417,7 @@ random_utf8_string(char *buffer, int32 capacity, int32 min_len) {
 }
 
 #if 0 == TESTING_utf8
-static inline void
+CBASE_API_DEF void
 utf8_functions_sink(void) {
     (void)utf8_decode;
     (void)utf8_encode;
@@ -439,10 +433,6 @@ utf8_functions_sink(void) {
 #if TESTING_utf8
 #define CBASE_IMPLEMENT
 #include "cbase.h"
-
-#include <wchar.h>
-#include <wctype.h>
-#include <string.h>
 
 int
 main(void) {

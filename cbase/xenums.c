@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-
 #include "base_macros.h"
 
 #if CC_CLANG
@@ -63,6 +59,23 @@
   #endif
 #endif
 
+#if !defined(XENUMS_DECLARE_ONLY)
+#define XENUMS_DECLARE_ONLY 0
+#endif
+
+#if !defined(XENUMS_FUNCTIONS_ONLY)
+#define XENUMS_FUNCTIONS_ONLY 0
+#endif
+
+#if !defined(XENUMS_LINKAGE)
+#define XENUMS_LINKAGE CBASE_TEMPLATE
+#endif
+
+#if !defined(XENUMS_PRIVATE)
+#define XENUMS_PRIVATE CBASE_PRIVATE
+#endif
+
+#if XENUMS_FUNCTIONS_ONLY == 0
 #if ENUM_BITFLAGS
 enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE_SPEC {
     #define X_IDX_1(e)    CAT(e, _BIT_IDX),
@@ -109,8 +122,14 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
     #undef XENUM_DEF_2
     CAT(ENUM_PREFIX_, LAST)
 };
+#endif
 
-static void
+XENUMS_LINKAGE void CAT(ENUM_PREFIX_, str_free)(char *);
+XENUMS_LINKAGE char *CAT(ENUM_PREFIX_, str)(enum ENUM_NAME);
+XENUMS_LINKAGE enum ENUM_NAME CAT(ENUM_PREFIX_, parse)(char *);
+
+#if XENUMS_DECLARE_ONLY == 0
+XENUMS_LINKAGE void
 CAT(ENUM_PREFIX_, str_free)(char *str) {
     (void)str;
 #if ENUM_BITFLAGS
@@ -119,7 +138,7 @@ CAT(ENUM_PREFIX_, str_free)(char *str) {
     return;
 }
 
-static char *
+XENUMS_LINKAGE char *
 CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
 #if ENUM_BITFLAGS == 0
     switch (val) {
@@ -206,7 +225,7 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
 #endif
 }
 
-static bool
+XENUMS_PRIVATE bool
 CAT(ENUM_PREFIX_, token_equals)(char *token, int32 token_len, char *name) {
     int32 name_len = strlen32(name);
     if (token_len != name_len) {
@@ -215,7 +234,7 @@ CAT(ENUM_PREFIX_, token_equals)(char *token, int32 token_len, char *name) {
     return !strncmp32(token, name, token_len);
 }
 
-static bool
+XENUMS_PRIVATE bool
 CAT(ENUM_PREFIX_, token_equals_enum_name)(char *token, int32 token_len,
                                           char *name) {
     char *prefix = QUOTE(ENUM_PREFIX_);
@@ -230,7 +249,7 @@ CAT(ENUM_PREFIX_, token_equals_enum_name)(char *token, int32 token_len,
     return CAT(ENUM_PREFIX_, token_equals)(token, token_len, name + prefix_len);
 }
 
-static enum ENUM_NAME
+XENUMS_LINKAGE enum ENUM_NAME
 CAT(ENUM_PREFIX_, parse)(char *string) {
     ENUM_UNDERLYING_TYPE result = 0;
     char *p = string;
@@ -310,7 +329,7 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
 }
 
 #if 0 == TESTING_xenums
-static inline void
+XENUMS_PRIVATE void
 CAT(ENUM_PREFIX_, functions_sink)(void) {
     (void)CAT(ENUM_PREFIX_, str);
     (void)CAT(ENUM_PREFIX_, str_free);
@@ -318,6 +337,12 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
     return;
 }
 #endif
+#endif
+
+#undef XENUMS_DECLARE_ONLY
+#undef XENUMS_FUNCTIONS_ONLY
+#undef XENUMS_LINKAGE
+#undef XENUMS_PRIVATE
 
 #undef ENUM_NAME
 #undef ENUM_PREFIX_

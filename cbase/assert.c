@@ -4,27 +4,16 @@
 #if !defined(ASSERT_C)
 #define ASSERT_C
 
-#include <assert.h>
-#include <errno.h>
-#include <float.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_assert 1
 #elif !defined(TESTING_assert)
 #define TESTING_assert 0
 #endif
 
-#include "platform_detection.h"
+#include "libc.h"
 #include "primitives.h"
 #include "base_macros.h"
-#include "generic.c"
+#include "platform_detection.h"
 
 #define ASSERT_FP_KIND_NONE    0
 #define ASSERT_FP_KIND_FLOAT   1
@@ -902,8 +891,8 @@ _Generic((VAR1),                                                        \
 } while (0)
 
 #if TESTING_assert
-#include <setjmp.h>
-#include <signal.h>
+#define CBASE_IMPLEMENT
+#include "cbase.h"
 
 static sig_atomic_t assertion_failed = false;
 static sigjmp_buf assert_env;
