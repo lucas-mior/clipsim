@@ -14,7 +14,7 @@
 
 #include "cbase.h"
 
-static void
+CBASE_API_DEF void
 sort_shuffle(void *array, int64 n, int64 size) {
     char *tmp = malloc2(size);
     char *arr = array;
@@ -34,7 +34,7 @@ sort_shuffle(void *array, int64 n, int64 size) {
     return;
 }
 
-static void
+CBASE_API_DEF void
 sort_heapify(HeapNode *heap, int32 p, int32 i,
              int32 (*compare_func)(void *a, void *b)) {
     (void)compare_func;
@@ -69,7 +69,7 @@ sort_heapify(HeapNode *heap, int32 p, int32 i,
     return;
 }
 
-static void
+CBASE_API_DEF void
 sort_merge_subsorted(
     void *array,
     int32 n,
@@ -152,7 +152,7 @@ sort_merge_subsorted(
 }
 
 #if 0 == TESTING_sort
-static inline void
+CBASE_API_DEF void
 sort_functions_sink(void) {
     (void)sort_shuffle;
     (void)sort_heapify;

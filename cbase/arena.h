@@ -5,6 +5,7 @@
 #define ARENA_H
 
 #include "primitives.h"
+#include "base_macros.h"
 
 typedef struct Arena {
     char *name;
@@ -24,26 +25,24 @@ enum ArenaErrors {
     EARENA_SIZE,
 };
 
-static void *arena_allocate(int64 *);
-static bool arena_free(Arena *);
-static Arena *arena_create(int64, char *);
-static int64 arena_data_size(Arena *);
-static bool arena_decr(Arena *, void *);
-static void arena_destroy(Arena *);
-static void arena_functions_sink(void);
-static int32 arena_nlinked(Arena *);
-static Arena *arena_of(Arena *, void *);
-static void arena_print(Arena *);
-static void *arena_push(Arena *, int64);
-static uint32 arena_push_index32(Arena *, uint32);
-static void *arena_reset(Arena *);
-static char *arena_strerror(int);
-static Arena *arena_with_space(Arena *, int64);
-static void arenas_destroy(Arena **, int32);
-static bool arenas_pop(Arena **, int32, void *);
-static void *arenas_push(Arena **, int32, int64);
-static void *arenas_reset(Arena **, int32);
-static void *xarena_push(Arena *, int64);
-static void *xarenas_push(Arena **, int32, int64);
+CBASE_API_DECL Arena *arena_create(int64, char *);
+CBASE_API_DECL int64 arena_data_size(Arena *);
+CBASE_API_DECL bool arena_decr(Arena *, void *);
+CBASE_API_DECL void arena_destroy(Arena *);
+CBASE_API_DECL void arena_functions_sink(void);
+CBASE_API_DECL int32 arena_nlinked(Arena *);
+CBASE_API_DECL Arena *arena_of(Arena *, void *);
+CBASE_API_DECL void arena_print(Arena *);
+CBASE_API_DECL void *arena_push(Arena *, int64);
+CBASE_API_DECL uint32 arena_push_index32(Arena *, uint32);
+CBASE_API_DECL void *arena_reset(Arena *);
+CBASE_API_DECL char *arena_strerror(int);
+CBASE_API_DECL Arena *arena_with_space(Arena *, int64);
+CBASE_API_DECL void arenas_destroy(Arena **, int32);
+CBASE_API_DECL bool arenas_pop(Arena **, int32, void *);
+CBASE_API_DECL void *arenas_push(Arena **, int32, int64);
+CBASE_API_DECL void *arenas_reset(Arena **, int32);
+CBASE_API_DECL void *xarena_push(Arena *, int64);
+CBASE_API_DECL void *xarenas_push(Arena **, int32, int64);
 
 #endif /* ARENA_H */

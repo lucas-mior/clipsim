@@ -65,96 +65,50 @@
 #define ERROR_NOTIFY 0
 #endif
 
-#include <assert.h>
-#include <ctype.h>
-#include <dirent.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <float.h>
-#include <limits.h>
-#include <pthread.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
-
 #include "platform_detection.h"
-
-#if OS_WINDOWS
-#include <windows.h>
-#endif
-
-#if OS_UNIX
-#include <sys/mman.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <pthread.h>
-#include <poll.h>
-#endif
-
-#if OS_MAC
-#include <sys/param.h>
-#undef MIN
-#undef MAX
-#endif
-
 #include "primitives.h"
 #include "base_macros.h"
 
-#if !defined(FLAGS_HUGE_PAGES)
-#if defined(MAP_HUGETLB) && defined(MAP_HUGE_2MB)
-#define FLAGS_HUGE_PAGES MAP_HUGETLB | MAP_HUGE_2MB
-#else
-#define FLAGS_HUGE_PAGES 0
-#endif
-#endif
+#define error(...) \
+    error_impl(__FILE__, __LINE__, (char *)__func__, __VA_ARGS__)
+#define error2(...) fprintf(stderr, __VA_ARGS__)
+CBASE_API_DECL int32 optional_strlen32(char *);
+CBASE_API_DECL int32 strlen32(char *);
+CBASE_API_DECL void fatal(int32) __attribute__((noreturn));
+CBASE_API_DECL void error_impl(char *, int32, char *, char *, ...)
+    __attribute__((format(printf, 4, 5)));
+CBASE_API_DECL int memcmp64(void *, void *, int64);
+CBASE_API_DECL void *memmem64(void *, int64, void *, int64);
+CBASE_API_DECL void *memrchr64(void *, int32, int64);
 
-#if !defined(MAP_POPULATE)
-#define MAP_POPULATE 0
-#endif
-
-#if !defined(MAP_ANON) && defined(MAP_ANONYMOUS)
-#define MAP_ANON MAP_ANONYMOUS
-#elif !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
-#define MAP_ANONYMOUS MAP_ANON
-#elif !defined(MAP_ANONYMOUS) && !defined(MAP_ANON)
-#define MAP_ANON 0
-#define MAP_ANONYMOUS 0
-#endif
-
+#include "libc.h"
 #include "i18n.h"
 #include "memory.h"
+#include "arena.h"
 
+#include "assert.c"
 #include "generic.c"
 #include "minmax.c"
-#include "assert.c"
 
-#include "arena.h"
 #define UTF_INVALID 0xFFFD
 
-static int32 random_utf8_string(char *, int32, int32);
-static int32 utf8_byte_position(char *, int32, int32);
-static int32 utf8_capitalize_first_letters(char *, int32, char *, int32);
-static int32 utf8_char_width(uint32);
-static int32 utf8_characters(char *, int32);
-static int32 utf8_cut_width(char *, int32, int32);
-static int32 utf8_decode(char *, int32, uint32 *);
-static uint32 utf8_decode_byte(char, int32 *);
-static int32 utf8_decode_raw(char *, uint32 *, int32);
-static int32 utf8_encode(uint32, char *, int32);
-static char utf8_encode_byte(uint32, int32);
-static int32 utf8_encode_raw(uint32, char *);
-static void utf8_functions_sink(void);
-static int32 utf8_next_position(char *, int32, int32);
-static int32 utf8_suffix_width_position(char *, int32, int32);
-static int32 utf8_validate(uint32 *, int32);
-static int32 utf8_width(char *, int32);
+CBASE_API_DECL int32 random_utf8_string(char *, int32, int32);
+CBASE_API_DECL int32 utf8_byte_position(char *, int32, int32);
+CBASE_API_DECL int32 utf8_capitalize_first_letters(char *, int32, char *, int32);
+CBASE_API_DECL int32 utf8_char_width(uint32);
+CBASE_API_DECL int32 utf8_characters(char *, int32);
+CBASE_API_DECL int32 utf8_cut_width(char *, int32, int32);
+CBASE_API_DECL int32 utf8_decode(char *, int32, uint32 *);
+CBASE_API_DECL uint32 utf8_decode_byte(char, int32 *);
+CBASE_API_DECL int32 utf8_decode_raw(char *, uint32 *, int32);
+CBASE_API_DECL int32 utf8_encode(uint32, char *, int32);
+CBASE_API_DECL char utf8_encode_byte(uint32, int32);
+CBASE_API_DECL int32 utf8_encode_raw(uint32, char *);
+CBASE_API_DECL void utf8_functions_sink(void);
+CBASE_API_DECL int32 utf8_next_position(char *, int32, int32);
+CBASE_API_DECL int32 utf8_suffix_width_position(char *, int32, int32);
+CBASE_API_DECL int32 utf8_validate(uint32 *, int32);
+CBASE_API_DECL int32 utf8_width(char *, int32);
 
 #if !defined(MAX_FILES_COPY)
 #define MAX_FILES_COPY 256
@@ -180,37 +134,30 @@ typedef struct UtilCopyFilesAsync {
     int32 unused;
 } UtilCopyFilesAsync;
 
-static bool util_is_integer(char *string);
-static int32 util_copy_file_async(char *, char *, int *);
-static void util_copy_file_async_parsed(UtilCopyFilesAsync *);
-static void *util_copy_file_async_thread(void *);
+CBASE_API_DECL bool util_is_integer(char *string);
+CBASE_API_DECL int32 util_copy_file_async(char *, char *, int *);
+CBASE_API_DECL void util_copy_file_async_parsed(UtilCopyFilesAsync *);
+CBASE_API_DECL void *util_copy_file_async_thread(void *);
 #endif
 
-static void error_impl(char *, int32, char *, char *, ...)
-    __attribute__((format(printf, 4, 5)));
-static void fatal(int32) __attribute__((noreturn));
-static void util_segv_handler(int32) __attribute__((noreturn));
-static int32 itoa2(char *, int32, llong);
-static long atoi2(char *);
-static char *basename2(char *, int32 *, int32 *);
-static char *begins_with(char *, int32, char *, int32);
-static int32 bytes_pretty(char *, int64);
-static void catfile(int, char *);
-static double deg2rad(double);
-static int32 dirname2(char *, char *, int32 *);
-static char *ends_with(char *, int32, char *, int32);
-static void error_async_safe(char *);
-static bool is_ident_char(char);
-static bool is_ident_start_char(char);
-static void *memchr64(void *, int32, int64);
-static int memcmp64(void *, void *, int64);
-static void *memmem64(void *, int64, void *, int64);
-static void *memrchr64(void *, int32, int64);
-static void normalize(char *restrict, int32 *restrict);
-static int32 optional_strlen32(char *);
-static bool parse_option(char **, char *, char *);
-static char *path_basename(char *, int32);
-static void print_timings(
+CBASE_API_DECL void util_segv_handler(int32) __attribute__((noreturn));
+CBASE_API_DECL int32 itoa2(char *, int32, llong);
+CBASE_API_DECL long atoi2(char *);
+CBASE_API_DECL char *basename2(char *, int32 *, int32 *);
+CBASE_API_DECL char *begins_with(char *, int32, char *, int32);
+CBASE_API_DECL int32 bytes_pretty(char *, int64);
+CBASE_API_DECL void catfile(int, char *);
+CBASE_API_DECL double deg2rad(double);
+CBASE_API_DECL int32 dirname2(char *, char *, int32 *);
+CBASE_API_DECL char *ends_with(char *, int32, char *, int32);
+CBASE_API_DECL void error_async_safe(char *);
+CBASE_API_DECL bool is_ident_char(char);
+CBASE_API_DECL bool is_ident_start_char(char);
+CBASE_API_DECL void *memchr64(void *, int32, int64);
+CBASE_API_DECL void normalize(char *restrict, int32 *restrict);
+CBASE_API_DECL bool parse_option(char **, char *, char *);
+CBASE_API_DECL char *path_basename(char *, int32);
+CBASE_API_DECL void print_timings(
     char *,
     int32,
     char *,
@@ -218,87 +165,82 @@ static void print_timings(
     struct timespec,
     struct timespec
 );
-static void qsort64(void *, int64, int64, int (*)(void *, void *));
-static double rad2deg(double);
-static int32 random_ascii_string(char *, int32, int32);
-static char *read_entire_file(char *, int32 *);
-static char *remove_escape_sequences(char *, int32 *);
-static void sb_append(StrBuilder *, char *, int32);
-static void sb_append_byte(StrBuilder *, char);
-static void sb_clear(StrBuilder *);
-static bool sb_copy(StrBuilder *, StrBuilder *);
-static void sb_free(StrBuilder *);
-static void sb_init(StrBuilder *);
-static void sb_move(StrBuilder *, StrBuilder *);
-static void sb_printf(StrBuilder *, char *, ...);
-static void sb_reserve(StrBuilder *, int32);
-static bool sb_set(StrBuilder *, char *, int32);
-static char *sb_steal(StrBuilder *, int32 *, int32 *);
-static char *sb_steal_exact(StrBuilder *, int32 *);
-static void send_signal(char *, int32);
-static int32 snprintf2(char *, int64, char *, ...);
-static StrBuilder *str_builder_array_append(StrBuilderArray *);
-static bool str_builder_array_append_copy(StrBuilderArray *, StrBuilder *);
-static void str_builder_array_clear(StrBuilderArray *);
-static bool str_builder_array_copy(StrBuilderArray *, StrBuilderArray *);
-static void str_builder_array_destroy(StrBuilderArray *);
-static void str_builder_array_init(StrBuilderArray *);
-static void str_builder_array_move(StrBuilderArray *, StrBuilderArray *);
-static bool str_builder_array_reserve(StrBuilderArray *, int32);
-static void str_builder_array_swap(StrBuilderArray *, StrBuilderArray *);
-static int32 string_from_strings(char *, int32, char *, char **, int32);
-static int32 string_from_doubles(char *, int32, char *, double *, int32);
-static double clamp_double(double, double, double);
-static double square_double(double);
-static int64 clamp_int64(int64, int64, int64);
-static int64 square_int64(int64);
-static bool strequal(char *, char *);
-static bool strequal2(char *, int32, char *, int32);
-static int64 strftime2(char *, int64, char *, struct tm *);
-static int32 strlen32(char *);
-static int strncmp32(char *, char *, int64);
-static char *strncpy32(char *, char *, int64);
-static double timediff(struct timespec, struct timespec);
-static void timezone_init(void);
-static int32 util_copy_file_sync(char *, char *);
-static void util_die_notify(char *, char *, ...);
-static bool util_equal_files(char *, char *);
-static bool util_file_exists(char *);
-static int32 util_filename_from(char *, int64, int);
-static void util_functions_sink(void);
-static int32 util_nthreads(void);
-static int32 util_string_int32(int32 *, char *);
-static void warn(char *, ...);
-static int64 read64(int32, void *, int64);
-static int64 write64(int32, void *, int64);
-static int64 fread64(void *, int64, int64, FILE *);
-static int64 fwrite64(void *, int64, int64, FILE *);
-static void write_all(int, char *, int64);
-static bool write_entire_file(char *, char *, int64);
-static int xclose(char *, int, int *, char *, char *);
-static int xclosedir(DIR *, char *);
-static void xdup2(int, int);
-static int xfclose(char *, int32, char *, FILE *, char *);
-static FILE *xfopen(char *, int32, char *, char *, char *);
-static void xkill(pid_t, int);
-static void xpipe(int [2]);
-static void xpthread_cond_destroy(pthread_cond_t *);
-static void xpthread_create(
+CBASE_API_DECL void qsort64(void *, int64, int64, int (*)(void *, void *));
+CBASE_API_DECL double rad2deg(double);
+CBASE_API_DECL int32 random_ascii_string(char *, int32, int32);
+CBASE_API_DECL char *read_entire_file(char *, int32 *);
+CBASE_API_DECL char *remove_escape_sequences(char *, int32 *);
+CBASE_API_DECL void sb_append(StrBuilder *, char *, int32);
+CBASE_API_DECL void sb_append_byte(StrBuilder *, char);
+CBASE_API_DECL void sb_clear(StrBuilder *);
+CBASE_API_DECL bool sb_copy(StrBuilder *, StrBuilder *);
+CBASE_API_DECL void sb_free(StrBuilder *);
+CBASE_API_DECL void sb_init(StrBuilder *);
+CBASE_API_DECL void sb_move(StrBuilder *, StrBuilder *);
+CBASE_API_DECL void sb_printf(StrBuilder *, char *, ...);
+CBASE_API_DECL void sb_reserve(StrBuilder *, int32);
+CBASE_API_DECL bool sb_set(StrBuilder *, char *, int32);
+CBASE_API_DECL char *sb_steal(StrBuilder *, int32 *, int32 *);
+CBASE_API_DECL char *sb_steal_exact(StrBuilder *, int32 *);
+CBASE_API_DECL void send_signal(char *, int32);
+CBASE_API_DECL int32 snprintf2(char *, int64, char *, ...);
+CBASE_API_DECL StrBuilder *str_builder_array_append(StrBuilderArray *);
+CBASE_API_DECL bool str_builder_array_append_copy(StrBuilderArray *, StrBuilder *);
+CBASE_API_DECL void str_builder_array_clear(StrBuilderArray *);
+CBASE_API_DECL bool str_builder_array_copy(StrBuilderArray *, StrBuilderArray *);
+CBASE_API_DECL void str_builder_array_destroy(StrBuilderArray *);
+CBASE_API_DECL void str_builder_array_init(StrBuilderArray *);
+CBASE_API_DECL void str_builder_array_move(StrBuilderArray *, StrBuilderArray *);
+CBASE_API_DECL bool str_builder_array_reserve(StrBuilderArray *, int32);
+CBASE_API_DECL void str_builder_array_swap(StrBuilderArray *, StrBuilderArray *);
+CBASE_API_DECL int32 string_from_strings(char *, int32, char *, char **, int32);
+CBASE_API_DECL int32 string_from_doubles(char *, int32, char *, double *, int32);
+CBASE_API_DECL double clamp_double(double, double, double);
+CBASE_API_DECL double square_double(double);
+CBASE_API_DECL int64 clamp_int64(int64, int64, int64);
+CBASE_API_DECL int64 square_int64(int64);
+CBASE_API_DECL bool strequal(char *, char *);
+CBASE_API_DECL bool strequal2(char *, int32, char *, int32);
+CBASE_API_DECL int64 strftime2(char *, int64, char *, struct tm *);
+CBASE_API_DECL int strncmp32(char *, char *, int64);
+CBASE_API_DECL char *strncpy32(char *, char *, int64);
+CBASE_API_DECL double timediff(struct timespec, struct timespec);
+CBASE_API_DECL void timezone_init(void);
+CBASE_API_DECL int32 util_copy_file_sync(char *, char *);
+CBASE_API_DECL void util_die_notify(char *, char *, ...);
+CBASE_API_DECL bool util_equal_files(char *, char *);
+CBASE_API_DECL bool util_file_exists(char *);
+CBASE_API_DECL int32 util_filename_from(char *, int64, int);
+CBASE_API_DECL void util_functions_sink(void);
+CBASE_API_DECL int32 util_nthreads(void);
+CBASE_API_DECL int32 util_string_int32(int32 *, char *);
+CBASE_API_DECL void warn(char *, ...);
+CBASE_API_DECL int64 read64(int32, void *, int64);
+CBASE_API_DECL int64 write64(int32, void *, int64);
+CBASE_API_DECL int64 fread64(void *, int64, int64, FILE *);
+CBASE_API_DECL int64 fwrite64(void *, int64, int64, FILE *);
+CBASE_API_DECL void write_all(int, char *, int64);
+CBASE_API_DECL bool write_entire_file(char *, char *, int64);
+CBASE_API_DECL int xclose(char *, int, int *, char *, char *);
+CBASE_API_DECL int xclosedir(DIR *, char *);
+CBASE_API_DECL void xdup2(int, int);
+CBASE_API_DECL int xfclose(char *, int32, char *, FILE *, char *);
+CBASE_API_DECL FILE *xfopen(char *, int32, char *, char *, char *);
+CBASE_API_DECL void xkill(pid_t, int);
+CBASE_API_DECL void xpipe(int [2]);
+CBASE_API_DECL void xpthread_cond_destroy(pthread_cond_t *);
+CBASE_API_DECL void xpthread_create(
     pthread_t *,
     pthread_attr_t *,
     void *(*)(void *),
     void *
 );
-static void xpthread_join(pthread_t *, void **);
-static void xpthread_mutex_destroy(pthread_mutex_t *);
-static void xpthread_mutex_lock(pthread_mutex_t *);
-static void xpthread_mutex_unlock(pthread_mutex_t *);
-static int xunlink(char *);
-static void here_impl(char *, int32, char *);
-
-#define error(...) \
-    error_impl(__FILE__, __LINE__, (char *)__func__, __VA_ARGS__)
-#define error2(...) fprintf(stderr, __VA_ARGS__)
+CBASE_API_DECL void xpthread_join(pthread_t *, void **);
+CBASE_API_DECL void xpthread_mutex_destroy(pthread_mutex_t *);
+CBASE_API_DECL void xpthread_mutex_lock(pthread_mutex_t *);
+CBASE_API_DECL void xpthread_mutex_unlock(pthread_mutex_t *);
+CBASE_API_DECL int xunlink(char *);
+CBASE_API_DECL void here_impl(char *, int32, char *);
 
 #define STRING_FROM_ARRAY(BUFFER, SEP, ARRAY, LENGTH) \
 _Generic((ARRAY), \
@@ -378,10 +320,6 @@ _Generic((VAR), \
     ncalls_ncalls += 1; \
 } while (0)
 
-#define MEM_FREED 0xDC
-#define MEM_MALLOCED_UNINITIALIZED 0xCD
-#define MEM_DONT_READ 0xBD
-
 #define PRINT_TIMINGS_3(N, T0, T1) \
     print_timings(__FILE__, __LINE__, (char *)__func__, N, T0, T1)
 #define PRINT_TIMINGS_4(N, T0, T1, NAME) \
@@ -420,31 +358,35 @@ _Generic((VAR), \
     X(COMMAND_NEW_PROCESS_GROUP)   \
     X(COMMAND_STDIN_TTY)           \
     X(COMMAND_CLOSE_STDIN)
+#define XENUMS_DECLARE_ONLY 1
+#define XENUMS_LINKAGE CBASE_API_DECL
 #define XENUMS_NO_TESTS 1
 #include "xenums.c"
 #undef XENUMS_NO_TESTS
+#undef XENUMS_LINKAGE
 
 typedef struct CommandResult {
+    int64 pid;
+
     char *output;
     char *stdout_output;
     char *stderr_output;
 
-    int64 pid;
-
     int32 output_len;
     int32 stdout_len;
     int32 stderr_len;
+
+    int32 stdout_fd;
+    int32 stderr_fd;
+
     int32 status;
     int32 error_status;
     int32 exit_status;
     int32 term_signal;
-    int32 stdout_fd;
-    int32 stderr_fd;
 
     bool exited;
     bool signaled;
-    bool stdout_fd_open;
-    bool stderr_fd_open;
+    int16 padding;
 } CommandResult;
 
 typedef struct Command {
@@ -464,32 +406,32 @@ typedef struct Command {
     CommandResult result;
 } Command;
 
-static void command_argv0_set(Command *, char *);
-static void command_child_env_apply(Command *);
-static void command_child_exec(
+CBASE_API_DECL void command_argv0_set(Command *, char *);
+CBASE_API_DECL void command_child_env_apply(Command *);
+CBASE_API_DECL void command_child_exec(
     Command *, enum CommandFlag, int [2], int [2]
 ) __attribute__((noreturn));
 #if OS_WINDOWS
-static void command_windows_command_line(Command *, char *, int64);
-static char *command_windows_argv0(Command *, char *, int32 *);
-static int32 command_windows_run_process(Command *, enum CommandFlag);
+CBASE_API_DECL void command_windows_command_line(Command *, char *, int64);
+CBASE_API_DECL char *command_windows_argv0(Command *, char *, int32 *);
+CBASE_API_DECL int32 command_windows_run_process(Command *, enum CommandFlag);
 #endif
-static void command_cwd_clear(Command *);
-static void command_cwd_set(Command *, char *);
-static void command_env_clear(Command *);
-static void command_env_printf(Command *, char *, ...);
-static void command_env_push(Command *, char *);
-static void command_env_push_length(Command *, char *, int32);
-static void command_error_set(Command *, int32);
-static bool command_flags_capture(enum CommandFlag);
-static enum CommandFlag command_flags_normalized(enum CommandFlag);
-static void command_free(Command *);
-static void command_print(Command *);
-static void command_printf(Command *, char *, ...);
-static void command_push(Command *, char *);
-static void command_push_length(Command *, char *, int32);
-static void command_push_array(Command *, int32, char **);
-static void command_push_owned_length(
+CBASE_API_DECL void command_cwd_clear(Command *);
+CBASE_API_DECL void command_cwd_set(Command *, char *);
+CBASE_API_DECL void command_env_clear(Command *);
+CBASE_API_DECL void command_env_printf(Command *, char *, ...);
+CBASE_API_DECL void command_env_push(Command *, char *);
+CBASE_API_DECL void command_env_push_length(Command *, char *, int32);
+CBASE_API_DECL void command_error_set(Command *, int32);
+CBASE_API_DECL bool command_flags_capture(enum CommandFlag);
+CBASE_API_DECL enum CommandFlag command_flags_normalized(enum CommandFlag);
+CBASE_API_DECL void command_free(Command *);
+CBASE_API_DECL void command_print(Command *);
+CBASE_API_DECL void command_printf(Command *, char *, ...);
+CBASE_API_DECL void command_push(Command *, char *);
+CBASE_API_DECL void command_push_length(Command *, char *, int32);
+CBASE_API_DECL void command_push_array(Command *, int32, char **);
+CBASE_API_DECL void command_push_owned_length(
     char ***,
     int32 **,
     int32 *,
@@ -497,9 +439,9 @@ static void command_push_owned_length(
     char *,
     int32
 );
-static void command_push_split(Command *, char *, char *);
-static void command_reset(Command *);
-static void command_result_append(
+CBASE_API_DECL void command_push_split(Command *, char *, char *);
+CBASE_API_DECL void command_reset(Command *);
+CBASE_API_DECL void command_result_append(
     StrBuilder *,
     StrBuilder *,
     StrBuilder *,
@@ -507,22 +449,22 @@ static void command_result_append(
     char *,
     int32
 );
-static void command_result_file_descriptors_close(CommandResult *);
-static void command_result_free(CommandResult *);
-static void command_result_init(CommandResult *);
-static void command_result_read_captured(Command *);
-static bool command_run(Command *, enum CommandFlag);
-static bool command_run_async(Command *, enum CommandFlag);
-static bool command_run_capture(Command *, enum CommandFlag);
-static bool command_run_capture_all(Command *);
-static bool command_run_capture_combined(Command *);
-static bool command_run_sync(Command *, int *);
-static bool command_signal(Command *, int32, bool);
-static bool command_start(Command *, enum CommandFlag);
-static int32 command_status_from_wait(int, CommandResult *);
-static char *command_str(Command *, int32 *);
-static void command_vector_reserve(char ***, int32 **, int32 *, int32, int32);
-static bool command_wait(Command *);
+CBASE_API_DECL void command_result_file_descriptors_close(CommandResult *);
+CBASE_API_DECL void command_result_free(CommandResult *);
+CBASE_API_DECL void command_result_init(CommandResult *);
+CBASE_API_DECL void command_result_read_captured(Command *);
+CBASE_API_DECL bool command_run(Command *, enum CommandFlag);
+CBASE_API_DECL bool command_run_async(Command *, enum CommandFlag);
+CBASE_API_DECL bool command_run_capture(Command *, enum CommandFlag);
+CBASE_API_DECL bool command_run_capture_all(Command *);
+CBASE_API_DECL bool command_run_capture_combined(Command *);
+CBASE_API_DECL bool command_run_sync(Command *, int *);
+CBASE_API_DECL bool command_signal(Command *, int32, bool);
+CBASE_API_DECL bool command_start(Command *, enum CommandFlag);
+CBASE_API_DECL int32 command_status_from_wait(int, CommandResult *);
+CBASE_API_DECL char *command_str(Command *, int32 *);
+CBASE_API_DECL void command_vector_reserve(char ***, int32 **, int32 *, int32, int32);
+CBASE_API_DECL bool command_wait(Command *);
 
 #define COMMAND_PUSH_2(A, B) command_push(A, B)
 #define COMMAND_PUSH_3(A, B, B_LEN) command_push_length(A, B, B_LEN)
@@ -548,16 +490,16 @@ typedef struct HeapNode {
     int32 unused;
 } HeapNode;
 
-static void sort_functions_sink(void);
-static void sort_heapify(HeapNode *, int32, int32, int32 (*)(void *, void *));
-static void sort_merge_subsorted(
+CBASE_API_DECL void sort_functions_sink(void);
+CBASE_API_DECL void sort_heapify(HeapNode *, int32, int32, int32 (*)(void *, void *));
+CBASE_API_DECL void sort_merge_subsorted(
     void *,
     int32,
     int32,
     int64,
     int32 (*)(void *, void *)
 );
-static void sort_shuffle(void *, int64, int64);
+CBASE_API_DECL void sort_shuffle(void *, int64, int64);
 
 typedef struct GenericArrayHeader {
     ldouble alignment;
@@ -566,9 +508,9 @@ typedef struct GenericArrayHeader {
     int64 padding;
 } GenericArrayHeader;
 
-static void *generic_array_init(int32, int64);
-static void *generic_array_grow(void *, int64);
-static void array_sink(void);
+CBASE_API_DECL void *generic_array_init(int32, int64);
+CBASE_API_DECL void *generic_array_grow(void *, int64);
+CBASE_API_DECL void array_sink(void);
 
 #define ARRAY_HEADER(ARRAY) ((GenericArrayHeader *)(ARRAY) - 1)
 #define ARRAY_LEN(ARRAY) ((ARRAY) ? ARRAY_HEADER(ARRAY)->count : 0)
@@ -603,6 +545,27 @@ static void array_sink(void);
 #include "array.c"
 #include "utf8.c"
 #include "util.c"
+
+#define ENUM_NAME CommandFlag
+#define ENUM_BITFLAGS 1
+#define ENUM_PREFIX_ COMMAND_
+#define ENUM_FIELDS \
+    X(COMMAND_CAPTURE_STDOUT)      \
+    X(COMMAND_CAPTURE_STDERR)      \
+    X(COMMAND_MERGE_STDERR)        \
+    X(COMMAND_ASYNC)               \
+    X(COMMAND_DETACHED)            \
+    X(COMMAND_NEW_SESSION)         \
+    X(COMMAND_NEW_PROCESS_GROUP)   \
+    X(COMMAND_STDIN_TTY)           \
+    X(COMMAND_CLOSE_STDIN)
+#define XENUMS_FUNCTIONS_ONLY 1
+#define XENUMS_LINKAGE CBASE_API_DEF
+#define XENUMS_NO_TESTS 1
+#include "xenums.c"
+#undef XENUMS_NO_TESTS
+#undef XENUMS_LINKAGE
+
 #include "command.c"
 #include "sort.c"
 #include "cbase.h"

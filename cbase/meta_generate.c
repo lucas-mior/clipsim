@@ -4,9 +4,6 @@
 #if !defined(META_GENERATE_C)
 #define META_GENERATE_C
 
-#include <ctype.h>
-#include <inttypes.h>
-
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_meta_generate 1
 #elif !defined(TESTING_meta_generate)
@@ -15,7 +12,7 @@
 
 #include "cbase.h"
 
-static StrBuilder
+CBASE_API_DEF StrBuilder
 c_string_literal(char *value, int32 value_len) {
     StrBuilder out = {0};
 
@@ -70,7 +67,7 @@ c_string_literal(char *value, int32 value_len) {
     return out;
 }
 
-static bool
+CBASE_API_DEF bool
 c_identifier_is_keyword(char *identifier) {
     static char *keywords[] = {
         "_Alignas",
@@ -127,7 +124,7 @@ c_identifier_is_keyword(char *identifier) {
     return false;
 }
 
-static StrBuilder
+CBASE_API_DEF StrBuilder
 c_identifier(char *value, int32 value_len) {
     StrBuilder out = {0};
 
@@ -175,7 +172,7 @@ c_identifier(char *value, int32 value_len) {
     return out;
 }
 
-static void
+CBASE_API_DEF void
 emit_string_array_initializer(StrBuilder *out, char *field, char **values,
                               int32 *value_lens, int32 count,
                               char *fallback_prefix) {
@@ -209,7 +206,7 @@ emit_string_array_initializer(StrBuilder *out, char *field, char **values,
     return;
 }
 
-static void
+CBASE_API_DEF void
 emit_lens_initializer(StrBuilder *out, char *field, char **values,
                       int32 *value_lens, int32 count, char *fallback_prefix) {
     if (count <= 0) {
@@ -239,7 +236,7 @@ emit_lens_initializer(StrBuilder *out, char *field, char **values,
     return;
 }
 
-static void
+CBASE_API_DEF void
 emit_int_array_initializer(StrBuilder *out, char *field, int32 *values,
                            int32 count) {
     if (count <= 0) {
@@ -258,7 +255,7 @@ emit_int_array_initializer(StrBuilder *out, char *field, int32 *values,
     return;
 }
 
-static void
+CBASE_API_DEF void
 emit_u64_array_initializer(StrBuilder *out, char *field, uint64 *values,
                            int32 count) {
     if (count <= 0) {
@@ -276,7 +273,7 @@ emit_u64_array_initializer(StrBuilder *out, char *field, uint64 *values,
     SB_APPEND(out, " },\n");
 }
 
-static void
+CBASE_API_DEF void
 c_emit_wrapped_expr(StrBuilder *out, char *indent, char *prefix, char *expr,
                     char *suffix) {
     int32 prefix_len = strlen32(prefix);

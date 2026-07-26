@@ -28,9 +28,17 @@
 #error "Error: SFA_FORMAT not defined"
 #endif
 
-static int32 snprintf2(char *buffer, int64 size, char *format, ...);
+#if !defined(SFA_LINKAGE)
+#define SFA_LINKAGE static
+#endif
 
-static int32
+#if !defined(SFA_SNPRINTF_LINKAGE)
+#define SFA_SNPRINTF_LINKAGE static
+#endif
+
+SFA_SNPRINTF_LINKAGE int32 snprintf2(char *buffer, int64 size, char *format, ...);
+
+SFA_LINKAGE int32
 CAT(string_from_, SFA_NAME)(char *buffer, int32 size,
                             char *sep, SFA_TYPE *array, int32 array_length) {
     int32 n = 0;
@@ -54,3 +62,5 @@ CAT(string_from_, SFA_NAME)(char *buffer, int32 size,
 #undef SFA_TYPE
 #undef SFA_NAME
 #undef SFA_FORMAT
+#undef SFA_LINKAGE
+#undef SFA_SNPRINTF_LINKAGE

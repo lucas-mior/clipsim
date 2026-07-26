@@ -14,7 +14,7 @@
 
 #include "cbase.h"
 
-static bool
+CBASE_API_DEF bool
 char_is_alpha(char c) {
     if (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'))) {
         return true;
@@ -22,7 +22,7 @@ char_is_alpha(char c) {
     return false;
 }
 
-static bool
+CBASE_API_DEF bool
 char_is_digit(char c) {
     if ((c >= '0') && (c <= '9')) {
         return true;
@@ -30,7 +30,7 @@ char_is_digit(char c) {
     return false;
 }
 
-static bool
+CBASE_API_DEF bool
 token_is_number(Token *token) {
     if ((token->kind == TOKEN_LITERAL) && (token->len > 0)
         && (char_is_digit(token->text[0])
@@ -41,7 +41,7 @@ token_is_number(Token *token) {
     return false;
 }
 
-static bool
+CBASE_API_DEF bool
 char_is_identifier_start(char c) {
     if (char_is_alpha(c) || (c == '_')) {
         return true;
@@ -49,7 +49,7 @@ char_is_identifier_start(char c) {
     return false;
 }
 
-static bool
+CBASE_API_DEF bool
 char_is_identifier_body(char c) {
     if (char_is_identifier_start(c) || char_is_digit(c)) {
         return true;
@@ -57,7 +57,7 @@ char_is_identifier_body(char c) {
     return false;
 }
 
-static bool
+CBASE_API_DEF bool
 char_is_horizontal_space(char c) {
     switch (c) {
     case ' ':
@@ -71,7 +71,7 @@ char_is_horizontal_space(char c) {
     }
 }
 
-static bool
+CBASE_API_DEF bool
 char_is_number_body(char c) {
     if (char_is_identifier_body(c)
         || char_is_digit(c)
@@ -82,7 +82,7 @@ char_is_number_body(char c) {
     return false;
 }
 
-static int32
+CBASE_API_DEF int32
 scan_number_literal(char *text, int32 text_len, int32 start) {
     int32 result;
 
@@ -109,7 +109,7 @@ scan_number_literal(char *text, int32 text_len, int32 start) {
     return result;
 }
 
-static bool
+CBASE_API_DEF bool
 line_starts_preprocessor(char *text, int32 len) {
     for (int32 i = 0; i < len; i += 1) {
         if (char_is_horizontal_space(text[i])) {
@@ -123,7 +123,7 @@ line_starts_preprocessor(char *text, int32 len) {
     return false;
 }
 
-static void
+CBASE_API_DEF void
 line_reserve_tokens(Line *line, int32 extra) {
     int32 need;
     int32 new_capacity;
@@ -155,7 +155,7 @@ line_reserve_tokens(Line *line, int32 extra) {
     return;
 }
 
-static void
+CBASE_API_DEF void
 line_add_token(Line *line, enum TokenKind category, char *text, int32 len,
                int32 column) {
     Token *token;
@@ -180,7 +180,7 @@ line_add_token(Line *line, enum TokenKind category, char *text, int32 len,
     return;
 }
 
-static int32
+CBASE_API_DEF int32
 literal_quote_index(char *text, int32 text_len, int32 start) {
     int32 result = -1;
 
@@ -213,7 +213,7 @@ literal_quote_index(char *text, int32 text_len, int32 start) {
     return result;
 }
 
-static int32
+CBASE_API_DEF int32
 scan_literal_token(char *text, int32 text_len, int32 start) {
     char quote;
     int32 quote_index;
@@ -251,7 +251,7 @@ scan_literal_token(char *text, int32 text_len, int32 start) {
     return result;
 }
 
-static int32
+CBASE_API_DEF int32
 scan_line_comment(char *text, int32 text_len, int32 start) {
     int32 i;
 
@@ -262,7 +262,7 @@ scan_line_comment(char *text, int32 text_len, int32 start) {
     return i - start;
 }
 
-static int32
+CBASE_API_DEF int32
 scan_block_comment(char *text, int32 len, int32 start, bool *in_block_comment) {
     int32 i;
 
@@ -287,7 +287,7 @@ scan_block_comment(char *text, int32 len, int32 start, bool *in_block_comment) {
     return i - start;
 }
 
-static enum TokenKind
+CBASE_API_DEF enum TokenKind
 operator_or_punct_category(char *text, int32 len, int32 start, int32 *out_len) {
     enum TokenKind result;
     char a;
@@ -409,7 +409,7 @@ operator_or_punct_category(char *text, int32 len, int32 start, int32 *out_len) {
     return result;
 }
 
-static bool
+CBASE_API_DEF bool
 char_is_operator_or_punct(char c) {
     switch (c) {
     case '+':
@@ -443,7 +443,7 @@ char_is_operator_or_punct(char c) {
     }
 }
 
-static void
+CBASE_API_DEF void
 tokenize_line_with_flags(Line *line, bool *in_block_comment, int32 flags) {
     int32 i;
 
@@ -531,7 +531,7 @@ tokenize_line_with_flags(Line *line, bool *in_block_comment, int32 flags) {
     return;
 }
 
-static Line
+CBASE_API_DEF Line
 tokenize_text_with_flags(char *text, int32 text_len, int32 flags) {
     bool in_block_comment = false;
     Line result = {0};
@@ -543,20 +543,20 @@ tokenize_text_with_flags(char *text, int32 text_len, int32 flags) {
     return result;
 }
 
-static void
+CBASE_API_DEF void
 tokenize_line(Line *line, bool *in_block_comment) {
     tokenize_line_with_flags(line, in_block_comment, TOKENIZE_DEFAULT);
     return;
 }
 
-static void
+CBASE_API_DEF void
 tokenize_cstyle_line(Line *line, bool *in_block_comment) {
     tokenize_line_with_flags(line, in_block_comment,
                              TOKENIZE_PREPROCESSOR_LINES);
     return;
 }
 
-static void
+CBASE_API_DEF void
 free_line_tokens(Line *line) {
     for (int32 i = 0; i < line->token_count; i += 1) {
         free2(line->tokens[i].text, line->tokens[i].len + 1);
@@ -572,7 +572,7 @@ free_line_tokens(Line *line) {
     return;
 }
 
-static bool
+CBASE_API_DEF bool
 token_is_trivia(Token *token) {
     switch (token->kind) {
     case TOKEN_SPACE:
@@ -591,7 +591,7 @@ token_is_trivia(Token *token) {
     }
 }
 
-static int32
+CBASE_API_DEF int32
 tokenization_significant_at_or_after(Tokenization *tokenization,
                                      int32 token_index) {
     int32 result = token_index;
@@ -603,12 +603,12 @@ tokenization_significant_at_or_after(Tokenization *tokenization,
     return result;
 }
 
-static int32
+CBASE_API_DEF int32
 tokenization_next_significant(Tokenization *tokenization, int32 token_index) {
     return tokenization_significant_at_or_after(tokenization, token_index + 1);
 }
 
-static int32
+CBASE_API_DEF int32
 tokenization_previous_significant(Tokenization *tokenization,
                                   int32 token_index) {
     int32 result;
@@ -620,7 +620,7 @@ tokenization_previous_significant(Tokenization *tokenization,
     return result;
 }
 
-static int32
+CBASE_API_DEF int32
 tokenization_token_at_or_after_offset(Tokenization *tokenization,
                                       int32 offset) {
     for (int32 i = 0; i < tokenization->token_count; i += 1) {
@@ -633,7 +633,7 @@ tokenization_token_at_or_after_offset(Tokenization *tokenization,
     return tokenization->token_count;
 }
 
-static int32
+CBASE_API_DEF int32
 tokenization_logical_line_start_offset(Tokenization *tokenization,
                                        int32 offset) {
     int32 result;
@@ -663,7 +663,7 @@ tokenization_logical_line_start_offset(Tokenization *tokenization,
     return result;
 }
 
-static bool
+CBASE_API_DEF bool
 tokenization_is_in_preprocessor_define(Tokenization *tokenization,
                                        int32 token_index) {
     int32 line_start_offset;
@@ -694,7 +694,7 @@ tokenization_is_in_preprocessor_define(Tokenization *tokenization,
            && TOKEN_IS(&tokenization->tokens[i], "define");
 }
 
-static int32
+CBASE_API_DEF int32
 tokenization_find_matching(Tokenization *tokenization, int32 open_index) {
     char *close;
     char *open;
@@ -734,7 +734,7 @@ tokenization_find_matching(Tokenization *tokenization, int32 open_index) {
     return -1;
 }
 
-static Tokenization
+CBASE_API_DEF Tokenization
 tokenize_with_flags(char *text, int32 text_len, int32 flags) {
     Line line = tokenize_text_with_flags(text, text_len, flags);
     Tokenization result = {0};
@@ -748,12 +748,12 @@ tokenize_with_flags(char *text, int32 text_len, int32 flags) {
     return result;
 }
 
-static Tokenization
+CBASE_API_DEF Tokenization
 tokenize(char *text, int32 text_len) {
     return tokenize_with_flags(text, text_len, TOKENIZE_DEFAULT);
 }
 
-static void
+CBASE_API_DEF void
 free_tokenization(Tokenization *tokenization) {
     if (tokenization == NULL) {
         return;
@@ -780,7 +780,7 @@ free_tokenization(Tokenization *tokenization) {
 }
 
 #if 0 == TESTING_meta_tokenize
-static inline void
+CBASE_API_DEF void
 meta_tokenize_sink(void) {
     (void)tokenize_line;
     (void)tokenize_cstyle_line;

@@ -4,12 +4,6 @@
 #if !defined(GENERIC_C)
 #define GENERIC_C
 
-#include <limits.h>
-#include <float.h>
-#include <stdbool.h>
-#include <signal.h>
-#include <stdio.h>
-
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_generic 1
 #elif !defined(TESTING_generic)
@@ -19,10 +13,7 @@
 #include "platform_detection.h"
 #include "primitives.h"
 #include "base_macros.h"
-
-#include <assert.h>
-#include <stdarg.h>
-#include <string.h>
+#include "libc.h"
 
 enum Type {
     TYPE_VOIDP = 1,
@@ -520,10 +511,8 @@ _Generic((VAR), \
 } while (0)
 
 #if TESTING_generic
-
-#include <assert.h>
-#include <string.h>
-#include <stdio.h>
+#define CBASE_IMPLEMENT
+#include "cbase.h"
 
 int
 main(void) {
