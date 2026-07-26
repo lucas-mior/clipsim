@@ -81,6 +81,7 @@ ipc_resolve_socket_name(void) {
             }
         }
     }
+    free2(XDG_RUNTIME_DIR, XDG_RUNTIME_DIR_len + 1);
 
     n = SNPRINTF(ipc_directory, "/tmp/clipsim-%lu", (unsigned long)getuid());
     if ((n <= 0) || (n >= (int32)SIZEOF(ipc_directory))) {
