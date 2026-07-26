@@ -1,8 +1,12 @@
 #include "cbase.h"
 
-// it doesnt work yet because currently all functions are declared static
+#if TESTING_cbase_main_separate_object
+#define CBASE_IMPLEMENT
+#include "cbase.h"
 
 int main(void) {
     error("Works.\n");
-    fatal(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }
+
+#endif

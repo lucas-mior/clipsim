@@ -24,7 +24,7 @@ INLINE uint32 hash_normal(void *map, uint64 hash);
 INLINE uint32 hash_capacity(void *map);
 INLINE uint32 hash_length(void *map);
 #if DEBUGGING
-uint32 hash_expected_collisions(void *map);
+INLINE uint32 hash_expected_collisions(void *map);
 #endif
 
 struct CommonBucket;
@@ -777,7 +777,7 @@ hash_length(void *map) {
 }
 
 #if DEBUGGING
-uint32
+INLINE uint32
 hash_expected_collisions(void *map) {
     CommonMap *map2 = map;
     double n = map2->length;
