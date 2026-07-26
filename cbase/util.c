@@ -771,7 +771,7 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
         fatal(EXIT_FAILURE);
     }
 
-    if (!RELEASING) {
+    if (!DEBUGGING) {
         p = SNPRINTF(fileline, "%s:%d %s():", file, line, func);
     } else {
         p = 0;

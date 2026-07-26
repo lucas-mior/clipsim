@@ -57,10 +57,6 @@
 #define DEBUGGING 0
 #endif
 
-#if !defined(RELEASING)
-#define RELEASING 0
-#endif
-
 #if !defined(ERROR_NOTIFY)
 #define ERROR_NOTIFY 0
 #endif
