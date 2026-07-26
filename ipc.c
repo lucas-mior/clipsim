@@ -59,7 +59,6 @@ void
 ipc_resolve_socket_name(void) {
     static bool resolved = false;
     char *XDG_RUNTIME_DIR;
-    int32 XDG_RUNTIME_DIR_len;
     int32 n;
 
     if (resolved) {
@@ -67,7 +66,7 @@ ipc_resolve_socket_name(void) {
     }
 
     GETENV(XDG_RUNTIME_DIR);
-    if ((XDG_RUNTIME_DIR != NULL) && (XDG_RUNTIME_DIR[0] != '\0')) {
+    if (XDG_RUNTIME_DIR && (XDG_RUNTIME_DIR[0] != '\0')) {
         n = SNPRINTF(ipc_directory, "%s/clipsim", XDG_RUNTIME_DIR);
         if ((n > 0) && (n < (int32)SIZEOF(ipc_directory))) {
             n = SNPRINTF(ipc_socket_name, "%s/daemon.sock", ipc_directory);
@@ -81,7 +80,6 @@ ipc_resolve_socket_name(void) {
             }
         }
     }
-    free2(XDG_RUNTIME_DIR, XDG_RUNTIME_DIR_len + 1);
 
     n = SNPRINTF(ipc_directory, "/tmp/clipsim-%lu", (unsigned long)getuid());
     if ((n <= 0) || (n >= (int32)SIZEOF(ipc_directory))) {

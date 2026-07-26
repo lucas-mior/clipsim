@@ -28,10 +28,8 @@ static volatile bool recovered = false;
 static int32 history_length;
 static File history = {.file = NULL, .fd = -1, .name = NULL};
 static char *XDG_CACHE_HOME = NULL;
-static int32 XDG_CACHE_HOME_len;
 static char xdg_cache_home_buffer[4096];
 static char *HOME = NULL;
-static int32 HOME_len;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 static char tmp_directory_buffer[PATH_MAX];
 static char *tmp_directory = tmp_directory_buffer;
@@ -54,27 +52,22 @@ static void history_exit(int) __attribute__((noreturn));
 static void
 history_prepare_tmp_directory(void) {
     char *TMPDIR;
-    int32 TMPDIR_len;
     int32 n;
-    char *tmp;
 
     if ((tmp_directory == NULL) || (tmp_directory[0] == '\0')) {
         GETENV(TMPDIR);
 
         if ((TMPDIR == NULL) || (TMPDIR[0] == '\0')) {
-            tmp = "/tmp";
-        } else {
-            tmp = TMPDIR;
+            TMPDIR = "/tmp";
         }
 
-        n = SNPRINTF(tmp_directory_buffer, "%s/clipsim-images-%lu",
-                     tmp, (unsigned long)getuid());
+        n = SNPRINTF(tmp_directory_buffer,
+                     "%s/clipsim-images-%lu", TMPDIR, (ulong)getuid());
         if ((n <= 0) || (n >= (int32)SIZEOF(tmp_directory_buffer))) {
             error("Error resolving temporary image directory.\n");
             exit(EXIT_FAILURE);
         }
 
-        free2(TMPDIR, TMPDIR_len + 1);
         tmp_directory = tmp_directory_buffer;
     }
 
@@ -207,7 +200,7 @@ history_save(void) {
                          XDG_CACHE_HOME, basename2(e->content,
                                                    &e->content_length, NULL));
 
-            if (strcmp(image_save, e->content)) {
+            if (!strequal(image_save, e->content)) {
                 if ((pipes[nfds].fd
                         = util_copy_file_async(image_save, e->content,
                                                &dests[nfds])) < 0) {
