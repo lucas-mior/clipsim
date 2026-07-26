@@ -122,7 +122,7 @@ main_block_middle_mouse_paste_enabled(void) {
     }
 
     free2(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE,
-          CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE_len);
+          CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE_len + 1);
 
     return true;
 }

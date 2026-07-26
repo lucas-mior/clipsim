@@ -68,6 +68,7 @@ history_prepare_tmp_directory(void) {
             error("Error resolving temporary image directory.\n");
             exit(EXIT_FAILURE);
         }
+        free2(TMPDIR, TMPDIR_len + 1);
         tmp_directory = tmp_directory_buffer;
     }
 
