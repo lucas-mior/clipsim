@@ -2189,6 +2189,20 @@ warn(char *fmt, ...) {
     return;
 }
 
+static bool
+util_is_integer(char *string) {
+    char c;
+
+    while ((c = *string)) {
+        if (!isdigit(c)) {
+            return false;
+        }
+        string += 1;
+    }
+
+    return true;
+}
+
 #if 0 == TESTING_util
 static inline void
 util_functions_sink(void) {
