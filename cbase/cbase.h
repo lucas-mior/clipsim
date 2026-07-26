@@ -322,18 +322,20 @@ _Generic((VAR), \
     print_timings(__FILE__, __LINE__, NAME, N, T0, T1)
 #define PRINT_TIMINGS(...) SELECT_ON_NUM_ARGS(PRINT_TIMINGS_, __VA_ARGS__)
 
-#define GETENV(VAR) do { \
-    if (((VAR) = getenv(#VAR)) == NULL) { \
-        if (DEBUGGING) { \
-            error_impl(__FILE__, __LINE__, FUNC__, \
+#define GETENV(VAR) do {                                    \
+    if (((VAR) = getenv(#VAR)) == NULL) {                   \
+        if (DEBUGGING) {                                    \
+            error_impl(__FILE__, __LINE__, FUNC__,          \
                        RED("%s") " is not defined.", #VAR); \
-        } \
-    } else { \
-        int32 getenv_len_ = strlen32(VAR); \
-        char *getenv_copy_ = malloc2(getenv_len_ + 1); \
-        memcpy64(getenv_copy_, VAR, getenv_len_ + 1); \
-        (VAR) = getenv_copy_; \
-    } \
+        }                                                   \
+        CAT(VAR, _len) = 0;                                 \
+    } else {                                                \
+        int32 getenv_len_ = strlen32(VAR);                  \
+        char *getenv_copy_ = malloc2(getenv_len_ + 1);      \
+        memcpy64(getenv_copy_, VAR, getenv_len_ + 1);       \
+        (VAR) = getenv_copy_;                               \
+        CAT(VAR, _len) = getenv_len_;                       \
+    }                                                       \
 } while (0)
 
 #define PARSE_OPTION(ARG, NAME) \

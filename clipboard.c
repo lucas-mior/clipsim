@@ -56,6 +56,8 @@ clipboard_daemon_watch(void) {
     struct timespec pause;
     char *CLIPSIM_SIGNAL_NUMBER;
     char *CLIPSIM_SIGNAL_PROGRAM;
+    int32 CLIPSIM_SIGNAL_NUMBER_len;
+    int32 CLIPSIM_SIGNAL_PROGRAM_len;
     int32 signal_number = 0;
     int32 xfixes_event_base;
     int32 xfixes_error_base;
