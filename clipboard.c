@@ -56,8 +56,6 @@ clipboard_daemon_watch(void) {
     struct timespec pause;
     char *CLIPSIM_SIGNAL_NUMBER;
     char *CLIPSIM_SIGNAL_PROGRAM;
-    int32 CLIPSIM_SIGNAL_NUMBER_len;
-    int32 CLIPSIM_SIGNAL_PROGRAM_len;
     int32 signal_number = 0;
     int32 xfixes_event_base;
     int32 xfixes_error_base;
@@ -92,8 +90,6 @@ clipboard_daemon_watch(void) {
                 error("%s will not be signaled.\n", CLIPSIM_SIGNAL_PROGRAM);
             }
 
-            free2(CLIPSIM_SIGNAL_NUMBER, CLIPSIM_SIGNAL_NUMBER_len + 1);
-            free2(CLIPSIM_SIGNAL_PROGRAM, CLIPSIM_SIGNAL_PROGRAM_len + 1);
             CLIPSIM_SIGNAL_NUMBER = NULL;
             CLIPSIM_SIGNAL_PROGRAM = NULL;
         }

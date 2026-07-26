@@ -104,7 +104,6 @@ main_setup_daemon_signals(void) {
 bool
 main_block_middle_mouse_paste_enabled(void) {
     char *CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE;
-    int32 CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE_len;
 
     GETENV(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE);
 
@@ -120,9 +119,6 @@ main_block_middle_mouse_paste_enabled(void) {
     if (strequal(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "false")) {
         return false;
     }
-
-    free2(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE,
-          CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE_len + 1);
 
     return true;
 }
