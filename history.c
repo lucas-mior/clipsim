@@ -28,8 +28,10 @@ static volatile bool recovered = false;
 static int32 history_length;
 static File history = {.file = NULL, .fd = -1, .name = NULL};
 static char *XDG_CACHE_HOME = NULL;
+int32 XDG_CACHE_HOME_len;
 static char xdg_cache_home_buffer[4096];
 static char *HOME = NULL;
+int32 HOME_len;
 static uint8 length_counts[ENTRY_MAX_LENGTH] = {0};
 static char tmp_directory_buffer[PATH_MAX];
 static char *tmp_directory = tmp_directory_buffer;
@@ -52,6 +54,7 @@ static void history_exit(int) __attribute__((noreturn));
 static void
 history_prepare_tmp_directory(void) {
     char *TMPDIR;
+    int32 TMPDIR_len;
     int32 n;
 
     if ((tmp_directory == NULL) || (tmp_directory[0] == '\0')) {

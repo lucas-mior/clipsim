@@ -59,6 +59,7 @@ void
 ipc_resolve_socket_name(void) {
     static bool resolved = false;
     char *XDG_RUNTIME_DIR;
+    int32 XDG_RUNTIME_DIR_len;
     int32 n;
 
     if (resolved) {
