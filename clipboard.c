@@ -59,7 +59,6 @@ clipboard_daemon_watch(void) {
     int32 CLIPSIM_SIGNAL_NUMBER_len;
     int32 CLIPSIM_SIGNAL_PROGRAM_len;
     int32 signal_number = 0;
-    bool signal_enabled = false;
     int32 xfixes_event_base;
     int32 xfixes_error_base;
 
