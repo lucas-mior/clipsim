@@ -92,6 +92,8 @@ clipboard_daemon_watch(void) {
                 error("%s will not be signaled.\n", CLIPSIM_SIGNAL_PROGRAM);
             }
 
+            free2(CLIPSIM_SIGNAL_NUMBER, CLIPSIM_SIGNAL_NUMBER_len + 1);
+            free2(CLIPSIM_SIGNAL_PROGRAM, CLIPSIM_SIGNAL_PROGRAM_len + 1);
             CLIPSIM_SIGNAL_NUMBER = NULL;
             CLIPSIM_SIGNAL_PROGRAM = NULL;
         }
