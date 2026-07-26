@@ -164,8 +164,8 @@ ipc_lock_daemon(void) {
         error("Error truncating daemon lock %s: %s.\n",
               ipc_lock.name, strerror(errno));
     }
-    if (ipc_daemon_dprintf(ipc_lock.fd, ipc_lock.name, "%lld\n",
-                           (llong)getpid()) == false) {
+    if (ipc_daemon_dprintf(ipc_lock.fd, ipc_lock.name,
+                           "%d\n", getpid()) == false) {
         error("Error writing daemon pid to %s.\n", ipc_lock.name);
     }
 

@@ -56,8 +56,8 @@ generic_array_grow(void *array, int64 item_size) {
     }
 
     if ((MAXOF(new_size)/item_size) < new_cap) {
-        error("Array with %lld items of size %lld is too much.\n",
-              (llong)new_cap, (llong)item_size);
+        error("Array with %d items of size %lld is too much.\n",
+              new_cap, item_size);
         fatal(EXIT_FAILURE);
     }
 

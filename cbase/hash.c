@@ -129,7 +129,7 @@ CAT(hash_print_summary_, HASH_TYPE)(struct Map *map) {
     (void)map;
     /* fprintf(stderr, "struct Hash%s {\n", QUOTE(HASH_TYPE)); */
     /* fprintf(stderr, "  name: %s\n", map->name); */
-    /* fprintf(stderr, "  size: %lldB\n", (llong)map->size); */
+    /* fprintf(stderr, "  size: %lldB\n", map->size); */
     /* fprintf(stderr, "  capacity: %u\n", map->capacity); */
     /* fprintf(stderr, "  bitmask: 0x%X\n", map->bitmask); */
     /* fprintf(stderr, "  length: %u\n", map->length); */

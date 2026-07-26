@@ -25,23 +25,23 @@ CAT(f, RW_FUNCTION, 64)(void *buffer, int64 size, int64 n, FILE *file) {
     size_t rw;
 
     if (size <= 0) {
-        error("Error: Invalid size = %lld\n", (llong)size);
+        error("Error: Invalid size = %lld\n", size);
         fatal(EXIT_FAILURE);
     }
     if (n <= 0) {
-        error("Error: Invalid n = %lld\n", (llong)n);
+        error("Error: Invalid n = %lld\n", n);
         fatal(EXIT_FAILURE);
     }
     if (size >= (MAXOF(size)/n)) {
-        error("Error: Overflow (%lld*%lld)\n", (llong)size, (llong)n);
+        error("Error: Overflow (%lld*%lld)\n", size, n);
         fatal(EXIT_FAILURE);
     }
     if ((size_t)size >= MAXOF(rw)) {
-        error("Error: size (%lld) is bigger than SIZEMAX\n", (llong)size);
+        error("Error: size (%lld) is bigger than SIZEMAX\n", size);
         fatal(EXIT_FAILURE);
     }
     if ((size_t)n >= MAXOF(rw)) {
-        error("Error: n (%lld) is bigger than SIZEMAX\n", (llong)n);
+        error("Error: n (%lld) is bigger than SIZEMAX\n", n);
         fatal(EXIT_FAILURE);
     }
 
@@ -60,12 +60,12 @@ CAT(RW_FUNCTION, 64)(int fd, void *buffer, int64 size) {
         return 0;
     }
     if (size < 0) {
-        error("Error: Invalid size = %lld\n", (llong)size);
+        error("Error: Invalid size = %lld\n", size);
         fatal(EXIT_FAILURE);
     }
     if ((ullong)size >= (ullong)MAXOF(instance)) {
         error("Error: size (%lld) is too big for %s\n",
-              (llong)size, QUOTE(RW_FUNCTION));
+              size, QUOTE(RW_FUNCTION));
         fatal(EXIT_FAILURE);
     }
 
