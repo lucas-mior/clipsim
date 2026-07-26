@@ -387,7 +387,13 @@ ipc_client_speak(int32 command, int32 id) {
     int32 fd;
 
     fd = ipc_connect_socket(false);
-    ipc_set_socket_timeout(fd, ipc_socket.name);
+    if (fd < 0) {
+        fatal(EXIT_FAILURE);
+    }
+    if (!ipc_set_socket_timeout(fd, ipc_socket.name)) {
+        XCLOSE(&fd, ipc_socket.name);
+        fatal(EXIT_FAILURE);
+    }
 
     request.command = command;
     request.id = id;
@@ -615,14 +621,23 @@ ipc_connect_socket(bool quiet) {
         }
         return -1;
     }
-    ipc_set_close_on_exec(fd, ipc_socket.name);
+    if (!ipc_set_close_on_exec(fd, ipc_socket.name)) {
+        if (close(fd) < 0) {
+            error("Error closing ipc socket %s: %s.\n",
+                  ipc_socket.name, strerror(errno));
+        }
+        return -1;
+    }
 
     if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         if (!quiet) {
             error("Could not connect to clipsim daemon at %s. "
                   "Is `clipsim --daemon` running?\n", ipc_socket.name);
         }
-        XCLOSE(&fd, ipc_socket.name);
+        if (close(fd) < 0) {
+            error("Error closing ipc socket %s: %s.\n",
+                  ipc_socket.name, strerror(errno));
+        }
         return -1;
     }
 
