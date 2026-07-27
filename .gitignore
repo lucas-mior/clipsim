@@ -16,3 +16,4 @@ temp_delete_me
 tests/incr_owner
 *.gz
 tests/unresponsive_owner
+*.cmd
