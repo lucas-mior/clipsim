@@ -1061,6 +1061,16 @@ main(void) {
         ASSERT_LESS(b, a);
         ASSERT_LESS_EQUAL(b, a);
     } {
+        char haystack[] = "alpha beta gamma";
+        char binary_haystack[] = { 'a', 'b', '\0', 'c', 'd' };
+
+        ASSERT_CONTAINS(haystack, SIZEOF(haystack) - 1, "alpha");
+        ASSERT_CONTAINS(haystack, SIZEOF(haystack) - 1, "beta");
+        ASSERT_CONTAINS(binary_haystack, SIZEOF(binary_haystack), "cd");
+        ASSERT_NOT_CONTAINS(haystack, SIZEOF(haystack) - 1, "delta");
+        ASSERT_NOT_CONTAINS(haystack, 10, "gamma");
+        ASSERT_NOT_CONTAINS(binary_haystack, SIZEOF(binary_haystack), "bc");
+    } {
         // uncomment to trigger linking error
         /* double x = 0.1; */
         /* void *a = NULL; */
@@ -1135,11 +1145,25 @@ main(void) {
         }
         ASSERT(assertion_failed);
         assertion_failed = false;
+
+        if (sigsetjmp(assert_env, 1) == 0) {
+            ASSERT_CONTAINS("alpha beta gamma\n", 17, "delta\n");
+        }
+        ASSERT(assertion_failed);
+        assertion_failed = false;
+
+        if (sigsetjmp(assert_env, 1) == 0) {
+            ASSERT_NOT_CONTAINS("alpha beta\n gamma\n", 18, "beta\n");
+        }
+        ASSERT(assertion_failed);
+        assertion_failed = false;
     }
+
     ASSERT(true);
     ASSERT(!false);
     ASSERT_EQUAL(true, true);
-    ASSERT_EQUAL(0 < 1, 1 < 2);
+    ASSERT_EQUAL(0 < 1, 1 < 3);
+
     exit(EXIT_SUCCESS);
 }
 #endif
