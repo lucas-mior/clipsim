@@ -88,7 +88,6 @@ static pthread_mutex_t lock;
 static magic_t magic = 0;
 
 static void util_close(File *file);
-static void main_reopen_magic(void);
 
 void
 util_close(File *file) {
