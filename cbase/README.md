@@ -41,3 +41,22 @@ NOTE: it does not work yet, because all cbase functions are declared static.
 gcc -DCBASE_IMPLEMENT -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -x c -c cbase.h -o cbase.o 
 gcc cbase_main_separate_object.c cbase.o
 ```
+
+## Infrastructure
+Every C file in cbase/ must have block for avoid unused function warnings when
+not testing that specific file. This allows to still see which functions are not
+being tested, without warnings if a specific project does not use all the
+functions of cbase/.
+
+```c
+#if 0 == TESTING_memory
+static inline void
+memory_functions_sink(void) {
+    (void)memory_check;
+    (void)realloc4;
+    (void)free2_;
+    (void)realloc_flex_debug;
+    return;
+}
+#endif
+```
