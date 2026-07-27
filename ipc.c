@@ -382,7 +382,7 @@ ipc_daemon_listen(void *unused) {
 
 void
 ipc_client_speak(int32 command, int32 id) {
-    DEBUG_PRINT("%u, %d", command, id)
+    DEBUG_PRINT("%d, %d", command, id)
     IpcRequest request;
     int32 fd;
 
