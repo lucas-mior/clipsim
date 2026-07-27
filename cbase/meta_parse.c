@@ -60,7 +60,7 @@ document_add_line(Document *doc, char *text, int32 length,
 
     document_reserve_lines(doc, 1);
     line = &doc->lines[doc->line_count];
-    memset64(line, 0, SIZEOF(*line));
+    *line = (Line){0};
     line->len = length;
 
     line->text = malloc2(length + 1);

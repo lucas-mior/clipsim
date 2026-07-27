@@ -219,6 +219,18 @@ xrealloc(void *old, int64 new_size) {
     void *p;
     uint64 old_save = (uint64)old;
 
+    if (new_size < 0) {
+        error("Error: Invalid size = %lld.\n", new_size);
+        fatal(EXIT_FAILURE);
+    }
+    if (new_size == 0) {
+        new_size = 1;
+    }
+    if ((ullong)new_size >= (ullong)SIZE_MAX) {
+        error("Error: Size (%lld) is bigger than SIZEMAX.\n", new_size);
+        fatal(EXIT_FAILURE);
+    }
+
     if ((p = realloc(old, (size_t)new_size)) == NULL) {
         error("Failed to reallocate %lld bytes from %llx.\n",
               new_size, (ullong)old_save);
