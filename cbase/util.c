@@ -815,9 +815,7 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
     }
 #endif
 
-    if (big_buffer) {
-        free2(big_buffer, m);
-    }
+    free2(big_buffer, m);
     return;
 }
 
@@ -1728,10 +1726,7 @@ sb_init(StrBuilder *str_builder) {
 
 CBASE_API_DEF void
 sb_free(StrBuilder *str_builder) {
-    if (str_builder->data) {
-        free2(str_builder->data, str_builder->cap);
-    }
-
+    free2(str_builder->data, str_builder->cap);
     sb_init(str_builder);
     return;
 }
@@ -2002,9 +1997,7 @@ str_builder_array_destroy(StrBuilderArray *array) {
     }
 
     str_builder_array_clear(array);
-    if (array->items) {
-        free2(array->items, array->cap*SIZEOF(*array->items));
-    }
+    free2(array->items, array->cap*SIZEOF(*array->items));
     str_builder_array_init(array);
     return;
 }

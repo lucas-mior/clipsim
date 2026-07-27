@@ -17,9 +17,7 @@
 CBASE_API_DEF void
 free_line(Line *line) {
     free_line_tokens(line);
-    if (line->text) {
-        free2(line->text, line->len + 1);
-    }
+    free2(line->text, line->len + 1);
     line->text = NULL;
     line->len = 0;
     return;

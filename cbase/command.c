@@ -92,15 +92,9 @@ CBASE_API_DEF void
 command_result_free(CommandResult *result) {
     command_result_file_descriptors_close(result);
 
-    if (result->output) {
-        free2(result->output, result->output_len + 1);
-    }
-    if (result->stdout_output) {
-        free2(result->stdout_output, result->stdout_len + 1);
-    }
-    if (result->stderr_output) {
-        free2(result->stderr_output, result->stderr_len + 1);
-    }
+    free2(result->output, result->output_len + 1);
+    free2(result->stdout_output, result->stdout_len + 1);
+    free2(result->stderr_output, result->stderr_len + 1);
 
     command_result_init(result);
     return;
@@ -826,9 +820,7 @@ command_argv0_set(Command *command, char *argument) {
 
 CBASE_API_DEF void
 command_cwd_clear(Command *command) {
-    if (command->cwd) {
-        free2(command->cwd, command->cwd_len + 1);
-    }
+    free2(command->cwd, command->cwd_len + 1);
     command->cwd = NULL;
     command->cwd_len = 0;
     return;
