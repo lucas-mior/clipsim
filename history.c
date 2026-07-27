@@ -39,6 +39,7 @@ static void history_free_entry(Entry *, int32);
 static void history_reorder(int32);
 static void history_prune(void);
 static int32 history_save_image(char **, int32 *);
+static bool history_recover_write(int32, Entry *);
 static void history_prepare_tmp_directory(void);
 
 static void history_append(char *, int, bool);
@@ -119,6 +120,40 @@ history_callback_delete(const char *path, const struct stat *stat,
     }
 
     return 0;
+}
+
+static bool
+history_recover_write(int32 fd, Entry *e) {
+    int64 written = 0;
+
+    if (e->content_length < 0) {
+        error("Error writing negative length to xclip.\n");
+        return false;
+    }
+
+    while (written < e->content_length) {
+        int64 w;
+
+        errno = 0;
+        w = write64(fd, e->content + written, e->content_length - written);
+        if (w < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            if (errno == EPIPE) {
+                error("xclip closed stdin before clipsim finished writing.\n");
+            } else {
+                error("Error writing to xclip: %s.\n", strerror(errno));
+            }
+            return false;
+        }
+        if (w == 0) {
+            error("Error writing to xclip: short write.\n");
+            return false;
+        }
+        written += w;
+    }
+    return true;
 }
 
 int
@@ -643,14 +678,11 @@ history_prune(void) {
 void
 history_recover(int32 id) {
     DEBUG_PRINT("%d", id)
-    Command command = {0};
+    int32 fd[2];
     Entry *e;
-    struct sigaction action;
-    struct sigaction old_action;
-    char text_file[PATH_MAX] = {0};
-    char *xclip_path = "/usr/bin/xclip";
     bool istext;
-    bool success = false;
+    char *xclip = "xclip";
+    char *xclip_path = "/usr/bin/xclip";
 
     if (history_length <= 0) {
         error("Clipboard history empty. Start copying text.\n");
@@ -666,109 +698,43 @@ history_recover(int32 id) {
     }
 
     e = &entries[id];
-    istext = (is_image[id] == false);
+
+    if ((istext = (is_image[id] == false))) {
+        if (pipe(fd) < 0) {
+            util_die_notify("Error creating pipe: %s\n", strerror(errno));
+        }
+    }
+
+    switch (fork()) {
+    case 0:
+        signal(SIGPIPE, SIG_DFL);
+
+        if (istext) {
+            XCLOSE(&fd[1]);
+            xdup2(fd[0], STDIN_FILENO);
+            XCLOSE(&fd[0]);
+            execl(xclip_path, xclip, "-selection", "clipboard", NULL);
+        } else {
+            execl(xclip_path, xclip, "-selection", "clipboard", "-target",
+                  "image/png", e->content, NULL);
+        }
+
+        util_die_notify("Error in exec(%s): %s", xclip_path, strerror(errno));
+    case -1:
+        util_die_notify("Error in fork(%s): %s", xclip_path, strerror(errno));
+    default:
+        if (istext) {
+            XCLOSE(&fd[0]);
+        }
+    }
 
     if (istext) {
-        int32 fd;
-        int32 n;
-        int64 written = 0;
-
-        if (e->content_length < 0) {
-            error("Error writing negative length to xclip input file.\n");
-            return;
-        }
-
-        history_prepare_tmp_directory();
-
-        n = snprintf2(text_file, SIZEOF(text_file),
-                      "%s/clipsim-xclip-text-XXXXXX", tmp_directory);
-        if ((n <= 0) || (n >= (int32)SIZEOF(text_file))) {
-            error("Error resolving temporary xclip input file.\n");
-            return;
-        }
-
-        if ((fd = mkstemp(text_file)) < 0) {
-            error("Error creating temporary xclip input file: %s.\n",
-                  strerror(errno));
-            return;
-        }
-
-        while (written < e->content_length) {
-            int64 w;
-
-            errno = 0;
-            w = write64(fd, e->content + written,
-                        e->content_length - written);
-            if (w < 0) {
-                if (errno == EINTR) {
-                    continue;
-                }
-                error("Error writing to temporary xclip input file %s: %s.\n",
-                      text_file, strerror(errno));
-                XCLOSE(&fd, text_file);
-                xunlink(text_file);
-                return;
-            }
-            if (w == 0) {
-                error("Short write to temporary xclip input file %s.\n",
-                      text_file);
-                XCLOSE(&fd, text_file);
-                xunlink(text_file);
-                return;
-            }
-            written += w;
-        }
-
-        XCLOSE(&fd, text_file);
-        COMMAND_PUSH(&command,
-                     xclip_path, "-selection", "clipboard", text_file);
-    } else {
-        COMMAND_PUSH(&command,
-                     xclip_path, "-selection", "clipboard",
-                                 "-target", "image/png", e->content);
+        history_recover_write(fd[1], e);
+        XCLOSE(&fd[1]);
     }
-
-    memset64(&action, 0, SIZEOF(action));
-    if (sigemptyset(&action.sa_mask) < 0) {
-        error("Error creating signal mask for SIGPIPE: %s.\n",
-              strerror(errno));
+    if (wait(NULL) < 0) {
+        error("Error waiting for fork: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
-    }
-    action.sa_handler = SIG_DFL;
-
-    if (sigaction(SIGPIPE, &action, &old_action) < 0) {
-        error("Error installing signal handler for SIGPIPE: %s.\n",
-              strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-
-    if (command_start(&command, COMMAND_NONE)) {
-        success = command_wait(&command);
-        if (success && (command.result.status != 0)) {
-            error("xclip exited with status %d.\n", command.result.status);
-            success = false;
-        }
-    }
-
-    if (sigaction(SIGPIPE, &old_action, NULL) < 0) {
-        error("Error restoring signal handler for SIGPIPE: %s.\n",
-              strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-
-    command_free(&command);
-
-    if (istext) {
-        if ((text_file[0] != '\0')
-            && (unlink(text_file) < 0)
-            && (errno != ENOENT)) {
-            error("Error deleting temporary xclip input file %s: %s.\n",
-                  text_file, strerror(errno));
-        }
-    }
-
-    if (!success) {
-        return;
     }
 
     if (id != (history_length - 1)) {
