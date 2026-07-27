@@ -708,6 +708,7 @@ history_recover(int32 id) {
     switch (fork()) {
     case 0:
         signal(SIGPIPE, SIG_DFL);
+
         if (istext) {
             XCLOSE(&fd[1]);
             xdup2(fd[0], STDIN_FILENO);
@@ -717,6 +718,7 @@ history_recover(int32 id) {
             execl(xclip_path, xclip, "-selection", "clipboard", "-target",
                   "image/png", e->content, NULL);
         }
+
         util_die_notify("Error in exec(%s): %s", xclip_path, strerror(errno));
     case -1:
         util_die_notify("Error in fork(%s): %s", xclip_path, strerror(errno));
