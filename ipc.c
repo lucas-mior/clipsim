@@ -386,8 +386,7 @@ ipc_client_speak(int32 command, int32 id) {
     IpcRequest request;
     int32 fd;
 
-    fd = ipc_connect_socket(false);
-    if (fd < 0) {
+    if ((fd = ipc_connect_socket(false)) < 0) {
         fatal(EXIT_FAILURE);
     }
     if (!ipc_set_socket_timeout(fd, ipc_socket.name)) {
