@@ -2212,7 +2212,6 @@ util_functions_sink(void) {
     (void)command_argv0_set;
     (void)command_free;
     (void)command_printf;
-    (void)command_push;
     (void)command_push_length;
     (void)command_push_array;
     (void)command_push_split;
