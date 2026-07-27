@@ -46,7 +46,7 @@ PREFIX="${PREFIX:-/usr/local}"
 DESTDIR="${DESTDIR:-/}"
 
 main="main.c"
-program="clipsim"
+program=$(basename "$(readlink -f "$(dirname "$0")")")
 exe="bin/$program"
 mkdir -p "$(dirname "$exe")"
 
