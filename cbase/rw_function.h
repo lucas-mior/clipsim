@@ -15,11 +15,7 @@
 #error "RW_TYPE is not defined"
 #endif
 
-#if !defined(RW_FUNCTION_LINKAGE)
-#define RW_FUNCTION_LINKAGE static
-#endif
-
-RW_FUNCTION_LINKAGE int64
+CBASE_API_DECL int64
 CAT(f, RW_FUNCTION, 64)(void *buffer, int64 size, int64 n, FILE *file) {
     size_t rw;
 
@@ -48,7 +44,7 @@ CAT(f, RW_FUNCTION, 64)(void *buffer, int64 size, int64 n, FILE *file) {
     return (int64)rw;
 }
 
-RW_FUNCTION_LINKAGE int64
+CBASE_API_DECL int64
 CAT(RW_FUNCTION, 64)(int fd, void *buffer, int64 size) {
     RW_TYPE instance = 0;
     ssize_t w;
@@ -73,4 +69,3 @@ CAT(RW_FUNCTION, 64)(int fd, void *buffer, int64 size) {
 }
 
 #undef RW_FUNCTION
-#undef RW_FUNCTION_LINKAGE

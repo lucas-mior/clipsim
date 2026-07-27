@@ -154,6 +154,15 @@ strequal(char *s1, char *s2) {
 }
 
 CBASE_API_DEF bool
+optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
+    if ((a == NULL) || (b == NULL)) {
+        return false;
+    }
+
+    return strequal2(a, a_len, b, b_len);
+}
+
+CBASE_API_DEF bool
 strequal2(char *a, int32 a_len, char *b, int32 b_len) {
     if (a_len != b_len) {
         return false;
@@ -1697,6 +1706,18 @@ write_entire_file(char *path, char *text, int64 text_len) {
 
 #define STR_BUILDER_INITIAL_CAPACITY 16
 
+CBASE_API_DEF char *
+sb_opt_cstr(StrBuilder *buffer) {
+    if (buffer == NULL) {
+        return "";
+    }
+    if (buffer->data == NULL) {
+        return "";
+    }
+
+    return buffer->data;
+}
+
 CBASE_API_DEF void
 sb_init(StrBuilder *str_builder) {
     str_builder->data = NULL;
@@ -1833,10 +1854,11 @@ sb_append(StrBuilder *str_builder, char *data, int32 data_len) {
     bool aliases = false;
     int32 data_offset = 0;
 
-    if (data_len <= 0) {
-        return;
-    }
-    if (data == NULL) {
+    if ((data_len <= 0) || (data == NULL)) {
+        if (str_builder->data == NULL) {
+            sb_reserve(str_builder, 8);
+            str_builder->data[0] = '\0';
+        }
         return;
     }
 
@@ -1871,10 +1893,23 @@ sb_append(StrBuilder *str_builder, char *data, int32 data_len) {
 
 CBASE_API_DEF void
 sb_append_byte(StrBuilder *str_builder, char byte) {
+    if (byte == '\0') {
+        return;
+    }
     sb_reserve(str_builder, 1);
     str_builder->data[str_builder->len] = byte;
     str_builder->len += 1;
     str_builder->data[str_builder->len] = '\0';
+    return;
+}
+
+CBASE_API_DEF void
+sb_append_byte_if_not(StrBuilder *str_builder, char byte) {
+    if ((str_builder->len > 0)
+        && (str_builder->data[str_builder->len - 1] == byte)) {
+        return;
+    }
+    sb_append_byte(str_builder, byte);
     return;
 }
 

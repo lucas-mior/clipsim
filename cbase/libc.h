@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL
+// Copyright (c) 2026 Lucas Mior
+
 #include "platform_detection.h"
 
 #include <assert.h>
@@ -33,9 +36,14 @@
 #endif
 
 #if OS_UNIX
-#include <sys/mman.h>
-#include <sys/wait.h>
+#include <sys/select.h>
+#include <termios.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <poll.h>
+#include <sys/mman.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
 #endif
 
 #if defined(__GLIBC__)
