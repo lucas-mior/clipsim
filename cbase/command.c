@@ -14,7 +14,7 @@
 
 CBASE_API_DEF void
 command_result_init(CommandResult *result) {
-    memset64(result, 0, SIZEOF(*result));
+    *result = (CommandResult){0};
 
     result->pid = -1;
     result->status = -1;
