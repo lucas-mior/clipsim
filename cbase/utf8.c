@@ -347,6 +347,18 @@ utf8_capitalize_first_letters(char *string, int32 string_len,
     return result_len;
 }
 
+static bool
+utf8_random_rune_allowed(uint32 u) {
+    if (u == UTF_INVALID) {
+        return false;
+    }
+    if (BETWEEN(u, 0xD800, 0xDFFF)) {
+        return false;
+    }
+
+    return true;
+}
+
 CBASE_API_DEF int32
 random_utf8_string(char *buffer, int32 capacity, int32 min_len) {
     int32 max_len = capacity - 1;
@@ -384,11 +396,12 @@ random_utf8_string(char *buffer, int32 capacity, int32 min_len) {
             u = (uint32)(0xA0 + (rand() % (0x7FF - 0xA0 + 1)));
         } else if (choice == 2) {
             u = (uint32)(0x800 + (rand() % (0xFFFF - 0x800 + 1)));
-            if (u >= 0xD800 && u <= 0xDFFF) {
-                continue;
-            }
         } else {
             u = (uint32)(0x10000 + (rand() % (0x10FFFF - 0x10000 + 1)));
+        }
+
+        if (!utf8_random_rune_allowed(u)) {
+            continue;
         }
 
         encoded_len = utf8_encode(u, temp_buf, SIZEOF(temp_buf));
@@ -527,10 +540,20 @@ main(void) {
         ASSERT_EQUAL(u, UTF_INVALID);
     }
 
+    {
+        ASSERT(utf8_random_rune_allowed(0x41));
+        ASSERT(utf8_random_rune_allowed(0x10000));
+        ASSERT(!utf8_random_rune_allowed(0xD800));
+        ASSERT(!utf8_random_rune_allowed(0xDFFF));
+        ASSERT(!utf8_random_rune_allowed(UTF_INVALID));
+    }
+
     /* Test random_utf8_string generation and decoding validation */
     {
         char test_buf[256];
-        srand((uint32)time(NULL));
+
+        /* Seed 205 used to produce UTF_INVALID before the exclusion below. */
+        srand(205);
 
         for (int32 i = 0; i < 50; i += 1) {
             int32 gen_len = random_utf8_string(test_buf, SIZEOF(test_buf), 10);

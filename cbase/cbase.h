@@ -422,7 +422,6 @@ CBASE_API_DECL enum CommandFlag command_flags_normalized(enum CommandFlag);
 CBASE_API_DECL void command_free(Command *);
 CBASE_API_DECL void command_print(Command *);
 CBASE_API_DECL void command_printf(Command *, char *, ...);
-CBASE_API_DECL void command_push(Command *, char *);
 CBASE_API_DECL void command_push_length(Command *, char *, int32);
 CBASE_API_DECL void command_push_array(Command *, int32, char **);
 CBASE_API_DECL void command_push_owned_length(
@@ -460,9 +459,11 @@ CBASE_API_DECL char *command_str(Command *, int32 *);
 CBASE_API_DECL void command_vector_reserve(char ***, int32 **, int32 *, int32, int32);
 CBASE_API_DECL bool command_wait(Command *);
 
-#define COMMAND_PUSH_2(A, B) command_push(A, B)
-#define COMMAND_PUSH_3(A, B, B_LEN) command_push_length(A, B, B_LEN)
-#define COMMAND_PUSH(...) SELECT_ON_NUM_ARGS(COMMAND_PUSH_, __VA_ARGS__)
+#define COMMAND_PUSH(CMD, ...) \
+    command_push_array(CMD, \
+                       (int32)(sizeof((char *[]){__VA_ARGS__}) \
+                               /sizeof(char *)), \
+                       (char *[]){__VA_ARGS__})
 
 #define COMMAND_ENV_PUSH_2(A, B) command_env_push(A, B)
 #define COMMAND_ENV_PUSH_3(A, B, B_LEN) \
