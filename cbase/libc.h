@@ -37,7 +37,6 @@
 
 #if OS_UNIX
 #include <sys/select.h>
-#include <termios.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
