@@ -4,17 +4,14 @@
 #if !defined(HISTORY_C)
 #define HISTORY_C
 
+#include "cbase.h"
 #include "clipsim.h"
-#include "cbase/util.c"
 #include "content.c"
 
-#include <poll.h>
 #include <X11/X.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xfixes.h>
-
-#include <ftw.h>
 
 #define MAX_OPEN_FD 64
 

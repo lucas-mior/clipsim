@@ -4,15 +4,9 @@
 #if !defined(IPC_C)
 #define IPC_C
 
+#include "cbase.h"
 #include "clipsim.h"
-#include "cbase/util.c"
 #include "history.c"
-
-#include <fcntl.h>
-#include <sys/file.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/un.h>
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_ipc 1
