@@ -1,9 +1,5 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "../clipsim.h"
 
 #define CBASE_IMPLEMENT

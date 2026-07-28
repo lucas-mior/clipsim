@@ -9,8 +9,8 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/Xfixes.h>
 
+#include "cbase.h"
 #include "clipsim.h"
-#include "cbase/util.c"
 #include "history.c"
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
