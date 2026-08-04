@@ -94,6 +94,11 @@ _Static_assert(CAT(ENUM_PREFIX_, BIT_COUNT)
 _Static_assert((ENUM_UNDERLYING_TYPE)-1 > 0,
                "enum underlying type must be unsigned");
 
+#if ENUM_BITFLAGS && CC_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wduplicate-enum"
+#endif
+
 // For bit flag enums, the optional second X macro parameter is a value.
 // Only use compositions of previous enum values there, not numeric values.
 // For non-bit flag enums, the optional second X macro parameter is a parse
@@ -121,6 +126,10 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
     #undef XENUM_DEF_2
     CAT(ENUM_PREFIX_, LAST)
 };
+#endif
+
+#if ENUM_BITFLAGS && CC_CLANG
+#pragma clang diagnostic pop
 #endif
 
 XENUMS_LINKAGE void CAT(ENUM_PREFIX_, str_free)(char *);
