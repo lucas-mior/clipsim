@@ -119,6 +119,49 @@ utf8_encode_raw(uint32 u, char *c) {
     return len;
 }
 
+CBASE_API_DEF bool
+utf8_valid(char *text, int32 text_len, int32 *bad_offset) {
+    uint32 rune;
+
+    for (int32 i = 0; i < text_len;) {
+        char encoded[4];
+        int32 encoded_len;
+        int32 step;
+
+        step = utf8_decode_raw(text + i, &rune, text_len - i);
+        encoded_len = utf8_encode_raw(rune, encoded);
+        if ((step <= 0)
+            || (encoded_len != step)
+            || (memcmp64(encoded, text + i, step) != 0)) {
+            if (bad_offset) {
+                *bad_offset = i;
+            }
+            return false;
+        }
+        i += step;
+    }
+
+    return true;
+}
+
+CBASE_API_DEF bool
+utf8_has_bom(char *text, int32 text_len) {
+    if (text_len < 3) {
+        return false;
+    }
+    if ((uint8)text[0] != 0xEF) {
+        return false;
+    }
+    if ((uint8)text[1] != 0xBB) {
+        return false;
+    }
+    if ((uint8)text[2] != 0xBF) {
+        return false;
+    }
+
+    return true;
+}
+
 CBASE_API_DEF int32
 utf8_decode(char *string, int32 string_len, uint32 *rune) {
     int32 result;
@@ -438,6 +481,8 @@ utf8_functions_sink(void) {
     (void)utf8_byte_position;
     (void)utf8_next_position;
     (void)utf8_capitalize_first_letters;
+    (void)utf8_valid;
+    (void)utf8_has_bom;
     (void)random_utf8_string;
     return;
 }
@@ -546,6 +591,21 @@ main(void) {
         ASSERT(!utf8_random_rune_allowed(0xD800));
         ASSERT(!utf8_random_rune_allowed(0xDFFF));
         ASSERT(!utf8_random_rune_allowed(UTF_INVALID));
+    }
+
+    {
+        int32 bad_offset;
+
+        bad_offset = -1;
+        ASSERT(utf8_valid(STRLIT("Aé水"), &bad_offset));
+        ASSERT_EQUAL(bad_offset, -1);
+
+        bad_offset = -1;
+        ASSERT(!utf8_valid("A\xC0\xAF", 3, &bad_offset));
+        ASSERT_EQUAL(bad_offset, 1);
+
+        ASSERT(utf8_has_bom("\xEF\xBB\xBFtext", 7));
+        ASSERT(!utf8_has_bom("text", 4));
     }
 
     /* Test random_utf8_string generation and decoding validation */

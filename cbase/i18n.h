@@ -6,20 +6,23 @@
 
 #include "platform_detection.h"
 
-#if OS_LINUX
+#if !defined(GETTEXT_PACKAGE)
+#define GETTEXT_PACKAGE "cecup"
+#endif
+
+#if CBASE_HAS_GETTEXT
   #include <libintl.h>
-  #include <locale.h>
-  
-  #if !defined(GETTEXT_PACKAGE)
-  #define GETTEXT_PACKAGE "cecup"
-  #endif
-  
+
   #define _(String) gettext(String)
   #define N_(String) String
 #else
-  #define GETTEXT_PACKAGE
   #define _(String) String
   #define N_(String) String
+  #define bindtextdomain(Domain, Directory) \
+    ((void)(Domain), (char *)(Directory))
+  #define bind_textdomain_codeset(Domain, Codeset) \
+    ((void)(Domain), (char *)(Codeset))
+  #define textdomain(Domain) (char *)(Domain)
 #endif
 
 #endif /* I18N_H */

@@ -40,7 +40,8 @@
 #define ENUM_FIELDS \
     X(TEST_FLAGS_READ) \
     X(TEST_FLAGS_WRITE) \
-    X(TEST_FLAGS_EXEC)
+    X(TEST_FLAGS_EXEC) \
+    X(TEST_FLAGS_READ_WRITE, TEST_FLAGS_READ|TEST_FLAGS_WRITE)
 #endif
 
 #if !defined(__INCLUDE_LEVEL__) || (__INCLUDE_LEVEL__ >= 1) \
@@ -93,17 +94,19 @@ _Static_assert(CAT(ENUM_PREFIX_, BIT_COUNT)
 _Static_assert((ENUM_UNDERLYING_TYPE)-1 > 0,
                "enum underlying type must be unsigned");
 
-// Note: passing numbers to the X macro second parameter is not allowed for the
-// BITFLAGS case. It will break the API. You can only passing composition of
-// previous enum values.
+// For bit flag enums, the optional second X macro parameter is a value.
+// Only use compositions of previous enum values there, not numeric values.
+// For non-bit flag enums, the optional second X macro parameter is a parse
+// alias token. Custom numeric values are not supported for non-bit flag enums.
 //
 // Passing multiple ENUM names for the same value will break compilation.
 enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
 #if ENUM_BITFLAGS == 0
-    #define XENUM_DEF_1(e)    e,
-    #define XENUM_DEF_2(e, v) e = v,
+    #define XENUM_DEF_1(e)        e,
+    #define XENUM_DEF_2(e, alias) e,
 #else
-    #define XENUM_DEF_1(e)    e = (ENUM_UNDERLYING_TYPE)1 << CAT(e, _BIT_IDX),
+    #define XENUM_DEF_1(e) \
+        e = (ENUM_UNDERLYING_TYPE)1 << CAT(e, _BIT_IDX),
     #define XENUM_DEF_2(e, v) e = v,
 #endif
     #define X(...)            SELECT_ON_NUM_ARGS(XENUM_DEF_, __VA_ARGS__)
@@ -290,11 +293,12 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
         if (CAT(ENUM_PREFIX_, token_equals)(token, token_len,
                                             QUOTE(ENUM_PREFIX_) "LAST")
             || CAT(ENUM_PREFIX_, token_equals)(token, token_len, "LAST")) {
-            result |= (ENUM_UNDERLYING_TYPE)CAT(ENUM_PREFIX_, LAST);
+            result = (ENUM_UNDERLYING_TYPE)CAT(ENUM_PREFIX_, LAST);
             matched = 1;
         }
 #endif
 
+#if ENUM_BITFLAGS
         #define XENUM_PARSE_ONE(e) \
             if (!matched \
                 && CAT(ENUM_PREFIX_, token_equals_enum_name)(token, token_len, \
@@ -304,6 +308,25 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
             }
         #define XENUM_PARSE_1(e)    XENUM_PARSE_ONE(e)
         #define XENUM_PARSE_2(e, v) XENUM_PARSE_ONE(e)
+#else
+        #define XENUM_PARSE_ONE(e) \
+            if (!matched \
+                && CAT(ENUM_PREFIX_, token_equals_enum_name)(token, token_len, \
+                                                            #e)) { \
+                result = (ENUM_UNDERLYING_TYPE)e; \
+                matched = 1; \
+            }
+        #define XENUM_PARSE_ALIAS(e, alias) \
+            XENUM_PARSE_ONE(e) \
+            if (!matched \
+                && CAT(ENUM_PREFIX_, token_equals)(token, token_len, \
+                                                       #alias)) { \
+                result = (ENUM_UNDERLYING_TYPE)e; \
+                matched = 1; \
+            }
+        #define XENUM_PARSE_1(e)        XENUM_PARSE_ONE(e)
+        #define XENUM_PARSE_2(e, alias) XENUM_PARSE_ALIAS(e, alias)
+#endif
         #define X(...) \
             SELECT_ON_NUM_ARGS(XENUM_PARSE_, __VA_ARGS__)
 
@@ -312,6 +335,9 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
         #undef X
         #undef XENUM_PARSE_1
         #undef XENUM_PARSE_2
+#if ENUM_BITFLAGS == 0
+        #undef XENUM_PARSE_ALIAS
+#endif
         #undef XENUM_PARSE_ONE
 
         if (!matched) {
@@ -356,14 +382,15 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #define ENUM_BITFLAGS 0
 #define ENUM_FIELDS \
     X(TEST_NORMAL_APPLE) \
-    X(TEST_NORMAL_BANANA) \
-    X(TEST_NORMAL_CHERRY, 10)
+    X(TEST_NORMAL_BANANA, banana) \
+    X(TEST_NORMAL_CHERRY, cherry)
 #include "xenums.c"
 
 int
 main(void) {
     char *s;
     ASSERT_EQUAL(TEST_FLAGS_READ_BIT_IDX, 0);
+    ASSERT_EQUAL(TEST_FLAGS_BIT_COUNT, 3);
     ASSERT_EQUAL(TEST_FLAGS_READ, 1 << 0);
     ASSERT_EQUAL(TEST_FLAGS_WRITE, 1 << 1);
     ASSERT_EQUAL(TEST_FLAGS_EXEC, 1 << 2);
@@ -376,6 +403,10 @@ main(void) {
     ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_EXEC");
     TEST_FLAGS_str_free(s);
 
+    s = TEST_FLAGS_str(TEST_FLAGS_READ_WRITE);
+    ASSERT_EQUAL(s, "TEST_FLAGS_READ_WRITE");
+    TEST_FLAGS_str_free(s);
+
     s = TEST_FLAGS_str(TEST_FLAGS_READ | TEST_FLAGS_WRITE | TEST_FLAGS_EXEC);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_WRITE|TEST_FLAGS_EXEC");
     TEST_FLAGS_str_free(s);
@@ -384,12 +415,18 @@ main(void) {
     ASSERT_EQUAL(s, "NONE");
     TEST_FLAGS_str_free(s);
 
-    ASSERT_EQUAL((uint32)TEST_FLAGS_parse("TEST_FLAGS_READ"), TEST_FLAGS_READ);
-    ASSERT_EQUAL((uint32)TEST_FLAGS_parse("TEST_FLAGS_READ | TEST_FLAGS_EXEC"),
-                 TEST_FLAGS_READ | TEST_FLAGS_EXEC);
-    ASSERT_EQUAL((uint32)TEST_FLAGS_parse("READ|WRITE"),
-                 TEST_FLAGS_READ | TEST_FLAGS_WRITE);
-    ASSERT_EQUAL((uint32)TEST_FLAGS_parse("NONE"), TEST_FLAGS_NONE);
+    ASSERT(TEST_FLAGS_parse("TEST_FLAGS_READ") == TEST_FLAGS_READ);
+    ASSERT(TEST_FLAGS_parse("TEST_FLAGS_READ | TEST_FLAGS_EXEC")
+           == (TEST_FLAGS_READ | TEST_FLAGS_EXEC));
+    ASSERT(TEST_FLAGS_parse("READ|WRITE")
+            == (TEST_FLAGS_READ | TEST_FLAGS_WRITE));
+    ASSERT(TEST_FLAGS_parse("READ_WRITE") == TEST_FLAGS_READ_WRITE);
+    ASSERT(TEST_FLAGS_parse("NONE") == TEST_FLAGS_NONE);
+
+    ASSERT(TEST_NORMAL_APPLE == 0);
+    ASSERT(TEST_NORMAL_BANANA == 1);
+    ASSERT(TEST_NORMAL_CHERRY == 2);
+    ASSERT(TEST_NORMAL_LAST == 3);
 
     s = TEST_NORMAL_str(TEST_NORMAL_APPLE);
     ASSERT_EQUAL(s, "TEST_NORMAL_APPLE");
@@ -403,11 +440,11 @@ main(void) {
     ASSERT_EQUAL(s, "TEST_NORMAL_CHERRY");
     TEST_NORMAL_str_free(s);
 
-    ASSERT_EQUAL((uint32)TEST_NORMAL_parse("TEST_NORMAL_APPLE"),
-                 TEST_NORMAL_APPLE);
-    ASSERT_EQUAL((uint32)TEST_NORMAL_parse("BANANA"), TEST_NORMAL_BANANA);
-    ASSERT_EQUAL((uint32)TEST_NORMAL_parse("TEST_NORMAL_CHERRY"),
-                 TEST_NORMAL_CHERRY);
+    ASSERT(TEST_NORMAL_parse("TEST_NORMAL_APPLE") == TEST_NORMAL_APPLE);
+    ASSERT(TEST_NORMAL_parse("BANANA") == TEST_NORMAL_BANANA);
+    ASSERT(TEST_NORMAL_parse("banana") == TEST_NORMAL_BANANA);
+    ASSERT(TEST_NORMAL_parse("TEST_NORMAL_CHERRY") == TEST_NORMAL_CHERRY);
+    ASSERT(TEST_NORMAL_parse("cherry") == TEST_NORMAL_CHERRY);
 
     s = TEST_NORMAL_str(999);
     ASSERT_EQUAL(s, "Invalid enum value");

@@ -35,7 +35,45 @@ typedef struct DebugAllocInfo {
 #include "hash.c"
 
 static struct Hash_alloc_map *allocations = NULL;
+#if OS_UNIX
 static pthread_mutex_t allocations_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void
+allocations_lock(void) {
+    xpthread_mutex_lock(&allocations_mutex);
+    return;
+}
+
+static void
+allocations_unlock(void) {
+    xpthread_mutex_unlock(&allocations_mutex);
+    return;
+}
+#elif OS_WINDOWS
+static SRWLOCK allocations_mutex = SRWLOCK_INIT;
+
+static void
+allocations_lock(void) {
+    AcquireSRWLockExclusive(&allocations_mutex);
+    return;
+}
+
+static void
+allocations_unlock(void) {
+    ReleaseSRWLockExclusive(&allocations_mutex);
+    return;
+}
+#else
+static void
+allocations_lock(void) {
+    return;
+}
+
+static void
+allocations_unlock(void) {
+    return;
+}
+#endif
 
 #define X64(FUNC) \
 CBASE_API_DEF void \
@@ -103,7 +141,7 @@ memory_check(void) {
         return;
     }
 
-    pthread_mutex_lock(&allocations_mutex);
+    allocations_lock();
     if (allocations) {
         for (uint32 i = 0; i < allocations->capacity; i += 1) {
             Bucket_alloc_map *bucket = &allocations->array[i];
@@ -147,7 +185,7 @@ memory_check(void) {
             }
         }
     }
-    pthread_mutex_unlock(&allocations_mutex);
+    allocations_unlock();
     return;
 }
 
@@ -199,12 +237,12 @@ malloc_debug(char *file, int32 line, char *func, int64 size, bool zero) {
         info.func = func;
         info.reallocated = 0;
 
-        pthread_mutex_lock(&allocations_mutex);
+        allocations_lock();
         if (allocations == NULL) {
             allocations = hash_create_alloc_map(1024, "DebugAllocations");
         }
         hash_insert_alloc_map(allocations, &key, info);
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
     }
 
     if (zero) {
@@ -298,7 +336,7 @@ realloc_debug(char *file, int32 line, char *func,
         info.func = func;
         info.reallocated = 0;
 
-        pthread_mutex_lock(&allocations_mutex);
+        allocations_lock();
 
         if (old && (allocations == NULL)) {
             error_impl(file, line, func,
@@ -398,7 +436,7 @@ realloc_debug(char *file, int32 line, char *func,
         p_key = (intptr)p;
         hash_insert_alloc_map(allocations, &p_key, info);
 
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
     }
 
     return p;
@@ -465,7 +503,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
         info.func = func;
         info.reallocated = 0;
 
-        pthread_mutex_lock(&allocations_mutex);
+        allocations_lock();
 
         if (old && (allocations == NULL)) {
             error_impl(file, line, func,
@@ -566,7 +604,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
         p_key = (intptr)p;
         hash_insert_alloc_map(allocations, &p_key, info);
 
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
     }
 
     return p;
@@ -594,7 +632,7 @@ free_debug(char *file, int32 line, char *func,
         return;
     }
 
-    pthread_mutex_lock(&allocations_mutex);
+    allocations_lock();
 
     if (allocations == NULL) {
         error_impl(file, line, func,
@@ -658,7 +696,7 @@ free_debug(char *file, int32 line, char *func,
         fatal(EXIT_FAILURE);
     }
 
-    pthread_mutex_unlock(&allocations_mutex);
+    allocations_unlock();
 
     return;
 }
@@ -1074,7 +1112,7 @@ int main(void) {
         ASSERT_EXPECTED_FATAL({
             free2(untracked, 16);
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
     }
 
     {
@@ -1083,7 +1121,7 @@ int main(void) {
         ASSERT_EXPECTED_FATAL({
             free2(p, size + 1); // Incorrect size
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
         free(p - MEMORY_PADDING);
     }
 
@@ -1094,7 +1132,7 @@ int main(void) {
         ASSERT_EXPECTED_FATAL({
             free2(p, size); // Double free
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
         free(p - MEMORY_PADDING);
     }
 
@@ -1105,7 +1143,7 @@ int main(void) {
             // Realloc with wrong old size
             realloc2(arr, count + 5, 20, SIZEOF(int64));
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
         free2(arr, count*SIZEOF(int64));
     }
 
@@ -1121,7 +1159,7 @@ int main(void) {
             // Realloc flex with wrong old capacity
             realloc_flex(flex, count + 2, 10, SIZEOF(int64));
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
         free2(flex, initial_size);
     }
 
@@ -1131,7 +1169,7 @@ int main(void) {
             // Realloc with untracked pointer
             realloc2(invalid_ptr, 1, 10, SIZEOF(int64));
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
     }
 
     {
@@ -1141,7 +1179,7 @@ int main(void) {
             p[-MEMORY_PADDING] = 0x00; // Corrupt underflow canary
             memory_check();
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
         free(p - MEMORY_PADDING);
     }
 
@@ -1152,7 +1190,7 @@ int main(void) {
             p[size] = 0x00; // Corrupt overflow canary
             memory_check();
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
         free(p - MEMORY_PADDING);
     }
 
@@ -1163,7 +1201,7 @@ int main(void) {
             p[-4] = 0xFF; // Corrupt underflow canary
             free2(p, size);
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
         free(p - MEMORY_PADDING);
     }
 
@@ -1174,7 +1212,7 @@ int main(void) {
             p[size] = 0xFF; // Corrupt overflow canary
             free2(p, size);
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
         free(p - MEMORY_PADDING);
     }
 
@@ -1186,7 +1224,7 @@ int main(void) {
             p[0] = 0xAA; // Use after free
             memory_check();
         });
-        pthread_mutex_unlock(&allocations_mutex);
+        allocations_unlock();
         free(p - MEMORY_PADDING);
     }
 #endif

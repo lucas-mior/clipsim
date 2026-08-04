@@ -46,6 +46,9 @@
 #if !defined(TESTING_utf8)
 #define TESTING_utf8 0
 #endif
+#if !defined(TESTING_threads)
+#define TESTING_threads 0
+#endif
 #if !defined(TESTING_util)
 #define TESTING_util 0
 #endif
@@ -65,6 +68,9 @@
 #include "primitives.h"
 #include "base_macros.h"
 
+static char *program = __FILE__;
+static int32 program_len UNUSED;
+
 #define error(...) \
     error_impl(__FILE__, __LINE__, (char *)__func__, __VA_ARGS__)
 #define error2(...) fprintf(stderr, __VA_ARGS__)
@@ -78,6 +84,10 @@ CBASE_API_DECL void *memmem64(void *, int64, void *, int64);
 CBASE_API_DECL void *memrchr64(void *, int32, int64);
 
 #include "libc.h"
+#if defined(ALIGN)
+#undef ALIGN
+#endif
+#define ALIGN(x) ALIGN_POWER_OF_2(x, ALIGNMENT)
 #include "i18n.h"
 #include "memory.h"
 #include "arena.h"
@@ -100,6 +110,8 @@ CBASE_API_DECL int32 utf8_decode_raw(char *, uint32 *, int32);
 CBASE_API_DECL int32 utf8_encode(uint32, char *, int32);
 CBASE_API_DECL char utf8_encode_byte(uint32, int32);
 CBASE_API_DECL int32 utf8_encode_raw(uint32, char *);
+CBASE_API_DECL bool utf8_has_bom(char *, int32);
+CBASE_API_DECL bool utf8_valid(char *, int32, int32 *);
 CBASE_API_DECL void utf8_functions_sink(void);
 CBASE_API_DECL int32 utf8_next_position(char *, int32, int32);
 CBASE_API_DECL int32 utf8_suffix_width_position(char *, int32, int32);
@@ -164,7 +176,8 @@ CBASE_API_DECL void print_timings(
 CBASE_API_DECL void qsort64(void *, int64, int64, int (*)(void *, void *));
 CBASE_API_DECL double rad2deg(double);
 CBASE_API_DECL int32 random_ascii_string(char *, int32, int32);
-CBASE_API_DECL char *read_entire_file(char *, int32 *);
+CBASE_API_DECL bool path_missing(char *);
+CBASE_API_DECL bool read_entire_file(char *, char **, int32 *);
 CBASE_API_DECL char *remove_escape_sequences(char *, int32 *);
 CBASE_API_DECL void sb_append(StrBuilder *, char *, int32);
 CBASE_API_DECL void sb_append_byte(StrBuilder *, char);
@@ -204,6 +217,8 @@ CBASE_API_DECL int64 strftime2(char *, int64, char *, struct tm *);
 CBASE_API_DECL int strncmp32(char *, char *, int64);
 CBASE_API_DECL char *strncpy32(char *, char *, int64);
 CBASE_API_DECL double timediff(struct timespec, struct timespec);
+CBASE_API_DECL void time_monotonic_coarse(struct timespec *);
+CBASE_API_DECL void time_monotonic_precise(struct timespec *);
 CBASE_API_DECL void timezone_init(void);
 CBASE_API_DECL int32 util_copy_file_sync(char *, char *);
 CBASE_API_DECL void util_die_notify(char *, char *, ...);
@@ -218,6 +233,36 @@ CBASE_API_DECL int64 read64(int32, void *, int64);
 CBASE_API_DECL int64 write64(int32, void *, int64);
 CBASE_API_DECL int64 fread64(void *, int64, int64, FILE *);
 CBASE_API_DECL int64 fwrite64(void *, int64, int64, FILE *);
+
+#if !defined(PARALLEL_FOR_MAX_THREADS)
+#define PARALLEL_FOR_MAX_THREADS 64
+#endif
+
+#if !defined(MIN_PARALLEL_ITEMS)
+#define MIN_PARALLEL_ITEMS 64
+#endif
+
+typedef void ParallelForFunction(int64, int64, int32, void *);
+
+CBASE_API_DECL int32 parallel_for(
+    int64,
+    ParallelForFunction *,
+    void *
+);
+CBASE_API_DECL int32 parallel_for_min_items(
+    int64,
+    int64,
+    ParallelForFunction *,
+    void *
+);
+CBASE_API_DECL int32 parallel_for_max_threads_min_items(
+    int64,
+    int32,
+    int64,
+    ParallelForFunction *,
+    void *
+);
+CBASE_API_DECL void threads_functions_sink(void);
 CBASE_API_DECL void write_all(int, char *, int64);
 CBASE_API_DECL bool write_entire_file(char *, char *, int64);
 CBASE_API_DECL int xclose(char *, int, int *, char *, char *);
@@ -227,6 +272,7 @@ CBASE_API_DECL int xfclose(char *, int32, char *, FILE *, char *);
 CBASE_API_DECL FILE *xfopen(char *, int32, char *, char *, char *);
 CBASE_API_DECL void xkill(pid_t, int);
 CBASE_API_DECL void xpipe(int [2]);
+#if OS_UNIX
 CBASE_API_DECL void xpthread_cond_destroy(pthread_cond_t *);
 CBASE_API_DECL void xpthread_create(
     pthread_t *,
@@ -238,7 +284,16 @@ CBASE_API_DECL void xpthread_join(pthread_t *, void **);
 CBASE_API_DECL void xpthread_mutex_destroy(pthread_mutex_t *);
 CBASE_API_DECL void xpthread_mutex_lock(pthread_mutex_t *);
 CBASE_API_DECL void xpthread_mutex_unlock(pthread_mutex_t *);
+#endif
 CBASE_API_DECL int xunlink(char *);
+#if TESTING && OS_UNIX
+CBASE_API_DECL bool test_command_exists(char *);
+CBASE_API_DECL bool test_hardlink_supported(char *);
+CBASE_API_DECL bool test_symlink_supported(char *);
+CBASE_API_DECL void test_join_path(char *, int64, char *, char *);
+CBASE_API_DECL void test_make_temp_dir(char *, int32, char *);
+CBASE_API_DECL void test_remove_tree(char *);
+#endif
 CBASE_API_DECL void here_impl(char *, int32, char *);
 
 #define STRING_FROM_ARRAY(BUFFER, SEP, ARRAY, LENGTH) \
@@ -370,6 +425,7 @@ typedef struct CommandResult {
     int32 stdout_len;
     int32 stderr_len;
 
+    int32 stdin_fd;
     int32 stdout_fd;
     int32 stderr_fd;
 
@@ -387,6 +443,7 @@ typedef struct Command {
     char **argv;
     char **env;
     char *cwd;
+    char *stdin_buffer;
 
     int32 *argvs_lens;
     int32 *env_lens;
@@ -396,6 +453,8 @@ typedef struct Command {
     int32 cap;
     int32 env_cap;
     int32 error_status;
+    bool stdin_buffer_enabled;
+    int64 stdin_buffer_len;
 
     CommandResult result;
 } Command;
@@ -403,7 +462,7 @@ typedef struct Command {
 CBASE_API_DECL void command_argv0_set(Command *, char *);
 CBASE_API_DECL void command_child_env_apply(Command *);
 CBASE_API_DECL void command_child_exec(
-    Command *, enum CommandFlag, int [2], int [2]
+    Command *, enum CommandFlag, int [2], int [2], int [2]
 ) __attribute__((noreturn));
 #if OS_WINDOWS
 CBASE_API_DECL void command_windows_command_line(Command *, char *, int64);
@@ -433,6 +492,8 @@ CBASE_API_DECL void command_push_owned_length(
     int32
 );
 CBASE_API_DECL void command_push_split(Command *, char *, char *);
+CBASE_API_DECL bool command_stdin_buffer_set(Command *, char *, int64);
+CBASE_API_DECL void command_stdin_buffer_clear(Command *);
 CBASE_API_DECL void command_reset(Command *);
 CBASE_API_DECL void command_result_append(
     StrBuilder *,
@@ -446,6 +507,7 @@ CBASE_API_DECL void command_result_file_descriptors_close(CommandResult *);
 CBASE_API_DECL void command_result_free(CommandResult *);
 CBASE_API_DECL void command_result_init(CommandResult *);
 CBASE_API_DECL void command_result_read_captured(Command *);
+CBASE_API_DECL void command_result_process_io(Command *, enum CommandFlag);
 CBASE_API_DECL bool command_run(Command *, enum CommandFlag);
 CBASE_API_DECL bool command_run_async(Command *, enum CommandFlag);
 CBASE_API_DECL bool command_run_capture(Command *, enum CommandFlag);
@@ -470,10 +532,6 @@ CBASE_API_DECL bool command_wait(Command *);
     command_env_push_length(A, B, B_LEN)
 #define COMMAND_ENV_PUSH(...) \
     SELECT_ON_NUM_ARGS(COMMAND_ENV_PUSH_, __VA_ARGS__)
-
-#if !defined(SORT_COMPARE)
-#define SORT_COMPARE(A, B) compare_func(A, B)
-#endif
 
 #if !defined(MAX_NTHREADS)
 #define MAX_NTHREADS 64
@@ -505,10 +563,24 @@ typedef struct GenericArrayHeader {
 
 CBASE_API_DECL void *generic_array_init(int32, int64);
 CBASE_API_DECL void *generic_array_grow(void *, int64);
+CBASE_API_DECL bool generic_array_reserve(void **, int32, int64);
+CBASE_API_DECL int32 generic_array_capacity(void *);
+CBASE_API_DECL void generic_array_set_count(void *, int32);
 CBASE_API_DECL void array_sink(void);
 
 #define ARRAY_HEADER(ARRAY) ((GenericArrayHeader *)(ARRAY) - 1)
 #define ARRAY_LEN(ARRAY) ((ARRAY) ? ARRAY_HEADER(ARRAY)->count : 0)
+#define ARRAY_CAPACITY(ARRAY) generic_array_capacity(ARRAY)
+#define ARRAY_RESERVE(ARRAY, NEEDED_COUNT) \
+    generic_array_reserve((void **)&(ARRAY), \
+                          (NEEDED_COUNT), \
+                          SIZEOF(*(ARRAY)))
+#define ARRAY_SET_COUNT(ARRAY, COUNT) \
+    generic_array_set_count((ARRAY), (COUNT))
+#define ARRAY_INIT_COUNT(ARRAY, COUNT) do { \
+    ARRAY_INIT((ARRAY), (COUNT)); \
+    ARRAY_SET_COUNT((ARRAY), (COUNT)); \
+} while (0)
 #define ARRAY_CLEAR(ARRAY) do { \
     if (ARRAY) { \
         ARRAY_HEADER(ARRAY)->count = 0; \
@@ -540,6 +612,7 @@ CBASE_API_DECL void array_sink(void);
 #include "array.c"
 #include "utf8.c"
 #include "util.c"
+#include "threads.c"
 
 #define ENUM_NAME CommandFlag
 #define ENUM_BITFLAGS 1
@@ -562,7 +635,6 @@ CBASE_API_DECL void array_sink(void);
 #undef XENUMS_LINKAGE
 
 #include "command.c"
-#include "sort.c"
 #include "cbase.h"
 #include "meta_common.c"
 #include "meta_tokenize.c"
