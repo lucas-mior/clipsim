@@ -17,8 +17,8 @@
 #include <inttypes.h>
 #include <libgen.h>
 #include <limits.h>
+#include <locale.h>
 #include <math.h>
-#include <pthread.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -42,6 +42,12 @@
 #endif
 
 #if OS_UNIX
+#include <pthread.h>
+#include <utime.h>
+#endif
+
+#if OS_UNIX
+#include <sys/ioctl.h>
 #include <sys/select.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -52,11 +58,29 @@
 #include <sys/un.h>
 #endif
 
-#if defined(__GLIBC__)
+#if !defined(CBASE_HAS_FTS)
+#if OS_UNIX
+  #if defined(__has_include)
+    #if __has_include(<fts.h>)
+      #define CBASE_HAS_FTS 1
+    #else
+      #define CBASE_HAS_FTS 0
+    #endif
+  #elif defined(__GLIBC__) || OS_MAC || OS_BSD
+    #define CBASE_HAS_FTS 1
+  #else
+    #define CBASE_HAS_FTS 0
+  #endif
+#else
+  #define CBASE_HAS_FTS 0
+#endif
+#endif
+
+#if CBASE_HAS_FTS
 #include <fts.h>
 #endif
 
-#if OS_MAC
+#if OS_MAC || OS_BSD
 #include <sys/param.h>
 #endif
 
@@ -68,9 +92,33 @@
 #include <emscripten/emscripten.h>
 #endif
 
+#if !defined(CBASE_DIRENT_HAS_D_TYPE)
+#if defined(DT_DIR)
+#define CBASE_DIRENT_HAS_D_TYPE 1
+#else
+#define CBASE_DIRENT_HAS_D_TYPE 0
+#endif
+#endif
+
+#if !defined(CBASE_HAS_F_GETPATH)
+#if defined(F_GETPATH)
+#define CBASE_HAS_F_GETPATH 1
+#else
+#define CBASE_HAS_F_GETPATH 0
+#endif
+#endif
+
+#if !defined(CBASE_HAS_SYSTEM_MEMMEM)
+#if defined(__GLIBC__) && defined(_GNU_SOURCE)
+#define CBASE_HAS_SYSTEM_MEMMEM 1
+#else
+#define CBASE_HAS_SYSTEM_MEMMEM 0
+#endif
+#endif
+
 #if !defined(FLAGS_HUGE_PAGES)
 #if defined(MAP_HUGETLB) && defined(MAP_HUGE_2MB)
-#define FLAGS_HUGE_PAGES MAP_HUGETLB | MAP_HUGE_2MB
+#define FLAGS_HUGE_PAGES (MAP_HUGETLB | MAP_HUGE_2MB)
 #else
 #define FLAGS_HUGE_PAGES 0
 #endif

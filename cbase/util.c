@@ -12,12 +12,6 @@
 
 #include "cbase.h"
 
-#if !TESTING_util
-static char *program;
-#else
-static char *program = __FILE__;
-#endif
-static int32 program_len UNUSED;
 static ullong here_counter;
 
 CBASE_API_DEF void
@@ -72,13 +66,18 @@ static time_t timezone_offset = 0;
 
 static char *notifiers[2] = {"dunstify", "notify-send"};
 
-#if OS_WINDOWS
+#if !CBASE_HAS_SYSTEM_MEMMEM
 static void *
-memmem(void *haystack, size_t hay_len, void *needle, size_t needle_len) {
+cbase_memmem_fallback(
+    void *haystack,
+    size_t hay_len,
+    void *needle,
+    size_t needle_len
+) {
     uchar *h = haystack;
     uchar *n = needle;
-    uchar *end = h + hay_len;
-    uchar *limit = end - needle_len + 1;
+    uchar *end;
+    uchar *limit;
 
     if (needle_len == 0) {
         return haystack;
@@ -89,6 +88,9 @@ memmem(void *haystack, size_t hay_len, void *needle, size_t needle_len) {
     if (hay_len < needle_len) {
         return NULL;
     }
+
+    end = h + hay_len;
+    limit = end - needle_len + 1;
 
     while (h < limit) {
         uchar *p;
@@ -144,7 +146,12 @@ memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
         return NULL;
     }
 
+#if CBASE_HAS_SYSTEM_MEMMEM
     result = memmem(haystack, (size_t)hay_len, needle, (size_t)needle_len);
+#else
+    result = cbase_memmem_fallback(haystack, (size_t)hay_len,
+                                   needle, (size_t)needle_len);
+#endif
     return result;
 }
 
@@ -425,6 +432,7 @@ util_nthreads(void) {
 }
 #endif
 
+#if OS_UNIX
 CBASE_API_DEF void
 xpthread_mutex_lock(pthread_mutex_t *mutex) {
     int err;
@@ -486,6 +494,7 @@ xpthread_join(pthread_t *thread, void **thread_return) {
     *thread = 0;
     return;
 }
+#endif
 
 CBASE_API_DEF int32 __attribute__((format(printf, 3, 4)))
 snprintf2(char *buffer, int64 size, char *format, ...) {
@@ -576,7 +585,7 @@ util_filename_from(char *buffer, int64 size, int fd) {
     }
     buffer[len] = '\0';
     return 0;
-#elif OS_MAC
+#elif CBASE_HAS_F_GETPATH
     static char buffer2[MAXPATHLEN];
     int64 len;
 
@@ -734,7 +743,6 @@ xclosedir(DIR *dir, char *dirname) {
     }
     return 0;
 }
-
 
 CBASE_API_DEF void __attribute__((format(printf, 4, 5)))
 error_impl(char *file, int32 line, char *func, char *format, ...) {
@@ -1047,7 +1055,7 @@ util_copy_file_async_thread(void *arg) {
 
 #endif
 
-#if OS_LINUX
+#if CBASE_HAS_PROCFS
 CBASE_API_DEF void
 send_signal(char *executable, int32 signal_number) {
     DIR *processes;
@@ -1067,9 +1075,11 @@ send_signal(char *executable, int32 signal_number) {
         ssize_t r;
         char *last;
 
-        if (process->d_type != DT_DIR) {
+#if CBASE_DIRENT_HAS_D_TYPE
+        if ((process->d_type != DT_DIR) && (process->d_type != DT_UNKNOWN)) {
             continue;
         }
+#endif
         if ((pid = atoi(process->d_name)) <= 0) {
             continue;
         }
@@ -1509,6 +1519,60 @@ timediff(struct timespec t0, struct timespec t1) {
 }
 
 CBASE_API_DEF void
+time_monotonic_precise(struct timespec *time) {
+    int32 status;
+
+#if defined(CLOCK_MONOTONIC_RAW)
+    status = clock_gettime(CLOCK_MONOTONIC_RAW, time);
+#elif defined(CLOCK_MONOTONIC)
+    status = clock_gettime(CLOCK_MONOTONIC, time);
+#else
+    struct timeval timeval;
+
+    status = gettimeofday(&timeval, NULL);
+    if (status == 0) {
+        time->tv_sec = timeval.tv_sec;
+        time->tv_nsec = timeval.tv_usec*1000;
+    }
+#endif
+
+    if (status < 0) {
+        error("Error reading precise monotonic clock: %s.\n",
+              strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+CBASE_API_DEF void
+time_monotonic_coarse(struct timespec *time) {
+    int32 status;
+
+#if defined(CLOCK_MONOTONIC_COARSE)
+    status = clock_gettime(CLOCK_MONOTONIC_COARSE, time);
+#elif defined(CLOCK_MONOTONIC)
+    status = clock_gettime(CLOCK_MONOTONIC, time);
+#elif defined(CLOCK_MONOTONIC_RAW)
+    status = clock_gettime(CLOCK_MONOTONIC_RAW, time);
+#else
+    struct timeval timeval;
+
+    status = gettimeofday(&timeval, NULL);
+    if (status == 0) {
+        time->tv_sec = timeval.tv_sec;
+        time->tv_nsec = timeval.tv_usec*1000;
+    }
+#endif
+
+    if (status < 0) {
+        error("Error reading coarse monotonic clock: %s.\n",
+              strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+CBASE_API_DEF void
 catfile(int where, char *file) {
     int fd;
     char buffer[4096];
@@ -1627,53 +1691,84 @@ timezone_init(void) {
 }
 #endif
 
-CBASE_API_DEF char *
-read_entire_file(char *path, int32 *file_len) {
-    FILE *fp;
-    int64 len;
-    char *data;
-    int64 r;
+CBASE_API_DEF bool
+path_missing(char *path) {
+    if (path == NULL) {
+        return true;
+    }
+    if (path[0] == '\0') {
+        return true;
+    }
 
-    if ((fp = fopen(path, "rb")) == NULL) {
+    return false;
+}
+
+CBASE_API_DEF bool
+read_entire_file(char *path, char **file_bytes, int32 *file_len) {
+    FILE *file;
+    int64 len;
+    int64 read_len;
+    char *bytes;
+
+    if (file_bytes) {
+        *file_bytes = NULL;
+    }
+    if (file_len) {
+        *file_len = 0;
+    }
+    if (path_missing(path)
+        || (file_bytes == NULL)
+        || (file_len == NULL)) {
+        error("Error reading file: invalid arguments.\n");
+        return false;
+    }
+
+    if ((file = fopen(path, "rb")) == NULL) {
         error("Error opening "RED("%s")" for reading: %s",
               path, strerror(errno));
-        fatal(EXIT_FAILURE);
+        return false;
     }
-    if (fseek(fp, 0, SEEK_END)) {
+    if (fseek(file, 0, SEEK_END) != 0) {
         error("Error seeking end of %s: %s.\n", path, strerror(errno));
-        fclose(fp);
-        fatal(EXIT_FAILURE);
+        XFCLOSE(file, path);
+        return false;
     }
-    if ((len = ftell(fp)) < 0) {
+    if ((len = ftell(file)) < 0) {
         error("Error in ftell(%s): %s.\n", path, strerror(errno));
-        fclose(fp);
-        fatal(EXIT_FAILURE);
+        XFCLOSE(file, path);
+        return false;
     }
-    if (fseek(fp, 0, SEEK_SET)) {
-        error("Error rewinding %s: %s.\n", path, strerror(errno));
-        fclose(fp);
-        fatal(EXIT_FAILURE);
-    }
-
-    data = malloc2(len + 1);
-    if (len > 0) {
-        r = fread64(data, 1, len, fp);
-        if (r != len) {
-            error("Error reading "RED("%s")": %s.\n", path, strerror(errno));
-            fatal(EXIT_FAILURE);
-        }
-    } else {
-        r = 0;
-    }
-    data[r] = '\0';
-    XFCLOSE(fp, path);
-
-    if (r >= MAXOF(*file_len)) {
+    if (len >= MAXOF(*file_len)) {
         error("Only files up to 2GB are supported.\n");
-        fatal(EXIT_FAILURE);
+        XFCLOSE(file, path);
+        return false;
     }
-    *file_len = (int32)r;
-    return data;
+    if (fseek(file, 0, SEEK_SET) != 0) {
+        error("Error rewinding %s: %s.\n", path, strerror(errno));
+        XFCLOSE(file, path);
+        return false;
+    }
+
+    bytes = malloc2(len + 1);
+    read_len = 0;
+    if (len > 0) {
+        read_len = fread64(bytes, 1, len, file);
+    }
+    if (read_len != len) {
+        error("Error reading "RED("%s")": %s.\n", path, strerror(errno));
+        free2(bytes, (len + 1)*SIZEOF(*bytes));
+        XFCLOSE(file, path);
+        return false;
+    }
+    bytes[read_len] = '\0';
+    if (XFCLOSE(file, path) != 0) {
+        free2(bytes, (len + 1)*SIZEOF(*bytes));
+        return false;
+    }
+
+    *file_bytes = bytes;
+    *file_len = (int32)read_len;
+    return true;
 }
 
 CBASE_API_DEF bool
@@ -2205,6 +2300,7 @@ CBASE_API_DEF void
 util_functions_sink(void) {
     (void)here_counter;
     (void)strequal;
+    (void)path_missing;
     (void)read_entire_file;
     (void)write_entire_file;
     (void)sb_printf;
@@ -2274,12 +2370,14 @@ util_functions_sink(void) {
     (void)xmemdup;
     (void)xunlink;
 
+#if OS_UNIX
     (void)xpthread_mutex_lock;
     (void)xpthread_mutex_unlock;
     (void)xpthread_cond_destroy;
     (void)xpthread_mutex_destroy;
     (void)xpthread_create;
     (void)xpthread_join;
+#endif
 
     (void)random_ascii_string;
     (void)strncpy32;
@@ -2288,10 +2386,214 @@ util_functions_sink(void) {
     (void)deg2rad;
     (void)path_basename;
     (void)timediff;
+    (void)time_monotonic_coarse;
+    (void)time_monotonic_precise;
     (void)catfile;
     (void)parse_option;
     (void)command_print;
     return;
+}
+#endif
+
+#if TESTING && OS_UNIX
+CBASE_API_DEF bool
+test_command_exists(char *command) {
+    char *path;
+    int32 command_len;
+    int32 path_len;
+
+    if ((command == NULL) || (command[0] == '\0')) {
+        return false;
+    }
+
+    command_len = strlen32(command);
+    if (memchr64(command, '/', command_len) != NULL) {
+        return access(command, X_OK) == 0;
+    }
+
+    path = getenv("PATH");
+    if (path == NULL) {
+        return false;
+    }
+
+    path_len = strlen32(path);
+    for (int32 start = 0; start <= path_len; start += 1) {
+        char candidate[PATH_MAX];
+        int32 len;
+        int32 end;
+
+        end = start;
+        while ((end < path_len) && (path[end] != ':')) {
+            end += 1;
+        }
+
+        if (end == start) {
+            len = snprintf2(candidate, SIZEOF(candidate), "./%s", command);
+        } else {
+            len = snprintf2(candidate, SIZEOF(candidate), "%.*s/%s",
+                            end - start, path + start, command);
+        }
+        if ((len > 0) && (len < SIZEOF(candidate))
+            && (access(candidate, X_OK) == 0)) {
+            return true;
+        }
+
+        start = end;
+    }
+
+    return false;
+}
+
+CBASE_API_DEF void
+test_join_path(
+    char *buffer,
+    int64 buffer_len,
+    char *dir,
+    char *name
+) {
+    int32 len;
+
+    len = snprintf2(buffer, buffer_len, "%s/%s", dir, name);
+    ASSERT(len > 0);
+    ASSERT(len < buffer_len);
+
+    return;
+}
+
+CBASE_API_DEF void
+test_make_temp_dir(char *buffer, int32 capacity, char *name) {
+    char *tmpdir;
+    int32 len;
+
+    tmpdir = getenv("CECUP_TEST_TMPDIR");
+    if (tmpdir == NULL) {
+        tmpdir = getenv("TMPDIR");
+    }
+    if (tmpdir == NULL) {
+        tmpdir = "/tmp";
+    }
+
+    len = snprintf2(buffer, capacity, "%s/cecup_%s_XXXXXX", tmpdir, name);
+    if ((len <= 0) || (len >= capacity)) {
+        error("Temporary directory path too long.\n");
+        fatal(EXIT_FAILURE);
+    }
+    if (mkdtemp(buffer) == NULL) {
+        error("Error creating temporary directory %s: %s.\n",
+              buffer, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+
+    return;
+}
+
+static void
+test_remove_tree_children(char *path) {
+    DIR *dir;
+    struct dirent *entry;
+
+    dir = opendir(path);
+    if (dir == NULL) {
+        return;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        char child[PATH_MAX];
+        int32 len;
+
+        if (strequal(entry->d_name, ".") || strequal(entry->d_name, "..")) {
+            continue;
+        }
+
+        len = snprintf2(child, SIZEOF(child), "%s/%s", path, entry->d_name);
+        if ((len <= 0) || (len >= SIZEOF(child))) {
+            error("Test path too long below %s.\n", path);
+            fatal(EXIT_FAILURE);
+        }
+        test_remove_tree(child);
+    }
+
+    xclosedir(dir, path);
+    return;
+}
+
+CBASE_API_DEF void
+test_remove_tree(char *path) {
+    struct stat statbuf;
+
+    if (lstat(path, &statbuf) < 0) {
+        if (errno == ENOENT) {
+            return;
+        }
+        error("Error checking test path %s: %s.\n", path, strerror(errno));
+        return;
+    }
+
+    if (S_ISDIR(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
+        test_remove_tree_children(path);
+        if (rmdir(path) < 0) {
+            error("Error removing test directory %s: %s.\n",
+                  path, strerror(errno));
+        }
+    } else if (unlink(path) < 0) {
+        error("Error removing test path %s: %s.\n", path, strerror(errno));
+    }
+
+    return;
+}
+
+CBASE_API_DEF bool
+test_symlink_supported(char *dir) {
+    char link_path[PATH_MAX];
+    int32 len;
+    bool supported;
+
+    len = snprintf2(link_path, SIZEOF(link_path), "%s/symlink_probe", dir);
+    if ((len <= 0) || (len >= SIZEOF(link_path))) {
+        return false;
+    }
+
+    unlink(link_path);
+    supported = symlink("target", link_path) == 0;
+    if (supported) {
+        unlink(link_path);
+    }
+
+    return supported;
+}
+
+CBASE_API_DEF bool
+test_hardlink_supported(char *dir) {
+    char link_path[PATH_MAX];
+    char src_path[PATH_MAX];
+    int32 len;
+    bool supported;
+    int32 fd;
+
+    len = snprintf2(src_path, SIZEOF(src_path), "%s/hardlink_probe_src", dir);
+    if ((len <= 0) || (len >= SIZEOF(src_path))) {
+        return false;
+    }
+    len = snprintf2(link_path, SIZEOF(link_path),
+                    "%s/hardlink_probe_dst", dir);
+    if ((len <= 0) || (len >= SIZEOF(link_path))) {
+        return false;
+    }
+
+    unlink(src_path);
+    unlink(link_path);
+    fd = open(src_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (fd < 0) {
+        return false;
+    }
+    write64(fd, "x", 1);
+    XCLOSE(&fd, src_path);
+
+    supported = link(src_path, link_path) == 0;
+    unlink(link_path);
+    unlink(src_path);
+
+    return supported;
 }
 #endif
 
@@ -2303,13 +2605,13 @@ util_functions_sink(void) {
 #define ENUM_BITFLAGS 0
 #define ENUM_PREFIX_ WEEK_DAY_
 #define ENUM_FIELDS \
-    X(WEEK_DAY_SUNDAY, 0)          \
-    X(WEEK_DAY_MONDAY)             \
-    X(WEEK_DAY_TUESDAY, 10)        \
-    X(WEEK_DAY_WEDNESDAY)          \
-    X(WEEK_DAY_THURSDAY)           \
-    X(WEEK_DAY_FRIDAY, 5)          \
-    X(WEEK_DAY_SATURDAY, 20)
+    X(WEEK_DAY_SUNDAY, sunday)    \
+    X(WEEK_DAY_MONDAY, monday)    \
+    X(WEEK_DAY_TUESDAY, tuesday)  \
+    X(WEEK_DAY_WEDNESDAY)         \
+    X(WEEK_DAY_THURSDAY)          \
+    X(WEEK_DAY_FRIDAY, friday)    \
+    X(WEEK_DAY_SATURDAY, saturday)
 #include "xenums.c"
 
 #define ENUM_NAME PowerOfTwo
@@ -2369,10 +2671,13 @@ main(int argc, char **argv) {
     char *s1 = "aaaabbbb";
     struct timespec t0;
     struct timespec t1;
+    char temp_dir[PATH_MAX];
 
     (void)argc;
     (void)argv;
     (void)here_counter;
+
+    test_make_temp_dir(temp_dir, SIZEOF(temp_dir), "util");
 
     ASSERT(BEGINS_WITH(s1, strlen32(s1), "aaaa"));
     ASSERT(BEGINS_WITH(s1, strlen32(s1), "aaaabbbb"));
@@ -2397,7 +2702,7 @@ main(int argc, char **argv) {
         sb_free(&builder);
     }
 
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
+    time_monotonic_precise(&t0);
 #if OS_UNIX
     timezone_init();
 #endif
@@ -2417,14 +2722,14 @@ main(int argc, char **argv) {
     }
 
     for (enum WeekDay day = WEEK_DAY_MONDAY; day <= WEEK_DAY_LAST; day += 1) {
-        printf("enum[%d] = %s\n", day, WEEK_DAY_str(day));
+        printf("enum[%u] = %s\n", day, WEEK_DAY_str(day));
     }
 
     printf("\n");
 
     for (uint x = 0; x < POWER_OF2_LAST; x += 1) {
         char *value_name = POWER_OF2_str((enum PowerOfTwo)x);
-        printf("enum[%d] = %s\n", x, value_name);
+        printf("enum[%u] = %s\n", x, value_name);
         POWER_OF2_str_free(value_name);
     }
 
@@ -2572,8 +2877,11 @@ main(int argc, char **argv) {
     }
 
     {
-        char *a = "/tmp/afile";
-        char *b = "/tmp/bfile";
+        char a[PATH_MAX];
+        char b[PATH_MAX];
+
+        SNPRINTF(a, "%s/afile", temp_dir);
+        SNPRINTF(b, "%s/bfile", temp_dir);
 
         WRITE_FILE(a, "hello world");
         WRITE_FILE(b, "hello world");
@@ -2597,8 +2905,11 @@ main(int argc, char **argv) {
         char buffer2[4096];
         char name2[256];
         char buffer3[4096];
-        char *name = "/tmp/test";
+        char buffer4[4096];
+        char name[PATH_MAX];
         int fd;
+
+        SNPRINTF(name, "%s/test", temp_dir);
 
         if ((fd = open(name,
                        O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
@@ -2618,16 +2929,18 @@ main(int argc, char **argv) {
         }
         name2[SIZEOF(name2) - 1] = '\0';
 
-        if ((fd = open(name2,
+        SNPRINTF(buffer2, "%s/%s", temp_dir, name2);
+
+        if ((fd = open(buffer2,
                        O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
-            error("Error opening %s: %s.\n", name2, strerror(errno));
+            error("Error opening %s: %s.\n", buffer2, strerror(errno));
             fatal(EXIT_FAILURE);
         }
 
-        util_filename_from(buffer2, sizeof(buffer2), fd);
-        ASSERT_EQUAL(realpath(name2, buffer3), buffer2);
+        util_filename_from(buffer4, sizeof(buffer4), fd);
+        ASSERT_EQUAL(realpath(buffer2, buffer3), buffer4);
         XCLOSE(&fd);
-        xunlink(name2);
+        xunlink(buffer2);
     }
 
     ASSERT_EQUAL(deg2rad(180.0), 3.141592653589793);
@@ -2663,18 +2976,22 @@ main(int argc, char **argv) {
     (void)xpipe;
     (void)xunlink;
 
+#if OS_UNIX
     (void)xpthread_mutex_lock;
     (void)xpthread_mutex_unlock;
     (void)xpthread_cond_destroy;
     (void)xpthread_mutex_destroy;
     (void)xpthread_create;
     (void)xpthread_join;
+#endif
 
     (void)fwrite64;
     (void)fread64;
     (void)program_len;
 
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
+    test_remove_tree(temp_dir);
+
+    time_monotonic_precise(&t1);
     PRINT_TIMINGS(1, t0, t1);
     exit(EXIT_SUCCESS);
 }

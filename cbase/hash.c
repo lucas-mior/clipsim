@@ -899,12 +899,12 @@ main(void) {
         strings[i] = random_string(arena, NBYTES);
     }
 
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t0);
+    time_monotonic_precise(&t0);
     for (uint32 i = 0; i < NSTRINGS; i += 1) {
         ASSERT(hash_insert_map(map, strings[i].s, strings[i].len,
                                strings[i].value));
     }
-    clock_gettime(CLOCK_MONOTONIC_RAW, &t1);
+    time_monotonic_precise(&t1);
     PRINT_TIMINGS(NSTRINGS, t0, t1, "insertion with resizes");
 
     ASSERT(map->capacity > initial_capacity);

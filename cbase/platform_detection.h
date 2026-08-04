@@ -47,6 +47,14 @@
 
 #define OS_UNIX (OS_LINUX || OS_MAC || OS_BSD)
 
+#if !defined(CBASE_HAS_PROCFS)
+#define CBASE_HAS_PROCFS OS_LINUX
+#endif
+
+#if !defined(CBASE_HAS_GETTEXT)
+#define CBASE_HAS_GETTEXT OS_LINUX
+#endif
+
 #if defined(__clang__)
   #define CC_GCC 0
   #define CC_CLANG 1
@@ -77,7 +85,7 @@
 #define CC_TOY !(CC_GCC || CC_CLANG || CC_TCC || CC_MSVC)
 
 #if OS_WINDOWS
-#define RW_TYPE uint
+#define RW_TYPE unsigned int
 #else
 #define RW_TYPE size_t
 #endif

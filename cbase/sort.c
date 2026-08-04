@@ -4,8 +4,6 @@
 #if !defined(SORT_C)
 #define SORT_C
 
-#include <stdlib.h>
-
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_sort 1
 #elif !defined(TESTING_sort)
@@ -13,6 +11,10 @@
 #endif
 
 #include "cbase.h"
+
+#if !defined(SORT_COMPARE)
+#define SORT_COMPARE(A, B) compare_func(A, B)
+#endif
 
 CBASE_API_DEF void
 sort_shuffle(void *array, int64 n, int64 size) {
