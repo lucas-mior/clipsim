@@ -359,19 +359,6 @@ double_get(union Primitive var, enum Type type) {
 static inline void
 generic_functions_sink(void) {
     (void)generic_functions_sink;
-    (void)double_from_schar;
-    (void)double_from_short;
-    (void)double_from_int;
-    (void)double_from_long;
-    (void)double_from_llong;
-    (void)double_from_uchar;
-    (void)double_from_ushort;
-    (void)double_from_uint;
-    (void)double_from_ulong;
-    (void)double_from_ullong;
-    (void)double_from_float;
-    (void)double_from_double;
-
     (void)typebits;
     (void)typename;
     (void)double_get;

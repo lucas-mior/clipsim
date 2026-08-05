@@ -706,6 +706,11 @@ CAT(hash_ndeleted_, HASH_TYPE)(struct Map *map) {
     return ndeleted;
 }
 
+#if CC_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
+#endif
+
 static inline void
 CAT(hash_functions_sink_, HASH_TYPE)(void) {
     (void)CAT(hash_functions_sink_, HASH_TYPE);
@@ -737,6 +742,9 @@ CAT(hash_functions_sink_, HASH_TYPE)(void) {
 #endif
     return;
 }
+#if CC_CLANG
+#pragma clang diagnostic pop
+#endif
 
 #undef HASH_VALUE_TYPE
 #undef HASH_PADDING_TYPE
