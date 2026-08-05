@@ -682,8 +682,7 @@ ipc_clean_socket(void) {
     DEBUG_PRINT("%s", ipc_socket.name)
     if (unlink(ipc_socket.name) < 0) {
         if (errno != ENOENT) {
-            error("Error deleting %s: %s\n",
-                  ipc_socket.name, strerror(errno));
+            error("Error deleting %s: %s\n", ipc_socket.name, strerror(errno));
             fatal(EXIT_FAILURE);
         }
     }
