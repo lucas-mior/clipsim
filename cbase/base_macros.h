@@ -115,7 +115,16 @@ _Generic((SIZE), \
     int:    ALIGN_POWER_OF_2_((uint)SIZE,   (uint)A)    \
 )
 
+#if ARCH_AVX512
+#define ALIGNMENT 64ll
+#elif ARCH_AVX2 || ARCH_AVX
+#define ALIGNMENT 32ll
+#elif ARCH_SSE
 #define ALIGNMENT 16ll
+#else
+#define ALIGNMENT 8ll
+#endif
+
 #if defined(ALIGN)
 #undef ALIGN
 #endif

@@ -544,6 +544,7 @@ typedef union GenericArrayHeader {
         int32 count;
         int32 cap;
     };
+    uchar padding[ALIGNMENT];
     max_align_t alignment;
 } GenericArrayHeader;
 
