@@ -155,7 +155,7 @@ _Generic((SIZE), \
 #endif
 
 #if CC_GCC || CC_CLANG
-#define UNUSED __attribute__((unused))
+#define UNUSED __attribute((unused))
 #else
 #define UNUSED
 #endif
@@ -174,6 +174,8 @@ _Generic((SIZE), \
   #define UNREACHABLE() do { } while(0)
 #endif
 
+// __func__ returns const char *
+// which breaks the qualifiers when passing it around
 #define FUNC__ (char *)__func__
 #define FUNC FUNC__
 
@@ -182,9 +184,9 @@ _Generic((SIZE), \
 #endif
 
 #if TESTING
-  #define TRAP(...) raise(SIGILL)
+  #define TRAP(...) do { raise(SIGILL); exit(EXIT_FAILURE); } while (0)
 #else
-  #if defined(__GNUC__) || defined(__clang__)
+  #if CC_GCC || CC_CLANG
     #define TRAP(...) __builtin_trap()
   #elif defined(_MSC_VER)
     #define TRAP(...) __debugbreak()
