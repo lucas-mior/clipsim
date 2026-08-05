@@ -87,35 +87,7 @@ static char IMAGE_TAG = (char)0x02;
 static pthread_mutex_t lock;
 static magic_t magic = 0;
 
-static void
-util_close(File *file) {
-    if (file->fd >= 0) {
-        if (close(file->fd) < 0)
-            fprintf(stderr, "Error closing %s: %s\n", file->name, strerror(errno));
-        file->fd = -1;
-    }
-    if (file->file != NULL) {
-        if (fclose(file->file) != 0)
-            fprintf(stderr, "Error closing %s: %s\n", file->name, strerror(errno));
-        file->file = NULL;
-    }
-    return;
-}
-
-static void
-reopen_magic(void) {
-    if (magic) {
-        magic_close(magic);
-    }
-    if ((magic = magic_open(MAGIC_MIME_TYPE)) == NULL) {
-        error("Error in magic_open(MAGIC_MIME_TYPE): %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-    if (magic_load(magic, NULL) != 0) {
-        error("Error in magic_load(): %s\n", magic_error(magic));
-        exit(EXIT_FAILURE);
-    }
-    return;
-}
+static void util_close(File *file);
+static void reopen_magic(void);
 
 #endif /* CLIPSIM_H */
