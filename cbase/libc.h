@@ -21,6 +21,7 @@
 #include <math.h>
 #include <setjmp.h>
 #include <signal.h>
+#include <stdalign.h>
 #include <stdarg.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -38,6 +39,7 @@
 #include <wctype.h>
 
 #if OS_WINDOWS
+#include <malloc.h>
 #include <windows.h>
 #endif
 
