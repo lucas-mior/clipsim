@@ -162,8 +162,9 @@ generic_array_set_count(void *array, int32 count) {
     return;
 }
 
-CBASE_API_DEF void
+static inline void
 array_sink(void) {
+    (void)array_sink;
     (void)generic_array_init;
     (void)generic_array_grow;
     (void)generic_array_reserve;

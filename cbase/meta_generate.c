@@ -294,6 +294,18 @@ c_emit_wrapped_expr(StrBuilder *out, char *indent, char *prefix, char *expr,
     SB_APPEND(out, "\n");
 }
 
+#if 0 == TESTING_meta_generate
+static inline void
+meta_generate_sink(void) {
+    (void)c_emit_wrapped_expr;
+    (void)c_identifier;
+    (void)emit_int_array_initializer;
+    (void)emit_lens_initializer;
+    (void)emit_string_array_initializer;
+    (void)emit_u64_array_initializer;
+}
+#endif
+
 #if TESTING_meta_generate
 #define CBASE_IMPLEMENT
 #include "cbase.h"

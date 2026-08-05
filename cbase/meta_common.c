@@ -154,13 +154,19 @@ TOKEN_parse(char *string) {
     return result;
 }
 
-CBASE_API_DEF void
+#if 0 == TESTING_meta_common
+static inline void
 TOKEN_functions_sink(void) {
+    (void)TOKEN_functions_sink;
+    (void)token_is_val_len;
+    (void)token_is_ptr_len;
+    (void)precedence_of;
     (void)TOKEN_str;
     (void)TOKEN_str_free;
     (void)TOKEN_parse;
     return;
 }
+#endif
 
 CBASE_API_DEF int32
 token_is_val(Token token, char *what) {

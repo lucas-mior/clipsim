@@ -49,7 +49,6 @@ CBASE_API_DECL void *malloc_debug(char *, int32, char *, int64, bool);
 CBASE_API_DECL void memcpy64(void *, void *, int64);
 CBASE_API_DECL void memmove64(void *, void *, int64);
 CBASE_API_DECL void memory_check(void);
-CBASE_API_DECL void memory_functions_sink(void);
 CBASE_API_DECL void memset64(void *, int, int64);
 CBASE_API_DECL void *realloc4(void *, int64, int64, int64);
 CBASE_API_DECL void *realloc_debug(char *, int32, char *, void *, int64, int64, int64);

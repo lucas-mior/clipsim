@@ -473,8 +473,10 @@ random_utf8_string(char *buffer, int32 capacity, int32 min_len) {
 }
 
 #if 0 == TESTING_utf8
-CBASE_API_DEF void
+static inline void
 utf8_functions_sink(void) {
+    (void)utf8_suffix_width_position;
+    (void)utf8_functions_sink;
     (void)utf8_decode;
     (void)utf8_encode;
     (void)utf8_characters;
@@ -483,6 +485,9 @@ utf8_functions_sink(void) {
     (void)utf8_capitalize_first_letters;
     (void)utf8_valid;
     (void)utf8_has_bom;
+#if !OS_WINDOWS
+    (void)utf8_cut_width;
+#endif
     (void)random_utf8_string;
     return;
 }

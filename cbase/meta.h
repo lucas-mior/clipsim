@@ -65,7 +65,6 @@ CBASE_API_DECL void TOKEN_str_free(char *);
 CBASE_API_DECL enum TokenKind TOKEN_parse(char *);
 CBASE_API_DECL bool TOKEN_token_equals(char *, int32, char *);
 CBASE_API_DECL bool TOKEN_token_equals_enum_name(char *, int32, char *);
-CBASE_API_DECL void TOKEN_functions_sink(void);
 
 CBASE_API_DECL int32 token_is_val(Token, char *);
 CBASE_API_DECL int32 token_is_ptr(Token *, char *);
@@ -86,7 +85,6 @@ CBASE_API_DECL void line_add_token(Line *, enum TokenKind, char *, int32, int32)
 CBASE_API_DECL void line_reserve_tokens(Line *, int32);
 CBASE_API_DECL bool line_starts_preprocessor(char *, int32);
 CBASE_API_DECL int32 literal_quote_index(char *, int32, int32);
-CBASE_API_DECL void meta_tokenize_sink(void);
 CBASE_API_DECL enum TokenKind operator_or_punct_category(char *, int32, int32, int32 *);
 CBASE_API_DECL int32 scan_block_comment(char *, int32, int32, bool *);
 CBASE_API_DECL int32 scan_line_comment(char *, int32, int32);

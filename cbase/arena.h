@@ -29,7 +29,6 @@ CBASE_API_DECL Arena *arena_create(int64, char *);
 CBASE_API_DECL int64 arena_data_size(Arena *);
 CBASE_API_DECL bool arena_decr(Arena *, void *);
 CBASE_API_DECL void arena_destroy(Arena *);
-CBASE_API_DECL void arena_functions_sink(void);
 CBASE_API_DECL int32 arena_nlinked(Arena *);
 CBASE_API_DECL Arena *arena_of(Arena *, void *);
 CBASE_API_DECL void arena_print(Arena *);

@@ -32,5 +32,11 @@ CAT(square_, CLAMP_TYPE)(CLAMP_TYPE var) {
     return var*var;
 }
 
+static inline void
+CAT(CLAMP_TYPE, _sink)(void) {
+    (void)CAT(square_, CLAMP_TYPE);
+    (void)CAT(clamp_, CLAMP_TYPE);
+}
+
 #undef CLAMP_TYPE
 #undef CLAMP_LINKAGE

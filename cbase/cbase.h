@@ -112,7 +112,6 @@ CBASE_API_DECL char utf8_encode_byte(uint32, int32);
 CBASE_API_DECL int32 utf8_encode_raw(uint32, char *);
 CBASE_API_DECL bool utf8_has_bom(char *, int32);
 CBASE_API_DECL bool utf8_valid(char *, int32, int32 *);
-CBASE_API_DECL void utf8_functions_sink(void);
 CBASE_API_DECL int32 utf8_next_position(char *, int32, int32);
 CBASE_API_DECL int32 utf8_suffix_width_position(char *, int32, int32);
 CBASE_API_DECL int32 utf8_validate(uint32 *, int32);
@@ -212,6 +211,8 @@ CBASE_API_DECL int64 clamp_int64(int64, int64, int64);
 CBASE_API_DECL int64 square_int64(int64);
 CBASE_API_DECL bool strequal(char *, char *);
 CBASE_API_DECL bool strequal2(char *, int32, char *, int32);
+CBASE_API_DECL bool striqual(char *, char *);
+CBASE_API_DECL bool striqual2(char *, int32, char *, int32);
 CBASE_API_DEF bool optional_strequal(char *a, int32 a_len, char *b, int32 b_len);
 CBASE_API_DECL int64 strftime2(char *, int64, char *, struct tm *);
 CBASE_API_DECL int strncmp32(char *, char *, int64);
@@ -225,7 +226,6 @@ CBASE_API_DECL void util_die_notify(char *, char *, ...);
 CBASE_API_DECL bool util_equal_files(char *, char *);
 CBASE_API_DECL bool util_file_exists(char *);
 CBASE_API_DECL int32 util_filename_from(char *, int64, int);
-CBASE_API_DECL void util_functions_sink(void);
 CBASE_API_DECL int32 util_nthreads(void);
 CBASE_API_DECL int32 util_string_int32(int32 *, char *);
 CBASE_API_DECL void warn(char *, ...);
@@ -262,7 +262,6 @@ CBASE_API_DECL int32 parallel_for_max_threads_min_items(
     ParallelForFunction *,
     void *
 );
-CBASE_API_DECL void threads_functions_sink(void);
 CBASE_API_DECL void write_all(int, char *, int64);
 CBASE_API_DECL bool write_entire_file(char *, char *, int64);
 CBASE_API_DECL int xclose(char *, int, int *, char *, char *);
@@ -363,6 +362,10 @@ _Generic((VAR), \
 #define strequal2_4(A, A_LEN, B, B_LEN) strequal2(A, A_LEN, B, B_LEN)
 #define STREQUAL(...) SELECT_ON_NUM_ARGS(strequal2_, __VA_ARGS__)
 
+#define striqual2_3(A, A_LEN, B) striqual2(A, A_LEN, B, strlen32(B))
+#define striqual2_4(A, A_LEN, B, B_LEN) striqual2(A, A_LEN, B, B_LEN)
+#define STRIQUAL(...) SELECT_ON_NUM_ARGS(striqual2_, __VA_ARGS__)
+
 #define HERE here_impl(__FILE__, __LINE__, (char *)__func__)
 
 #define NCALLS(INTERVAL) do { \
@@ -436,7 +439,7 @@ typedef struct CommandResult {
 
     bool exited;
     bool signaled;
-    int16 padding;
+    uint8 padding[6];
 } CommandResult;
 
 typedef struct Command {
@@ -453,7 +456,6 @@ typedef struct Command {
     int32 cap;
     int32 env_cap;
     int32 error_status;
-    bool stdin_buffer_enabled;
     int64 stdin_buffer_len;
 
     CommandResult result;
@@ -537,23 +539,6 @@ CBASE_API_DECL bool command_wait(Command *);
 #define MAX_NTHREADS 64
 #endif
 
-typedef struct HeapNode {
-    void *value;
-    int32 p_index;
-    int32 unused;
-} HeapNode;
-
-CBASE_API_DECL void sort_functions_sink(void);
-CBASE_API_DECL void sort_heapify(HeapNode *, int32, int32, int32 (*)(void *, void *));
-CBASE_API_DECL void sort_merge_subsorted(
-    void *,
-    int32,
-    int32,
-    int64,
-    int32 (*)(void *, void *)
-);
-CBASE_API_DECL void sort_shuffle(void *, int64, int64);
-
 typedef struct GenericArrayHeader {
     ldouble alignment;
     int32 count;
@@ -566,7 +551,6 @@ CBASE_API_DECL void *generic_array_grow(void *, int64);
 CBASE_API_DECL bool generic_array_reserve(void **, int32, int64);
 CBASE_API_DECL int32 generic_array_capacity(void *);
 CBASE_API_DECL void generic_array_set_count(void *, int32);
-CBASE_API_DECL void array_sink(void);
 
 #define ARRAY_HEADER(ARRAY) ((GenericArrayHeader *)(ARRAY) - 1)
 #define ARRAY_LEN(ARRAY) ((ARRAY) ? ARRAY_HEADER(ARRAY)->count : 0)

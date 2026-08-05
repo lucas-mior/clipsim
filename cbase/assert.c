@@ -135,7 +135,7 @@ assert_not_contains(char *file, int32 line, char *func,
     int32 needle_len = assert_strlen32(needle);
     if (assert_memmem(haystack, haystack_len, needle, needle_len)) {
         assert_error(file, line, func,
-                     "did not expect to find substring:\n%.*s\n--- in ---\n%.*s",
+                     "expected to not find substring:\n%.*s\n--- in ---\n%.*s",
                      needle_len, needle, haystack_len, haystack);
         assert_fatal();
     }
@@ -574,7 +574,7 @@ assert_double_close_tolerance(double var1, double var2,
     bool handled;
     double diff;
 
-    if (tolerance < (double)0) {
+    if (tolerance < 0.0) {
         tolerance = -tolerance;
     }
 

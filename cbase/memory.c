@@ -862,8 +862,9 @@ xstrndup(char *s, int64 n) {
 }
 
 #if 0 == TESTING_memory
-CBASE_API_DEF void
+static inline void
 memory_functions_sink(void) {
+    (void)memory_functions_sink;
     (void)memory_check;
     (void)realloc4;
     (void)free2_;
