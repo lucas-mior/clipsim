@@ -216,7 +216,7 @@ double_from_uint(uint x) {
 }
 static double UNUSED
 double_from_ulong(ulong x) {
-    if (x >= (ullong)LLONG_MAX) {
+    if ((ullong)x >= (ullong)LLONG_MAX) {
         TRAP();
     }
     check_integer_fits_in_double((llong)x);
@@ -332,7 +332,7 @@ double_get(union Primitive var, enum Type type) {
     case TYPE_UINT:
         return (double)var.auint;
     case TYPE_ULONG:
-        if (var.aulong >= (ullong)LLONG_MAX) {
+        if ((ullong)var.aulong >= (ullong)LLONG_MAX) {
             TRAP();
         }
         check_integer_fits_in_double((llong)var.aulong);
