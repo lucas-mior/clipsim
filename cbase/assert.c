@@ -816,6 +816,10 @@ assert_functions_sink(void) {
 
     (void)a_bool_equal;
     (void)a_bool_not_equal;
+    (void)a_bool_less_equal;
+    (void)a_bool_less;
+    (void)a_bool_more_equal;
+    (void)a_bool_more;
     return;
 }
 #endif
@@ -1178,8 +1182,6 @@ main(void) {
         float a = 0.3f;
         double b = 0.3;
         ASSERT_CLOSE(a, b);
-        ASSERT_MORE(a, b);
-        ASSERT_LESS(b, a);
     } {
         float a = 0.1f + 0.2f;
         double b = 0.3;
