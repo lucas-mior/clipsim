@@ -647,8 +647,7 @@ ipc_make_socket(void) {
     existing = ipc_connect_socket(true);
     if (existing >= 0) {
         XCLOSE(&existing, ipc_socket.name);
-        error("clipsim --daemon is already running at %s.\n",
-              ipc_socket.name);
+        error("clipsim --daemon is already running at %s.\n", ipc_socket.name);
         fatal(EXIT_FAILURE);
     }
 
