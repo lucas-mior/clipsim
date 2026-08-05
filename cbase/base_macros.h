@@ -96,7 +96,7 @@
 #if defined(SIZEOF)
 #undef SIZEOF
 #endif
-#define SIZEOF(X) ((int64)sizeof(X))
+#define SIZEOF(...) ((int64)sizeof(__VA_ARGS__))
 #define LENGTH(x) (int32)((sizeof(x) / sizeof(*x)))
 #define SWAP(x, y) do { __typeof__(x) SWAP = x; x = y; y = SWAP; } while (0)
 
@@ -115,11 +115,11 @@ _Generic((SIZE), \
     int:    ALIGN_POWER_OF_2_((uint)SIZE,   (uint)A)    \
 )
 
-#define ALIGNMENT 16ul
+#define ALIGNMENT 16ll
 #if defined(ALIGN)
 #undef ALIGN
 #endif
-#define ALIGN(x) ALIGN_POWER_OF_2(x, ALIGNMENT)
+#define ALIGN(x) ALIGN_POWER_OF_2(x, (ullong)ALIGNMENT)
 
 #if defined(__GNUC__)
 #define ASSUME_ALIGNED_EXPR(X) __builtin_assume_aligned((X), ALIGNMENT)
