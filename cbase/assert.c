@@ -597,22 +597,6 @@ assert_double_close_tolerance(double var1, double var2,
     return diff <= tolerance;
 }
 
-static bool
-assert_double_less(double var1, double var2, int kind1, int kind2) {
-    (void)kind1;
-    (void)kind2;
-
-    return var1 < var2;
-}
-
-static bool
-assert_double_more(double var1, double var2, int kind1, int kind2) {
-    (void)kind1;
-    (void)kind2;
-
-    return var1 > var2;
-}
-
 static void __attribute((noreturn))
 assert_double_failure(char *file, int32 line, char *func,
                       char *name1, char *name2,
@@ -642,67 +626,58 @@ assert_double_failure(char *file, int32 line, char *func,
     TRAP();
 }
 
-static void
-a_double_close(char *file, int32 line, char *func,
-               char *name1, char *name2,
-               char *type1, char *type2,
-               llong bits1, llong bits2,
-               int kind1, int kind2,
-               double var1, double var2) {
-    double diff;
-    ullong ulps;
-    ullong max_ulps;
-
-    if (!assert_double_close_ulps(var1, var2, kind1, kind2,
-                                  &diff, &ulps, &max_ulps)) {
-        assert_double_failure(file, line, func, name1, name2,
-                              type1, type2, bits1, bits2,
-                              var1, var2, "~=", diff, (double)0,
-                              ulps, max_ulps, false);
-    }
-    return;
+#define GENERATE_A_DOUBLE_CLOSE(MODE, SYMBOL, EXPECT_CLOSE)                    \
+static void                                                                    \
+a_double_##MODE(char *file, int32 line, char *func,                            \
+                char *name1, char *name2,                                      \
+                char *type1, char *type2,                                      \
+                llong bits1, llong bits2,                                      \
+                int kind1, int kind2,                                          \
+                double var1, double var2) {                                    \
+    double diff;                                                               \
+    ullong ulps;                                                               \
+    ullong max_ulps;                                                           \
+                                                                               \
+    if (assert_double_close_ulps(var1, var2, kind1, kind2,                     \
+                                 &diff, &ulps, &max_ulps) != EXPECT_CLOSE) {    \
+        assert_double_failure(file, line, func, name1, name2,                  \
+                              type1, type2, bits1, bits2,                     \
+                              var1, var2, SYMBOL, diff, (double)0,             \
+                              ulps, max_ulps, false);                          \
+    }                                                                          \
+    return;                                                                    \
 }
 
-static void
-a_double_close_tolerance(char *file, int32 line, char *func,
-                         char *name1, char *name2,
-                         char *type1, char *type2,
-                         llong bits1, llong bits2,
-                         double var1, double var2,
-                         double tolerance) {
-    double diff;
-    double tolerance_abs;
+GENERATE_A_DOUBLE_CLOSE(close, "~=", true)
+GENERATE_A_DOUBLE_CLOSE(not_close, "!~=", false)
 
-    if (!assert_double_close_tolerance(var1, var2, tolerance,
-                                       &diff, &tolerance_abs)) {
-        assert_double_failure(file, line, func, name1, name2,
-                              type1, type2, bits1, bits2,
-                              var1, var2, "~=", diff, tolerance_abs,
-                              0, 0, true);
-    }
-    return;
+#undef GENERATE_A_DOUBLE_CLOSE
+
+#define GENERATE_A_DOUBLE_CLOSE_TOLERANCE(MODE, SYMBOL, EXPECT_CLOSE)          \
+static void                                                                    \
+a_double_##MODE(char *file, int32 line, char *func,                            \
+                char *name1, char *name2,                                      \
+                char *type1, char *type2,                                      \
+                llong bits1, llong bits2,                                      \
+                double var1, double var2,                                      \
+                double tolerance) {                                            \
+    double diff;                                                               \
+    double tolerance_abs;                                                       \
+                                                                               \
+    if (assert_double_close_tolerance(var1, var2, tolerance,                   \
+                                      &diff, &tolerance_abs) != EXPECT_CLOSE) { \
+        assert_double_failure(file, line, func, name1, name2,                  \
+                              type1, type2, bits1, bits2,                     \
+                              var1, var2, SYMBOL, diff, tolerance_abs,         \
+                              0, 0, true);                                     \
+    }                                                                          \
+    return;                                                                    \
 }
 
-static void
-a_double_not_close(char *file, int32 line, char *func,
-                   char *name1, char *name2,
-                   char *type1, char *type2,
-                   llong bits1, llong bits2,
-                   int kind1, int kind2,
-                   double var1, double var2) {
-    double diff;
-    ullong ulps;
-    ullong max_ulps;
+GENERATE_A_DOUBLE_CLOSE_TOLERANCE(close_tolerance, "~=", true)
+GENERATE_A_DOUBLE_CLOSE_TOLERANCE(not_close_tolerance, "!~=", false)
 
-    if (assert_double_close_ulps(var1, var2, kind1, kind2,
-                                 &diff, &ulps, &max_ulps)) {
-        assert_double_failure(file, line, func, name1, name2,
-                              type1, type2, bits1, bits2,
-                              var1, var2, "!~=", diff, (double)0,
-                              ulps, max_ulps, false);
-    }
-    return;
-}
+#undef GENERATE_A_DOUBLE_CLOSE_TOLERANCE
 
 #define GENERATE_ASSERT_BOOLS(MODE, SYMBOL)                                    \
 static void                                                                    \
@@ -812,11 +787,10 @@ assert_functions_sink(void) {
     (void)a_double_more;
     (void)a_double_more_equal;
     (void)a_double_close_tolerance;
+    (void)a_double_not_close_tolerance;
     (void)assert_file_contains;
     (void)assert_contains;
     (void)assert_not_contains;
-    (void)assert_double_more;
-    (void)assert_double_less;
 
     (void)a_bool_equal;
     (void)a_bool_not_equal;
@@ -1022,52 +996,65 @@ _Generic((VAR1),                                                        \
 #define ASSERT_MORE(VAR1, VAR2)       ASSERT_COMPARE(more,       VAR1, VAR2)
 #define ASSERT_MORE_EQUAL(VAR1, VAR2) ASSERT_COMPARE(more_equal, VAR1, VAR2)
 
-#define A_BOTH_DOUBLE_CLOSE(VAR1, VAR2, TYPE1, TYPE2)                      \
-    a_double_close(__FILE__, __LINE__, FUNC__,                             \
-                   #VAR1, #VAR2,                                           \
-                   typename(TYPE1), typename(TYPE2),                       \
-                   typebits(TYPE1), typebits(TYPE2),                       \
-                   ASSERT_FP_KIND_EXPR(VAR1), ASSERT_FP_KIND_EXPR(VAR2),   \
-                   DOUBLE_GET2(VAR1, TYPE1), DOUBLE_GET2(VAR2, TYPE2))
+#define A_BOTH_DOUBLE_CLOSE(MODE, VAR1, VAR2, TYPE1, TYPE2)                   \
+    a_double_##MODE(__FILE__, __LINE__, FUNC__,                               \
+                    #VAR1, #VAR2,                                             \
+                    typename(TYPE1), typename(TYPE2),                         \
+                    typebits(TYPE1), typebits(TYPE2),                         \
+                    ASSERT_FP_KIND_EXPR(VAR1), ASSERT_FP_KIND_EXPR(VAR2),     \
+                    DOUBLE_GET2(VAR1, TYPE1), DOUBLE_GET2(VAR2, TYPE2))
 
-#define A_BOTH_DOUBLE_CLOSE_TOL(VAR1, VAR2, TOL, TYPE1, TYPE2)              \
-    a_double_close_tolerance(__FILE__, __LINE__, FUNC__,                    \
-                             #VAR1, #VAR2,                                  \
-                             typename(TYPE1), typename(TYPE2),              \
-                             typebits(TYPE1), typebits(TYPE2),              \
-                             DOUBLE_GET2(VAR1, TYPE1),                     \
-                             DOUBLE_GET2(VAR2, TYPE2),                     \
-                             (double)(TOL))
+#define A_BOTH_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL, TYPE1, TYPE2)          \
+    a_double_##MODE(__FILE__, __LINE__, FUNC__,                               \
+                    #VAR1, #VAR2,                                             \
+                    typename(TYPE1), typename(TYPE2),                         \
+                    typebits(TYPE1), typebits(TYPE2),                         \
+                    DOUBLE_GET2(VAR1, TYPE1),                                 \
+                    DOUBLE_GET2(VAR2, TYPE2),                                 \
+                    (double)(TOL))
 
-#define A_FIRST_DOUBLE_CLOSE(VAR1, VAR2, TYPE1) \
+#define A_FIRST_DOUBLE_CLOSE(MODE, VAR1, VAR2, TYPE1) \
 _Generic((VAR2), \
-    float:  A_BOTH_DOUBLE_CLOSE(VAR1, VAR2, TYPE1, TYPE_FLOAT),  \
-    double: A_BOTH_DOUBLE_CLOSE(VAR1, VAR2, TYPE1, TYPE_DOUBLE), \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND()  \
+    float:  A_BOTH_DOUBLE_CLOSE(MODE, VAR1, VAR2, TYPE1, TYPE_FLOAT),  \
+    double: A_BOTH_DOUBLE_CLOSE(MODE, VAR1, VAR2, TYPE1, TYPE_DOUBLE), \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND()        \
 )
 
-#define A_FIRST_DOUBLE_CLOSE_TOL(VAR1, VAR2, TOL, TYPE1) \
+#define A_FIRST_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL, TYPE1) \
 _Generic((VAR2), \
-    float:  A_BOTH_DOUBLE_CLOSE_TOL(VAR1, VAR2, TOL, TYPE1, TYPE_FLOAT),  \
-    double: A_BOTH_DOUBLE_CLOSE_TOL(VAR1, VAR2, TOL, TYPE1, TYPE_DOUBLE), \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND()           \
+    float:  A_BOTH_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL, TYPE1, TYPE_FLOAT), \
+    double: A_BOTH_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL, TYPE1, TYPE_DOUBLE),\
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND()                \
+)
+
+#define ASSERT_DOUBLE_CLOSE_ULPS(MODE, VAR1, VAR2) \
+_Generic((VAR1), \
+    float:  A_FIRST_DOUBLE_CLOSE(MODE, VAR1, VAR2, TYPE_FLOAT),        \
+    double: A_FIRST_DOUBLE_CLOSE(MODE, VAR1, VAR2, TYPE_DOUBLE),       \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_FIRST()         \
+)
+
+#define ASSERT_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL) \
+_Generic((VAR1), \
+    float:  A_FIRST_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL, TYPE_FLOAT),  \
+    double: A_FIRST_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL, TYPE_DOUBLE), \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_FIRST()            \
 )
 
 #define ASSERT_CLOSE_2(VAR1, VAR2) \
-_Generic((VAR1), \
-    float:  A_FIRST_DOUBLE_CLOSE(VAR1, VAR2, TYPE_FLOAT),                 \
-    double: A_FIRST_DOUBLE_CLOSE(VAR1, VAR2, TYPE_DOUBLE),                \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_FIRST()            \
-)
+    ASSERT_DOUBLE_CLOSE_ULPS(close, VAR1, VAR2)
 
 #define ASSERT_CLOSE_3(VAR1, VAR2, TOL) \
-_Generic((VAR1), \
-    float:  A_FIRST_DOUBLE_CLOSE_TOL(VAR1, VAR2, TOL, TYPE_FLOAT),        \
-    double: A_FIRST_DOUBLE_CLOSE_TOL(VAR1, VAR2, TOL, TYPE_DOUBLE),       \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_FIRST()            \
-)
+    ASSERT_DOUBLE_CLOSE_TOL(close_tolerance, VAR1, VAR2, TOL)
+
+#define ASSERT_NOT_CLOSE_2(VAR1, VAR2) \
+    ASSERT_DOUBLE_CLOSE_ULPS(not_close, VAR1, VAR2)
+
+#define ASSERT_NOT_CLOSE_3(VAR1, VAR2, TOL) \
+    ASSERT_DOUBLE_CLOSE_TOL(not_close_tolerance, VAR1, VAR2, TOL)
 
 #define ASSERT_CLOSE(...) SELECT_ON_NUM_ARGS(ASSERT_CLOSE_, __VA_ARGS__)
+#define ASSERT_NOT_CLOSE(...) SELECT_ON_NUM_ARGS(ASSERT_NOT_CLOSE_, __VA_ARGS__)
 
 #define ASSERT_NULL(VAR1) do {                                                 \
     void *p = VAR1;                                                            \
@@ -1182,10 +1169,14 @@ main(void) {
         ASSERT_NOT_EQUAL(a, b + 1.0e-9);
         ASSERT_LESS(b, a);
         ASSERT_MORE(a, b);
+        ASSERT_CLOSE(a, b, 0.01);
+        ASSERT_NOT_CLOSE(a, b + 1.0e-9);
+        ASSERT_NOT_CLOSE(a, b + 0.02, 0.01);
     } {
         float a = 0.3f;
         double b = 0.3;
         ASSERT_CLOSE(a, b);
+        ASSERT_NOT_CLOSE(a, b + 1.0);
     } {
         float a = 0.1f + 0.2f;
         double b = 0.3;
@@ -1268,6 +1259,8 @@ main(void) {
     } {
         int a = 0;
         double b = 1;
+        double close_a = 0.1 + 0.2;
+        double close_b = 0.3;
         float array[10] = {0};
         char *string_null = NULL;
         char *string_some = "some";
@@ -1334,6 +1327,18 @@ main(void) {
         assertion_failed = false;
 
         if (sigsetjmp(assert_env, 1) == 0) {
+            ASSERT_NOT_CLOSE(close_a, close_b);
+        }
+        ASSERT(assertion_failed);
+        assertion_failed = false;
+
+        if (sigsetjmp(assert_env, 1) == 0) {
+            ASSERT_NOT_CLOSE(close_a, close_b, 0.01);
+        }
+        ASSERT(assertion_failed);
+        assertion_failed = false;
+
+        if (sigsetjmp(assert_env, 1) == 0) {
             ASSERT_CONTAINS("alpha beta gamma\n", 17, "delta\n");
         }
         ASSERT(assertion_failed);
@@ -1350,6 +1355,21 @@ main(void) {
     ASSERT(!false);
     ASSERT_EQUAL(true, true);
     ASSERT_EQUAL(0 < 1, 1 < 3);
+
+    {
+        char *path = "/tmp/test_assert.txt";
+        FILE *file;
+
+        if ((file = XFOPEN(path, "w")) == NULL) {
+            fatal(EXIT_FAILURE);
+        }
+
+        fprintf(file, "contents\n");
+        if (fclose(file)) {
+            fatal(EXIT_FAILURE);
+        }
+        ASSERT_FILE_CONTAINS(path, "ontents");
+    }
 
     exit(EXIT_SUCCESS);
 }
