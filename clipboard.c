@@ -378,6 +378,8 @@ clipboard_incremental_case(char **save, ulong *length) {
 #define CBASE_IMPLEMENT
 #include "cbase.h"
 
+#include "clipsim.c"
+
 int
 main(void) {
     {
