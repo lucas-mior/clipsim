@@ -45,7 +45,6 @@ static void history_recover(int32);
 static void history_remove(int32);
 static void history_exit(int) __attribute__((noreturn));
 
-
 static void
 history_prepare_tmp_directory(void) {
     char *TMPDIR;
