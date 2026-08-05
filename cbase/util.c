@@ -2453,7 +2453,7 @@ test_make_temp_dir(char *buffer, int32 capacity, char *name) {
         tmpdir = "/tmp";
     }
 
-    len = snprintf2(buffer, capacity, "%s/%s_%s_XXXXXX", program, tmpdir, name);
+    len = snprintf2(buffer, capacity, "%s/%s_XXXXXX", tmpdir, name);
     if ((len <= 0) || (len >= capacity)) {
         error("Temporary directory path too long.\n");
         fatal(EXIT_FAILURE);
