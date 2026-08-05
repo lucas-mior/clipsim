@@ -266,7 +266,7 @@ command_windows_run_process(Command *command, enum CommandFlag flags) {
 #endif
 
 #if OS_UNIX
-CBASE_API_DEF bool
+CBASE_PRIVATE bool
 command_pipe_set_nonblock(int32 fd) {
     int flags;
 
@@ -281,7 +281,7 @@ command_pipe_set_nonblock(int32 fd) {
     return true;
 }
 
-CBASE_API_DEF void
+CBASE_PRIVATE void
 command_result_close_poll_fd(struct pollfd *pipe, int32 *fd, int32 *left) {
     if (*fd >= 0) {
         XCLOSE(fd);
@@ -293,7 +293,7 @@ command_result_close_poll_fd(struct pollfd *pipe, int32 *fd, int32 *left) {
     return;
 }
 
-CBASE_API_DEF void
+CBASE_PRIVATE void
 command_result_process_stdin_event(
     Command *command,
     struct pollfd *pipe,
@@ -359,7 +359,7 @@ command_result_process_stdin_event(
     return;
 }
 
-CBASE_API_DEF void
+CBASE_PRIVATE void
 command_result_process_output_event(
     Command *command,
     struct pollfd *pipe,
