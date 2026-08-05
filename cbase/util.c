@@ -2972,7 +2972,9 @@ main(int argc, char **argv) {
     (void)fread64;
     (void)program_len;
 
+#if TESTING && OS_UNIX
     test_remove_tree(temp_dir);
+#endif
 
     time_monotonic_precise(&t1);
     PRINT_TIMINGS(1, t0, t1);
