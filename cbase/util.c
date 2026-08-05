@@ -2449,9 +2449,7 @@ test_make_temp_dir(char *buffer, int32 capacity, char *name) {
     char *tmpdir;
     int32 len;
 
-    tmpdir = getenv("TMPDIR");
-
-    if (tmpdir == NULL) {
+    if ((tmpdir = getenv("TMPDIR")) == NULL) {
         tmpdir = "/tmp";
     }
 
