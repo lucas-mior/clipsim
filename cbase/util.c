@@ -1121,13 +1121,6 @@ send_signal(char *executable, int32 signal_number) {
     }
     return;
 }
-#else
-CBASE_API_DEF void
-send_signal(char *executable, int32 signal_number) {
-    (void)executable;
-    (void)signal_number;
-    return;
-}
 #endif
 
 #if !OS_WINDOWS
@@ -2326,6 +2319,7 @@ util_functions_sink(void) {
 #if OS_UNIX
     (void)util_copy_file_sync;
     (void)util_copy_file_async;
+    (void)send_signal;
 #endif
     (void)util_equal_files;
 
@@ -2333,7 +2327,6 @@ util_functions_sink(void) {
     (void)realloc_debug;
     (void)free_debug;
 
-    (void)send_signal;
     (void)atoi2;
 #if OS_UNIX
     (void)command_run_capture;
