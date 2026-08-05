@@ -2970,7 +2970,6 @@ main(int argc, char **argv) {
 
     (void)fwrite64;
     (void)fread64;
-    (void)program_len;
 
 #if TESTING && OS_UNIX
     test_remove_tree(temp_dir);
