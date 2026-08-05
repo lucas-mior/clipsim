@@ -87,7 +87,7 @@ static char IMAGE_TAG = (char)0x02;
 static pthread_mutex_t lock;
 static magic_t magic = 0;
 
-static void util_close(File *file);
-static void reopen_magic(void);
+void util_close(File *file);
+void reopen_magic(void);
 
 #endif /* CLIPSIM_H */

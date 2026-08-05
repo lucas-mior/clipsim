@@ -7,6 +7,7 @@
 #include "cbase.h"
 #include "clipsim.h"
 #include "content.c"
+#include "clipsim.c"
 
 #include <X11/X.h>
 #include <X11/Xatom.h>
@@ -812,6 +813,7 @@ history_functions_sink(void) {
     (void)history_functions_sink;
     (void)history_exit;
     (void)history_read;
+    (void)history_append;
 }
 #endif
 
