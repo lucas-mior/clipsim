@@ -123,6 +123,15 @@ parse_text(char *text, int32 text_len) {
     return result;
 }
 
+#if 0 == TESTING_meta_parse
+static inline void
+meta_parse_sink(void) {
+    (void)free_document;
+    (void)parse_c_text;
+    (void)parse_text;
+}
+#endif
+
 #if TESTING_meta_parse
 #define CBASE_IMPLEMENT
 #include "cbase.h"

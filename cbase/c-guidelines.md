@@ -144,11 +144,18 @@ typeof(var)  // good
 
 ## Function declarations
 Most functions don't need to have an extra declaration, only the definition will
-suffice. Order the functions in a file properly so that extra declarations
-aren't needed. Functions that do need an extra pre declaration, put the
+suffice. Properly order the functions in a file so that extra declarations
+aren't needed. For functions that do need an extra pre declaration, put the
 declaration in a project-wide header file or in the header file associated with
 the C file itself. Avoid declaring functions defined in a C file, in another C
-file. 
+file. If a C function for whatever reason needs to define a function that is
+only used for tests in itself and tests in another file, put it inside an #if
+TESTING block, to avoid unused function warnings when compiling the main
+program.
+- Never use `#if TESTING_module` block in `.h` files.
+- Never use more than one `#if TESTING_module` block in a C file.
+- Never use more than one `#if TESTING` block in a C file and use it only if
+  absolutely needed as explained above.
 
 ## Struct declarations
 
@@ -648,51 +655,13 @@ default:
   ```
 
 ## Utilities
-Use the following available functions from `cbase/util.c` for common programming
-tasks rather than writing stupid implementations.
-
-### File and Path Operations
-
-| Function                      | Description                                                  |
-| ----------------------------- | ------------------------------------------------------------ |
-| `read_entire_file`            | Reads an entire file into memory.                            |
-| `write_entire_file`           | Writes a text/memory buffer directly to a file.              |
-| `util_copy_file_sync`         | Synchronously copies a file from a source to a destination.  |
-| `util_equal_files`            | Compares two files to check if their contents are identical. |
-| `basename2` / `path_basename` | Extracts the base file name from a path.                     |
-| `dirname2`                    | Extracts the directory portion of a full path.               |
-
-### String Building (`StrBuilder`)
-
-| Function     | Description                                                        |
-| ------------ | ------------------------------------------------------------------ |
-| `SB_APPEND`  | Appends a string to the builder. Optionally pass the length of the string. |
-| `sb_printf`  | Appends formatted text directly into the builder.                  |
-| `sb_reserve` | Pre-allocates memory capacity to avoid frequent reallocations.     |
-| `sb_steal`   | Extracts the built string and frees the builder's internal memory. |
-
-### Process and Command Execution (`Command`)
-
-| Function              | Description                                                 |
-| --------------------- | ----------------------------------------------------------- |
-| `command_run_sync`    | Synchronously runs a command and retrieves its exit status. |
-| `command_run_capture` | Runs a command subprocess and captures its standard output. |
-| `command_push`        | Adds a standard argument to the command structure.          |
-| `command_printf`      | Adds a formatted argument to the command structure.         |
-
-### Formatting, Math, and Memory
-
-| Function              | Description                                                                   |
-| --------------------- | ----------------------------------------------------------------------------- |
-| `bytes_pretty`        | Formats a raw byte count into a human-readable string, such as kB, MB, or GB. |
-| `itoa2` / `atoi2`     | Converts a 64-bit integer to a string, or a string to an integer.             |
-| `memmem64`            | Finds a byte sequence within a larger 64-bit memory block.                    |
-| `qsort64`             | Sorts an array using a 64-bit element count and size.                         |
-| `rad2deg` / `deg2rad` | Converts float/double values between radians and degrees.                     |
+Use utilities available in `cbase/`. There are functions for command building
+and executing, file reading and writing, string comparison, path manipulation,
+memory, etc.
 
 Before implementing a new common utility function, check whether this
-functionality is already in `cbase/`. If not, implement it, probably in
-`util.c`.
+functionality is already in `cbase/`. If not, implement it in the most
+appropriate cbase/ C file.
 
 ## Functions
 - Avoid defining functions that are called only once in the same file.

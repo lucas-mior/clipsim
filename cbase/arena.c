@@ -317,8 +317,9 @@ arenas_destroy(Arena **arenas, int32 number) {
 }
 
 #if 0 == TESTING_arena
-CBASE_API_DEF void
+static inline void
 arena_functions_sink(void) {
+    (void)arena_functions_sink;
     (void)arena_print;
     (void)xarenas_push;
     (void)xarena_push;

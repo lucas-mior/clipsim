@@ -29,6 +29,92 @@ typedef struct ThreadWork {
     int32 padding;
 } ThreadWork;
 
+#if OS_WINDOWS
+CBASE_API_DEF int32
+util_nthreads(void) {
+    SYSTEM_INFO sysinfo = {0};
+    GetSystemInfo(&sysinfo);
+    return (int32)sysinfo.dwNumberOfProcessors;
+}
+#else
+CBASE_API_DEF int32
+util_nthreads(void) {
+    return (int32)sysconf(_SC_NPROCESSORS_ONLN);
+}
+#endif
+
+#if OS_UNIX
+CBASE_API_DEF void
+xpthread_mutex_lock(pthread_mutex_t *mutex) {
+    int err;
+    if ((err = pthread_mutex_lock(mutex))) {
+        error("Error locking mutex %p: %s.\n", (void *)mutex, strerror(err));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+CBASE_API_DEF void
+xpthread_mutex_unlock(pthread_mutex_t *mutex) {
+    int err;
+    if ((err = pthread_mutex_unlock(mutex))) {
+        error("Error unlocking mutex %p: %s.\n", (void *)mutex, strerror(err));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+CBASE_API_DEF void
+xpthread_cond_destroy(pthread_cond_t *cond) {
+    int err;
+    if ((err = pthread_cond_destroy(cond))) {
+        error("Error destroying cond %p: %s.\n", (void *)cond, strerror(err));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+CBASE_API_DEF void
+xpthread_mutex_destroy(pthread_mutex_t *mutex) {
+    int err;
+    if ((err = pthread_mutex_destroy(mutex))) {
+        error("Error destroying mutex %p: %s.\n", (void *)mutex, strerror(err));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+CBASE_API_DEF void
+xpthread_create(pthread_t *thread, pthread_attr_t *attr,
+                void *(*function)(void *), void *arg) {
+    int err;
+    if ((err = pthread_create(thread, attr, function, arg))) {
+        error("Error creating thread: %s.\n", strerror(err));
+        fatal(EXIT_FAILURE);
+    }
+    return;
+}
+
+CBASE_API_DEF void
+xpthread_join(pthread_t *thread, void **thread_return) {
+    int err;
+    if ((err = pthread_join(*thread, thread_return))) {
+        error("Error joining thread: %s.\n", strerror(err));
+        fatal(EXIT_FAILURE);
+    }
+    *thread = 0;
+    return;
+}
+
+CBASE_API_DEF void *
+util_copy_file_async_thread(void *arg) {
+    UtilCopyFilesAsync *copy_files = arg;
+    util_copy_file_async_parsed(copy_files);
+    pthread_exit(NULL);
+    return NULL;
+}
+#endif
+
 #if (OS_UNIX || OS_WINDOWS) && (PARALLEL_FOR_MAX_THREADS > 1)
 #if OS_UNIX
 static pthread_mutex_t thread_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -444,11 +530,22 @@ parallel_for(int64 length, ParallelForFunction *function, void *user_data) {
 }
 
 #if 0 == TESTING_threads
-CBASE_API_DEF void
+static inline void
 threads_functions_sink(void) {
+    (void)threads_functions_sink;
+    (void)util_nthreads;
     (void)parallel_for;
     (void)parallel_for_min_items;
     (void)parallel_for_max_threads_min_items;
+#if OS_UNIX
+    (void)util_copy_file_async_thread;
+    (void)xpthread_mutex_lock;
+    (void)xpthread_mutex_unlock;
+    (void)xpthread_cond_destroy;
+    (void)xpthread_mutex_destroy;
+    (void)xpthread_create;
+    (void)xpthread_join;
+#endif
     return;
 }
 #endif

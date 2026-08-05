@@ -160,6 +160,46 @@ strequal(char *s1, char *s2) {
     return !strcmp(s1, s2);
 }
 
+static void
+striqual_validate_ascii_utf8(char *string, int32 string_len) {
+    int32 bad_offset = 0;
+
+    if (string_len < 0) {
+        error("Error: Invalid string length = %d.\n", string_len);
+        fatal(EXIT_FAILURE);
+    }
+    if ((string == NULL) && (string_len > 0)) {
+        error("Error: NULL string with length = %d.\n", string_len);
+        fatal(EXIT_FAILURE);
+    }
+    if (!utf8_valid(string, string_len, &bad_offset)) {
+        error("Error: String is invalid UTF-8 at byte %d.\n", bad_offset);
+        fatal(EXIT_FAILURE);
+    }
+    for (int32 i = 0; i < string_len; i += 1) {
+        if ((uchar)string[i] > 0x7f) {
+            error("Error: String contains non-ASCII UTF-8 at byte %d.\n", i);
+            fatal(EXIT_FAILURE);
+        }
+    }
+
+    return;
+}
+
+static char
+striqual_ascii_lower(char c) {
+    if ((c >= 'A') && (c <= 'Z')) {
+        c = (char)(c - 'A' + 'a');
+    }
+
+    return c;
+}
+
+CBASE_API_DEF bool
+striqual(char *s1, char *s2) {
+    return striqual2(s1, strlen32(s1), s2, strlen32(s2));
+}
+
 CBASE_API_DEF bool
 optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
     if ((a == NULL) || (b == NULL)) {
@@ -176,6 +216,25 @@ strequal2(char *a, int32 a_len, char *b, int32 b_len) {
     }
     if (memcmp64(a, b, a_len)) {
         return false;
+    }
+
+    return true;
+}
+
+CBASE_API_DEF bool
+striqual2(char *a, int32 a_len, char *b, int32 b_len) {
+    if (DEBUGGING) {
+        striqual_validate_ascii_utf8(a, a_len);
+        striqual_validate_ascii_utf8(b, b_len);
+    }
+
+    if (a_len != b_len) {
+        return false;
+    }
+    for (int32 i = 0; i < a_len; i += 1) {
+        if (striqual_ascii_lower(a[i]) != striqual_ascii_lower(b[i])) {
+            return false;
+        }
     }
 
     return true;
@@ -371,10 +430,10 @@ write_all(int fd, char *buffer, int64 left) {
 
     while (left > 0) {
         if ((w = write(fd, buffer + written, (RW_TYPE)left)) <= 0) {
-            fprintf(stderr, "Error writing: %s.\n", strerror(errno));
             if (errno == EINTR) {
                 continue;
             }
+            fprintf(stderr, "Error writing: %s.\n", strerror(errno));
             fatal(EXIT_FAILURE);
         }
         left -= w;
@@ -392,10 +451,10 @@ write_all(int fd, char *buffer, int64 left) {
 #include "rw_function.h"
 
 CBASE_API_DEF void
-qsort64(void *base, int64 n, int64 size,
-        int (*compar)(void *, void *)) {
+qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
     int (*compar_consted)(const void *, const void *);
     compar_consted = (int (*)(const void *, const void *)) compar;
+
     if (DEBUGGING) {
         if ((size <= 0) || (n <= 0)) {
             error("Error: Invalid size(%lld) or n(%lld)\n", size, n);
@@ -414,87 +473,10 @@ qsort64(void *base, int64 n, int64 size,
             fatal(EXIT_FAILURE);
         }
     }
+
     qsort(base, (size_t)n, (size_t)size, compar_consted);
     return;
 }
-
-#if OS_WINDOWS
-CBASE_API_DEF int32
-util_nthreads(void) {
-    SYSTEM_INFO sysinfo = {0};
-    GetSystemInfo(&sysinfo);
-    return (int32)sysinfo.dwNumberOfProcessors;
-}
-#else
-CBASE_API_DEF int32
-util_nthreads(void) {
-    return (int32)sysconf(_SC_NPROCESSORS_ONLN);
-}
-#endif
-
-#if OS_UNIX
-CBASE_API_DEF void
-xpthread_mutex_lock(pthread_mutex_t *mutex) {
-    int err;
-    if ((err = pthread_mutex_lock(mutex))) {
-        error("Error locking mutex %p: %s.\n", (void *)mutex, strerror(err));
-        fatal(EXIT_FAILURE);
-    }
-    return;
-}
-
-CBASE_API_DEF void
-xpthread_mutex_unlock(pthread_mutex_t *mutex) {
-    int err;
-    if ((err = pthread_mutex_unlock(mutex))) {
-        error("Error unlocking mutex %p: %s.\n", (void *)mutex, strerror(err));
-        fatal(EXIT_FAILURE);
-    }
-    return;
-}
-
-CBASE_API_DEF void
-xpthread_cond_destroy(pthread_cond_t *cond) {
-    int err;
-    if ((err = pthread_cond_destroy(cond))) {
-        error("Error destroying cond %p: %s.\n", (void *)cond, strerror(err));
-        fatal(EXIT_FAILURE);
-    }
-    return;
-}
-
-CBASE_API_DEF void
-xpthread_mutex_destroy(pthread_mutex_t *mutex) {
-    int err;
-    if ((err = pthread_mutex_destroy(mutex))) {
-        error("Error destroying mutex %p: %s.\n", (void *)mutex, strerror(err));
-        fatal(EXIT_FAILURE);
-    }
-    return;
-}
-
-CBASE_API_DEF void
-xpthread_create(pthread_t *thread, pthread_attr_t *attr,
-                void *(*function)(void *), void *arg) {
-    int err;
-    if ((err = pthread_create(thread, attr, function, arg))) {
-        error("Error creating thread: %s.\n", strerror(err));
-        fatal(EXIT_FAILURE);
-    }
-    return;
-}
-
-CBASE_API_DEF void
-xpthread_join(pthread_t *thread, void **thread_return) {
-    int err;
-    if ((err = pthread_join(*thread, thread_return))) {
-        error("Error joining thread: %s.\n", strerror(err));
-        fatal(EXIT_FAILURE);
-    }
-    *thread = 0;
-    return;
-}
-#endif
 
 CBASE_API_DEF int32 __attribute__((format(printf, 3, 4)))
 snprintf2(char *buffer, int64 size, char *format, ...) {
@@ -718,7 +700,8 @@ xfopen(char *file, int32 line, char *func, char *filename, char *mode) {
     }
 
     if ((f = fopen(filename, mode)) == NULL) {
-        error_impl(file, line, func, "Error opening %s for %s: %s.\n",
+        error_impl(file, line, func,
+                   "Error opening %s for %s: %s.\n",
                    filename, mode_long, strerror(errno));
         return NULL;
     }
@@ -932,11 +915,18 @@ util_copy_file_sync(char *destination, char *source) {
 
     errno = 0;
     while ((r = read64(source_fd, buffer, BUFSIZ)) > 0) {
-        w = write64(destination_fd, buffer, r);
+        int saved_errno;
+
+        while (((w = write64(destination_fd, buffer, r)) < 0)
+                && (errno == EINTR)) {
+            continue;
+        }
+        saved_errno = errno;
+
         if (w != r) {
             fprintf(stderr, "Error writing data to %s", destination);
-            if (errno) {
-                fprintf(stderr, ": %s", strerror(errno));
+            if (r < 0) {
+                fprintf(stderr, ": %s", strerror(saved_errno));
             }
             fprintf(stderr, ".\n");
 
@@ -1043,14 +1033,6 @@ util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
     }
     free2(copy_files, sizeof(*copy_files));
     return;
-}
-
-CBASE_API_DEF void *
-util_copy_file_async_thread(void *arg) {
-    UtilCopyFilesAsync *copy_files = arg;
-    util_copy_file_async_parsed(copy_files);
-    pthread_exit(NULL);
-    return NULL;
 }
 
 #endif
@@ -2296,8 +2278,21 @@ util_is_integer(char *string) {
 }
 
 #if 0 == TESTING_util
-CBASE_API_DEF void
+static inline void
 util_functions_sink(void) {
+    (void)util_functions_sink;
+    (void)util_is_integer;
+    (void)is_ident_start_char;
+    (void)sb_append_byte_if_not;
+    (void)sb_move;
+    (void)sb_opt_cstr;
+    (void)str_builder_array_copy;
+    (void)str_builder_array_move;
+    (void)str_builder_array_swap;
+    (void)optional_strequal;
+    (void)warn;
+    (void)xfopen;
+    (void)here_impl;
     (void)here_counter;
     (void)strequal;
     (void)path_missing;
@@ -2322,7 +2317,6 @@ util_functions_sink(void) {
     (void)command_run_capture_all;
     (void)command_run_capture_combined;
     (void)util_segv_handler;
-    (void)util_nthreads;
     (void)util_filename_from;
     (void)util_string_int32;
     (void)util_die_notify;
@@ -2332,7 +2326,6 @@ util_functions_sink(void) {
 #if OS_UNIX
     (void)util_copy_file_sync;
     (void)util_copy_file_async;
-    (void)util_copy_file_async_thread;
 #endif
     (void)util_equal_files;
 
@@ -2369,15 +2362,6 @@ util_functions_sink(void) {
 #endif
     (void)xmemdup;
     (void)xunlink;
-
-#if OS_UNIX
-    (void)xpthread_mutex_lock;
-    (void)xpthread_mutex_unlock;
-    (void)xpthread_cond_destroy;
-    (void)xpthread_mutex_destroy;
-    (void)xpthread_create;
-    (void)xpthread_join;
-#endif
 
     (void)random_ascii_string;
     (void)strncpy32;
@@ -2689,6 +2673,17 @@ main(int argc, char **argv) {
     ASSERT(!ENDS_WITH(s1, strlen32(s1), "aaaa"));
     ASSERT(!ENDS_WITH(s1, strlen32(s1), "aaaaabbbbb"));
 
+    ASSERT(striqual("abc", "ABC"));
+    ASSERT(striqual("ASCII 123 _-", "ascii 123 _-"));
+    ASSERT(!striqual("abc", "abd"));
+    ASSERT(!striqual("abc", "abcd"));
+
+    ASSERT(STRIQUAL(s1, strlen32(s1), "AAAABBBB"));
+    ASSERT(STRIQUAL(s1 + 4, 4, "BBBB"));
+    ASSERT(STRIQUAL("MiXeD", 5, "mixed", 5));
+    ASSERT(!STRIQUAL("MiXeD", 4, "mixed", 5));
+    ASSERT(!STRIQUAL("MiXeD", 5, "match", 5));
+
     {
         StrBuilder builder = {0};
         int32 old_cap;
@@ -2962,7 +2957,6 @@ main(int argc, char **argv) {
 #if OS_UNIX
     (void)util_copy_file_sync;
     (void)util_copy_file_async;
-    (void)util_copy_file_async_thread;
 #endif
 
     (void)malloc_debug;
@@ -2975,15 +2969,6 @@ main(int argc, char **argv) {
     (void)xdup2;
     (void)xpipe;
     (void)xunlink;
-
-#if OS_UNIX
-    (void)xpthread_mutex_lock;
-    (void)xpthread_mutex_unlock;
-    (void)xpthread_cond_destroy;
-    (void)xpthread_mutex_destroy;
-    (void)xpthread_create;
-    (void)xpthread_join;
-#endif
 
     (void)fwrite64;
     (void)fread64;

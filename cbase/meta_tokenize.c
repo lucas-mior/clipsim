@@ -780,8 +780,16 @@ free_tokenization(Tokenization *tokenization) {
 }
 
 #if 0 == TESTING_meta_tokenize
-CBASE_API_DEF void
+static inline void
 meta_tokenize_sink(void) {
+    (void)meta_tokenize_sink;
+    (void)free_tokenization;
+    (void)token_is_number;
+    (void)tokenization_find_matching;
+    (void)tokenization_is_in_preprocessor_define;
+    (void)tokenization_next_significant;
+    (void)tokenization_previous_significant;
+    (void)tokenize;
     (void)tokenize_line;
     (void)tokenize_cstyle_line;
     (void)free_line_tokens;
