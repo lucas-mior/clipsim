@@ -700,6 +700,9 @@ main(void) {
     ipc_resolve_socket_name();
     ipc_make_directory();
     ipc_clean_socket();
+    (void)ipc_lock_daemon;
+    (void)ipc_client_speak;
+    (void)ipc_daemon_listen;
     return 0;
 }
 #endif
