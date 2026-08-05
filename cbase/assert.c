@@ -803,6 +803,8 @@ assert_functions_sink(void) {
     (void)a_unsigned_signed_more;
     (void)a_unsigned_signed_more_equal;
 
+    (void)a_double_close;
+    (void)a_double_not_close;
     (void)a_double_less;
     (void)a_double_less_equal;
     (void)a_double_equal;
@@ -813,6 +815,8 @@ assert_functions_sink(void) {
     (void)assert_file_contains;
     (void)assert_contains;
     (void)assert_not_contains;
+    (void)assert_double_more;
+    (void)assert_double_less;
 
     (void)a_bool_equal;
     (void)a_bool_not_equal;
