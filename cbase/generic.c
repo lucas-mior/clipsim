@@ -146,25 +146,25 @@ toString(char *restrict buf, int64 bufSize, char *restrict fmt, ...) {
     return buf;
 }
 
-static double
+static double UNUSED
 double_from_voidp(void* x) {
     (void)x;
     TRAP();
     return 0.0;  // NOLINT
 }
-static double
+static double UNUSED
 double_from_charp(char* x) {
     (void)x;
     TRAP();
     return 0.0;  // NOLINT
 }
-static double
+static double UNUSED
 double_from_bool(bool x) {
     (void)x;
     TRAP();
     return 0.0;  // NOLINT
 }
-static double
+static double UNUSED
 double_from_char(char x) {
     (void)x;
     TRAP();
@@ -346,10 +346,7 @@ double_get(union Primitive var, enum Type type) {
 #if 0 == TESTING_generic
 static inline void
 generic_functions_sink(void) {
-    (void)double_from_voidp;
-    (void)double_from_charp;
-    (void)double_from_bool;
-    (void)double_from_char;
+    (void)generic_functions_sink;
     (void)double_from_schar;
     (void)double_from_short;
     (void)double_from_int;
@@ -366,7 +363,6 @@ generic_functions_sink(void) {
     (void)typebits;
     (void)typename;
     (void)double_get;
-    (void)generic_functions_sink;
     return;
 }
 #endif
