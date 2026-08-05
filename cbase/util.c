@@ -1107,8 +1107,9 @@ CBASE_API_DEF void
 send_signal(char *executable, int32 signal_number) {
     char signal_string[14];
     SNPRINTF(signal_string, "%d", signal_number);
+    pid_t child;
 
-    switch (fork()) {
+    switch (child = fork()) {
     case -1:
         error("Error forking: %s\n", strerror(errno));
         return;
@@ -1117,7 +1118,13 @@ send_signal(char *executable, int32 signal_number) {
         error("Error executing pkill: %s\n", strerror(errno));
         fatal(EXIT_FAILURE);
     default:
-        wait(NULL);
+        while (waitpid(child, NULL, 0) < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            fprintf(stderr, "Error waiting for child: %s.\n", strerror(errno));
+            fatal(EXIT_FAILURE);
+        }
     }
     return;
 }
