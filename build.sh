@@ -52,6 +52,7 @@ mkdir -p "$(dirname "$exe")"
 
 CFLAGS="$CFLAGS -std=c11"
 CFLAGS="$CFLAGS -Wextra -Wall"
+CFLAGS="$CFLAGS -Werror"
 CFLAGS="$CFLAGS -Wno-unknown-warning-option"
 CFLAGS="$CFLAGS -Wno-unused-macros"
 CFLAGS="$CFLAGS -Wno-gnu-union-cast"

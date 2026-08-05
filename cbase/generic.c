@@ -533,7 +533,7 @@ _Generic((x), \
 
 #define PRINT_OTHER(VAR, TYPE, FORMAT, CAST) \
   fprintf(stderr, "["GREEN("%s%lld")"]%s = "FORMAT" ", \
-                  typename(TYPE), typebits(TYPE), #VAR, (CAST)(uintptr_t)(VAR))
+                  typename(TYPE), typebits(TYPE), #VAR, (CAST)(uintptr)(VAR))
 
 #define PRINT(VAR) \
 _Generic((VAR), \

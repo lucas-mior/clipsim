@@ -545,6 +545,10 @@ typedef struct GenericArrayHeader {
     int32 cap;
     int64 padding;
 } GenericArrayHeader;
+_Static_assert(_Alignof(GenericArrayHeader) <= ALIGNMENT,
+               "GenericArrayHeader alignment exceeds allocator alignment");
+_Static_assert((sizeof(GenericArrayHeader)%ALIGNMENT) == 0,
+               "GenericArrayHeader size must preserve payload alignment");
 
 CBASE_API_DECL void *generic_array_init(int32, int64);
 CBASE_API_DECL void *generic_array_grow(void *, int64);
@@ -552,7 +556,8 @@ CBASE_API_DECL bool generic_array_reserve(void **, int32, int64);
 CBASE_API_DECL int32 generic_array_capacity(void *);
 CBASE_API_DECL void generic_array_set_count(void *, int32);
 
-#define ARRAY_HEADER(ARRAY) ((GenericArrayHeader *)(ARRAY) - 1)
+#define ARRAY_HEADER(ARRAY) \
+    ((GenericArrayHeader *)ASSUME_ALIGNED_EXPR((void *)(ARRAY)) - 1)
 #define ARRAY_LEN(ARRAY) ((ARRAY) ? ARRAY_HEADER(ARRAY)->count : 0)
 #define ARRAY_CAPACITY(ARRAY) generic_array_capacity(ARRAY)
 #define ARRAY_RESERVE(ARRAY, NEEDED_COUNT) \
