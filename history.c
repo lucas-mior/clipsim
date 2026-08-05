@@ -806,6 +806,15 @@ history_free_entry(Entry *e, int32 index) {
     return;
 }
 
+#if 0 == TESTING_history
+static inline void
+history_functions_sink(void) {
+    (void)history_functions_sink;
+    (void)history_exit;
+    (void)history_read;
+}
+#endif
+
 #if TESTING_history
 #define CBASE_IMPLEMENT
 #include "cbase.h"
