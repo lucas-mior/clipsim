@@ -87,9 +87,7 @@ static char IMAGE_TAG = (char)0x02;
 static pthread_mutex_t lock;
 static magic_t magic = 0;
 
-static void util_close(File *file);
-
-void
+static void
 util_close(File *file) {
     if (file->fd >= 0) {
         if (close(file->fd) < 0)
