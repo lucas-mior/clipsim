@@ -581,7 +581,7 @@ util_filename_from(char *buffer, int64 size, int fd) {
 #elif OS_WINDOWS
     HANDLE h;
     DWORD len;
-    intptr_t h2 = _get_osfhandle(fd);
+    intptr h2 = _get_osfhandle(fd);
 
     if ((h = (HANDLE)h2) == INVALID_HANDLE_VALUE) {
         return -1;
@@ -1409,7 +1409,7 @@ basename2(char *path, int32 *full_length, int32 *base_len) {
             }
             return p;
         }
-        if ((uintptr_t)fslash > (uintptr_t)bslash) {
+        if ((uintptr)fslash > (uintptr)bslash) {
             length = fslash - p + 1;
             p = fslash + 1;
         } else {
@@ -1937,11 +1937,11 @@ sb_append(StrBuilder *str_builder, char *data, int32 data_len) {
     if (data == str_builder->data) {
         aliases = true;
     } else if (str_builder->data) {
-        uintptr_t data_address = (uintptr_t)data;
-        uintptr_t start = (uintptr_t)str_builder->data;
+        uintptr data_address = (uintptr)data;
+        uintptr start = (uintptr)str_builder->data;
 
         if (data_address >= start) {
-            uintptr_t offset = data_address - start;
+            uintptr offset = data_address - start;
 
             if (offset < (uint32)str_builder->cap) {
                 aliases = true;
