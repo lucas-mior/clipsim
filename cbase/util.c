@@ -2449,10 +2449,8 @@ test_make_temp_dir(char *buffer, int32 capacity, char *name) {
     char *tmpdir;
     int32 len;
 
-    tmpdir = getenv("CECUP_TEST_TMPDIR");
-    if (tmpdir == NULL) {
-        tmpdir = getenv("TMPDIR");
-    }
+    tmpdir = getenv("TMPDIR");
+
     if (tmpdir == NULL) {
         tmpdir = "/tmp";
     }
