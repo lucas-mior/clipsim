@@ -2657,7 +2657,9 @@ main(int argc, char **argv) {
     (void)argv;
     (void)here_counter;
 
+#if TESTING && OS_UNIX
     test_make_temp_dir(temp_dir, SIZEOF(temp_dir), "util");
+#endif
 
     ASSERT(BEGINS_WITH(s1, strlen32(s1), "aaaa"));
     ASSERT(BEGINS_WITH(s1, strlen32(s1), "aaaabbbb"));
