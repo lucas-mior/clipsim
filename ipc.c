@@ -106,15 +106,13 @@ ipc_make_directory(void) {
 
     if (mkdir(ipc_directory, 0700) < 0) {
         if (errno != EEXIST) {
-            error("Error creating %s: %s\n",
-                  ipc_directory, strerror(errno));
+            error("Error creating %s: %s\n", ipc_directory, strerror(errno));
             fatal(EXIT_FAILURE);
         }
     }
 
     if (stat(ipc_directory, &st) < 0) {
-        error("Error checking %s: %s\n",
-              ipc_directory, strerror(errno));
+        error("Error checking %s: %s\n", ipc_directory, strerror(errno));
         fatal(EXIT_FAILURE);
     }
     if (!S_ISDIR(st.st_mode)) {
@@ -158,8 +156,7 @@ ipc_lock_daemon(void) {
         error("Error truncating daemon lock %s: %s.\n",
               ipc_lock.name, strerror(errno));
     }
-    if (ipc_daemon_dprintf(ipc_lock.fd, ipc_lock.name,
-                           "%d\n", getpid()) == false) {
+    if (!ipc_daemon_dprintf(ipc_lock.fd, ipc_lock.name, "%d\n", getpid())) {
         error("Error writing daemon pid to %s.\n", ipc_lock.name);
     }
 
