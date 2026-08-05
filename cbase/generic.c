@@ -180,50 +180,62 @@ check_integer_fits_in_double(llong x) {
     }
     return;
 }
-static double double_from_schar  (schar x)   {
+static double
+double_from_schar(schar x) {
     return (double)x;
 }
-static double double_from_short  (short x)   {
+static double
+double_from_short(short x) {
     return (double)x;
 }
-static double double_from_int    (int x)     {
+static double
+double_from_int(int x) {
     return (double)x;
 }
-static double double_from_long   (long x)    {
+static double
+double_from_long(long x) {
     check_integer_fits_in_double((llong)x);
     return (double)x;
 }
-static double double_from_llong  (llong x)   {
+static double
+double_from_llong(llong x) {
     check_integer_fits_in_double(x);
     return (double)x;
 }
-static double double_from_uchar  (uchar x)   {
+static double
+double_from_uchar(uchar x) {
     return (double)x;
 }
-static double double_from_ushort (ushort x)  {
+static double
+double_from_ushort(ushort x) {
     return (double)x;
 }
-static double double_from_uint   (uint x)    {
+static double
+double_from_uint(uint x) {
     return (double)x;
 }
-static double double_from_ulong  (ulong x)   {
+static double
+double_from_ulong(ulong x) {
     if (x >= (ullong)LLONG_MAX) {
         TRAP();
     }
     check_integer_fits_in_double((llong)x);
     return (double)x;
 }
-static double double_from_ullong (ullong x)  {
+static double
+double_from_ullong(ullong x) {
     if (x >= (ullong)LLONG_MAX) {
         TRAP();
     }
     check_integer_fits_in_double((llong)x);
     return (double)x;
 }
-static double double_from_float  (float x)   {
+static double
+double_from_float(float x) {
     return (double)x;
 }
-static double double_from_double (double x)  {
+static double
+double_from_double(double x)  {
     return (double)x;
 }
 
