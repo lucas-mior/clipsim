@@ -260,7 +260,7 @@ In general, avoid `strcmp()`:
   null terminated):
   * use `STREQUAL(s1, s1_len, s2)`
 - For strings that we know the length of both (they might be null terminated,
-  but not necessarly:
+  but not necessarly):
   * use `STREQUAL(s1, s1_len, s2, s2_len)`
 - Use `strcmp()` when comparing strings for sorting purposes.
 
