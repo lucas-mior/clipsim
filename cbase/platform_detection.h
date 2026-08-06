@@ -96,6 +96,12 @@
 #define ARCH_AVX 0
 #endif
 
+#if defined(__AVX2__)
+#define ARCH_AVX2 1
+#else
+#define ARCH_AVX2 0
+#endif
+
 #if defined(__SSE__) || defined(__x86_64__)
 #define ARCH_SSE 1
 #else
