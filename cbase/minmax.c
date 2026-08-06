@@ -48,21 +48,19 @@ GENERATE_COMPARE_INTEGERS_SAME_SIGN(unsigned, >,  max)
 #undef GENERATE_COMPARE_INTEGERS_SAME_SIGN
 
 static int
-minmax_compare_sign_with_unsign(llong signed_value, ullong unsigned_value) {
-    ullong converted;
-
-    if (signed_value < 0) {
+minmax_compare_sign_with_unsign(llong s, ullong u) {
+    ullong saux;
+    if (s < 0) {
         return -1;
     }
-
-    converted = (ullong)signed_value;
-    if (converted < unsigned_value) {
+    saux = (ullong)s;
+    if (saux < u) {
         return -1;
-    }
-    if (converted == unsigned_value) {
+    } else if (saux == u) {
         return 0;
+    } else {
+        return +1;
     }
-    return 1;
 }
 
 #define GENERATE_COMPARE_SIGNED_UNSIGNED(MODE, SYMBOL) \
@@ -149,8 +147,29 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_MINMAX_COMPARE(void);
 #define SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2) \
     get_signed_unsigned_##MODE((llong)(VAR1), (ullong)(VAR2))
 
+#if CHAR_MIN < 0
+#define CHAR_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1) \
+    BOTH_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+
+#define CHAR_FOR_UNSIGNED(MODE, VAR1, VAR2, TYPE1) \
+    UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+
+#define FIRST_CHAR(MODE, VAR1, VAR2) \
+    FIRST_SIGNED(MODE, VAR1, VAR2, TYPE_CHAR)
+#else
+#define CHAR_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1) \
+    SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+
+#define CHAR_FOR_UNSIGNED(MODE, VAR1, VAR2, TYPE1) \
+    BOTH_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+
+#define FIRST_CHAR(MODE, VAR1, VAR2) \
+    FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_CHAR)
+#endif
+
 #define FIRST_SIGNED(MODE, VAR1, VAR2, TYPE1) \
 _Generic((VAR2), \
+    char:    CHAR_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1), \
     schar:   BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_SCHAR  ), \
     short:   BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_SHORT  ), \
     int:     BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_INT    ), \
@@ -173,6 +192,7 @@ _Generic((VAR2), \
 
 #define FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE1) \
 _Generic((VAR2), \
+    char:    CHAR_FOR_UNSIGNED(MODE, VAR1, VAR2, TYPE1), \
     schar:   UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_SCHAR  ), \
     short:   UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_SHORT  ), \
     int:     UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_INT    ), \
@@ -192,6 +212,7 @@ _Generic((VAR2), \
 
 #define FIRST_DOUBLE(MODE, VAR1, VAR2, TYPE1) \
 _Generic((VAR2), \
+    char:    BOTH_DOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR   ), \
     schar:   BOTH_DOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_SCHAR  ), \
     short:   BOTH_DOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_SHORT  ), \
     int:     BOTH_DOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE_INT    ), \
@@ -216,6 +237,7 @@ _Generic((VAR1), \
         void *: POINTERS(MODE, VAR1, VAR2), \
         default: UNSUPPORTED_TYPE_FOR_GENERIC_MINMAX_COMPARE_VOIDP() \
     ), \
+    char:    FIRST_CHAR(MODE,     VAR1, VAR2), \
     schar:   FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_SCHAR  ), \
     short:   FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_SHORT  ), \
     int:     FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_INT    ), \
@@ -304,6 +326,20 @@ main(void) {
         double max = MAX(a, 0);
         ASSERT_EQUAL(min, 0.0);
         ASSERT_EQUAL(max, a);
+    } {
+        char a = 1;
+        int b = 0;
+        long min = MIN(a, b);
+        long max = MAX(a, b);
+        ASSERT_EQUAL(min, b);
+        ASSERT_EQUAL(max, a);
+    } {
+        char a = 1;
+        uint b = 2;
+        long min = MIN(a, b);
+        long max = MAX(a, b);
+        ASSERT_EQUAL(min, a);
+        ASSERT_EQUAL(max, b);
     } {
         int array[100];
         void *a = &array[0];
