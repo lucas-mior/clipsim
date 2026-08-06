@@ -520,7 +520,7 @@ _Generic((x), \
 
 #define PRINT_UNSIGNED(VAR, TYPE) \
   fprintf(stderr, "["GREEN("%s%lld")"]%s = %llu ", \
-                  typename(TYPE), typebits(TYPE), #VAR, (llong)(VAR))
+                  typename(TYPE), typebits(TYPE), #VAR, (ullong)(VAR))
 
 #define PRINT_DOUBLE(VAR, TYPE) \
   fprintf(stderr, "["GREEN("%s%lld")"]%s = %f ", \

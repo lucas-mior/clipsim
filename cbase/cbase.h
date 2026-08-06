@@ -352,13 +352,11 @@ _Generic((VAR), \
 #define XFCLOSE(F, FILENAME) \
     xfclose(__FILE__, __LINE__, FUNC__, F, FILENAME)
 
-#define SB_APPEND_2(BUILDER, STRING) \
-    sb_append(BUILDER, STRING, strlen32(STRING))
-#define SB_APPEND_3(BUILDER, STRING, LEN) \
-    sb_append(BUILDER, STRING, (int32)(LEN))
+#define SB_APPEND_2(SB, STRING)      sb_append(SB, STRING, strlen32(STRING))
+#define SB_APPEND_3(SB, STRING, LEN) sb_append(SB, STRING, (int32)(LEN))
 #define SB_APPEND(...) SELECT_ON_NUM_ARGS(SB_APPEND_, __VA_ARGS__)
 
-#define strequal2_3(A, A_LEN, B) strequal2(A, A_LEN, B, strlen32(B))
+#define strequal2_3(A, A_LEN, B)        strequal2(A, A_LEN, B, strlen32(B))
 #define strequal2_4(A, A_LEN, B, B_LEN) strequal2(A, A_LEN, B, B_LEN)
 #define STREQUAL(...) SELECT_ON_NUM_ARGS(strequal2_, __VA_ARGS__)
 
