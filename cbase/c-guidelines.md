@@ -1,4 +1,5 @@
 # C coding guidelines for 64-bit PC programming
+Use this together with c-format.md
 
 ## Note
 When a rule says "prefer", avoid changing already-readable code unless the

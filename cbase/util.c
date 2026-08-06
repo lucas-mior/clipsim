@@ -2910,8 +2910,10 @@ main(int argc, char **argv) {
             fatal(EXIT_FAILURE);
         }
 
-        util_filename_from(buffer2, sizeof(buffer2), fd);
-        ASSERT_EQUAL(realpath(name, buffer3), buffer2);
+        if (util_filename_from(buffer2, sizeof(buffer2), fd) == 0) {
+            ASSERT(realpath(name, buffer3) != NULL);
+            ASSERT_EQUAL(buffer3, buffer2);
+        }
         xunlink(name);
 
         XCLOSE(&fd);
@@ -2930,8 +2932,10 @@ main(int argc, char **argv) {
             fatal(EXIT_FAILURE);
         }
 
-        util_filename_from(buffer4, sizeof(buffer4), fd);
-        ASSERT_EQUAL(realpath(buffer2, buffer3), buffer4);
+        if (util_filename_from(buffer4, sizeof(buffer4), fd) == 0) {
+            ASSERT(realpath(buffer2, buffer3) != NULL);
+            ASSERT_EQUAL(buffer3, buffer4);
+        }
         XCLOSE(&fd);
         xunlink(buffer2);
     }

@@ -1,4 +1,5 @@
 # C formatting style for 64-bit PC programming
+Use this together with c-guidelines.md
 
 ## Note
 When a rule says "prefer", avoid changing already-readable code unless the
