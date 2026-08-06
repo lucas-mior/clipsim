@@ -35,8 +35,6 @@ Code compiling utf8.c depends on `-D_XOPEN_SOURCE=700` because of `wcwidth`.
 cbase in general depends on `-D_DEFAULT_SOURCE`.
 
 ## Alternative usage: compile cbase as a separate object
-NOTE: it does not work yet, because all cbase functions are declared static.
-
 ```sh
 gcc -DCBASE_IMPLEMENT -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -x c -c cbase.h -o cbase.o 
 gcc cbase_main_separate_object.c cbase.o
