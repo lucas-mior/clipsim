@@ -1008,7 +1008,7 @@ util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
             if (n <= 0) {
                 break;
             }
-            if (!(pipes[i].revents & POLL_IN)) {
+            if (!(pipes[i].revents & POLLIN)) {
                 pipes[i].revents = 0;
                 continue;
             }
