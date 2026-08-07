@@ -128,10 +128,6 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
 };
 #endif
 
-#if ENUM_BITFLAGS && CC_CLANG
-#pragma clang diagnostic pop
-#endif
-
 XENUMS_LINKAGE void CAT(ENUM_PREFIX_, str_free)(char *);
 XENUMS_LINKAGE char *CAT(ENUM_PREFIX_, str)(enum ENUM_NAME);
 XENUMS_LINKAGE enum ENUM_NAME CAT(ENUM_PREFIX_, parse)(char *);
