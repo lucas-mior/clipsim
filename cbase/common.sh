@@ -20,5 +20,5 @@ get_program() {
         error "get_program <full_path_to_build.sh>"
         exit 1
     fi
-    basename "$(readlink -f "$(dirname "$0")")"
+    basename "$(readlink -f "$(dirname "$1")")"
 }
