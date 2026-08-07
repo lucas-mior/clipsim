@@ -333,7 +333,7 @@ arena_functions_sink(void) {
 #endif
 
 #if TESTING_arena
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 // flags: -lm
 

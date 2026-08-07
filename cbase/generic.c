@@ -558,7 +558,7 @@ _Generic((VAR), \
 } while (0)
 
 #if TESTING_generic
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 
 int

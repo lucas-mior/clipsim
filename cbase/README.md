@@ -5,7 +5,7 @@ Alternative description:
 
 ## Usage (except include-based files)
 - users of cbase shall `#include "cbase.h"`.
-- one of the files shall `#define CBASE_IMPLEMENT` before including `cbase.h`
+- one of the files shall `#define CBASE_IMPLEMENT 1` before including `cbase.h`
 
 ## Usage for include-based files like hash.c and xenums.c
 - the user must first have `#included "cbase.h" before continuing
@@ -27,7 +27,7 @@ instead as needed:
 - `base_macros.h`
 
 However, when testing files like assert.c, it is ok and necessary to `#define
-CBASE_IMPLEMENT` and `#include "cbase.h"` so that the test compilation unit
+CBASE_IMPLEMENT 1` and `#include "cbase.h"` so that the test compilation unit
 works. But this must be done inside `#if TESTING_` block.
 
 ## Sadness
@@ -38,7 +38,7 @@ cbase in general depends on `-D_DEFAULT_SOURCE`.
 NOTE: it does not work yet, because all cbase functions are declared static.
 
 ```sh
-gcc -DCBASE_IMPLEMENT -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -x c -c cbase.h -o cbase.o 
+gcc -DCBASE_IMPLEMENT=1 -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -x c -c cbase.h -o cbase.o 
 gcc cbase_main_separate_object.c cbase.o
 ```
 

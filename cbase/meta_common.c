@@ -229,7 +229,7 @@ precedence_of(char *op, int32 op_len) {
 }
 
 #if TESTING_meta_common
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 
 int

@@ -1195,7 +1195,7 @@ command_env_printf(Command *command, char *fmt, ...) {
 }
 
 #if TESTING_command
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 
 int

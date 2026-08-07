@@ -697,7 +697,7 @@ When you need one of those, make use of the algorithms implemented in
 Every .c file (except the main program) must have a testing block:
 ```c
 #if TESTING_file_prefix`
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 
 #include "other_needed_file.c"
