@@ -989,7 +989,16 @@ _Generic((VAR1),                                                        \
     default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE()              \
 )
 
+#if CC_GCC
+#define ASSERT_EQUAL(VAR1, VAR2) do {                         \
+    _Pragma("GCC diagnostic push")                            \
+    _Pragma("GCC diagnostic ignored \"-Waddress\"")           \
+    ASSERT_COMPARE(equal, VAR1, VAR2);                        \
+    _Pragma("GCC diagnostic pop")                             \
+} while (0)
+#else
 #define ASSERT_EQUAL(VAR1, VAR2)      ASSERT_COMPARE(equal,      VAR1, VAR2)
+#endif
 #define ASSERT_NOT_EQUAL(VAR1, VAR2)  ASSERT_COMPARE(not_equal,  VAR1, VAR2)
 #define ASSERT_LESS(VAR1, VAR2)       ASSERT_COMPARE(less,       VAR1, VAR2)
 #define ASSERT_LESS_EQUAL(VAR1, VAR2) ASSERT_COMPARE(less_equal, VAR1, VAR2)
