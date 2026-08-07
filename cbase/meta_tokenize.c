@@ -797,7 +797,7 @@ meta_tokenize_sink(void) {
 #endif
 
 #if TESTING_meta_tokenize
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 
 static void

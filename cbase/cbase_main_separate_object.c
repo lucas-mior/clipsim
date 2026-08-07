@@ -4,7 +4,7 @@
 #include "cbase.h"
 
 #if TESTING_cbase_main_separate_object
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 
 int main(void) {

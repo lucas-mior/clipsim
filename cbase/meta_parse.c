@@ -133,7 +133,7 @@ meta_parse_sink(void) {
 #endif
 
 #if TESTING_meta_parse
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 
 static void

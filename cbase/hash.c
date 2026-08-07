@@ -993,7 +993,7 @@ main(void) {
     exit(EXIT_SUCCESS);
 }
 
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 
 #endif /* standalone hash tests */

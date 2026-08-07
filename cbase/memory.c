@@ -874,7 +874,7 @@ memory_functions_sink(void) {
 #endif
 
 #if TESTING_memory
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 // flags: -lm
 

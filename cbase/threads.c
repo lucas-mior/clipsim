@@ -561,7 +561,7 @@ threads_functions_sink(void) {
 #endif
 
 #if TESTING_threads
-#define CBASE_IMPLEMENT
+#define CBASE_IMPLEMENT 1
 #include "cbase.h"
 
 typedef struct ThreadsTestWork {
