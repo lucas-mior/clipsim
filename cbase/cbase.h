@@ -281,6 +281,7 @@ CBASE_API_DECL void xpthread_create(
 );
 CBASE_API_DECL void xpthread_join(pthread_t *, void **);
 CBASE_API_DECL void xpthread_mutex_destroy(pthread_mutex_t *);
+CBASE_API_DECL void xpthread_mutex_init(pthread_mutex_t *, pthread_mutexattr_t *);
 CBASE_API_DECL void xpthread_mutex_lock(pthread_mutex_t *);
 CBASE_API_DECL void xpthread_mutex_unlock(pthread_mutex_t *);
 #endif
