@@ -15,16 +15,55 @@ fi
 dir=$(dirname "$(readlink -f "$0")")
 cd "$dir" || exit
 
-. ./targets
-
 cbase="cbase"
-CPPFLAGS="$CPPFLAGS -I "$dir/$cbase""
+CPPFLAGS="$CPPFLAGS -I$dir/$cbase"
+script=$(basename "$0")
+
+if [ -f ./targets ]; then
+    . ./targets
+else
+    targets=$(cat <<'EOF_TARGETS'
+build
+debug
+fast_feedback
+install
+uninstall
+test
+check
+assembly
+valgrind
+callgrind
+test_all
+cross x86_64-linux
+cross aarch64-linux
+cross x86_64-macos
+cross aarch64-macos
+cross x86_64-windows-gnu
+EOF_TARGETS
+)
+fi
 
 target="${1:-build}"
+target_line=$target
+if [ "$target" = "cross" ] && [ -n "${2:-}" ]; then
+    target_line="$target $2"
+fi
 
-if ! grep -q "$target" ./targets; then
-    echo "usage: $(basename "$0") <targets>"
-    cat targets
+target_supported () {
+    wanted=$1
+    printf '%s\n' "$targets" | awk -v wanted="$wanted" '
+        {
+            line = $0
+            sub(/^# /, "", line)
+        }
+        line == wanted { found = 1 }
+        END { exit !found }
+    '
+}
+
+if ! target_supported "$target_line" && ! target_supported "$target"; then
+    echo "usage: $script <targets>"
+    printf '%s\n' "$targets"
     exit 1
 fi
 
@@ -68,6 +107,51 @@ LDFLAGS="$LDFLAGS $(pkg-config xfixes --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config xi --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config libmagic --libs)"
 LDFLAGS="$LDFLAGS -lm"
+
+option_remove() {
+    echo "$1" | sed -E "s| *$2 +| |g"
+}
+
+with_other () {
+    compiler="$1"
+    compiler_macro=$(echo "$compiler" | tr '[:lower:]' '[:upper:]')
+    compiler_macro="__${compiler_macro}__"
+    shift
+    args="$*"
+    trace_on
+    while ! problem=$($compiler                       "-D${compiler_macro}" -D__attribute=__attribute__                       $args 2>&1); do
+        trace_off
+        problem=$(echo "$problem" | head -n 1 | tr -d "'")
+
+        sleep 0.4
+        if echo "$problem" | grep -Eq "unknown (argument|option)"; then
+            arg=$(echo "$problem" | awk '{print $NF}')
+            printf "
+Removing argument %s...
+" "$arg"
+            args=$(option_remove "$args" "$arg")
+        elif echo "$problem" | grep -q "unknown file extension:"; then
+            arg=$(echo "$problem" | awk '{print $NF}')
+            printf "
+Removing argument %s...
+" "$arg"
+            args=$(option_remove "$args" "$arg")
+        else
+            printf "
+
+Error compiling with %s:
+
+%s
+
+" "$compiler" "$problem"
+            return 1
+        fi
+        printf "
+"
+        trace_on
+    done
+    return 0
+}
 
 if [ "$target" = "test" ] && [ -z "$CC" ] && command tcc; then
     CC=tcc
