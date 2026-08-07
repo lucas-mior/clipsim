@@ -45,17 +45,6 @@ util_nthreads(void) {
 
 #if OS_UNIX
 CBASE_API_DEF void
-xpthread_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *attr) {
-    int err;
-    if ((err = pthread_mutex_init(mutex, attr))) {
-        error("Error initializing mutex %p: %s.\n",
-              (void *)mutex, strerror(err));
-        fatal(EXIT_FAILURE);
-    }
-    return;
-}
-
-CBASE_API_DEF void
 xpthread_mutex_lock(pthread_mutex_t *mutex) {
     int err;
     if ((err = pthread_mutex_lock(mutex))) {
@@ -550,7 +539,6 @@ threads_functions_sink(void) {
     (void)parallel_for_max_threads_min_items;
 #if OS_UNIX
     (void)util_copy_file_async_thread;
-    (void)xpthread_mutex_init;
     (void)xpthread_mutex_lock;
     (void)xpthread_mutex_unlock;
     (void)xpthread_cond_destroy;

@@ -144,7 +144,6 @@ memory_os_realloc(void *old, int64 old_size, int64 new_size) {
     void *p;
     int64 old_map_size;
     int64 new_map_size;
-    long sysret;
 
     ASSERT(old != NULL);
     ASSERT(memory_uses_os_allocator(old_size));
@@ -163,9 +162,8 @@ memory_os_realloc(void *old, int64 old_size, int64 new_size) {
     #define MREMAP_MAYMOVE 1
   #endif
     errno = 0;
-    sysret = syscall(SYS_mremap, old, (size_t)old_map_size,
-                     (size_t)new_map_size, MREMAP_MAYMOVE);
-    p = (void *)sysret;
+    p = (void *)syscall(SYS_mremap, old, (size_t)old_map_size,
+                        (size_t)new_map_size, MREMAP_MAYMOVE);
     if (p == MAP_FAILED) {
         error("Error in mremap(%p, %lld, %lld): %s.\n",
               old, old_map_size, new_map_size, strerror(errno));
@@ -175,7 +173,6 @@ memory_os_realloc(void *old, int64 old_size, int64 new_size) {
     ASSUME_ALIGNED(p);
     return p;
 #elif OS_UNIX
-    (void)sysret;
     if (new_map_size < old_map_size) {
         uchar *tail = (uchar *)old + new_map_size;
         int64 tail_size = old_map_size - new_map_size;
@@ -203,17 +200,12 @@ memory_os_realloc(void *old, int64 old_size, int64 new_size) {
             }
         }
     }
-    p = memory_os_alloc(new_size);
-    memcpy64(p, old, old_size < new_size ? old_size : new_size);
-    memory_os_free(old, old_size);
-    return p;
-#else
-    (void)sysret;
-    p = memory_os_alloc(new_size);
-    memcpy64(p, old, old_size < new_size ? old_size : new_size);
-    memory_os_free(old, old_size);
-    return p;
 #endif
+
+    p = memory_os_alloc(new_size);
+    memcpy64(p, old, old_size < new_size ? old_size : new_size);
+    memory_os_free(old, old_size);
+    return p;
 }
 #endif
 
@@ -617,6 +609,7 @@ realloc_debug(char *file, int32 line, char *func,
               int64 obj_size) {
     int64 old_size;
     int64 new_size;
+    int64 old_alloc_size;
     int64 new_alloc_size;
     void *p;
     void *old_base;
@@ -663,6 +656,7 @@ realloc_debug(char *file, int32 line, char *func,
 
     old_size = old_capacity*obj_size;
     new_size = new_capacity*obj_size;
+    old_alloc_size = memory_allocation_size(old_size);
     new_alloc_size = memory_allocation_size(new_size);
     ASSERT(new_alloc_size <= (MAXOF(new_alloc_size) - 2*MEMORY_PADDING));
 
@@ -755,10 +749,7 @@ realloc_debug(char *file, int32 line, char *func,
                     memset64(old, 0xCD, old_info.size);
                 }
             } else {
-                int64 old_alloc_size;
-
                 old_base = ((uchar *)old - MEMORY_PADDING);
-                old_alloc_size = memory_allocation_size(old_size);
                 base_p = xrealloc(old_base, old_alloc_size + 2*MEMORY_PADDING,
                                   new_alloc_size + 2*MEMORY_PADDING);
             }
@@ -800,6 +791,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
     int64 new_size;
     int64 old_size;
     int64 new_alloc_size;
+    int64 old_alloc_size;
 
     if (obj_size <= 0) {
         error_impl(file, line, func,
@@ -860,6 +852,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
 
     old_size = struct_size + old_capacity*obj_size;
     new_size = struct_size + new_capacity*obj_size;
+    old_alloc_size = memory_allocation_size(old_size);
     new_alloc_size = memory_allocation_size(new_size);
     ASSERT(new_alloc_size <= (MAXOF(new_alloc_size) - 2*MEMORY_PADDING));
 
@@ -953,10 +946,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
                     memset64(old, 0xCD, old_info.size);
                 }
             } else {
-                int64 old_alloc_size;
-
                 old_base = ((uchar *)old - MEMORY_PADDING);
-                old_alloc_size = memory_allocation_size(old_size);
                 base_p = xrealloc(old_base, old_alloc_size + 2*MEMORY_PADDING,
                                   new_alloc_size + 2*MEMORY_PADDING);
             }
