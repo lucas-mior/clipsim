@@ -94,7 +94,6 @@ CBASE_API_DECL void *memrchr64(void *, int32, int64);
 
 #include "assert.c"
 #include "generic.c"
-#include "minmax.c"
 
 #define UTF_INVALID 0xFFFD
 

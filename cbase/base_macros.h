@@ -208,4 +208,7 @@ _Generic((SIZE), \
   #endif
 #endif
 
+#define MIN(VAR1, VAR2) ((VAR1) < (VAR2) ? VAR1 : VAR2)
+#define MAX(VAR1, VAR2) ((VAR1) > (VAR2) ? VAR1 : VAR2)
+
 #endif /* BASE_MACROS_H */
