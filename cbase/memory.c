@@ -617,7 +617,6 @@ realloc_debug(char *file, int32 line, char *func,
               int64 obj_size) {
     int64 old_size;
     int64 new_size;
-    int64 old_alloc_size;
     int64 new_alloc_size;
     void *p;
     void *old_base;
@@ -664,7 +663,6 @@ realloc_debug(char *file, int32 line, char *func,
 
     old_size = old_capacity*obj_size;
     new_size = new_capacity*obj_size;
-    old_alloc_size = memory_allocation_size(old_size);
     new_alloc_size = memory_allocation_size(new_size);
     ASSERT(new_alloc_size <= (MAXOF(new_alloc_size) - 2*MEMORY_PADDING));
 
@@ -757,7 +755,10 @@ realloc_debug(char *file, int32 line, char *func,
                     memset64(old, 0xCD, old_info.size);
                 }
             } else {
+                int64 old_alloc_size;
+
                 old_base = ((uchar *)old - MEMORY_PADDING);
+                old_alloc_size = memory_allocation_size(old_size);
                 base_p = xrealloc(old_base, old_alloc_size + 2*MEMORY_PADDING,
                                   new_alloc_size + 2*MEMORY_PADDING);
             }
@@ -799,7 +800,6 @@ realloc_flex_debug(char *file, int32 line, char *func,
     int64 new_size;
     int64 old_size;
     int64 new_alloc_size;
-    int64 old_alloc_size;
 
     if (obj_size <= 0) {
         error_impl(file, line, func,
@@ -860,7 +860,6 @@ realloc_flex_debug(char *file, int32 line, char *func,
 
     old_size = struct_size + old_capacity*obj_size;
     new_size = struct_size + new_capacity*obj_size;
-    old_alloc_size = memory_allocation_size(old_size);
     new_alloc_size = memory_allocation_size(new_size);
     ASSERT(new_alloc_size <= (MAXOF(new_alloc_size) - 2*MEMORY_PADDING));
 
@@ -954,7 +953,10 @@ realloc_flex_debug(char *file, int32 line, char *func,
                     memset64(old, 0xCD, old_info.size);
                 }
             } else {
+                int64 old_alloc_size;
+
                 old_base = ((uchar *)old - MEMORY_PADDING);
+                old_alloc_size = memory_allocation_size(old_size);
                 base_p = xrealloc(old_base, old_alloc_size + 2*MEMORY_PADDING,
                                   new_alloc_size + 2*MEMORY_PADDING);
             }
