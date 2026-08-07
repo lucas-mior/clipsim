@@ -43,9 +43,11 @@ assert_error(char *file, int32 line, char *func, char *format, ...) {
     va_list ap;
 
     fprintf(stderr, "%s:%d:%s: ", file, line, func);
+
     va_start(ap, format);
     vfprintf(stderr, format, ap);
     va_end(ap);
+
     return;
 }
 
