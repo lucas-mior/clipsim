@@ -94,6 +94,7 @@ CBASE_API_DECL void *memrchr64(void *, int32, int64);
 
 #include "assert.c"
 #include "generic.c"
+#include "minmax.c"
 
 #define UTF_INVALID 0xFFFD
 
@@ -140,12 +141,12 @@ typedef struct UtilCopyFilesAsync {
     int32 unused;
 } UtilCopyFilesAsync;
 
+CBASE_API_DECL bool util_is_integer(char *string);
 CBASE_API_DECL int32 util_copy_file_async(char *, char *, int *);
 CBASE_API_DECL void util_copy_file_async_parsed(UtilCopyFilesAsync *);
 CBASE_API_DECL void *util_copy_file_async_thread(void *);
 #endif
 
-CBASE_API_DECL bool util_is_integer(char *string);
 CBASE_API_DECL void util_segv_handler(int32) __attribute__((noreturn));
 CBASE_API_DECL int32 itoa2(char *, int32, llong);
 CBASE_API_DECL long atoi2(char *);
@@ -280,10 +281,6 @@ CBASE_API_DECL void xpthread_create(
 );
 CBASE_API_DECL void xpthread_join(pthread_t *, void **);
 CBASE_API_DECL void xpthread_mutex_destroy(pthread_mutex_t *);
-CBASE_API_DECL void xpthread_mutex_init(
-    pthread_mutex_t *,
-    pthread_mutexattr_t *
-);
 CBASE_API_DECL void xpthread_mutex_lock(pthread_mutex_t *);
 CBASE_API_DECL void xpthread_mutex_unlock(pthread_mutex_t *);
 #endif
@@ -355,11 +352,13 @@ _Generic((VAR), \
 #define XFCLOSE(F, FILENAME) \
     xfclose(__FILE__, __LINE__, FUNC__, F, FILENAME)
 
-#define SB_APPEND_2(SB, STRING)      sb_append(SB, STRING, strlen32(STRING))
-#define SB_APPEND_3(SB, STRING, LEN) sb_append(SB, STRING, (int32)(LEN))
+#define SB_APPEND_2(BUILDER, STRING) \
+    sb_append(BUILDER, STRING, strlen32(STRING))
+#define SB_APPEND_3(BUILDER, STRING, LEN) \
+    sb_append(BUILDER, STRING, (int32)(LEN))
 #define SB_APPEND(...) SELECT_ON_NUM_ARGS(SB_APPEND_, __VA_ARGS__)
 
-#define strequal2_3(A, A_LEN, B)        strequal2(A, A_LEN, B, strlen32(B))
+#define strequal2_3(A, A_LEN, B) strequal2(A, A_LEN, B, strlen32(B))
 #define strequal2_4(A, A_LEN, B, B_LEN) strequal2(A, A_LEN, B, B_LEN)
 #define STREQUAL(...) SELECT_ON_NUM_ARGS(strequal2_, __VA_ARGS__)
 
