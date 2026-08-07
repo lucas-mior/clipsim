@@ -89,6 +89,16 @@
 #include <sys/param.h>
 #endif
 
+#if defined(MIN)
+#undef MIN
+#endif
+#if defined(MAX)
+#undef MAX
+#endif
+
+#define MIN(VAR1, VAR2) ((VAR1) < (VAR2) ? VAR1 : VAR2)
+#define MAX(VAR1, VAR2) ((VAR1) > (VAR2) ? VAR1 : VAR2)
+
 #if OS_LINUX || OS_BSD
 #include <sys/syscall.h>
 #endif
