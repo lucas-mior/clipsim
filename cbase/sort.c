@@ -170,9 +170,8 @@ sort_merge_subsorted(
 }
 
 #if 0 == TESTING_sort
-static inline void
+CBASE_API_DEF void
 sort_functions_sink(void) {
-    (void)sort_functions_sink;
     (void)sort_shuffle;
     (void)sort_heapify;
     (void)sort_merge_subsorted;

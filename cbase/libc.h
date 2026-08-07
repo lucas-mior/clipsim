@@ -4,22 +4,23 @@
 // Note: all libc or main platform headers must be included here.
 // other files include them by `#include "cbase.h"` or `#include "libc.h"`
 
-#if !defined(CBASE_LIBC_H)
-#define CBASE_LIBC_H
-
 #include "platform_detection.h"
 
 #include <assert.h>
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <float.h>
+#include <ftw.h>
+#include <getopt.h>
 #include <inttypes.h>
+#include <libgen.h>
 #include <limits.h>
 #include <locale.h>
 #include <math.h>
 #include <setjmp.h>
 #include <signal.h>
-#include <stdalign.h>
 #include <stdarg.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -27,21 +28,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <wchar.h>
-#include <wctype.h>
-
-#if OS_UNIX || OS_WINDOWS || OS_WASM
-#include <dirent.h>
-#include <fcntl.h>
-#include <ftw.h>
-#include <getopt.h>
-#include <libgen.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
+#include <wchar.h>
+#include <wctype.h>
+
+#if OS_WINDOWS
+#include <windows.h>
+#endif
+
+#if OS_UNIX
+#include <pthread.h>
+#include <utime.h>
 #endif
 
 #if OS_UNIX
@@ -54,13 +56,6 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/un.h>
-#include <pthread.h>
-#include <utime.h>
-#endif
-
-#if OS_WINDOWS
-#include <malloc.h>
-#include <windows.h>
 #endif
 
 #if !defined(CBASE_HAS_FTS)
@@ -89,7 +84,7 @@
 #include <sys/param.h>
 #endif
 
-#if OS_LINUX || OS_BSD
+#if OS_LINUX
 #include <sys/syscall.h>
 #endif
 
@@ -141,5 +136,3 @@
 #define MAP_ANON 0
 #define MAP_ANONYMOUS 0
 #endif
-
-#endif /* CBASE__LIBC_H */

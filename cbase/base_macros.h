@@ -96,7 +96,7 @@
 #if defined(SIZEOF)
 #undef SIZEOF
 #endif
-#define SIZEOF(...) ((int64)sizeof(__VA_ARGS__))
+#define SIZEOF(X) ((int64)sizeof(X))
 #define LENGTH(x) (int32)((sizeof(x) / sizeof(*x)))
 #define SWAP(x, y) do { __typeof__(x) SWAP = x; x = y; y = SWAP; } while (0)
 
@@ -115,20 +115,11 @@ _Generic((SIZE), \
     int:    ALIGN_POWER_OF_2_((uint)SIZE,   (uint)A)    \
 )
 
-#if ARCH_AVX512
-#define ALIGNMENT 64ll
-#elif ARCH_AVX2 || ARCH_AVX
-#define ALIGNMENT 32ll
-#elif ARCH_SSE
-#define ALIGNMENT 16ll
-#else
-#define ALIGNMENT 8ll
-#endif
-
+#define ALIGNMENT 16ul
 #if defined(ALIGN)
 #undef ALIGN
 #endif
-#define ALIGN(x) ALIGN_POWER_OF_2(x, (ullong)ALIGNMENT)
+#define ALIGN(x) ALIGN_POWER_OF_2(x, ALIGNMENT)
 
 #if defined(__GNUC__)
 #define ASSUME_ALIGNED_EXPR(X) __builtin_assume_aligned((X), ALIGNMENT)

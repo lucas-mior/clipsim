@@ -1008,7 +1008,7 @@ util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
             if (n <= 0) {
                 break;
             }
-            if (!(pipes[i].revents & POLLIN)) {
+            if (!(pipes[i].revents & POLL_IN)) {
                 pipes[i].revents = 0;
                 continue;
             }
@@ -2910,10 +2910,8 @@ main(int argc, char **argv) {
             fatal(EXIT_FAILURE);
         }
 
-        if (util_filename_from(buffer2, sizeof(buffer2), fd) == 0) {
-            ASSERT(realpath(name, buffer3) != NULL);
-            ASSERT_EQUAL(buffer3, buffer2);
-        }
+        util_filename_from(buffer2, sizeof(buffer2), fd);
+        ASSERT_EQUAL(realpath(name, buffer3), buffer2);
         xunlink(name);
 
         XCLOSE(&fd);
@@ -2932,10 +2930,8 @@ main(int argc, char **argv) {
             fatal(EXIT_FAILURE);
         }
 
-        if (util_filename_from(buffer4, sizeof(buffer4), fd) == 0) {
-            ASSERT(realpath(buffer2, buffer3) != NULL);
-            ASSERT_EQUAL(buffer3, buffer4);
-        }
+        util_filename_from(buffer4, sizeof(buffer4), fd);
+        ASSERT_EQUAL(realpath(buffer2, buffer3), buffer4);
         XCLOSE(&fd);
         xunlink(buffer2);
     }
