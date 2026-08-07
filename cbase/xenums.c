@@ -459,7 +459,7 @@ main(void) {
     return EXIT_SUCCESS;
 }
 
-#define CBASE_IMPLEMENT 1
+#define CBASE_IMPLEMENT
 #include "cbase.h"
 
 #endif /* TESTING_xenums && !defined(TESTING_xenums_started)

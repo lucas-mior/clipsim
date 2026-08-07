@@ -307,7 +307,7 @@ meta_generate_sink(void) {
 #endif
 
 #if TESTING_meta_generate
-#define CBASE_IMPLEMENT 1
+#define CBASE_IMPLEMENT
 #include "cbase.h"
 
 static void
