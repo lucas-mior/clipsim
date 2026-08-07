@@ -69,9 +69,10 @@ fi
 
 optional_stuff_for_development() {
     if command -v ctags; then
-        ctags -o tags --kinds-C=+l+d cbase/*.h cbase/*.c ./*.h ./*.c
+        find . -iname "*.[ch]" -print0 \
+            | xargs --verbose -0 ctags --kinds-C=+l+d || true
         if command -v vtags.sed; then
-            vtags.sed tags | sort | uniq > .tags.vim
+            vtags.sed tags | sort | uniq > .tags.vim  || true
         fi
     fi
 
