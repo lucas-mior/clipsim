@@ -85,12 +85,12 @@ typedef struct UtilCopyFilesAsync {
     int32 unused;
 } UtilCopyFilesAsync;
 
-CBASE_API_DECL bool util_is_integer(char *string);
 CBASE_API_DECL int32 util_copy_file_async(char *, char *, int *);
 CBASE_API_DECL void util_copy_file_async_parsed(UtilCopyFilesAsync *);
 CBASE_API_DECL void *util_copy_file_async_thread(void *);
 #endif
 
+CBASE_API_DECL bool util_is_integer(char *string);
 CBASE_API_DECL void util_segv_handler(int32) __attribute__((noreturn));
 CBASE_API_DECL int32 itoa2(char *, int32, llong);
 CBASE_API_DECL long atoi2(char *);
@@ -484,16 +484,14 @@ CBASE_API_DECL bool command_wait(Command *);
 #define MAX_NTHREADS 64
 #endif
 
-typedef struct GenericArrayHeader {
-    ldouble alignment;
-    int32 count;
-    int32 cap;
-    int64 padding;
+// Note: it is fine to typedef union in this case
+typedef union GenericArrayHeader {
+    struct {
+        int32 count;
+        int32 cap;
+    };
+    max_align_t alignment;
 } GenericArrayHeader;
-_Static_assert(_Alignof(GenericArrayHeader) <= ALIGNMENT,
-               "GenericArrayHeader alignment exceeds allocator alignment");
-_Static_assert((sizeof(GenericArrayHeader)%ALIGNMENT) == 0,
-               "GenericArrayHeader size must preserve payload alignment");
 
 CBASE_API_DECL void *generic_array_init(int32, int64);
 CBASE_API_DECL void *generic_array_grow(void *, int64);
@@ -538,19 +536,7 @@ CBASE_API_DECL void generic_array_set_count(void *, int32);
 
 #endif /* CBASE_H */
 
-#if defined(CBASE_IMPLEMENT)
-#define CBASE_IMPLEMENT_IS_ZERO(VALUE) CBASE_IMPLEMENT_IS_ZERO_(VALUE)
-#define CBASE_IMPLEMENT_IS_ZERO_(VALUE) \
-    CBASE_IMPLEMENT_IS_ZERO__(CBASE_IMPLEMENT_IS_ZERO_##VALUE)
-#define CBASE_IMPLEMENT_IS_ZERO__(...) \
-    CBASE_IMPLEMENT_IS_ZERO___(__VA_ARGS__, 0)
-#define CBASE_IMPLEMENT_IS_ZERO___(_IGNORED, VALUE, ...) VALUE
-#define CBASE_IMPLEMENT_IS_ZERO_0 _, 1
-#endif
-
-#if defined(CBASE_IMPLEMENT)
-#if !CBASE_IMPLEMENT_IS_ZERO(CBASE_IMPLEMENT) \
-    && !defined(CBASE_IMPLEMENTED)
+#if defined(CBASE_IMPLEMENT) && !defined(CBASE_IMPLEMENTED)
 #define CBASE_IMPLEMENTED 1
 
 #include "arena.c"
@@ -587,11 +573,4 @@ CBASE_API_DECL void generic_array_set_count(void *, int32);
 #include "meta_parse.c"
 #include "meta_generate.c"
 
-#endif /* !CBASE_IMPLEMENT_IS_ZERO(CBASE_IMPLEMENT) && !CBASE_IMPLEMENTED */
-
-#undef CBASE_IMPLEMENT_IS_ZERO
-#undef CBASE_IMPLEMENT_IS_ZERO_
-#undef CBASE_IMPLEMENT_IS_ZERO__
-#undef CBASE_IMPLEMENT_IS_ZERO___
-#undef CBASE_IMPLEMENT_IS_ZERO_0
 #endif
