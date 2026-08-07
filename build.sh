@@ -43,7 +43,7 @@ EOF_TARGETS
 )
 fi
 
-target="${1:-build}"
+target="${1:-debug}"
 target_line=$target
 if [ "$target" = "cross" ] && [ -n "${2:-}" ]; then
     target_line="$target $2"
