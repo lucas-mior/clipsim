@@ -84,30 +84,6 @@
 
 #define CC_TOY !(CC_GCC || CC_CLANG || CC_TCC || CC_MSVC)
 
-#if defined(__AVX512F__)
-#define ARCH_AVX512 1
-#else
-#define ARCH_AVX512 0
-#endif
-
-#if defined(__AVX__)
-#define ARCH_AVX 1
-#else
-#define ARCH_AVX 0
-#endif
-
-#if defined(__AVX2__)
-#define ARCH_AVX2 1
-#else
-#define ARCH_AVX2 0
-#endif
-
-#if defined(__SSE__) || defined(__x86_64__)
-#define ARCH_SSE 1
-#else
-#define ARCH_SSE 0
-#endif
-
 #if OS_WINDOWS
 #define RW_TYPE unsigned int
 #else
