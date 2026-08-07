@@ -614,8 +614,14 @@ strerror_r(int errnum, char *buffer, size_t size) {
     int32 len = strlen32(error_message);
 
     ASSERT_MORE(size, 0);
-    memcpy64(buffer, error_message, MIN(len + 1, size - 1));
-    buffer[size - 1] = '\0';
+    ASSERT_LESS(size, MAXOF(len));
+
+    if (len >= (int32)size) {
+        len = (int32)size - 1;
+    }
+
+    memcpy64(buffer, error_message, len);
+    buffer[len] = '\0';
 
     return 0;
 }
