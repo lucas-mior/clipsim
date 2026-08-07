@@ -16,5 +16,8 @@ temp_delete_me
 tests/incr_owner
 *.gz
 tests/unresponsive_owner
+*temp_delete_me*
 *.cmd
 *.o
+bin/
+*.tar.gz
