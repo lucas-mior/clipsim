@@ -153,15 +153,18 @@ Error compiling with %s:
     return 0
 }
 
-if [ "$target" = "test" ] && [ -z "$CC" ] && command tcc; then
-    CC=tcc
-else
-    CC="${CC:-cc}"
-fi
+requested_cc=${CC:-}
+case "$target" in
+"debug"|"test"|"fast_feedback")
+    CC="${requested_cc:-tcc}"
+    ;;
+*)
+    CC="${requested_cc:-cc}"
+    ;;
+esac
 
 case "$target" in
 "fast_feedback")
-    CC=clang
     CFLAGS="$CFLAGS -Werror"
     ;;
 "test")
