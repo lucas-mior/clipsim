@@ -15,6 +15,7 @@
 #include "platform_detection.h"
 #include "primitives.h"
 #include "base_macros.h"
+#include "libc.h"
 
 static char *program = __FILE__;
 static int32 program_len UNUSED;
@@ -26,16 +27,11 @@ CBASE_API_DECL int32 optional_strlen32(char *);
 CBASE_API_DECL int32 strlen32(char *);
 CBASE_API_DECL void fatal(int32) __attribute__((noreturn));
 CBASE_API_DECL void error_impl(char *, int32, char *, char *, ...)
-    __attribute__((format(printf, 4, 5)));
+    ATTR_PRINTF(4, 5);
 CBASE_API_DECL int memcmp64(void *, void *, int64);
 CBASE_API_DECL void *memmem64(void *, int64, void *, int64);
 CBASE_API_DECL void *memrchr64(void *, int32, int64);
 
-#include "libc.h"
-#if defined(ALIGN)
-#undef ALIGN
-#endif
-#define ALIGN(x) ALIGN_POWER_OF_2(x, ALIGNMENT)
 #include "i18n.h"
 #include "memory.h"
 #include "arena.h"
