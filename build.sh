@@ -168,7 +168,7 @@ fast_feedback)
     CFLAGS="$CFLAGS -Werror"
     ;;
 test)
-    CFLAGS="$CFLAGS -Wno-declaration-after-statement -Wno-address"
+    CFLAGS="$CFLAGS -Wno-declaration-after-statement"
     CFLAGS="$CFLAGS -g3 $GNUSOURCE -DDEBUGGING=1 -fsanitize=undefined"
     ;;
 debug)
