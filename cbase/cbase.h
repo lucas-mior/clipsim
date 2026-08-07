@@ -140,12 +140,12 @@ typedef struct UtilCopyFilesAsync {
     int32 unused;
 } UtilCopyFilesAsync;
 
-CBASE_API_DECL bool util_is_integer(char *string);
 CBASE_API_DECL int32 util_copy_file_async(char *, char *, int *);
 CBASE_API_DECL void util_copy_file_async_parsed(UtilCopyFilesAsync *);
 CBASE_API_DECL void *util_copy_file_async_thread(void *);
 #endif
 
+CBASE_API_DECL bool util_is_integer(char *string);
 CBASE_API_DECL void util_segv_handler(int32) __attribute__((noreturn));
 CBASE_API_DECL int32 itoa2(char *, int32, llong);
 CBASE_API_DECL long atoi2(char *);
