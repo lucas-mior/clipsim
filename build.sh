@@ -171,26 +171,26 @@ if ! command -v "$CC" > /dev/null 2>&1; then
 fi
 
 case "$target" in
-"fast_feedback")
+fast_feedback)
     CFLAGS="$CFLAGS -Werror"
     ;;
-"test")
+test)
     CFLAGS="$CFLAGS -Wno-declaration-after-statement -Wno-address"
     CFLAGS="$CFLAGS -g3 $GNUSOURCE -DDEBUGGING=1 -fsanitize=undefined"
     ;;
-"debug")
+debug)
     CFLAGS="$CFLAGS -Wno-declaration-after-statement -g -fsanitize=undefined"
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
-"valgrind")
+valgrind)
     CFLAGS="$CFLAGS -g -O0 -ftree-vectorize"
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
-"callgrind")
+callgrind)
     CFLAGS="$CFLAGS -g3 -O2 -ftree-vectorize"
     CPPFLAGS="$CPPFLAGS"
     ;;
-"check")
+check)
     CC=gcc CFLAGS="-fanalyzer -fdiagnostics-color=never" "$0" build
     CFLAGS="--analyze -Xanalyzer -analyzer-output=text"
     CFLAGS="$CFLAGS -Xanalyzer -analyzer-werror"
@@ -200,7 +200,7 @@ case "$target" in
     CC=clang CFLAGS="$CFLAGS" "$0" build
     exit
     ;;
-"build")
+build)
     CFLAGS="$CFLAGS -O2 -flto -march=native -ftree-vectorize"
     ;;
 *)
@@ -213,7 +213,7 @@ if [ "$target" = "cross" ]; then
     CFLAGS="$CFLAGS -target $cross"
 
     case $cross in
-    "x86_64-macos"|"aarch64-macos")
+    x86_64-macos|aarch64-macos)
         CFLAGS="$CFLAGS -fno-lto"
         LDFLAGS="$LDFLAGS -lpthread"
         ;;
@@ -244,7 +244,7 @@ if [ "$CC" = "clang" ]; then
 fi
 
 case "$target" in
-"uninstall")
+uninstall)
     trace_on
     rm -f ${DESTDIR}${PREFIX}/bin/${program}
     rm -f ${DESTDIR}${PREFIX}/man/man1/${program}.1
@@ -254,7 +254,7 @@ case "$target" in
     rm -f ${DESTDIR}${PREFIX}/share/licenses/${program}/LICENSE
     exit
     ;;
-"install")
+install)
     if [ ! -f bin/$program ]; then
         $0 build
     fi
@@ -267,12 +267,12 @@ case "$target" in
     install -Dm644 LICENSE                     ${DESTDIR}${PREFIX}/share/licenses/${program}/LICENSE
     exit
     ;;
-"assembly")
+assembly)
     trace_on
     $CC $CPPFLAGS $CFLAGS -S -o ${program}_$CC.S "$main" $LDFLAGS
     exit
     ;;
-"test")
+test)
     find . -iname "*.c" | sort | while read -r src; do
         trace_off
         name=$(basename "$src")
@@ -337,9 +337,9 @@ case "$target" in
     tests/test.bash
     exit
     ;;
-"test_all")
+test_all)
     ;;
-"fast_feedback")
+fast_feedback)
     trace_on
     $CC $CPPFLAGS $CFLAGS main.c -o "$exe" $LDFLAGS && "$exe"
     trace_off
@@ -353,7 +353,7 @@ case "$target" in
 esac
 
 case "$target" in
-"valgrind")
+valgrind)
     vg_flags="--error-exitcode=1 --errors-for-leak-kinds=all"
     vg_flags="$vg_flags --leak-check=full --show-leak-kinds=all"
 
@@ -362,7 +362,7 @@ case "$target" in
     trace_off
     exit
     ;;
-"callgrind")
+callgrind)
     trace_on
     out="callgrind-$(date +%s).callgrind"
     valgrind --tool=callgrind --callgrind-out-file="$out" bin/clipsim --daemon
