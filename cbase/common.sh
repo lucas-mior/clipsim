@@ -22,3 +22,25 @@ get_program() {
     fi
     basename "$(readlink -f "$(dirname "$1")")"
 }
+
+install_opt () {
+    mode="$1"
+    file="$2"
+    dest="$3"
+
+    if [ -f "$file" ]; then
+        install "$mode" "$file" "$dest"
+    elif [ -d "$file" ]; then
+        install "$mode" "$dest"
+        cp -rp "$file/." "$dest/"
+    fi
+}
+
+uninstall_opt () {
+    file="$1"
+    dest="$2"
+
+    if [ -e "$file" ]; then
+        rm -rf "$dest"
+    fi
+}
