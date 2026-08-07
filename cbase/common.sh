@@ -14,3 +14,11 @@ fi
 
 alias trace_on='set -x'
 alias trace_off='{ set +x; } 2>/dev/null'
+
+get_program() {
+    if [ -z "$1" ]; then
+        error "get_program <full_path_to_build.sh>"
+        exit 1
+    fi
+    basename "$(readlink -f "$(dirname "$0")")"
+}

@@ -79,7 +79,7 @@ PREFIX="${PREFIX:-/usr/local}"
 DESTDIR="${DESTDIR:-/}"
 
 main="main.c"
-program=$(basename "$(readlink -f "$(dirname "$0")")")
+program=$(get_program "$0")
 exe="bin/$program"
 mkdir -p "$(dirname "$exe")"
 
