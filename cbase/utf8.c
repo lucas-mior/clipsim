@@ -494,7 +494,7 @@ utf8_functions_sink(void) {
 #endif
 
 #if TESTING_utf8
-#define CBASE_IMPLEMENT 1
+#define CBASE_IMPLEMENT
 #include "cbase.h"
 
 int

@@ -2578,7 +2578,7 @@ test_hardlink_supported(char *dir) {
 #endif
 
 #if TESTING_util
-#define CBASE_IMPLEMENT 1
+#define CBASE_IMPLEMENT
 #include "cbase.h"
 
 #define ENUM_NAME WeekDay

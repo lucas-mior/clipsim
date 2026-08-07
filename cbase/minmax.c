@@ -242,7 +242,7 @@ _Generic((VAR1), \
 #define MAX(VAR1, VAR2) MINMAX_COMPARE(max, VAR1, VAR2)
 
 #if TESTING_minmax
-#define CBASE_IMPLEMENT 1
+#define CBASE_IMPLEMENT
 #include "cbase.h"
 
 int

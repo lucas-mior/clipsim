@@ -174,7 +174,7 @@ array_sink(void) {
 }
 
 #if TESTING_array
-#define CBASE_IMPLEMENT 1
+#define CBASE_IMPLEMENT
 #include "cbase.h"
 
 static void

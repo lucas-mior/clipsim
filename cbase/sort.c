@@ -181,7 +181,7 @@ sort_functions_sink(void) {
 #endif
 
 #if TESTING_sort
-#define CBASE_IMPLEMENT 1
+#define CBASE_IMPLEMENT
 #include "cbase.h"
 
 #define MAXI 10000
