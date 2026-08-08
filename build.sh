@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 # shellcheck disable=SC2086
 
@@ -9,7 +9,6 @@ dir=$(dirname "$(readlink -f "$0")")
 cd "$dir" || exit
 
 cbase="cbase"
-CPPFLAGS="$CPPFLAGS -I$dir/$cbase"
 script=$(basename "$0")
 
 if [ -f ./targets ]; then
@@ -42,39 +41,16 @@ if [ "$target" = "cross" ] && [ -n "${2:-}" ]; then
     target_line="$target $2"
 fi
 
-target_supported () {
-    wanted=$1
-    printf '%s\n' "$targets" | awk -v wanted="$wanted" '
-        {
-            line = $0
-            sub(/^# /, "", line)
-        }
-        line == wanted { found = 1 }
-        END { exit !found }
-    '
-}
-
-if ! target_supported "$target_line" && ! target_supported "$target"; then
+if ! target_supported "$targets" "$target_line" \
+        && ! target_supported "$targets" "$target"; then
     echo "usage: $script <targets>"
     printf '%s\n' "$targets"
     exit 1
 fi
 
-optional_stuff_for_development() {
-    if command -v ctags; then
-        find . -iname "*.[ch]" -print0 \
-            | xargs --verbose -0 ctags --kinds-C=+l+d || true
-        if command -v vtags.sed; then
-            vtags.sed tags | sort | uniq > .tags.vim  || true
-        fi
-    fi
-
-    return
-}
-
 cross="$2"
 
-printf "\n${0} ${RED}${1} ${2}$RES\n"
+printf "\n${script} ${RED}${1:-} ${2:-}$RES\n"
 PREFIX="${PREFIX:-/usr/local}"
 DESTDIR="${DESTDIR:-/}"
 
@@ -84,6 +60,7 @@ exe="bin/$program"
 mkdir -p "$(dirname "$exe")"
 
 CPPFLAGS="$CPPFLAGS -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700"
+CPPFLAGS="$CPPFLAGS -I$dir/$cbase"
 
 CFLAGS="$CFLAGS -std=c11"
 CFLAGS="$CFLAGS -Wfatal-errors"
@@ -103,51 +80,6 @@ LDFLAGS="$LDFLAGS $(pkg-config xi --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config libmagic --libs)"
 LDFLAGS="$LDFLAGS -lm"
 
-option_remove() {
-    echo "$1" | sed -E "s| *$2 +| |g"
-}
-
-with_other () {
-    compiler="$1"
-    compiler_macro=$(echo "$compiler" | tr '[:lower:]' '[:upper:]')
-    compiler_macro="__${compiler_macro}__"
-    shift
-    args="$*"
-    trace_on
-    while ! problem=$($compiler                       "-D${compiler_macro}" -D__attribute=__attribute__                       $args 2>&1); do
-        trace_off
-        problem=$(echo "$problem" | head -n 1 | tr -d "'")
-
-        sleep 0.4
-        if echo "$problem" | grep -Eq "unknown (argument|option)"; then
-            arg=$(echo "$problem" | awk '{print $NF}')
-            printf "
-Removing argument %s...
-" "$arg"
-            args=$(option_remove "$args" "$arg")
-        elif echo "$problem" | grep -q "unknown file extension:"; then
-            arg=$(echo "$problem" | awk '{print $NF}')
-            printf "
-Removing argument %s...
-" "$arg"
-            args=$(option_remove "$args" "$arg")
-        else
-            printf "
-
-Error compiling with %s:
-
-%s
-
-" "$compiler" "$problem"
-            return 1
-        fi
-        printf "
-"
-        trace_on
-    done
-    return 0
-}
-
 case "$target" in
 debug|test)
     CC="${CC:-tcc}"
@@ -166,7 +98,6 @@ fi
 
 case "$target" in
 fast_feedback)
-    CFLAGS="$CFLAGS -Werror"
     ;;
 test)
     CFLAGS="$CFLAGS -Wno-declaration-after-statement"
@@ -308,7 +239,8 @@ test)
         if [ "$CC" = "chibicc" ] || [ "$CC"  = "cproc" ]; then
             cmdline_no_cc=$(option_remove "$cmdline" "$CC")
             trace_on
-            if with_other "$CC" "$cmdline_no_cc"; then
+            if COMPILE_WITH_OTHER_EXTRA_DEFS="-D__attribute=__attribute__" \
+                    compile_with_other "$CC" "$cmdline_no_cc"; then
                 /tmp/${name}_test
             else
                 exit 1
@@ -340,7 +272,8 @@ fast_feedback)
     ;;
 *)
     trace_on
-    optional_stuff_for_development
+    build_tags
+
     $CC $CPPFLAGS $CFLAGS -o ${exe} "$main" $LDFLAGS
     trace_off
     ;;
