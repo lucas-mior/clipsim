@@ -534,7 +534,7 @@ _Generic((x), \
   fprintf(stderr, "["GREEN("%s%lld")"]%s = "FORMAT" ", \
                   typename(TYPE), typebits(TYPE), #VAR, (CAST)(uintptr)(VAR))
 
-#define PRINT(VAR) \
+#define PRINT_(VAR) \
 _Generic((VAR), \
     void*:   PRINT_OTHER(VAR,    TYPE_VOIDP,   "%p",           void*), \
     char*:   PRINT_OTHER(VAR,    TYPE_CHARP,   RED("\"%s\""),  char*), \
@@ -550,10 +550,27 @@ _Generic((VAR), \
     uint:    PRINT_UNSIGNED(VAR, TYPE_UINT),                           \
     ulong:   PRINT_UNSIGNED(VAR, TYPE_ULONG),                          \
     ullong:  PRINT_UNSIGNED(VAR, TYPE_ULLONG),                         \
-    float:   PRINT_DOUBLE(VAR,  TYPE_FLOAT),                          \
-    double:  PRINT_DOUBLE(VAR,  TYPE_DOUBLE),                         \
-    default: 0                                                        \
+    float:   PRINT_DOUBLE(VAR,   TYPE_FLOAT),                          \
+    double:  PRINT_DOUBLE(VAR,   TYPE_DOUBLE),                         \
+    default: 0                                                         \
 )
+
+#if CC_GCC || CC_CLANG
+#define PRINT_DIAGNOSTIC_PUSH() do {                         \
+    _Pragma("GCC diagnostic push")                            \
+    _Pragma("GCC diagnostic ignored \"-Wpedantic\"")          \
+} while (0)
+#define PRINT_DIAGNOSTIC_POP() do {                          \
+    _Pragma("GCC diagnostic pop")                             \
+} while (0)
+#define PRINT(VAR) do {                                       \
+    PRINT_DIAGNOSTIC_PUSH();                                  \
+    PRINT_(VAR);                                              \
+    PRINT_DIAGNOSTIC_POP();                                   \
+} while (0)
+#else
+#define PRINT(VAR) PRINT_(VAR)
+#endif
 
 #define PRINTLN(VAR) do { \
     fprintf(stderr, "%s:%d %s():", __FILE__, __LINE__, __func__); \
