@@ -64,6 +64,10 @@ static time_t timezone_offset = 0;
 #define CLAMP_TYPE int64
 #include "clamp.h"
 
+#define CLAMP_LINKAGE CBASE_API_DEF
+#define CLAMP_TYPE int32
+#include "clamp.h"
+
 static char *notifiers[2] = {"dunstify", "notify-send"};
 
 #if !CBASE_HAS_SYSTEM_MEMMEM
@@ -251,7 +255,14 @@ memchr64(void *pointer, int32 value, int64 size) {
     if (size == 0) {
         return 0;
     }
+#if CC_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+#endif
     return memchr(pointer, value, (size_t)size);
+#if CC_CLANG
+#pragma clang diagnostic pop
+#endif
 }
 
 CBASE_API_DEF int32

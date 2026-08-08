@@ -152,7 +152,9 @@ CBASE_API_DECL int32 string_from_doubles(char *, int32, char *, double *, int32)
 CBASE_API_DECL double clamp_double(double, double, double);
 CBASE_API_DECL double square_double(double);
 CBASE_API_DECL int64 clamp_int64(int64, int64, int64);
+CBASE_API_DECL int32 clamp_int32(int32, int32, int32);
 CBASE_API_DECL int64 square_int64(int64);
+CBASE_API_DECL int32 square_int32(int32);
 CBASE_API_DECL bool strequal(char *, char *);
 CBASE_API_DECL bool strequal2(char *, int32, char *, int32);
 CBASE_API_DECL bool striqual(char *, char *);
@@ -248,15 +250,17 @@ _Generic((ARRAY), \
 
 #define CLAMP(VAR, VMIN, VMAX) \
 _Generic((VAR), \
-    float: clamp_double, \
-    double: clamp_double, \
+    float:   clamp_double, \
+    double:  clamp_double, \
+    int32:   clamp_int32, \
     default: clamp_int64 \
 )(VAR, VMIN, VMAX)
 
 #define SQUARE(VAR) \
 _Generic((VAR), \
-    float: square_double, \
-    double: square_double, \
+    float:   square_double, \
+    double:  square_double, \
+    int32:   square_int32, \
     default: square_int64 \
 )(VAR)
 

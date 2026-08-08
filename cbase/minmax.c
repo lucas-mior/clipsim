@@ -238,8 +238,25 @@ _Generic((VAR1), \
 #undef MAX
 #endif
 
+#if CC_GCC || CC_CLANG
+#define MINMAX_COMPARE_DIAGNOSTIC_(RESULT, MODE, VAR1, VAR2) __extension__ ({ \
+    _Pragma("GCC diagnostic push")                                            \
+    _Pragma("GCC diagnostic ignored \"-Wpedantic\"")                          \
+    __auto_type RESULT = MINMAX_COMPARE(MODE, VAR1, VAR2);                    \
+    _Pragma("GCC diagnostic pop")                                             \
+    RESULT;                                                                   \
+})
+
+#define MINMAX_COMPARE_DIAGNOSTIC(MODE, VAR1, VAR2) \
+    MINMAX_COMPARE_DIAGNOSTIC_(CAT(minmax_result_, __LINE__), \
+                               MODE, VAR1, VAR2)
+
+#define MIN(VAR1, VAR2) MINMAX_COMPARE_DIAGNOSTIC(min, VAR1, VAR2)
+#define MAX(VAR1, VAR2) MINMAX_COMPARE_DIAGNOSTIC(max, VAR1, VAR2)
+#else
 #define MIN(VAR1, VAR2) MINMAX_COMPARE(min, VAR1, VAR2)
 #define MAX(VAR1, VAR2) MINMAX_COMPARE(max, VAR1, VAR2)
+#endif
 
 #if TESTING_minmax
 #define CBASE_IMPLEMENT
