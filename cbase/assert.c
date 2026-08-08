@@ -94,7 +94,7 @@ assert_file_contains(char *file, int32 line, char *func,
     FILE *file_handle;
     char buffer[4096];
     bool found = false;
-    int32 needle_len = strlen32(needle);
+    int32 needle_len = assert_strlen32(needle);
 
     if ((file_handle = fopen(path, "r")) == NULL) {
         assert_error(file, line, func,
@@ -103,8 +103,8 @@ assert_file_contains(char *file, int32 line, char *func,
         assert_fatal();
     }
     while (fgets(buffer, SIZEOF(buffer), file_handle)) {
-        int32 n = strlen32(buffer);
-        if (memmem64(buffer, n, needle, needle_len)) {
+        int32 n = assert_strlen32(buffer);
+        if (assert_memmem(buffer, n, needle, needle_len)) {
             found = true;
             break;
         }
