@@ -452,8 +452,15 @@ write_all(int fd, char *buffer, int64 left) {
 
 CBASE_API_DEF void
 qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
+#if CC_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-function-type-strict"
+#endif
     int (*compar_consted)(const void *, const void *);
     compar_consted = (int (*)(const void *, const void *)) compar;
+#if CC_CLANG
+#pragma clang diagnostic pop
+#endif
 
     if (DEBUGGING) {
         if ((size <= 0) || (n <= 0)) {
