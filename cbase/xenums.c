@@ -205,7 +205,7 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
             memcpy64(buffer + buffer_len, name, len); \
             buffer_len += len; \
             is_first = 0; \
-            val &= ~e; \
+            val &= (ENUM_UNDERLYING_TYPE)~e; \
         }
 
     #define XENUM_FL_1(e)    XENUM(e)

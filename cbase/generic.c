@@ -77,7 +77,7 @@ fprint_0(FILE *restrict fp, ... /* strings, NULL */) {
         if ((int64)INT_MAX - (int64)count < slen) {
             count = INT_MAX;
         } else {
-            count += slen;
+            count += (int32)slen;
         }
     }
 
