@@ -2313,6 +2313,7 @@ util_functions_sink(void) {
     (void)here_impl;
     (void)here_counter;
     (void)strequal;
+    (void)striqual;
     (void)path_missing;
     (void)read_entire_file;
     (void)write_entire_file;
