@@ -59,6 +59,22 @@ program=$(get_program "$0")
 exe="bin/$program"
 mkdir -p "$(dirname "$exe")"
 
+case "$target" in
+debug|test)
+    CC="${CC:-tcc}"
+    ;;
+fast_feedback)
+    CC="${CC:-clang}"
+    ;;
+*)
+    CC="${CC:-cc}"
+    ;;
+esac
+
+if ! command -v "$CC" > /dev/null 2>&1; then
+    CC=cc
+fi
+
 CPPFLAGS="$CPPFLAGS -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700"
 CPPFLAGS="$CPPFLAGS -I$dir/$cbase"
 
@@ -75,27 +91,26 @@ CFLAGS="$CFLAGS -Wno-unknown-pragmas"
 CFLAGS="$CFLAGS -Wno-unknown-warning-option"
 CFLAGS="$CFLAGS -Wno-unused-macros"
 
+if [ "$CC" = "clang" ]; then
+    CFLAGS="$CFLAGS -Weverything"
+    CFLAGS="$CFLAGS -Wno-unsafe-buffer-usage"
+    CFLAGS="$CFLAGS -Wno-format-nonliteral"
+    CFLAGS="$CFLAGS -Wno-disabled-macro-expansion"
+    CFLAGS="$CFLAGS -Wno-c++-keyword"
+    CFLAGS="$CFLAGS -Wno-covered-switch-default"
+    CFLAGS="$CFLAGS -Wno-implicit-void-ptr-cast"
+    CFLAGS="$CFLAGS -Wno-format-pedantic"
+    CFLAGS="$CFLAGS -Wno-pre-c11-compat"
+    CFLAGS="$CFLAGS -Wno-cast-function-type-strict"
+    CFLAGS="$CFLAGS -Wno-implicit-int-enum-cast"
+    CFLAGS="$CFLAGS -Wno-assign-enum"
+fi
+
 LDFLAGS="$LDFLAGS $(pkg-config x11 --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config xfixes --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config xi --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config libmagic --libs)"
 LDFLAGS="$LDFLAGS -lm"
-
-case "$target" in
-debug|test)
-    CC="${CC:-tcc}"
-    ;;
-fast_feedback)
-    CC="${CC:-clang}"
-    ;;
-*)
-    CC="${CC:-cc}"
-    ;;
-esac
-
-if ! command -v "$CC" > /dev/null 2>&1; then
-    CC=cc
-fi
 
 case "$target" in
 fast_feedback)
@@ -152,21 +167,6 @@ if [ "$target" = "cross" ]; then
     esac
 else
     LDFLAGS="$LDFLAGS -lpthread"
-fi
-
-if [ "$CC" = "clang" ]; then
-    CFLAGS="$CFLAGS -Weverything"
-    CFLAGS="$CFLAGS -Wno-unsafe-buffer-usage"
-    CFLAGS="$CFLAGS -Wno-format-nonliteral"
-    CFLAGS="$CFLAGS -Wno-disabled-macro-expansion"
-    CFLAGS="$CFLAGS -Wno-c++-keyword"
-    CFLAGS="$CFLAGS -Wno-covered-switch-default"
-    CFLAGS="$CFLAGS -Wno-implicit-void-ptr-cast"
-    CFLAGS="$CFLAGS -Wno-format-pedantic"
-    CFLAGS="$CFLAGS -Wno-pre-c11-compat"
-    CFLAGS="$CFLAGS -Wno-cast-function-type-strict"
-    CFLAGS="$CFLAGS -Wno-implicit-int-enum-cast"
-    CFLAGS="$CFLAGS -Wno-assign-enum"
 fi
 
 case "$target" in
