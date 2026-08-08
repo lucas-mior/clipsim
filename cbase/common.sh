@@ -1,5 +1,7 @@
 # shellcheck shell=sh
 
+# shellcheck disable=SC2086
+
 set -e
 
 error () {
@@ -18,6 +20,26 @@ fi
 
 alias trace_on='set -x'
 alias trace_off='{ set +x; } 2>/dev/null'
+
+get_compiler() {
+    case "$1" in
+    debug|test)
+        CC="${CC:-tcc}"
+        ;;
+    fast_feedback)
+        CC="${CC:-clang}"
+        ;;
+    *)
+        CC="${CC:-cc}"
+        ;;
+    esac
+
+    if ! command -v "$CC" > /dev/null 2>&1; then
+        CC=cc
+    fi
+
+    echo "$CC"
+}
 
 get_program() {
     if [ -z "$1" ]; then
@@ -143,3 +165,15 @@ compile_with_other () {
 
     return 0
 }
+
+compile_cbase () {
+    CC="${CC:-cc}"
+
+    trace_on
+    $CC -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -c "cbase.c" -o "cbase-${CC}.o"
+    trace_off
+}
+
+if [ "$(basename "$0")" = "common.sh" ]; then
+    compile_cbase
+fi
