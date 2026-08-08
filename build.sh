@@ -187,7 +187,7 @@ test)
         if [ -n "$2" ] && [ "$name" != "$2" ]; then
             continue
         fi
-        if [ "$name" = main.c ]; then
+        if [ "$name" = "main.c" ]; then
             continue
         fi
         if echo "$src" | grep -q "stc/"; then
