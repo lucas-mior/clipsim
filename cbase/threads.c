@@ -549,6 +549,7 @@ threads_functions_sink(void) {
     (void)parallel_for_max_threads_min_items;
 #if OS_UNIX
     (void)util_copy_file_async_thread;
+    (void)xpthread_mutex_init;
     (void)xpthread_mutex_lock;
     (void)xpthread_mutex_unlock;
     (void)xpthread_cond_destroy;
