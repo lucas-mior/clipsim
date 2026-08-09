@@ -49,6 +49,108 @@ get_program() {
     basename "$(readlink -f "$(dirname "$1")")"
 }
 
+needs_rebuild_includes () {
+    source_file=$1
+
+    awk '
+        /^[[:space:]]*#[[:space:]]*include[[:space:]]*"/ {
+            line = $0
+            sub(/^[^"]*"/, "", line)
+            sub(/".*$/, "", line)
+
+            if (line ~ /\.[ch]$/) {
+                print line
+            }
+        }
+    ' "$source_file"
+}
+
+needs_rebuild_resolve_include () {
+    source_file=$1
+    include_file=$2
+    source_dir=$(dirname "$source_file")
+
+    if [ -f "$source_dir/$include_file" ]; then
+        printf '%s\n' "$source_dir/$include_file"
+        return 0
+    fi
+
+    if [ -f "$include_file" ]; then
+        printf '%s\n' "$include_file"
+        return 0
+    fi
+
+    return 1
+}
+
+needs_rebuild_source_is_newer () {
+    target_file=$1
+    source_file=$2
+    seen_file=$3
+
+    if [ ! -e "$source_file" ]; then
+        return 1
+    fi
+
+    if grep -F -x -- "$source_file" "$seen_file" > /dev/null 2>&1; then
+        return 1
+    fi
+
+    printf '%s\n' "$source_file" >> "$seen_file"
+
+    if [ "$source_file" -nt "$target_file" ]; then
+        return 0
+    fi
+
+    if [ ! -f "$source_file" ]; then
+        return 1
+    fi
+
+    for include_file in $(needs_rebuild_includes "$source_file"); do
+        resolved_file=$(
+            needs_rebuild_resolve_include "$source_file" "$include_file" \
+                || true
+        )
+
+        if [ -n "$resolved_file" ] \
+                && needs_rebuild_source_is_newer \
+                    "$target_file" "$resolved_file" "$seen_file"; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+needs_rebuild () {
+    target_file=$1
+    shift
+
+    if [ ! -e "$target_file" ]; then
+        return 0
+    fi
+
+    seen_file=${TMPDIR:-/tmp}/needs_rebuild.$$.seen
+    : > "$seen_file"
+
+    for source_file do
+        if needs_rebuild_source_is_newer \
+                "$target_file" "$source_file" "$seen_file"; then
+            rm -f "$seen_file"
+            return 0
+        fi
+    done
+
+    rm -f "$seen_file"
+
+    if [ -d cbase ] \
+            && find cbase -type f -newer "$target_file" | grep -q .; then
+        return 0
+    fi
+
+    return 1
+}
+
 target_supported () {
     target_list=$1
     wanted=$2
