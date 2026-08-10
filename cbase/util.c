@@ -366,6 +366,22 @@ memcmp64(void *left, void *right, int64 size) {
     return memcmp(left, right, (size_t)size);
 }
 
+CBASE_API_DEF uint32
+rand_int(void) {
+    static uint64 state = 0x853c49e6748fea9bull;
+    uint64 old_state = state;
+    uint32 xorshifted;
+    uint32 rot;
+    uint32 result;
+
+    state = old_state*6364136223846793005ull + 1442695040888963407ull;
+    xorshifted = (uint32)(((old_state >> 18u) ^ old_state) >> 27u);
+    rot = (uint32)(old_state >> 59u);
+    result = (xorshifted >> rot) | (xorshifted << ((0u - rot) & 31u));
+
+    return result;
+}
+
 CBASE_API_DEF char *
 remove_escape_sequences(char *data, int32 *data_len) {
     int32 old_len = *data_len;
@@ -1026,7 +1042,7 @@ util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
             if (n <= 0) {
                 break;
             }
-            if (!(pipes[i].revents & POLL_IN)) {
+            if (!(pipes[i].revents & POLLIN)) {
                 pipes[i].revents = 0;
                 continue;
             }
@@ -2912,6 +2928,7 @@ main(int argc, char **argv) {
         ASSERT(util_equal_files(a, b));
     }
 
+#if OS_LINUX || CBASE_HAS_F_GETPATH || OS_WINDOWS
     {
         char characters[] = "abcdefghijklmnopqrstuvwxyz1234567890";
         char buffer2[4096];
@@ -2954,6 +2971,7 @@ main(int argc, char **argv) {
         XCLOSE(&fd);
         xunlink(buffer2);
     }
+#endif
 
     ASSERT_EQUAL(deg2rad(180.0), 3.141592653589793);
     ASSERT_EQUAL(rad2deg(3.141592653589793), 180.0);
