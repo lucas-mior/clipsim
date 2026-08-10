@@ -375,8 +375,6 @@ main(void) {
     ASSERT_EQUAL(ALIGN_POWER_OF_2(17, 16), 32);
     ASSERT_EQUAL(ALIGN_POWER_OF_2(18, 16), 32);
 
-    srand((uint32)time(NULL));
-
     ASSERT_EQUAL(arena_nlinked(arena), 1);
 
     {
@@ -384,7 +382,7 @@ main(void) {
         int64 total_pushed = 0;
 
         for (int32 i = 0; i < LENGTH(objs); i += 1) {
-            int64 size = ALIGN(1ul + (ulong)(rand() % 10000));
+            int64 size = ALIGN(1 + (int64)(rand_int() % 10000u));
             ASSERT((objs[i] = arena_push(arena, size)));
 
             total_size += size;
@@ -409,14 +407,14 @@ main(void) {
         int32 nallocated = LENGTH(objs);
 
         while (nallocated > 0) {
-            uint32 j = (uint32)rand() % LENGTH(objs);
-            uint32 k = (uint32)rand() % LENGTH(objs);
+            int32 j = (int32)(rand_int() % (uint32)LENGTH(objs));
+            int32 k = (int32)(rand_int() % (uint32)LENGTH(objs));
             if (objs[j]) {
                 ASSERT(arena_decr(arena, objs[j]));
                 objs[j] = NULL;
                 nallocated -= 1;
             }
-            if ((k + 1) < (uint32)(nallocated / 2)) {
+            if ((k + 1) < (nallocated / 2)) {
                 ASSERT((objs[j] = arena_push(arena, ALIGNMENT)));
                 nallocated += 1;
             }

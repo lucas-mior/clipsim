@@ -117,6 +117,7 @@ CBASE_API_DECL void print_timings(
     struct timespec
 );
 CBASE_API_DECL void qsort64(void *, int64, int64, int (*)(void *, void *));
+CBASE_API_DECL uint32 rand_int(void);
 CBASE_API_DECL double rad2deg(double);
 CBASE_API_DECL int32 random_ascii_string(char *, int32, int32);
 CBASE_API_DECL bool path_missing(char *);
