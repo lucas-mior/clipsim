@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
-#if !defined(ASSERT_C)
-#define ASSERT_C
+#if !defined(ASSERTIONS_C)
+#define ASSERTIONS_C
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_assert 1
@@ -34,9 +34,9 @@ _Generic((VAR), \
 #endif
 
 _Static_assert(sizeof(float)*CHAR_BIT == 32,
-               "assert.c ULP comparison requires 32-bit float");
+               "assertions.c ULP comparison requires 32-bit float");
 _Static_assert(sizeof(double)*CHAR_BIT == 64,
-               "assert.c ULP comparison requires 64-bit double");
+               "assertions.c ULP comparison requires 64-bit double");
 
 static void __attribute__((format(printf, 4, 5)))
 assert_error(char *file, int32 line, char *func, char *format, ...) {
@@ -1476,4 +1476,4 @@ main(void) {
 }
 #endif
 
-#endif /* ASSERT_C */
+#endif /* ASSERTIONS_C */

@@ -497,7 +497,7 @@ if (pointer) {
 ```
 
 ## Assertions
-- Use the assertions defined in `cbase/assert.c`.
+- Use the assertions defined in `cbase/assertions.c`.
   - `ASSERT(expression)`
   - `ASSERT_ZERO(integer expression)`
   - `ASSERT_POSITIVE(integer expression)`
