@@ -2315,6 +2315,7 @@ util_is_integer(char *string) {
 static inline void
 util_functions_sink(void) {
     (void)util_functions_sink;
+    (void)rand_int;
     (void)util_is_integer;
     (void)is_ident_start_char;
     (void)sb_append_byte_if_not;
