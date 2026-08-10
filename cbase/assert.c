@@ -42,7 +42,7 @@ static void __attribute__((format(printf, 4, 5)))
 assert_error(char *file, int32 line, char *func, char *format, ...) {
     va_list ap;
 
-    fprintf(stderr, "%s:%d:%s: ", file, line, func);
+    fprintf(stderr, "%s:%d:%s(): Assertion failed:\n", file, line, func);
 
     va_start(ap, format);
     vfprintf(stderr, format, ap);
@@ -51,21 +51,13 @@ assert_error(char *file, int32 line, char *func, char *format, ...) {
     return;
 }
 
-static void __attribute__((noreturn))
-assert_fatal(void) {
-    if (DEBUGGING) {
-        TRAP();
-    }
-    exit(EXIT_FAILURE);
-}
-
 static int32
 assert_strlen32(char *string) {
     size_t length = strlen(string);
 
     if (length > INT32_MAX) {
         fprintf(stderr, "Assertion string is too long.\n");
-        assert_fatal();
+        TRAP();
     }
     return (int32)length;
 }
@@ -100,7 +92,7 @@ assert_file_contains(char *file, int32 line, char *func,
         assert_error(file, line, func,
                      "Error opening %s for reading: %s.\n",
                      path, strerror(errno));
-        assert_fatal();
+        TRAP();
     }
     while (fgets(buffer, SIZEOF(buffer), file_handle)) {
         int32 n = assert_strlen32(buffer);
@@ -116,7 +108,7 @@ assert_file_contains(char *file, int32 line, char *func,
     if (!found) {
         assert_error(file, line, func,
                      "Needle '%s' not found in '%s'.\n", needle, path);
-        assert_fatal();
+        TRAP();
     }
     return;
 }
@@ -129,7 +121,7 @@ assert_contains(char *file, int32 line, char *func,
         assert_error(file, line, func,
                      "expected to find substring:\n%.*s\n--- in ---\n%.*s",
                      needle_len, needle, haystack_len, haystack);
-        assert_fatal();
+        TRAP();
     }
 }
 
@@ -141,7 +133,7 @@ assert_not_contains(char *file, int32 line, char *func,
         assert_error(file, line, func,
                      "expected to not find substring:\n%.*s\n--- in ---\n%.*s",
                      needle_len, needle, haystack_len, haystack);
-        assert_fatal();
+        TRAP();
     }
 }
 
@@ -151,22 +143,17 @@ a_strings_##MODE(char *file, int32 line, char *func,                           \
                  char *name1, char *name2,                                     \
                  char *var1, char *var2) {                                     \
     if (var1 == NULL) {                                                        \
-        fprintf(stderr,                                                        \
-                "\nError in assertion at %s:%d:%s\n", file, line, func);       \
-        fprintf(stderr, "%s is NULL.\n", name1);                               \
+        assert_error(file, line, func, "%s is NULL.\n", name1);                \
         TRAP();                                                                \
     }                                                                          \
     if (var2 == NULL) {                                                        \
-        fprintf(stderr,                                                        \
-                "\nError in assertion at %s:%d:%s\n", file, line, func);       \
-        fprintf(stderr, "%s is NULL.\n", name2);                               \
+        assert_error(file, line, func, "%s is NULL.\n", name2);                \
         TRAP();                                                                \
     }                                                                          \
     if (!(strcmp(var1, var2) SYMBOL 0)) {                                      \
-        fprintf(stderr,                                                        \
-                "\nError in assertion at %s:%d:%s\n", file, line, func);       \
-        fprintf(stderr,                                                        \
-                "%s = %s " #SYMBOL " %s = %s\n", name1, var1, var2, name2);    \
+        assert_error(file, line, func,                                         \
+                     "%s = %s " #SYMBOL " %s = %s\n",                          \
+                     name1, var1, var2, name2);                                \
         TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
@@ -190,10 +177,9 @@ a_pointers_##MODE(char *file, int32 line, char *func,                          \
         if (!DEBUGGING) {                                                      \
             UNREACHABLE();                                                     \
         }                                                                      \
-        fprintf(stderr,                                                        \
-                "\nAssertion failed at %s:%d:%s\n", file, line, func);         \
-        fprintf(stderr,                                                        \
-                "%s = %p " #SYMBOL " %p = %s\n", name1, var1, var2, name2);    \
+        assert_error(file, line, func,                                         \
+                     "%s = %p " #SYMBOL " %p = %s\n",                          \
+                     name1, var1, var2, name2);                                \
         TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
@@ -208,7 +194,7 @@ GENERATE_ASSERT_POINTERS(more_equal, >=)
 
 #undef GENERATE_ASSERT_POINTERS
 
-#define GENERATE_ASSERT_INTEGERS_SAME_SIGN(TYPE, FORMAT, SYMBOL, MODE)         \
+#define GENERATE_ASSERT_INTEGERS_SAME_SIGN(TYPE, FMT, SYMBOL, MODE)            \
 static void                                                                    \
 a_both_##TYPE##_##MODE(char *file, int32 line, char *func,                     \
                        char *name1, char *name2,                               \
@@ -219,11 +205,9 @@ a_both_##TYPE##_##MODE(char *file, int32 line, char *func,                     \
         if (!DEBUGGING) {                                                      \
             UNREACHABLE();                                                     \
         }                                                                      \
-        fprintf(stderr,                                                        \
-                "\nAssertion failed at %s:%d:%s\n", file, line, func);         \
-        fprintf(stderr,                                                        \
-                "[%s%lld]%s = "FORMAT" " #SYMBOL " "FORMAT" = %s[%s%lld]\n",   \
-               type1, bits1, name1, var1, var2, name2, type2, bits2);          \
+        assert_error(file, line, func,                                         \
+                     "[%s%lld]%s = "FMT" " #SYMBOL " "FMT" = %s[%s%lld]\n",    \
+                     type1, bits1, name1, var1, var2, name2, type2, bits2);    \
         TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
@@ -271,11 +255,9 @@ a_signed_unsigned##MODE(char *file, int32 line, char *func,                    \
         if (!DEBUGGING) {                                                      \
             UNREACHABLE();                                                     \
         }                                                                      \
-        fprintf(stderr,                                                        \
-                "\nAssertion failed at %s:%d:%s\n", file, line, func);         \
-        fprintf(stderr,                                                        \
-                "[%s%lld]%s = %lld " #SYMBOL " %llu = %s[%s%lld]\n",           \
-                type1, bits1, name1, var1, var2, name2, type2, bits2);         \
+        assert_error(file, line, func,                                         \
+                     "[%s%lld]%s = %lld " #SYMBOL " %llu = %s[%s%lld]\n",      \
+                     type1, bits1, name1, var1, var2, name2, type2, bits2);    \
         TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
@@ -301,11 +283,9 @@ a_unsigned_signed_##MODE(char *file, int32 line, char *func,                   \
         if (!DEBUGGING) {                                                      \
             UNREACHABLE();                                                     \
         }                                                                      \
-        fprintf(stderr,                                                        \
-                "\nAssertion failed at %s:%d:%s\n", file, line, func);         \
-        fprintf(stderr,                                                        \
-                "[%s%lld]%s = %llu " #SYMBOL " %lld = %s[%s%lld]\n",           \
-                type1, bits1, name1, var1, var2, name2, type2, bits2);         \
+        assert_error(file, line, func,                                         \
+                     "[%s%lld]%s = %llu " #SYMBOL " %lld = %s[%s%lld]\n",      \
+                     type1, bits1, name1, var1, var2, name2, type2, bits2);    \
         TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
@@ -331,11 +311,9 @@ a_double_##MODE(char *file, int32 line, char *func,                            \
         if (!DEBUGGING) {                                                      \
             UNREACHABLE();                                                     \
         }                                                                      \
-        fprintf(stderr,                                                        \
-                "\nAssertion failed at %s:%d:%s\n", file, line, func);         \
-        fprintf(stderr,                                                        \
-                "[%s%lld]%s = %f " #SYMBOL " %f = %s[%s%lld]\n",               \
-                type1, bits1, name1, var1, var2, name2, type2, bits2);         \
+        assert_error(file, line, func,                                         \
+                     "[%s%lld]%s = %f " #SYMBOL " %f = %s[%s%lld]\n",          \
+                     type1, bits1, name1, var1, var2, name2, type2, bits2);    \
         TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
@@ -613,11 +591,10 @@ assert_double_failure(char *file, int32 line, char *func,
     if (!DEBUGGING) {
         UNREACHABLE();
     }
-    fprintf(stderr,
-            "\nAssertion failed at %s:%d:%s\n", file, line, func);
-    fprintf(stderr,
-            "[%s%lld]%s = %.17g %s %.17g = %s[%s%lld]\n",
-            type1, bits1, name1, var1, symbol, var2, name2, type2, bits2);
+    assert_error(file, line, func,
+                 "[%s%lld]%s = %.17g %s %.17g = %s[%s%lld]\n",
+                 type1, bits1, name1, var1, symbol, var2, name2, type2,
+                 bits2);
     if (use_tolerance) {
         fprintf(stderr,
                 "floating diff = %.17g, tolerance = %.17g\n",
@@ -702,10 +679,9 @@ a_bool_##MODE(char *file, int32 line, char *func,                              \
         if (var2) {                                                            \
             s2 = "true";                                                       \
         }                                                                      \
-        fprintf(stderr,                                                        \
-                "\nAssertion failed at %s:%d:%s\n", file, line, func);         \
-        fprintf(stderr, "[%s%lld]%s = %s " #SYMBOL " %s = %s[%s%lld]\n",       \
-                        type1, bits1, name1, s1, s2, name2, type2, bits2);     \
+        assert_error(file, line, func,                                         \
+                     "[%s%lld]%s = %s " #SYMBOL " %s = %s[%s%lld]\n",         \
+                     type1, bits1, name1, s1, s2, name2, type2, bits2);        \
         TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
@@ -816,39 +792,92 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_FIRST(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
 
-#define ASSERT(C) do {                                                         \
-    if (!(C)) {                                                                \
+#define ASSERT(...) do {                                                       \
+    if (!(__VA_ARGS__)) {                                                      \
         if (!DEBUGGING) {                                                      \
             UNREACHABLE();                                                     \
         } else {                                                               \
-            fprintf(stderr, "Assertion '%s' failed at %s:%d:%s\n",             \
-                            #C, __FILE__, __LINE__, FUNC__);                   \
+            assert_error(__FILE__, __LINE__, FUNC__, "%s", #__VA_ARGS__);      \
             TRAP();                                                            \
         }                                                                      \
     }                                                                          \
 } while (0)
 
-#define ASSERT_FILE_CONTAINS(PATH, NEEDLE) \
+#define ASSERT_NULL(VAR1) do {                                                 \
+    void *p = VAR1;                                                            \
+    if (p != NULL) {                                                           \
+        assert_error(__FILE__, __LINE__, FUNC__,                               \
+                     "%s = %p == NULL\n", #VAR1, p);                           \
+        TRAP();                                                                \
+    }                                                                          \
+} while (0)
+
+#define ASSERT_ZERO(VAR1) do {                                                 \
+    llong p = VAR1;                                                            \
+    if (p != 0) {                                                              \
+        assert_error(__FILE__, __LINE__, FUNC__,                               \
+                     "%s = %lld == 0\n", #VAR1, p);                            \
+        TRAP();                                                                \
+    }                                                                          \
+} while (0)
+
+#define ASSERT_POSITIVE(VAR1) do {                                             \
+    llong p = VAR1;                                                            \
+    if (p <= 0) {                                                              \
+        assert_error(__FILE__, __LINE__, FUNC__,                               \
+                     "%s = %lld > 0\n", #VAR1, p);                             \
+        TRAP();                                                                \
+    }                                                                          \
+} while (0)
+
+#define ASSERT_NEGATIVE(VAR1) do {                                             \
+    llong p = VAR1;                                                            \
+    if (p >= 0) {                                                              \
+        assert_error(__FILE__, __LINE__, FUNC__,                               \
+                     "%s = %lld < 0\n", #VAR1, p);                             \
+        TRAP();                                                                \
+    }                                                                          \
+} while (0)
+
+#define ASSERT_NON_POSITIVE(VAR1) do {                                         \
+    llong p = VAR1;                                                            \
+    if (p > 0) {                                                               \
+        assert_error(__FILE__, __LINE__, FUNC__,                               \
+                     "%s = %lld <= 0\n", #VAR1, p);                            \
+        TRAP();                                                                \
+    }                                                                          \
+} while (0)
+
+#define ASSERT_NON_NEGATIVE(VAR1) do {                                         \
+    llong p = VAR1;                                                            \
+    if (p < 0) {                                                               \
+        assert_error(__FILE__, __LINE__, FUNC__,                               \
+                     "%s = %lld >= 0\n", #VAR1, p);                            \
+        TRAP();                                                                \
+    }                                                                          \
+} while (0)
+
+#define ASSERT_FILE_CONTAINS(PATH, NEEDLE)           \
     assert_file_contains(__FILE__, __LINE__, FUNC__, \
                          PATH, NEEDLE)
 
 #define ASSERT_CONTAINS(HAYSTACK, HAYSTACK_LEN, NEEDLE) \
-    assert_contains(__FILE__, __LINE__, FUNC__, \
+    assert_contains(__FILE__, __LINE__, FUNC__,         \
                     HAYSTACK, HAYSTACK_LEN, NEEDLE)
 
 #define ASSERT_NOT_CONTAINS(HAYSTACK, HAYSTACK_LEN, NEEDLE) \
-    assert_not_contains(__FILE__, __LINE__, FUNC__, \
+    assert_not_contains(__FILE__, __LINE__, FUNC__,         \
                         HAYSTACK, HAYSTACK_LEN, NEEDLE)
 
 #define A_BOTH_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2)             \
-    a_both_signed_##MODE(__FILE__, __LINE__, FUNC__,    \
+    a_both_signed_##MODE(__FILE__, __LINE__, FUNC__,              \
                          #VAR1, #VAR2,                            \
                          typename(TYPE1), typename(TYPE2),        \
                          typebits(TYPE1), typebits(TYPE2),        \
                          (llong)(VAR1), (llong)(VAR2))
 
 #define A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2)         \
-    a_signed_unsigned##MODE(__FILE__, __LINE__, FUNC__, \
+    a_signed_unsigned##MODE(__FILE__, __LINE__, FUNC__,           \
                             #VAR1, #VAR2,                         \
                             typename(TYPE1), typename(TYPE2),     \
                             typebits(TYPE1), typebits(TYPE2),     \
@@ -1112,17 +1141,6 @@ _Generic((VAR1), \
 #define ASSERT_CLOSE(...) SELECT_ON_NUM_ARGS(ASSERT_CLOSE_, __VA_ARGS__)
 #define ASSERT_NOT_CLOSE(...) SELECT_ON_NUM_ARGS(ASSERT_NOT_CLOSE_, __VA_ARGS__)
 
-#define ASSERT_NULL(VAR1) do {                                                 \
-    void *p = VAR1;                                                            \
-    if (p != NULL) {                                                           \
-        fprintf(stderr,                                                        \
-                "\nAssertion failed at %s:%d:%s\n",                            \
-                __FILE__, __LINE__, FUNC__);                                   \
-        fprintf(stderr, "%s = %p == NULL\n", #VAR1, p);                        \
-        TRAP();                                                                \
-    }                                                                          \
-} while (0)
-
 #if TESTING_assert
 #define CBASE_IMPLEMENT
 #include "cbase.h"
@@ -1139,6 +1157,18 @@ handler_failed_assertion(int unused) {
 
 int
 main(void) {
+    ASSERT(true);
+    ASSERT(!false);
+    ASSERT(1);
+    ASSERT_ZERO(0);
+    ASSERT_ZERO(0u);
+    ASSERT_ZERO(0ll);
+
+    ASSERT_POSITIVE(1);
+    ASSERT_NEGATIVE(-1);
+
+    ASSERT_NON_NEGATIVE(0);
+    ASSERT_NON_POSITIVE(0);
     {
         char *string = NULL;
         void *pointer = NULL;
