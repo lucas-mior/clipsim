@@ -12,8 +12,6 @@
 
 #include "cbase.h"
 
-static int64 here_counter = 0;
-
 CBASE_API_DEF void
 here_impl(char *file, int32 line, char *func) {
 #if OS_UNIX
@@ -39,9 +37,6 @@ here_impl(char *file, int32 line, char *func) {
 #endif
     return;
 }
-
-static bool timezone_initialized = false;
-static time_t timezone_offset = 0;
 
 #define SFA_LINKAGE CBASE_API_DEF
 #define SFA_SNPRINTF_LINKAGE CBASE_API_DECL

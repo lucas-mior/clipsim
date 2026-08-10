@@ -4,11 +4,15 @@
 // this is almost completely self contained,
 // it only depends on platform_detection.h,
 // but not on anything else on cbase/
+// We also have to include libc.h,
+// so that macros defined by system headers can be
+// undefined before I define them.
 
 #if !defined(BASE_MACROS_H)
 #define BASE_MACROS_H
 
 #include "platform_detection.h"
+#include "libc.h"
 
 #if !defined(CBASE_API_DECL)
 #define CBASE_API_DECL extern
@@ -62,13 +66,6 @@
   CAT_SELECT(macro, NUM_ARGS(__VA_ARGS__))(__VA_ARGS__)
 
 #define CAT(...) CAT_SELECT_ON_NUM_ARGS(CAT, __VA_ARGS__)
-
-#include <stddef.h>
-#if !defined(offsetof)
-#define OFFSET_OF(STRUCT, FIELD) ((size_t)&(((STRUCT *)0)->FIELD))
-#else
-#define OFFSET_OF(STRUCT, FIELD) offsetof(STRUCT, FIELD)
-#endif
 
 #define RESET      "\x1b[0m"
 
