@@ -333,28 +333,15 @@ test_compile_and_run_source () {
     test_cmdline="$test_cmdline -o $test_exe $test_src"
     test_cmdline="$test_cmdline $TEST_LDFLAGS $test_flags $LDFLAGS"
 
-    if [ "$test_cc" = "chibicc" ] || [ "$test_cc" = "cproc" ]; then
-        test_cmdline_no_cc=$(option_remove "$test_cmdline" "$test_cc")
-        trace_on
-        if compile_with_other "$test_cc" "$test_cmdline_no_cc"; then
-            if ! test_run_binary "$test_exe"; then
-                test_debugger "$test_exe"
-                exit 1
-            fi
-        else
+    trace_on
+    if $test_cmdline; then
+        if [ "$test_run_after_compile" != 0 ] \
+                && ! test_run_binary "$test_exe"; then
+            test_debugger "$test_exe"
             exit 1
         fi
     else
-        trace_on
-        if $test_cmdline; then
-            if [ "$test_run_after_compile" != 0 ] \
-                    && ! test_run_binary "$test_exe"; then
-                test_debugger "$test_exe"
-                exit 1
-            fi
-        else
-            exit 1
-        fi
+        exit 1
     fi
     trace_off
 
@@ -461,43 +448,6 @@ uninstall_opt () {
     if [ -e "$file" ]; then
         rm -rf "$dest"
     fi
-}
-
-compile_with_other () {
-    compiler=$1
-    compiler_macro=$(echo "$compiler" | tr '[:lower:]' '[:upper:]' | tr ' ' '_')
-    compiler_macro="__${compiler_macro}__"
-    shift
-    args="$*"
-
-    trace_on
-    while ! problem=$( \
-            $compiler "-D${compiler_macro}" \
-            ${COMPILE_WITH_OTHER_EXTRA_DEFS:-} \
-            $args 2>&1 \
-        ); do
-        trace_off
-        problem=$(echo "$problem" | head -n 1 | tr -d "'")
-
-        sleep 0.4
-        if echo "$problem" | grep -Eq "unknown (argument|option)"; then
-            arg=$(echo "$problem" | awk '{print $NF}')
-            printf "\nRemoving argument %s...\n" "$arg"
-            args=$(option_remove "$args" "$arg")
-        elif echo "$problem" | grep -q "unknown file extension:"; then
-            arg=$(echo "$problem" | awk '{print $NF}')
-            printf "\nRemoving argument %s...\n" "$arg"
-            args=$(option_remove "$args" "$arg")
-        else
-            printf "\n\nError compiling with %s:\n\n%s\n\n" \
-                "$compiler" "$problem"
-            return 1
-        fi
-        printf "\n"
-        trace_on
-    done
-
-    return 0
 }
 
 compile_cbase () {

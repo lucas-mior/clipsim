@@ -145,8 +145,7 @@ _Generic((SIZE), \
   #endif
 #endif
 
-// cproc uses gcc pre processor but __has_include does not work properly
-#if !defined(__CPROC__) && defined(__has_include)
+#if defined(__has_include)
   #if __has_include(<valgrind/valgrind.h>)
     #include <valgrind/valgrind.h>
   #else

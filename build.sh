@@ -180,7 +180,6 @@ assembly)
     exit
     ;;
 test)
-    COMPILE_WITH_OTHER_EXTRA_DEFS="-D__attribute=__attribute__" \
     TEST_EXCLUDE_PATTERN='(^|/)tests/' \
         test "$2"
     tests/test.bash

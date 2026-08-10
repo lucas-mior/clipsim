@@ -673,17 +673,7 @@ main(void) {
         uint var_uint = UINT_MAX;
         uint64 var_uint64 = UINT64_MAX;
         float var_float = FLT_MAX;
-#if !defined(__CPROC__)
-        // DBL_MAX is defined with L suffix in the gcc headers,
-        // which means long double,
-        // and cproc uses the gcc pre processor
-        // and cproc uses the gcc headers (at least in this case),
-        // and qbe does not support long double,
-        // which means that cproc also does not support long double
         double var_double = DBL_MAX;
-#else
-        double var_double = 1e300;
-#endif
 
         PRINTLN(var_voidptr);
         PRINTLN(var_string);
