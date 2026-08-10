@@ -27,6 +27,10 @@
   #define _GNU_SOURCE
 #endif
 
+#if OS_NETBSD && !defined(_NETBSD_SOURCE)
+  #define _NETBSD_SOURCE
+#endif
+
 #if CC_CLANG
   #pragma clang diagnostic pop
 #endif
@@ -68,20 +72,17 @@
 #endif
 
 #if OS_UNIX
-#include <pthread.h>
-#include <utime.h>
-#endif
-
-#if OS_UNIX
-#include <sys/ioctl.h>
-#include <sys/select.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
+#include <pthread.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/select.h>
 #include <sys/socket.h>
-#include <sys/wait.h>
 #include <sys/un.h>
+#include <sys/wait.h>
+#include <utime.h>
 #endif
 
 #if !defined(CBASE_HAS_FTS)
@@ -108,6 +109,7 @@
 
 #if OS_MAC || OS_BSD
 #include <sys/param.h>
+#include <sys/sysctl.h>
 #endif
 
 #if OS_LINUX
