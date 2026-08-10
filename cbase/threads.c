@@ -39,7 +39,26 @@ util_nthreads(void) {
 #else
 CBASE_API_DEF int32
 util_nthreads(void) {
+#if OS_LINUX
     return (int32)sysconf(_SC_NPROCESSORS_ONLN);
+#elif OS_MAC || OS_BSD
+    int cpus;
+    int mib[] = {
+        CTL_HW,
+        HW_NCPU,
+    };
+    size_t len = sizeof(cpus);
+
+    if ((sysctl(mib, 2, &cpus, &len, NULL, 0) < 0)
+        || (cpus <= 0)) {
+        error("Error getting number of processors: %s.\n", strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+
+    return cpus;
+#else
+    return 1;
+#endif
 }
 #endif
 
