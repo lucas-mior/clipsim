@@ -1054,7 +1054,7 @@ CBASE_API_DEF void
 command_argv0_set(Command *command, char *argument) {
     int32 argument_len = strlen32(argument);
 
-    ASSERT_MORE(command->argc, 0);
+    ASSERT_POSITIVE(command->argc);
     free2(command->argv[0], command->argvs_lens[0] + 1);
     command->argv[0] = xstrdup(argument);
     command->argvs_lens[0] = argument_len;
@@ -1235,7 +1235,7 @@ main(int argc, char **argv) {
         command_print(&cmd);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
         ASSERT_EQUAL(cmd.argv[0], NULL);
 
         command_push_split(&cmd, "  alpha beta  gamma ", " ");
@@ -1246,7 +1246,7 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(cmd.argv[cmd.argc], NULL);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         COMMAND_PUSH(&cmd, "first", "second");
         ASSERT_EQUAL(cmd.argc, 2);
@@ -1257,7 +1257,7 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(cmd.argv[cmd.argc], NULL);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         {
             enum {
@@ -1296,7 +1296,7 @@ main(int argc, char **argv) {
         }
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         {
             enum {
@@ -1317,7 +1317,7 @@ main(int argc, char **argv) {
         }
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         COMMAND_PUSH(&cmd, "sh", "-c", "exit 7");
         ASSERT(command_run_sync(&cmd, NULL));
@@ -1326,7 +1326,7 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(cmd.result.exit_status, 7);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         COMMAND_PUSH(&cmd,
                      "sh",
@@ -1340,7 +1340,7 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(cmd.result.status, 7);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         COMMAND_PUSH(&cmd,
                      "sh",
@@ -1354,16 +1354,16 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(cmd.result.status, 6);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         COMMAND_PUSH(&cmd, "cat");
         ASSERT(command_stdin_buffer_set(&cmd, STRLIT("stdin-buffer")));
         ASSERT(command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT));
         ASSERT_EQUAL(cmd.result.stdout_output, "stdin-buffer");
-        ASSERT_EQUAL(cmd.result.status, 0);
+        ASSERT_ZERO(cmd.result.status);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
         ASSERT(cmd.stdin_buffer == NULL);
         ASSERT(!command_stdin_buffer_set(&cmd, NULL, 0));
 
@@ -1384,12 +1384,12 @@ main(int argc, char **argv) {
                                             COMMAND_STDIN_TEST_LEN));
             ASSERT(command_run_capture_all(&cmd));
             ASSERT_EQUAL(cmd.result.stdout_output, "done");
-            ASSERT_EQUAL(cmd.result.status, 0);
+            ASSERT_ZERO(cmd.result.status);
             free2(stdin_data, COMMAND_STDIN_TEST_LEN);
         }
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         {
             enum {
@@ -1409,7 +1409,7 @@ main(int argc, char **argv) {
         }
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         {
             char *empty_input = "";
@@ -1418,11 +1418,11 @@ main(int argc, char **argv) {
             ASSERT(command_stdin_buffer_set(&cmd, empty_input, 0));
             ASSERT(command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT));
             ASSERT_EQUAL(cmd.result.stdout_output, "");
-            ASSERT_EQUAL(cmd.result.status, 0);
+            ASSERT_ZERO(cmd.result.status);
         }
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         {
             char expected_cwd[PATH_MAX];
@@ -1445,7 +1445,7 @@ main(int argc, char **argv) {
         }
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         command_env_push(&cmd, "COMMAND_TEST_VALUE=works");
         command_env_printf(&cmd, "COMMAND_TEST_NUMBER=%d", 42);
@@ -1460,7 +1460,7 @@ main(int argc, char **argv) {
         command_env_clear(&cmd);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         {
             char *flags_str;
@@ -1477,12 +1477,12 @@ main(int argc, char **argv) {
 
         COMMAND_PUSH(&cmd, "sh", "-c", "exit 9");
         ASSERT(command_run_async(&cmd, COMMAND_NEW_PROCESS_GROUP));
-        ASSERT_MORE(cmd.result.pid, 0);
+        ASSERT_POSITIVE(cmd.result.pid);
         ASSERT(command_wait(&cmd));
         ASSERT_EQUAL(cmd.result.status, 9);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         COMMAND_PUSH(&cmd,
                      "sh",
@@ -1491,29 +1491,29 @@ main(int argc, char **argv) {
         ASSERT(command_run_async(&cmd,
                                  COMMAND_CAPTURE_STDOUT
                                  |COMMAND_CAPTURE_STDERR));
-        ASSERT_MORE(cmd.result.pid, 0);
+        ASSERT_POSITIVE(cmd.result.pid);
         command_result_read_captured(&cmd);
         ASSERT(command_wait(&cmd));
         ASSERT_EQUAL(cmd.result.stdout_output, "asyncout");
         ASSERT_EQUAL(cmd.result.stderr_output, "asyncerr");
-        ASSERT_EQUAL(cmd.result.status, 0);
+        ASSERT_ZERO(cmd.result.status);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
 
         COMMAND_PUSH(&cmd, "sh", "-c", "exit 0");
         ASSERT(command_run(&cmd, COMMAND_DETACHED));
-        ASSERT_EQUAL(cmd.result.status, 0);
+        ASSERT_ZERO(cmd.result.status);
 
         command_reset(&cmd);
-        ASSERT_EQUAL(cmd.argc, 0);
+        ASSERT_ZERO(cmd.argc);
         command_free(&cmd);
         ASSERT(cmd.argv == NULL);
         ASSERT(cmd.argvs_lens == NULL);
         ASSERT(cmd.env == NULL);
         ASSERT(cmd.env_lens == NULL);
-        ASSERT_EQUAL(cmd.cap, 0);
-        ASSERT_EQUAL(cmd.env_cap, 0);
+        ASSERT_ZERO(cmd.cap);
+        ASSERT_ZERO(cmd.env_cap);
     }
 
     NCALLS(1);

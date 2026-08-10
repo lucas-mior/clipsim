@@ -202,7 +202,7 @@ test_document_add_line_grows_storage(void) {
     ASSERT_EQUAL(doc.lines[1].text, "value\n");
     free_line(&doc.lines[0]);
     ASSERT_NULL(doc.lines[0].text);
-    ASSERT_EQUAL(doc.lines[0].len, 0);
+    ASSERT_ZERO(doc.lines[0].len);
     free_line(&doc.lines[1]);
     free2(doc.lines, doc.capacity * SIZEOF(*doc.lines));
     return;

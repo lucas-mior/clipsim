@@ -626,13 +626,13 @@ main(void) {
 
             ASSERT(gen_len >= 10);
             ASSERT(gen_len < 256);
-            ASSERT(test_buf[gen_len] == '\0');
+            ASSERT_ZERO(test_buf[gen_len]);
 
             while (consumed < gen_len) {
                 uint32 u;
                 int32 dec_len = utf8_decode(test_buf + consumed,
                                             gen_len - consumed, &u);
-                ASSERT(dec_len > 0);
+                ASSERT_POSITIVE(dec_len);
                 ASSERT(u != UTF_INVALID);
                 consumed += dec_len;
             }

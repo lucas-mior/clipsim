@@ -762,7 +762,7 @@ INLINE uint64
 hash_function(void *key, int32 key_length) {
     uint64 hash;
     if (DEBUGGING) {
-        ASSERT_MORE(key_length, 0);
+        ASSERT_POSITIVE(key_length);
     }
     hash = rapidhash(key, key_length);
     return hash;
@@ -927,9 +927,9 @@ main(void) {
     ASSERT_EQUAL(hash_ndeleted_map(map), 1);
 
     hash_zero_map(map);
-    ASSERT_EQUAL(hash_length(map), 0);
-    ASSERT_EQUAL(hash_ndeleted_map(map), 0);
-    ASSERT_EQUAL(map->occupied, 0);
+    ASSERT_ZERO(hash_length(map));
+    ASSERT_ZERO(hash_ndeleted_map(map));
+    ASSERT_ZERO(map->occupied);
 
     for (uint32 i = 0; i < 10; i += 1) {
         ASSERT(hash_insert_map(map,
