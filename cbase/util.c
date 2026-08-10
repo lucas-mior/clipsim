@@ -12,7 +12,7 @@
 
 #include "cbase.h"
 
-static ullong here_counter;
+static int64 here_counter = 0;
 
 CBASE_API_DEF void
 here_impl(char *file, int32 line, char *func) {
@@ -20,7 +20,8 @@ here_impl(char *file, int32 line, char *func) {
     char buffer[4096];
 #endif
 
-    fprintf(stderr, "\n===== HERE(%llu): %s:%d (%s)\n",
+    fprintf(stderr,
+            "\n===== HERE(%lld): %s:%d (%s)\n",
             here_counter++, file, line, func);
 #if OS_UNIX
     SNPRINTF(buffer, "%s:%d:%s\n", file, line, func);

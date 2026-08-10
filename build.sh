@@ -233,7 +233,7 @@ test)
                 if ! $test_exe; then
                     gdb --quiet \
                         -ex run -ex backtrace -ex quit \
-                        $test_exe 2>&1 | tee /dev/tty | xsel -i -b
+                        $test_exe 2>&1
                     exit 1
                 fi
             else
