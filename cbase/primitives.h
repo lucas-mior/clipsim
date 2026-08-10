@@ -27,11 +27,7 @@ typedef unsigned long long ullong;
 
 typedef signed char schar;
 typedef long long llong;
-#if !defined(__CPROC__)
 typedef long double ldouble;
-#else
-typedef double ldouble;
-#endif
 
 typedef schar  int8;
 typedef short  int16;
