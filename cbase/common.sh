@@ -184,6 +184,238 @@ option_remove() {
     printf '%s\n' "$result"
 }
 
+
+test_run_binary () {
+    test_exe=$1
+
+    if [ -n "${TEST_STDIN:-}" ]; then
+        "$test_exe" < "$TEST_STDIN"
+    else
+        "$test_exe"
+    fi
+}
+
+test_debugger () {
+    test_exe=$1
+
+    if command_exists gdb; then
+        gdb --quiet \
+            -ex run -ex backtrace -ex quit \
+            "$test_exe" 2>&1 || true
+    elif command_exists lldb; then
+        lldb \
+            --batch \
+            --one-line "run" \
+            --one-line "bt" \
+            -- "$test_exe" 2>&1 || true
+    fi
+
+    return 0
+}
+
+test_source_matches_filter () {
+    test_src=$1
+    test_filter=$2
+
+    if [ -z "$test_filter" ]; then
+        return 0
+    fi
+
+    test_name=$(basename "$test_src")
+    test_module=${test_name%.c}
+    test_filter_base=$(basename "$test_filter")
+    test_filter_module=${test_filter_base%.c}
+
+    if [ "$test_src" = "$test_filter" ] \
+            || [ "$test_name" = "$test_filter_base" ] \
+            || [ "$test_module" = "$test_filter_module" ]; then
+        return 0
+    fi
+
+    return 1
+}
+
+test_source_is_excluded () {
+    test_src=$1
+    test_name=$(basename "$test_src")
+    test_module=${test_name%.c}
+    test_exclude_pattern="(^|/)stc/"
+
+    if [ "${TEST_SKIP_MAIN:-1}" != 0 ] \
+            && echo "$test_name" | grep -Eq '^main[^/]*\.c$'; then
+        return 0
+    fi
+
+    if [ -n "${TEST_EXCLUDE_PATTERN:-}" ]; then
+        test_exclude_pattern="$test_exclude_pattern|$TEST_EXCLUDE_PATTERN"
+    fi
+
+    if echo "$test_src" | grep -Eq "$test_exclude_pattern"; then
+        return 0
+    fi
+
+    if [ -z "${TEST_FILTER:-}" ] \
+            && [ -n "${TEST_EXCLUDE_UNFILTERED_PATTERN:-}" ] \
+            && echo "$test_src" \
+                | grep -Eq "$TEST_EXCLUDE_UNFILTERED_PATTERN"; then
+        return 0
+    fi
+
+    if [ "${TEST_REQUIRE_TESTING_MARKER:-1}" != 0 ] \
+            && ! grep -q "TESTING_$test_module" "$test_src"; then
+        return 0
+    fi
+
+    return 1
+}
+
+test_executable_path () {
+    test_module=$1
+
+    if [ -n "${TEST_EXE_PATH:-}" ]; then
+        printf '%s\n' "$TEST_EXE_PATH"
+        return 0
+    fi
+
+    if [ "${TEST_EXE_SUFFIX+set}" = set ]; then
+        test_exe_suffix=$TEST_EXE_SUFFIX
+    else
+        test_exe_suffix=_test
+    fi
+
+    printf '%s/%s%s\n' \
+        "${TEST_TMPDIR:-${TMPDIR:-/tmp}}" \
+        "$test_module" \
+        "$test_exe_suffix"
+}
+
+test_compile_and_run_source () {
+    test_src=$1
+    test_name=$(basename "$test_src")
+    test_module=${test_name%.c}
+    test_exe=$(test_executable_path "$test_module")
+    test_flags=$(awk '/flags:/ { $1=$2=""; print $0 }' "$test_src")
+    test_cc=$CC
+    test_run_after_compile=1
+
+    mkdir -p "$(dirname "$test_exe")"
+
+    printf "\nTesting ${RED}%s${RES} ...\n" "$test_src"
+
+    if [ -n "${TEST_WINDOWS_SOURCE_PATTERN:-}" ] \
+            && echo "$test_src" | grep -Eq "$TEST_WINDOWS_SOURCE_PATTERN"; then
+        if ! command_exists zig; then
+            return 0
+        fi
+
+        test_cc="zig cc"
+        test_cmdline="$test_cc $CPPFLAGS $TEST_CPPFLAGS $CFLAGS $TEST_CFLAGS"
+        test_cmdline=$(option_remove "$test_cmdline" "-D_GNU_SOURCE")
+        test_cmdline="$test_cmdline -target x86_64-windows-gnu"
+        test_run_after_compile=${TEST_WINDOWS_RUN:-1}
+    else
+        test_cmdline="$test_cc $CPPFLAGS $TEST_CPPFLAGS $CFLAGS $TEST_CFLAGS"
+    fi
+
+    if [ "${TEST_DISABLE_UNUSED_VARIABLE_WARNING:-1}" != 0 ]; then
+        test_cmdline="$test_cmdline -Wno-unused-variable"
+    fi
+
+    if [ "${TEST_DEFINE_MODULE:-1}" != 0 ]; then
+        test_cmdline="$test_cmdline -DTESTING_$test_module=1"
+    fi
+
+    if [ "${TEST_DEFINE_TESTING:-1}" != 0 ]; then
+        test_cmdline="$test_cmdline -DTESTING=1"
+    fi
+
+    test_cmdline="$test_cmdline $TEST_EXTRA_DEFS"
+    test_cmdline="$test_cmdline -o $test_exe $test_src"
+    test_cmdline="$test_cmdline $TEST_LDFLAGS $test_flags $LDFLAGS"
+
+    if [ "$test_cc" = "chibicc" ] || [ "$test_cc" = "cproc" ]; then
+        test_cmdline_no_cc=$(option_remove "$test_cmdline" "$test_cc")
+        trace_on
+        if compile_with_other "$test_cc" "$test_cmdline_no_cc"; then
+            if ! test_run_binary "$test_exe"; then
+                test_debugger "$test_exe"
+                exit 1
+            fi
+        else
+            exit 1
+        fi
+    else
+        trace_on
+        if $test_cmdline; then
+            if [ "$test_run_after_compile" != 0 ] \
+                    && ! test_run_binary "$test_exe"; then
+                test_debugger "$test_exe"
+                exit 1
+            fi
+        else
+            exit 1
+        fi
+    fi
+    trace_off
+
+    return 0
+}
+
+test () {
+    TEST_FILTER=${1:-}
+    if [ "$#" -gt 0 ]; then
+        shift
+    fi
+
+    if [ "$#" -eq 0 ]; then
+        if [ "${TEST_SOURCES+set}" = set ]; then
+            # shellcheck disable=SC2086
+            set -- $TEST_SOURCES
+        else
+            set -- .
+        fi
+    fi
+
+    test_roots=
+    for test_root do
+        if [ -e "$test_root" ]; then
+            test_roots="$test_roots $test_root"
+        fi
+    done
+
+    if [ -z "$test_roots" ]; then
+        return 0
+    fi
+
+    if [ -z "${TEST_WINDOWS_SOURCE_PATTERN:-}" ]; then
+        TEST_WINDOWS_SOURCE_PATTERN='(^|/)windows_functions\.c$'
+    fi
+
+    {
+        if [ -n "${TEST_MAXDEPTH:-}" ]; then
+            # shellcheck disable=SC2086
+            find $test_roots -maxdepth "$TEST_MAXDEPTH" -iname "*.c"
+        else
+            # shellcheck disable=SC2086
+            find $test_roots -iname "*.c"
+        fi
+    } | sort | while read -r test_src; do
+        trace_off
+
+        if ! test_source_matches_filter "$test_src" "$TEST_FILTER"; then
+            continue
+        fi
+
+        if test_source_is_excluded "$test_src"; then
+            continue
+        fi
+
+        test_compile_and_run_source "$test_src"
+    done
+
+    return 0
+}
+
 build_tags () {
     if [ "$#" -eq 0 ]; then
         set -- .
