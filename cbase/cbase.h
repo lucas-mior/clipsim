@@ -13,12 +13,15 @@
 #endif
 
 #include "platform_detection.h"
+#include "libc.h"
 #include "primitives.h"
 #include "base_macros.h"
-#include "libc.h"
 
 static char *program = __FILE__;
 static int32 program_len UNUSED;
+static bool timezone_initialized = false;
+static time_t timezone_offset = 0;
+static int64 here_counter = 0;
 
 #define error(...) \
     error_impl(__FILE__, __LINE__, (char *)__func__, __VA_ARGS__)
@@ -36,7 +39,7 @@ CBASE_API_DECL void *memrchr64(void *, int32, int64);
 #include "memory.h"
 #include "arena.h"
 
-#include "assert.c"
+#include "assertions.c"
 #include "generic.c"
 #include "minmax.c"
 

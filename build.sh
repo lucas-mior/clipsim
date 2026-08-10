@@ -60,7 +60,6 @@ mkdir -p "$(dirname "$exe")"
 
 CC=$(get_compiler "$target")
 
-CPPFLAGS="$CPPFLAGS -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700"
 CPPFLAGS="$CPPFLAGS -I$dir/$cbase"
 
 CFLAGS="$CFLAGS -std=c11"
@@ -98,7 +97,7 @@ fast_feedback)
     ;;
 test)
     CFLAGS="$CFLAGS -Wno-declaration-after-statement"
-    CFLAGS="$CFLAGS -g3 $GNUSOURCE -DDEBUGGING=1 -fsanitize=undefined"
+    CFLAGS="$CFLAGS -g3 -DDEBUGGING=1 -fsanitize=undefined"
     ;;
 debug)
     CFLAGS="$CFLAGS -Wno-declaration-after-statement -g -fsanitize=undefined"

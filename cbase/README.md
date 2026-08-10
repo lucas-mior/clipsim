@@ -4,7 +4,7 @@ Alternative description:
 "stuff that a sane programming language would provide by default".
 
 ## Usage (except include-based files)
-- users of cbase shall `#include "cbase.h"`.
+- users of cbase shall `#include "cbase.h"` before ANY OTHER INCLUDES.
 - one of the files shall `#define CBASE_IMPLEMENT 1` before including `cbase.h`
 
 ## Usage for include-based files like hash.c and xenums.c
@@ -26,6 +26,13 @@ instead as needed:
 - `primitives.h`
 - `base_macros.h`
 
+Also, sometimes we need to use a separate translation unit for wrapping a stupid
+library that does not use proper name space convention. In this case, *do not*
+include "cbase.h" from the wrapper. You may include the files above, and fix any
+name collision that ends up happening. For instance, harfbuzz library defined a
+macro called SIZEOF. (Really? They really couldn't have used HB_SIZEOF, I
+guess).
+
 However, when testing files like assert.c, it is ok and necessary to `#define
 CBASE_IMPLEMENT 1` and `#include "cbase.h"` so that the test compilation unit
 works. But this must be done inside `#if TESTING_` block.
@@ -41,7 +48,7 @@ cc -std=c11 your_main.c cbase.o
 ```
 
 ## Infrastructure
-Every C file in cbase/ must have block for avoid unused function warnings when
+Every .c file in cbase/ must have block for avoid unused function warnings when
 not testing that specific file. This allows to still see which functions are not
 being tested, without warnings if a specific project does not use all the
 functions of cbase/.
