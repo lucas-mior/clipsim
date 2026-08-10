@@ -982,7 +982,7 @@ test_tokenize_line_default(void) {
 
 static void
 test_tokenize_preprocessor_and_skip_whitespace(void) {
-    char *preproc_text = "  #include <x>\n";
+    char *preproc_text = "  #include \"x\"\n";
     char *skip_text = "a b\n";
     bool in_block_comment = false;
     Line line = {0};

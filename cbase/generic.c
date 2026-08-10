@@ -256,20 +256,20 @@ typebits(enum Type type) {
         pointer = (void*)&(primitive.acharp);
         size = ((char*)(pointer + 1)) - (char*)pointer;
         break;
-    case TYPE_BOOL:    size = sizeof(bool);    break;
-    case TYPE_CHAR:    size = sizeof(char);    break;
-    case TYPE_SCHAR:   size = sizeof(schar);   break;
-    case TYPE_SHORT:   size = sizeof(short);   break;
-    case TYPE_INT:     size = sizeof(int);     break;
-    case TYPE_LONG:    size = sizeof(long);    break;
-    case TYPE_LLONG:   size = sizeof(llong);   break;
-    case TYPE_UCHAR:   size = sizeof(uchar);   break;
-    case TYPE_USHORT:  size = sizeof(ushort);  break;
-    case TYPE_UINT:    size = sizeof(uint);    break;
-    case TYPE_ULONG:   size = sizeof(ulong);   break;
-    case TYPE_ULLONG:  size = sizeof(ullong);  break;
-    case TYPE_FLOAT:   size = sizeof(float);   break;
-    case TYPE_DOUBLE:  size = sizeof(double);  break;
+    case TYPE_BOOL:    size = SIZEOF(bool);    break;
+    case TYPE_CHAR:    size = SIZEOF(char);    break;
+    case TYPE_SCHAR:   size = SIZEOF(schar);   break;
+    case TYPE_SHORT:   size = SIZEOF(short);   break;
+    case TYPE_INT:     size = SIZEOF(int);     break;
+    case TYPE_LONG:    size = SIZEOF(long);    break;
+    case TYPE_LLONG:   size = SIZEOF(llong);   break;
+    case TYPE_UCHAR:   size = SIZEOF(uchar);   break;
+    case TYPE_USHORT:  size = SIZEOF(ushort);  break;
+    case TYPE_UINT:    size = SIZEOF(uint);    break;
+    case TYPE_ULONG:   size = SIZEOF(ulong);   break;
+    case TYPE_ULLONG:  size = SIZEOF(ullong);  break;
+    case TYPE_FLOAT:   size = SIZEOF(float);   break;
+    case TYPE_DOUBLE:  size = SIZEOF(double);  break;
     case TYPE_OTHER:
     default: TRAP();
     }
@@ -372,36 +372,33 @@ generic_functions_sink(void) {
 
 void UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC(void);
 
-#if !defined(GENERIC_S_BSZ)
-#define GENERIC_S_BSZ 64
-#endif
-
 #if !defined(S_BSZ)
-#define S_BSZ GENERIC_S_BSZ
+#define S_BSZ 64
 #endif
 
-#define fprint(FP, ...) fprint_0((FP), __VA_ARGS__, (char *)0)
+#define fprint(FP, ...)        fprint_0((FP),          __VA_ARGS__, (char *)0)
 #define snprint(BUF, BSZ, ...) snprint_0((BUF), (BSZ), __VA_ARGS__, (char *)0)
-#define print0(...) fprint_0(stdout, __VA_ARGS__, (char *)0)
+#define print0(...)            fprint_0(stdout,        __VA_ARGS__, (char *)0)
 
-#define S_(X) toString((char[S_BSZ]){ "" }, S_BSZ, _Generic((X), \
-    void *: "%p", \
-    char *: "%s", \
-    bool: "%i", \
-    char: "%c", \
-    schar: "%hhi", \
-    short: "%hi", \
-    int: "%i", \
-    long: "%li", \
-    llong: "%lli", \
-    uchar: "%hhu", \
-    ushort: "%hu", \
-    uint: "%u", \
-    ulong: "%lu", \
-    ullong: "%llu", \
-    float: "%." QUOTE(FLT_DIG) "g", \
-    double: "%." QUOTE(DBL_DIG) "g", \
-    default: "%p" \
+#define S_(X) \
+toString((char[S_BSZ]){ "" }, S_BSZ, _Generic((X),      \
+    void *:  "%p",                                      \
+    char *:  "%s",                                      \
+    bool:    "%i",                                      \
+    char:    "%c",                                      \
+    schar:   "%hhd",                                    \
+    short:   "%hd",                                     \
+    int:     "%d",                                      \
+    long:    "%ld",                                     \
+    llong:   "%lld",                                    \
+    uchar:   "%hhu",                                    \
+    ushort:  "%hu",                                     \
+    uint:    "%u",                                      \
+    ulong:   "%lu",                                     \
+    ullong:  "%llu",                                    \
+    float:   "%." QUOTE(FLT_DIG) "g",                   \
+    double:  "%." QUOTE(DBL_DIG) "g",                   \
+    default: "%p"                                       \
 ), (X))
 
 #define V(X) "", S_(X), ""
@@ -468,8 +465,8 @@ _Generic((VARIABLE),              \
     default: 1                    \
 )
 
-#define TYPEID(VAR) \
-_Generic((VAR), \
+#define TYPEID(VAR)            \
+_Generic((VAR),                \
     void*:   TYPE_VOIDP,       \
     char*:   TYPE_CHARP,       \
     bool:    TYPE_BOOL,        \
@@ -489,26 +486,26 @@ _Generic((VAR), \
     default: TYPE_OTHER        \
 )
 
-#define TYPEBITS(VAR) (sizeof(VAR)*CHAR_BIT)
+#define TYPEBITS(VAR) (SIZEOF(VAR)*CHAR_BIT)
 
-#define DOUBLE_GET(x) \
-_Generic((x), \
-    void*:   double_from_voidp,                                  \
-    char*:   double_from_charp,                                  \
-    bool:    double_from_bool,                                   \
-    char:    double_from_char,                                   \
-    schar:   double_from_schar,                                  \
-    short:   double_from_short,                                  \
-    int:     double_from_int,                                    \
-    long:    double_from_long,                                   \
-    llong:   double_from_llong,                                  \
-    uchar:   double_from_uchar,                                  \
-    ushort:  double_from_ushort,                                 \
-    uint:    double_from_uint,                                   \
-    ulong:   double_from_ulong,                                  \
-    ullong:  double_from_ullong,                                 \
-    float:   double_from_float,                                  \
-    double:  double_from_double,                                 \
+#define DOUBLE_GET(x)                                           \
+_Generic((x),                                                   \
+    void*:   double_from_voidp,                                 \
+    char*:   double_from_charp,                                 \
+    bool:    double_from_bool,                                  \
+    char:    double_from_char,                                  \
+    schar:   double_from_schar,                                 \
+    short:   double_from_short,                                 \
+    int:     double_from_int,                                   \
+    long:    double_from_long,                                  \
+    llong:   double_from_llong,                                 \
+    uchar:   double_from_uchar,                                 \
+    ushort:  double_from_ushort,                                \
+    uint:    double_from_uint,                                  \
+    ulong:   double_from_ulong,                                 \
+    ullong:  double_from_ullong,                                \
+    float:   double_from_float,                                 \
+    double:  double_from_double,                                \
     default: UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC            \
 )(x)
 
@@ -734,7 +731,7 @@ main(void) {
         assert(strequal(S_(false), "0"));
         assert(strequal(SF("0x%02x", 10), "0x0a"));
 
-        n = snprint(buf, sizeof(buf),
+        n = snprint(buf, SIZEOF(buf),
                     "Now you can insert var" V(a) V(b) "s in situ:\n"
                     V(c) " divided by " V(d) " equals " V(c/d) "\n");
         assert(n == strlen2("Now you can insert variables in situ:\n"
@@ -743,20 +740,20 @@ main(void) {
         assert(strequal(buf, "Now you can insert variables in situ:\n"
                             "1 divided by 8 equals 0.125\n"));
 
-        n = snprint(buf, sizeof(buf),
+        n = snprint(buf, SIZEOF(buf),
                     "This is " W(e) " It's " V(strlen(e)) " characters long\n");
-        snprintf(expected, sizeof(expected),
+        snprintf(expected, SIZEOF(expected),
                  "This is %s It's %lu characters long\n",
                  e, (ulong)strlen(e));
         assert(n == strlen2(expected));
         assert(strequal(buf, expected));
 
-        n = snprint(buf, sizeof(buf),
+        n = snprint(buf, SIZEOF(buf),
                     "custom " VF("%04i", c) " " VF("%c", a) "\n");
         assert(n == strlen2("custom 0001 i\n"));
         assert(strequal(buf, "custom 0001 i\n"));
 
-        n = snprint(small, sizeof(small), "prefix-" W(e));
+        n = snprint(small, SIZEOF(small), "prefix-" W(e));
         assert(n == (int)(strlen("prefix-") + strlen(e)));
         assert(strequal(small, "prefix-"));
 
@@ -765,7 +762,7 @@ main(void) {
         n = fprint(fp, "file ", V(c), " ", VF("%04i", c), "\n");
         assert(n == strlen2("file 1 0001\n"));
         rewind(fp);
-        assert(fgets(buf, sizeof(buf), fp));
+        assert(fgets(buf, SIZEOF(buf), fp));
         assert(strequal(buf, "file 1 0001\n"));
         fclose(fp);
 
@@ -774,8 +771,9 @@ main(void) {
         {
             char buffer[16];
             assert((print0(V(c), "\n")
-                    == snprintf(buffer, sizeof(buffer), "%d\n", c)));
+                    == snprintf(buffer, SIZEOF(buffer), "%d\n", c)));
         }
+        print0("PRINTING a=", V(a), "; b=", V(b), "\n");
     }
 }
 
