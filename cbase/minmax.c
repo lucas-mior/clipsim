@@ -270,7 +270,7 @@ main(void) {
         long max11 = MAX(1, 1);
         long max01 = MAX(0, 1);
 
-        ASSERT_EQUAL(min01, 0);
+        ASSERT_ZERO(min01);
         ASSERT_EQUAL(min11, 1);
         ASSERT_EQUAL(max11, 1);
         ASSERT_EQUAL(max01, 1);
@@ -314,7 +314,7 @@ main(void) {
         long min = MIN(a, 0);
         long max = MAX(a, 0);
         ASSERT_EQUAL(min, -1);
-        ASSERT_EQUAL(max, 0);
+        ASSERT_ZERO(max);
     } {
         double a = 0.123;
         double min = MIN(a, 0);

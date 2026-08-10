@@ -42,7 +42,8 @@ static void __attribute__((format(printf, 4, 5)))
 assert_error(char *file, int32 line, char *func, char *format, ...) {
     va_list ap;
 
-    fprintf(stderr, "%s:%d:%s(): Assertion failed:\n", file, line, func);
+    fprintf(stderr,
+            "%s:%d:"RED("%s()")": Assertion failed:\n", file, line, func);
 
     va_start(ap, format);
     vfprintf(stderr, format, ap);
@@ -194,13 +195,13 @@ GENERATE_ASSERT_POINTERS(more_equal, >=)
 
 #undef GENERATE_ASSERT_POINTERS
 
-#define GENERATE_ASSERT_INTEGERS_SAME_SIGN(TYPE, FMT, SYMBOL, MODE)            \
+#define GENERATE_ASSERT_INTEGERS_SAME_SIGN(SIGN, FMT, SYMBOL, MODE)            \
 static void                                                                    \
-a_both_##TYPE##_##MODE(char *file, int32 line, char *func,                     \
+a_both_##SIGN##_##MODE(char *file, int32 line, char *func,                     \
                        char *name1, char *name2,                               \
                        char *type1, char *type2,                               \
                        llong bits1, llong bits2,                               \
-                       TYPE long long var1, TYPE long long var2) {             \
+                       SIGN long long var1, SIGN long long var2) {             \
     if (!(var1 SYMBOL var2)) {                                                 \
         if (!DEBUGGING) {                                                      \
             UNREACHABLE();                                                     \
@@ -213,17 +214,17 @@ a_both_##TYPE##_##MODE(char *file, int32 line, char *func,                     \
     return;                                                                    \
 }
 
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed, "%lld", ==, equal)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", ==, equal)
 GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", ==, equal)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed, "%lld", !=, not_equal)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", !=, not_equal)
 GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", !=, not_equal)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed, "%lld", <, less)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", <, less)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed, "%lld", <=, less_equal)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", <,  less)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", <,  less)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", <=, less_equal)
 GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", <=, less_equal)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed, "%lld", >, more)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", >, more)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed, "%lld", >=, more_equal)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", >,  more)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", >,  more)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", >=, more_equal)
 GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", >=, more_equal)
 
 #undef GENERATE_ASSERT_INTEGERS_SAME_SIGN
@@ -549,10 +550,10 @@ assert_double_close_ulps(double var1, double var2,
 }
 
 static bool
-assert_double_close_tolerance(double var1, double var2,
-                              double tolerance,
-                              double *diff_out,
-                              double *tolerance_out) {
+assert_double_close_tol(double var1, double var2,
+                        double tolerance,
+                        double *diff_out,
+                        double *tolerance_out) {
     bool handled;
     double diff;
 
@@ -587,15 +588,14 @@ assert_double_failure(char *file, int32 line, char *func,
                       double var1, double var2, char *symbol,
                       double diff, double tolerance,
                       ullong ulps, ullong max_ulps,
-                      bool use_tolerance) {
+                      bool use_tol) {
     if (!DEBUGGING) {
         UNREACHABLE();
     }
     assert_error(file, line, func,
                  "[%s%lld]%s = %.17g %s %.17g = %s[%s%lld]\n",
-                 type1, bits1, name1, var1, symbol, var2, name2, type2,
-                 bits2);
-    if (use_tolerance) {
+                 type1, bits1, name1, var1, symbol, var2, name2, type2, bits2);
+    if (use_tol) {
         fprintf(stderr,
                 "floating diff = %.17g, tolerance = %.17g\n",
                 diff, tolerance);
@@ -620,9 +620,9 @@ a_double_##MODE(char *file, int32 line, char *func,                            \
     ullong max_ulps;                                                           \
                                                                                \
     if (assert_double_close_ulps(var1, var2, kind1, kind2,                     \
-                                 &diff, &ulps, &max_ulps) != EXPECT_CLOSE) {    \
+                                 &diff, &ulps, &max_ulps) != EXPECT_CLOSE) {   \
         assert_double_failure(file, line, func, name1, name2,                  \
-                              type1, type2, bits1, bits2,                     \
+                              type1, type2, bits1, bits2,                      \
                               var1, var2, SYMBOL, diff, (double)0,             \
                               ulps, max_ulps, false);                          \
     }                                                                          \
@@ -634,7 +634,7 @@ GENERATE_A_DOUBLE_CLOSE(not_close, "!~=", false)
 
 #undef GENERATE_A_DOUBLE_CLOSE
 
-#define GENERATE_A_DOUBLE_CLOSE_TOLERANCE(MODE, SYMBOL, EXPECT_CLOSE)          \
+#define GENERATE_A_DOUBLE_CLOSE_TOL(MODE, SYMBOL, EXPECT_CLOSE)                \
 static void                                                                    \
 a_double_##MODE(char *file, int32 line, char *func,                            \
                 char *name1, char *name2,                                      \
@@ -643,22 +643,22 @@ a_double_##MODE(char *file, int32 line, char *func,                            \
                 double var1, double var2,                                      \
                 double tolerance) {                                            \
     double diff;                                                               \
-    double tolerance_abs;                                                       \
+    double tolerance_abs;                                                      \
                                                                                \
-    if (assert_double_close_tolerance(var1, var2, tolerance,                   \
-                                      &diff, &tolerance_abs) != EXPECT_CLOSE) { \
+    if (assert_double_close_tol(var1, var2, tolerance,                         \
+                                &diff, &tolerance_abs) != EXPECT_CLOSE) {      \
         assert_double_failure(file, line, func, name1, name2,                  \
-                              type1, type2, bits1, bits2,                     \
+                              type1, type2, bits1, bits2,                      \
                               var1, var2, SYMBOL, diff, tolerance_abs,         \
                               0, 0, true);                                     \
     }                                                                          \
     return;                                                                    \
 }
 
-GENERATE_A_DOUBLE_CLOSE_TOLERANCE(close_tolerance, "~=", true)
-GENERATE_A_DOUBLE_CLOSE_TOLERANCE(not_close_tolerance, "!~=", false)
+GENERATE_A_DOUBLE_CLOSE_TOL(close_tol, "~=", true)
+GENERATE_A_DOUBLE_CLOSE_TOL(not_close_tol, "!~=", false)
 
-#undef GENERATE_A_DOUBLE_CLOSE_TOLERANCE
+#undef GENERATE_A_DOUBLE_CLOSE_TOL
 
 #define GENERATE_ASSERT_BOOLS(MODE, SYMBOL)                                    \
 static void                                                                    \
@@ -680,7 +680,7 @@ a_bool_##MODE(char *file, int32 line, char *func,                              \
             s2 = "true";                                                       \
         }                                                                      \
         assert_error(file, line, func,                                         \
-                     "[%s%lld]%s = %s " #SYMBOL " %s = %s[%s%lld]\n",         \
+                     "[%s%lld]%s = %s " #SYMBOL " %s = %s[%s%lld]\n",          \
                      type1, bits1, name1, s1, s2, name2, type2, bits2);        \
         TRAP();                                                                \
     }                                                                          \
@@ -766,8 +766,8 @@ assert_functions_sink(void) {
     (void)a_double_not_equal;
     (void)a_double_more;
     (void)a_double_more_equal;
-    (void)a_double_close_tolerance;
-    (void)a_double_not_close_tolerance;
+    (void)a_double_close_tol;
+    (void)a_double_not_close_tol;
     (void)assert_file_contains;
     (void)assert_contains;
     (void)assert_not_contains;
@@ -797,62 +797,77 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
         if (!DEBUGGING) {                                                      \
             UNREACHABLE();                                                     \
         } else {                                                               \
-            assert_error(__FILE__, __LINE__, FUNC__, "%s", #__VA_ARGS__);      \
+            assert_error(__FILE__, __LINE__, FUNC__, "%s\n", #__VA_ARGS__);    \
             TRAP();                                                            \
         }                                                                      \
     }                                                                          \
 } while (0)
 
 #define ASSERT_NULL(VAR1) do {                                                 \
-    void *p = VAR1;                                                            \
-    if (p != NULL) {                                                           \
+    void *ASSERT_NULL = VAR1;                                                  \
+    if (ASSERT_NULL != NULL) {                                                 \
+        if (!DEBUGGING) {                                                      \
+            UNREACHABLE();                                                     \
+        }                                                                      \
         assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %p == NULL\n", #VAR1, p);                           \
+                     "%s = %p == NULL\n", #VAR1, ASSERT_NULL);                 \
         TRAP();                                                                \
     }                                                                          \
 } while (0)
 
 #define ASSERT_ZERO(VAR1) do {                                                 \
-    llong p = VAR1;                                                            \
-    if (p != 0) {                                                              \
+    llong ASSERT_ZERO = VAR1;                                                  \
+    if (ASSERT_ZERO != 0) {                                                    \
+        if (!DEBUGGING) {                                                      \
+            UNREACHABLE();                                                     \
+        }                                                                      \
         assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %lld == 0\n", #VAR1, p);                            \
+                     "%s = %lld == 0\n", #VAR1, ASSERT_ZERO);                  \
         TRAP();                                                                \
     }                                                                          \
 } while (0)
 
 #define ASSERT_POSITIVE(VAR1) do {                                             \
-    llong p = VAR1;                                                            \
-    if (p <= 0) {                                                              \
+    llong ASSERT_POSITIVE = VAR1;                                              \
+    if (ASSERT_POSITIVE <= 0) {                                                \
+        if (!DEBUGGING) {                                                      \
+            UNREACHABLE();                                                     \
+        }                                                                      \
         assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %lld > 0\n", #VAR1, p);                             \
+                     "%s = %lld > 0\n", #VAR1, ASSERT_POSITIVE);               \
         TRAP();                                                                \
     }                                                                          \
 } while (0)
 
 #define ASSERT_NEGATIVE(VAR1) do {                                             \
-    llong p = VAR1;                                                            \
-    if (p >= 0) {                                                              \
+    llong ASSERT_NEGATIVE = VAR1;                                              \
+    if (ASSERT_NEGATIVE >= 0) {                                                \
         assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %lld < 0\n", #VAR1, p);                             \
+                     "%s = %lld < 0\n", #VAR1, ASSERT_NEGATIVE);               \
         TRAP();                                                                \
     }                                                                          \
 } while (0)
 
 #define ASSERT_NON_POSITIVE(VAR1) do {                                         \
-    llong p = VAR1;                                                            \
-    if (p > 0) {                                                               \
+    llong ASSERT_NON_POSITIVE = VAR1;                                          \
+    if (ASSERT_NON_POSITIVE > 0) {                                             \
+        if (!DEBUGGING) {                                                      \
+            UNREACHABLE();                                                     \
+        }                                                                      \
         assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %lld <= 0\n", #VAR1, p);                            \
+                     "%s = %lld <= 0\n", #VAR1, ASSERT_NON_POSITIVE);          \
         TRAP();                                                                \
     }                                                                          \
 } while (0)
 
 #define ASSERT_NON_NEGATIVE(VAR1) do {                                         \
-    llong p = VAR1;                                                            \
-    if (p < 0) {                                                               \
+    llong ASSERT_NON_NEGATIVE = VAR1;                                          \
+    if (ASSERT_NON_NEGATIVE < 0) {                                             \
+        if (!DEBUGGING) {                                                      \
+            UNREACHABLE();                                                     \
+        }                                                                      \
         assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %lld >= 0\n", #VAR1, p);                            \
+                     "%s = %lld >= 0\n", #VAR1, ASSERT_NON_NEGATIVE);          \
         TRAP();                                                                \
     }                                                                          \
 } while (0)
@@ -903,22 +918,22 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
     A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_CHAR)
 #endif
 
-#define A_FIRST_SIGNED(MODE, VAR1, VAR2, TYPE1)                        \
-_Generic((VAR2),                                                       \
-    char:    A_CHAR_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1),               \
-    schar:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_SCHAR  ), \
-    short:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_SHORT  ), \
-    int:     A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_INT    ), \
-    long:    A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_LONG   ), \
-    llong:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_LLONG  ), \
-    uchar:   A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_UCHAR  ), \
-    ushort:  A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_USHORT ), \
-    uint:    A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_UINT   ), \
-    ulong:   A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_ULONG  ), \
-    ullong:  A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_ULLONG ), \
-    float:   A_BOTH_DOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_FLOAT  ),  \
-    double:  A_BOTH_DOUBLE(MODE,    VAR1, VAR2, TYPE1, TYPE_DOUBLE ),  \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGNED()             \
+#define A_FIRST_SIGNED(MODE, VAR1, VAR2, TYPE1)                              \
+_Generic((VAR2),                                                             \
+    char:    A_CHAR_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1),                     \
+    schar:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_SCHAR  ),       \
+    short:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_SHORT  ),       \
+    int:     A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_INT    ),       \
+    long:    A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_LONG   ),       \
+    llong:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_LLONG  ),       \
+    uchar:   A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_UCHAR  ),       \
+    ushort:  A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_USHORT ),       \
+    uint:    A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_UINT   ),       \
+    ulong:   A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_ULONG  ),       \
+    ullong:  A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_ULLONG ),       \
+    float:   A_BOTH_DOUBLE(MODE,     VAR1, VAR2, TYPE1, TYPE_FLOAT  ),       \
+    double:  A_BOTH_DOUBLE(MODE,     VAR1, VAR2, TYPE1, TYPE_DOUBLE ),       \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGNED()                   \
 )
 #define A_BOTH_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2)             \
     a_both_unsigned_##MODE(__FILE__, __LINE__, FUNC__,              \
@@ -1117,28 +1132,28 @@ _Generic((VAR1), \
     ASSERT_DOUBLE_CLOSE_ULPS_DIAGNOSTIC(close, VAR1, VAR2)
 
 #define ASSERT_CLOSE_3(VAR1, VAR2, TOL) \
-    ASSERT_DOUBLE_CLOSE_TOL_DIAGNOSTIC(close_tolerance, VAR1, VAR2, TOL)
+    ASSERT_DOUBLE_CLOSE_TOL_DIAGNOSTIC(close_tol, VAR1, VAR2, TOL)
 
 #define ASSERT_NOT_CLOSE_2(VAR1, VAR2) \
     ASSERT_DOUBLE_CLOSE_ULPS_DIAGNOSTIC(not_close, VAR1, VAR2)
 
 #define ASSERT_NOT_CLOSE_3(VAR1, VAR2, TOL) \
-    ASSERT_DOUBLE_CLOSE_TOL_DIAGNOSTIC(not_close_tolerance, VAR1, VAR2, TOL)
+    ASSERT_DOUBLE_CLOSE_TOL_DIAGNOSTIC(not_close_tol, VAR1, VAR2, TOL)
 #else
 #define ASSERT_CLOSE_2(VAR1, VAR2) \
     ASSERT_DOUBLE_CLOSE_ULPS(close, VAR1, VAR2)
 
 #define ASSERT_CLOSE_3(VAR1, VAR2, TOL) \
-    ASSERT_DOUBLE_CLOSE_TOL(close_tolerance, VAR1, VAR2, TOL)
+    ASSERT_DOUBLE_CLOSE_TOL(close_tol, VAR1, VAR2, TOL)
 
 #define ASSERT_NOT_CLOSE_2(VAR1, VAR2) \
     ASSERT_DOUBLE_CLOSE_ULPS(not_close, VAR1, VAR2)
 
 #define ASSERT_NOT_CLOSE_3(VAR1, VAR2, TOL) \
-    ASSERT_DOUBLE_CLOSE_TOL(not_close_tolerance, VAR1, VAR2, TOL)
+    ASSERT_DOUBLE_CLOSE_TOL(not_close_tol, VAR1, VAR2, TOL)
 #endif
 
-#define ASSERT_CLOSE(...) SELECT_ON_NUM_ARGS(ASSERT_CLOSE_, __VA_ARGS__)
+#define ASSERT_CLOSE(...)     SELECT_ON_NUM_ARGS(ASSERT_CLOSE_, __VA_ARGS__)
 #define ASSERT_NOT_CLOSE(...) SELECT_ON_NUM_ARGS(ASSERT_NOT_CLOSE_, __VA_ARGS__)
 
 #if TESTING_assert
@@ -1235,11 +1250,11 @@ main(void) {
         ASSERT_MORE_EQUAL(b, a);
     } {
         long a = -1;
-        ASSERT_NOT_EQUAL(a, 0);
-        ASSERT_LESS(a, 0);
-        ASSERT_LESS_EQUAL(a, 0);
-        ASSERT_MORE(0, a);
-        ASSERT_MORE_EQUAL(0, a);
+        ASSERT_NEGATIVE(a);
+        ASSERT_NEGATIVE(a);
+        ASSERT_NON_POSITIVE(a);
+        ASSERT_NEGATIVE(a);
+        ASSERT_NON_POSITIVE(a);
     } {
         double a = 0.123;
         ASSERT_NOT_EQUAL(a, 0.123000001);

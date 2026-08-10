@@ -276,21 +276,19 @@ optional_strlen32(char *string) {
 
 CBASE_API_DEF int32
 strlen32(char *string) {
-    int32 length;
     size_t len;
 
     ASSERT(string);
     len = strlen(string);
 
     if (DEBUGGING) {
-        if (len >= MAXOF(length)) {
+        if (len >= MAXOF(strlen32(""))) {
             error("Error: string (%.*s ...) is too long.\n", 50, string);
             fatal(EXIT_FAILURE);
         }
     }
 
-    length = (int32)len;
-    return length;
+    return (int32)len;
 }
 
 CBASE_API_DEF char *
@@ -518,7 +516,7 @@ snprintf2(char *buffer, int64 size, char *format, ...) {
     int n;
     va_list args;
 
-    ASSERT_MORE_EQUAL(size, 0);
+    ASSERT_NON_NEGATIVE(size);
     va_start(args, format);
     n = vsnprintf(buffer, (size_t)size, format, args);
     va_end(args);
@@ -648,7 +646,6 @@ strerror_r(int errnum, char *buffer, size_t size) {
     char *error_message = strerror(errnum);
     int32 len = strlen32(error_message);
 
-    ASSERT_MORE(size, 0);
     memcpy64(buffer, error_message, MIN(len + 1, size - 1));
     buffer[size - 1] = '\0';
 
@@ -1414,7 +1411,7 @@ basename2(char *path, int32 *full_length, int32 *base_len) {
     normalize(path, full_length);
 
     left = *full_length;
-    ASSERT_MORE(*full_length, 0);
+    ASSERT_POSITIVE(*full_length);
     end = path + left - 1;
 
     if (left == 1) {
@@ -2475,7 +2472,7 @@ test_join_path(
     int32 len;
 
     len = snprintf2(buffer, buffer_len, "%s/%s", dir, name);
-    ASSERT(len > 0);
+    ASSERT_POSITIVE(len);
     ASSERT(len < buffer_len);
 
     return;
@@ -2786,9 +2783,9 @@ main(int argc, char **argv) {
 
     {
         int32 n;
-        ASSERT_EQUAL(util_string_int32(&n, "12345"), 0);
+        ASSERT_ZERO(util_string_int32(&n, "12345"));
         ASSERT_EQUAL(n, 12345);
-        ASSERT_EQUAL(util_string_int32(&n, "-54321"), 0);
+        ASSERT_ZERO(util_string_int32(&n, "-54321"));
         ASSERT_EQUAL(n, -54321);
         ASSERT_EQUAL(util_string_int32(&n, "2147483648"), -1);
         ASSERT_EQUAL(util_string_int32(&n, "notanumber"), -1);
@@ -2820,7 +2817,7 @@ main(int argc, char **argv) {
         string_from_strings(b, sizeof(b), "|", strs, 3);
         ASSERT_EQUAL(b, "one|two|three");
         string_from_doubles(b, sizeof(b), ",", dbls, 2);
-        ASSERT_NOT_EQUAL(strlen32(b), 0);
+        ASSERT_POSITIVE(strlen32(b));
     }
 
     {
@@ -2977,13 +2974,13 @@ main(int argc, char **argv) {
 
     ASSERT_EQUAL(deg2rad(180.0), 3.141592653589793);
     ASSERT_EQUAL(rad2deg(3.141592653589793), 180.0);
-    ASSERT_MORE(util_nthreads(), 0);
+    ASSERT_POSITIVE(util_nthreads());
 
     ASSERT_EQUAL(CLAMP(0.0, -0.1, 0.1),   0.0);
     ASSERT_EQUAL(CLAMP(0.2, -0.1, 0.1),   0.1);
     ASSERT_EQUAL(CLAMP(-0.2, -0.1, 0.1), -0.1);
 
-    ASSERT_EQUAL(CLAMP(+0, -1, +1), +0);
+    ASSERT_ZERO(CLAMP(+0, -1, +1));
     ASSERT_EQUAL(CLAMP(+2, -1, +1), +1);
     ASSERT_EQUAL(CLAMP(-2, -1, +1), -1);
 

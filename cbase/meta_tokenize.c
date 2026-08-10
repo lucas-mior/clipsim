@@ -880,13 +880,13 @@ static void
 test_literal_scanners(void) {
     char *literal = "\"a\\\"b\" tail";
 
-    ASSERT_EQUAL(literal_quote_index("'x'", strlen32("'x'"), 0), 0);
+    ASSERT_ZERO(literal_quote_index("'x'", strlen32("'x'"), 0));
     ASSERT_EQUAL(literal_quote_index("L\"abc\"", strlen32("L\"abc\""), 0), 1);
     ASSERT_EQUAL(literal_quote_index("u8\"abc\"", strlen32("u8\"abc\""), 0), 2);
     ASSERT_EQUAL(literal_quote_index("name", strlen32("name"), 0), -1);
     ASSERT_EQUAL(scan_literal_token(literal, strlen32(literal), 0), 6);
     ASSERT_EQUAL(scan_literal_token("u8\"xy\";", strlen32("u8\"xy\";"), 0), 6);
-    ASSERT_EQUAL(scan_literal_token("name", strlen32("name"), 0), 0);
+    ASSERT_ZERO(scan_literal_token("name", strlen32("name"), 0));
 
     {
         char trailing_escape[] = {'\"', 'a', '\\'};
@@ -1083,8 +1083,8 @@ test_tokenization_preprocessor_define_detection(void) {
     tokenization = tokenize(text, strlen32(text));
     plus = test_find_token(&tokenization, "+");
     int_token = test_find_token(&tokenization, "int");
-    ASSERT(plus >= 0);
-    ASSERT(int_token >= 0);
+    ASSERT_NON_NEGATIVE(plus);
+    ASSERT_NON_NEGATIVE(int_token);
     ASSERT_EQUAL(tokenization_logical_line_start_offset(
                      &tokenization, tokenization.tokens[plus].offset),
                  0);

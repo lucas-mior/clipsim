@@ -343,7 +343,7 @@ memset64(void *buffer, int value, int64 size) {
     if (size == 0) {
         return;
     }
-    ASSERT(size >= 0);
+    ASSERT_NON_NEGATIVE(size);
     ASSERT_LESS(size, SIZE_MAX);
     memset(buffer, value, (size_t)size);
     return;
@@ -396,7 +396,7 @@ main(void) {
         }
 
         for (Arena *a = arena; a; a = a->next) {
-            ASSERT_MORE(a->npushed, 0);
+            ASSERT_POSITIVE(a->npushed);
             total_pushed += a->npushed;
         }
         ASSERT_EQUAL(total_pushed, LENGTH(objs));
@@ -420,7 +420,7 @@ main(void) {
             }
         }
         for (Arena *a = arena; a; a = a->next) {
-            ASSERT_EQUAL(a->npushed, 0);
+            ASSERT_ZERO(a->npushed);
         }
 
         ASSERT(!arena_decr(arena, &aux));
@@ -441,7 +441,7 @@ main(void) {
 
         ASSERT(arena_decr(arena, p1));
         ASSERT(arena_decr(arena, p2));
-        ASSERT_EQUAL(arena->npushed, 0);
+        ASSERT_ZERO(arena->npushed);
     }
 
     arena_reset(arena);
@@ -462,17 +462,17 @@ main(void) {
         ASSERT(arena_decr(arena, p3));
         ASSERT_EQUAL(arena->npushed, 1);
         ASSERT(arena_decr(arena, p4));
-        ASSERT_EQUAL(arena->npushed, 0);
+        ASSERT_ZERO(arena->npushed);
     }
 
     arena_reset(arena);
     ASSERT(arena->pos == arena->begin);
-    ASSERT_EQUAL(arena->npushed, 0);
+    ASSERT_ZERO(arena->npushed);
 
     ASSERT(arena->next->pos == arena->next->begin);
-    ASSERT_EQUAL(arena->next->npushed, 0);
+    ASSERT_ZERO(arena->next->npushed);
     ASSERT(arena->pos == arena->begin);
-    ASSERT_EQUAL(arena->npushed, 0);
+    ASSERT_ZERO(arena->npushed);
 
     arena_reset(arena);
     {
@@ -510,8 +510,8 @@ main(void) {
         ASSERT(arenas_pop(arenas, (int32)arena_count, third_pointer));
 
         arenas_reset(arenas, arena_count);
-        ASSERT_EQUAL(arenas[0]->npushed, 0);
-        ASSERT_EQUAL(arenas[1]->npushed, 0);
+        ASSERT_ZERO(arenas[0]->npushed);
+        ASSERT_ZERO(arenas[1]->npushed);
 
         error_message = arena_strerror(EARENA_INVALID);
         ASSERT_EQUAL(error_message, "Invalid arena pointer");

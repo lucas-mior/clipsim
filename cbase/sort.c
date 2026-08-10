@@ -104,7 +104,7 @@ sort_merge_subsorted(
     char *output;
     char *array2 = array;
 
-    ASSERT(n >= 0);
+    ASSERT_NON_NEGATIVE(n);
     ASSERT(p >= 1);
     ASSERT(p <= MAX_NTHREADS);
 
@@ -113,7 +113,7 @@ sort_merge_subsorted(
     }
 
     ASSERT(p <= n);
-    ASSERT(obj_size > 0);
+    ASSERT_POSITIVE(obj_size);
     ASSERT(array);
     ASSERT(compare);
 
@@ -163,7 +163,7 @@ sort_merge_subsorted(
         }
     }
 
-    ASSERT(heap_length == 0);
+    ASSERT_ZERO(heap_length);
     memcpy64(array2, output, memory_size);
     free2(output, memory_size);
     return;
