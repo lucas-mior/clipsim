@@ -5,6 +5,7 @@
 #define PRIMITIVES_H
 
 #include <limits.h>
+#include <stdint.h>
 
 _Static_assert(CHAR_BIT == 8, "primitives.h requires CHAR_BIT == 8");
 
@@ -41,23 +42,20 @@ typedef ushort uint16;
 typedef uint   uint32;
 typedef ullong uint64;
 
-typedef ullong uintptr;
-typedef llong  intptr;
+typedef uintptr_t uintptr;
+typedef intptr_t  intptr;
 
-_Static_assert(sizeof(uintptr) == sizeof(void *),
-               "uintptr must match pointer width");
-_Static_assert(sizeof(intptr) == sizeof(void *),
-               "intptr must match pointer width");
-
-#if defined(__has_include)
-  #if __has_include(<stdbool.h>)
-    #include <stdbool.h>
-    #define HAS_STDBOOl 1
-  #else
-    #define HAS_STDBOOL 0
-  #endif
-#else
-  #define HAS_STDBOOL 0
+#if SCHAR_MIN != -128
+#error "This compiler/machine does not use 2's complement. Throw it out."
+#endif
+#if SHRT_MIN != -32768
+#error "This compiler/machine does not use 2's complement. Throw it out."
+#endif
+#if INT_MIN != -2147483648
+#error "This compiler/machine does not use 2's complement. Throw it out."
+#endif
+#if (LLONG_MIN + 1) != (-9223372036854775807)
+#error "This compiler/machine does not use 2's complement. Throw it out."
 #endif
 
 #endif /* PRIMITIVES_H */
