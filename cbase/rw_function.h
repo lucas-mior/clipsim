@@ -47,7 +47,7 @@ CAT(f, RW_FUNCTION, 64)(void *buffer, int64 size, int64 n, FILE *file) {
 CBASE_API_DECL int64
 CAT(RW_FUNCTION, 64)(int fd, void *buffer, int64 size) {
     RW_TYPE instance = 0;
-    ssize_t w;
+    int64 w;
 
     (void)instance;
 

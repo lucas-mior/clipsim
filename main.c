@@ -31,8 +31,8 @@ static ClipsimCommand commands[] = {
 static void main_set_signal(int32, void (*)(int));
 static void main_setup_daemon_signals(void);
 static bool main_block_middle_mouse_paste_enabled(void);
-static void main_usage(FILE *) __attribute__((noreturn));
-static void main_launch_daemon(void) __attribute__((noreturn));
+static noreturn void main_usage(FILE *);
+static noreturn void main_launch_daemon(void);
 
 int32
 main(int32 argc, char *argv[]) {

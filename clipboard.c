@@ -47,7 +47,7 @@ static void clipboard_incremental_case(char **, ulong *);
 static Atom clipboard_check_target(Atom);
 static int32 clipboard_get_clipboard(char **, ulong *, bool *);
 
-static int clipboard_daemon_watch(void) __attribute__((noreturn));
+static noreturn int clipboard_daemon_watch(void);
 
 int32
 clipboard_daemon_watch(void) {

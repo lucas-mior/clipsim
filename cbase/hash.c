@@ -801,10 +801,6 @@ hash_expected_collisions(void *map) {
 #if TESTING_hash && !defined(TESTING_hash_started)
 #define TESTING_hash_started
 
-#if !OS_UNIX
-#error "hash.c tests only work on unix systems"
-#endif
-
 // Have to add these declarations so that clangd does not complain
 struct Hash_map_by_value;
 static void hash_deinit_map_by_value(struct Hash_map_by_value *);

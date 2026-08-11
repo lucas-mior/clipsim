@@ -160,9 +160,9 @@ _Generic((SIZE), \
 #define ATTR_PRINTF(A, B)
 #endif
 
-#define π  3.14159265358979323846264338327950288
-#define π2 2*π
-#define τ  2*π
+#define PI  3.14159265358979323846264338327950288
+#define PI2 2*PI
+#define TAU 2*PI
 
 #if !defined(__has_builtin)
   #define __has_builtin(x) 0

@@ -1236,14 +1236,14 @@ main(int argc, char **argv) {
 
         command_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
-        ASSERT_EQUAL(cmd.argv[0], NULL);
+        ASSERT(cmd.argv[0] == NULL);
 
         command_push_split(&cmd, "  alpha beta  gamma ", " ");
         ASSERT_EQUAL(cmd.argc, 3);
         ASSERT_EQUAL(cmd.argv[0], "alpha");
         ASSERT_EQUAL(cmd.argv[1], "beta");
         ASSERT_EQUAL(cmd.argv[2], "gamma");
-        ASSERT_EQUAL(cmd.argv[cmd.argc], NULL);
+        ASSERT(cmd.argv[cmd.argc] == NULL);
 
         command_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
@@ -1284,15 +1284,15 @@ main(int argc, char **argv) {
             ASSERT_EQUAL(cmd.argv[63], "t");
             ASSERT_EQUAL(cmd.argv[64], "-e");
             ASSERT_EQUAL(cmd.argv[65], "d");
-            ASSERT_EQUAL(cmd.argv[128], "d");
-            ASSERT_EQUAL(cmd.argv[129], "/destination");
-            ASSERT_EQUAL(cmd.argv[130], "/source");
-            ASSERT_MORE(cmd.cap, cmd.argc);
-            ASSERT_EQUAL(cmd.argv[cmd.argc], NULL);
+        ASSERT_EQUAL(cmd.argv[128], "d");
+        ASSERT_EQUAL(cmd.argv[129], "/destination");
+        ASSERT_EQUAL(cmd.argv[130], "/source");
+        ASSERT_MORE(cmd.cap, cmd.argc);
+        ASSERT(cmd.argv[cmd.argc] == NULL);
 
-            command_text = command_str(&cmd, &len);
-            ASSERT_EQUAL(len, 279);
-            free2(command_text, len + 1);
+        command_text = command_str(&cmd, &len);
+        ASSERT_EQUAL(len, 279);
+        free2(command_text, len + 1);
         }
 
         command_reset(&cmd);
@@ -1319,6 +1319,7 @@ main(int argc, char **argv) {
         command_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
+#if OS_UNIX
         COMMAND_PUSH(&cmd, "sh", "-c", "exit 7");
         ASSERT(command_run_sync(&cmd, NULL));
         ASSERT_EQUAL(cmd.result.status, 7);
@@ -1461,6 +1462,7 @@ main(int argc, char **argv) {
 
         command_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
+#endif
 
         {
             char *flags_str;
@@ -1475,6 +1477,7 @@ main(int argc, char **argv) {
                    == (COMMAND_CAPTURE_STDOUT |COMMAND_CAPTURE_STDERR));
         }
 
+#if OS_UNIX
         COMMAND_PUSH(&cmd, "sh", "-c", "exit 9");
         ASSERT(command_run_async(&cmd, COMMAND_NEW_PROCESS_GROUP));
         ASSERT_POSITIVE(cmd.result.pid);
@@ -1504,6 +1507,7 @@ main(int argc, char **argv) {
         COMMAND_PUSH(&cmd, "sh", "-c", "exit 0");
         ASSERT(command_run(&cmd, COMMAND_DETACHED));
         ASSERT_ZERO(cmd.result.status);
+#endif
 
         command_reset(&cmd);
         ASSERT_ZERO(cmd.argc);

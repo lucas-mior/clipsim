@@ -19,3 +19,4 @@ tags
 temp_delete_me
 tests/incr_owner
 tests/unresponsive_owner
+*.obj

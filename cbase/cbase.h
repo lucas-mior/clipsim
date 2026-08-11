@@ -28,7 +28,7 @@ static int64 here_counter = 0;
 #define error2(...) fprintf(stderr, __VA_ARGS__)
 CBASE_API_DECL int32 optional_strlen32(char *);
 CBASE_API_DECL int32 strlen32(char *);
-CBASE_API_DECL void fatal(int32) __attribute__((noreturn));
+CBASE_API_DECL noreturn void fatal(int32);
 CBASE_API_DECL void error_impl(char *, int32, char *, char *, ...)
     ATTR_PRINTF(4, 5);
 CBASE_API_DECL int memcmp64(void *, void *, int64);
@@ -39,7 +39,7 @@ CBASE_API_DECL void *memrchr64(void *, int32, int64);
 #include "memory.h"
 #include "arena.h"
 
-#include "assertions.c"
+#include "assertions.h"
 #include "generic.c"
 #include "minmax.c"
 
@@ -94,7 +94,7 @@ CBASE_API_DECL void *util_copy_file_async_thread(void *);
 #endif
 
 CBASE_API_DECL bool util_is_integer(char *string);
-CBASE_API_DECL void util_segv_handler(int32) __attribute__((noreturn));
+CBASE_API_DECL noreturn void util_segv_handler(int32);
 CBASE_API_DECL int32 itoa2(char *, int32, llong);
 CBASE_API_DECL long atoi2(char *);
 CBASE_API_DECL char *basename2(char *, int32 *, int32 *);
@@ -215,13 +215,15 @@ CBASE_API_DECL int32 parallel_for_max_threads_min_items(
 CBASE_API_DECL void write_all(int, char *, int64);
 CBASE_API_DECL bool write_entire_file(char *, char *, int64);
 CBASE_API_DECL int xclose(char *, int, int *, char *, char *);
+#if CBASE_HAS_DIRENT_H
 CBASE_API_DECL int xclosedir(DIR *, char *);
-CBASE_API_DECL void xdup2(int, int);
+#endif
 CBASE_API_DECL int xfclose(char *, int32, char *, FILE *, char *);
 CBASE_API_DECL FILE *xfopen(char *, int32, char *, char *, char *);
+#if OS_UNIX
+CBASE_API_DECL void xdup2(int, int);
 CBASE_API_DECL void xkill(pid_t, int);
 CBASE_API_DECL void xpipe(int [2]);
-#if OS_UNIX
 CBASE_API_DECL void xpthread_cond_destroy(pthread_cond_t *);
 CBASE_API_DECL void xpthread_create(
     pthread_t *,
@@ -236,13 +238,15 @@ CBASE_API_DECL void xpthread_mutex_lock(pthread_mutex_t *);
 CBASE_API_DECL void xpthread_mutex_unlock(pthread_mutex_t *);
 #endif
 CBASE_API_DECL int xunlink(char *);
-#if TESTING && OS_UNIX
+#if TESTING
+CBASE_API_DECL void test_make_temp_dir(char *, int32, char *);
+CBASE_API_DECL void test_remove_tree(char *);
+#if OS_UNIX
 CBASE_API_DECL bool test_command_exists(char *);
 CBASE_API_DECL bool test_hardlink_supported(char *);
 CBASE_API_DECL bool test_symlink_supported(char *);
 CBASE_API_DECL void test_join_path(char *, int64, char *, char *);
-CBASE_API_DECL void test_make_temp_dir(char *, int32, char *);
-CBASE_API_DECL void test_remove_tree(char *);
+#endif
 #endif
 CBASE_API_DECL void here_impl(char *, int32, char *);
 
@@ -416,9 +420,9 @@ typedef struct Command {
 
 CBASE_API_DECL void command_argv0_set(Command *, char *);
 CBASE_API_DECL void command_child_env_apply(Command *);
-CBASE_API_DECL void command_child_exec(
+CBASE_API_DECL noreturn void command_child_exec(
     Command *, enum CommandFlag, int [2], int [2], int [2]
-) __attribute__((noreturn));
+);
 #if OS_WINDOWS
 CBASE_API_DECL void command_windows_command_line(Command *, char *, int64);
 CBASE_API_DECL char *command_windows_argv0(Command *, char *, int32 *);
@@ -493,13 +497,20 @@ CBASE_API_DECL bool command_wait(Command *);
 #endif
 
 // Note: it is fine to typedef union in this case
+#if CBASE_CRT_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4324)
+#endif
 typedef union GenericArrayHeader {
     struct {
         int32 count;
         int32 cap;
     };
-    max_align_t alignment;
+    CbaseMaxAlign alignment;
 } GenericArrayHeader;
+#if CBASE_CRT_MSVC
+#pragma warning(pop)
+#endif
 
 CBASE_API_DECL void *generic_array_init(int32, int64);
 CBASE_API_DECL void *generic_array_grow(void *, int64);
@@ -549,6 +560,7 @@ CBASE_API_DECL void generic_array_set_count(void *, int32);
 
 #include "arena.c"
 #include "memory.c"
+#include "assertions.c"
 #include "array.c"
 #include "utf8.c"
 #include "util.c"
