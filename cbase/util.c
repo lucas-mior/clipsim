@@ -2630,6 +2630,7 @@ test_command_exists(char *command) {
 
     return false;
 }
+#endif
 
 CBASE_API_DEF void
 test_join_path(
@@ -2646,7 +2647,6 @@ test_join_path(
 
     return;
 }
-#endif
 
 CBASE_API_DEF void
 test_make_temp_dir(char *buffer, int32 capacity, char *name) {
