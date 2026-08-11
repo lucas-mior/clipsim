@@ -104,7 +104,7 @@ debug)
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
 valgrind)
-    CFLAGS="$CFLAGS -g -O0 -ftree-vectorize"
+    CFLAGS="$CFLAGS -g -Og -ftree-vectorize"
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
 callgrind)
