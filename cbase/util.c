@@ -3269,6 +3269,7 @@ main(int argc, char **argv) {
         char buffer3[4096];
         char buffer4[4096];
         char name[PATH_MAX];
+        int32 name2_len;
         int fd;
 
         SNPRINTF(name, "%s/test", temp_dir);
@@ -3284,11 +3285,16 @@ main(int argc, char **argv) {
         XCLOSE(&fd);
         xunlink(name);
 
-        for (int32 i = 0; i < (SIZEOF(name2) - 1); i += 1) {
+        name2_len = SIZEOF(name2) - 1;
+#if OS_WINDOWS
+        name2_len = MIN(name2_len, MAX_PATH - strlen32(temp_dir) - 2);
+        ASSERT_POSITIVE(name2_len);
+#endif
+        for (int32 i = 0; i < name2_len; i += 1) {
             uint32 c = (uint32)rand() % (sizeof(characters) - 1);
             name2[i] = characters[c];
         }
-        name2[SIZEOF(name2) - 1] = '\0';
+        name2[name2_len] = '\0';
 
         SNPRINTF(buffer2, "%s/%s", temp_dir, name2);
 
