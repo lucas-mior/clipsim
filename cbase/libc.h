@@ -96,7 +96,7 @@
 #include <threads.h>
 #endif
 
-#if !defined(__STDC_NO_ATOMICS__)
+#if CC_TCC || !defined(__STDC_NO_ATOMICS__)
 #include <stdatomic.h>
 #endif
 
