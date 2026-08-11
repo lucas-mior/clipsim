@@ -2136,10 +2136,6 @@ sb_append(StrBuilder *str_builder, char *data, int32 data_len) {
     int32 data_offset = 0;
 
     if ((data_len <= 0) || (data == NULL)) {
-        if (str_builder->data == NULL) {
-            sb_reserve(str_builder, 8);
-            str_builder->data[0] = '\0';
-        }
         return;
     }
 
