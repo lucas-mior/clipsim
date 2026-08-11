@@ -1,6 +1,4 @@
 # C formatting style for 64-bit PC programming
-Use this together with c-guidelines.md
-
 ## Note
 When a rule says "prefer", avoid changing already-readable code unless the
 specific form is listed as bad. Exceptions listed under a "prefer" rule should
@@ -9,7 +7,6 @@ be preserved.
 For non-formatting coding guidelines, see `c-guidelines.md`.
 
 ## Whitespace and indentation
-
 - For indentation, never use tabs.
   * Use spaces for indentation.
   * Use 4 spaces for each indentation level.
@@ -17,8 +14,8 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
 - Keep line length at maximum 80 characters.
 
 ## Operators
-
-- Space is mandatory around `+` and `-`.
+- Space is forbidden around unary plus and minus (`a = -1;`)
+- Space is mandatory around binary plus and minus (`a + b` and `a - b`).
   * But not when using `+=` or `-=`:
     ```c
     i += 1; // good
@@ -39,14 +36,11 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
   union fields.
 - Space is forbidden after dot used for initializing struct fields (but space
   before the dot is fine).
-- Space is mandatory around all boolean operators (`!`, `&&`, and `||`).
+- Space is mandatory around boolean or and boolean and (`&&`, and `||`).
+- Space is forbidden around boolean negation (`!`).
 - Space is mandatory around all comparison operators.
 - In general, prefer `+= 1` instead of `++`.
-  * Exception: dynamic arrays: use `array[len++] = value` instead of
-    `array[len] = value; len += 1`.
 - In general, prefer `-= 1` instead of `--`.
-  * Exception: dynamic arrays: use `array[len--] = value` instead of
-    `array[len] = value; len -= 1`.
 
 ## Casts
 
@@ -110,13 +104,15 @@ default:
   int32 x;
   int32 y;
   ```
-- Always use trailing commas for arrays:
+- Always use trailing commas for arrays (except when initializing to zero):
   ```c
   int32 array[] = {
       1,
       2,
       3,
   };
+
+  int32 array2[10] = {0};
   ```
 
 ## Curly braces
@@ -224,19 +220,8 @@ long lines so the 80-character limit rule is followed.
 static int32 function(int32 arg);
 ```
 
-## Mechanical rewrite rules
-
-Do not rewrite post-increment or post-decrement when it is part of an array
-append or fill expression:
-
-```c
-array[len++] = value;  // keep as is
-argv[i++] = "arg";     // keep as is
-items[count++] = item; // keep as is
-```
-
 ## Preprocessor directives
-Don't use `#ifdef` and `#ifndef`, use `#if defined()` and `if !defined()`
+Don't use `#ifdef` and `#ifndef`, use `#if defined()` and `#if !defined()`
 instead. Prefer explicitly setting the macro to 0 or 1 and checking its value
 directly instead of checking if it is defined:
 ```c
@@ -252,7 +237,8 @@ Break lines longer than 80 characters with the backslash. Example:
 ```
 
 ## Initialization
-Use line breaks indentation for struct initialization:
+Use line breaks indentation for struct initialization,
+except when initializing to zero:
 
 ```c
 typedef struct MyStruct {
@@ -276,11 +262,19 @@ MyStruct my_struct = {
 
 // bad
 MyStruct my_struct = { .string = "string", .other = "other", };
+
+// bad
+MyStruct my_struct = {
+    0
+};
+
+// good
+MyStruct my_struct = {0};
 ```
 
 Also indent structs inside structs.
 ```c
-typedef Struct MyStruct {
+typedef struct MyStruct {
     char *string;
     struct {
         char *inner_string;
@@ -291,7 +285,7 @@ typedef Struct MyStruct {
 MyStruct my_struct = {
     .string = "string",
     .inner = {
-        .inner_string = "inner_string";
+        .inner_string = "inner_string",
     },
 };
 
