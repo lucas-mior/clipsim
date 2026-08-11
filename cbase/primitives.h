@@ -48,6 +48,14 @@ typedef ullong uint64;
 typedef uintptr_t uintptr;
 typedef intptr_t  intptr;
 
+#if CBASE_CRT_MSVC
+typedef struct __declspec(align(16)) CbaseMaxAlign {
+    char data[16];
+} CbaseMaxAlign;
+#else
+typedef max_align_t CbaseMaxAlign;
+#endif
+
 #if SCHAR_MIN != -128
 #error "This compiler/machine does not use 2's complement. Throw it out."
 #endif

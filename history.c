@@ -44,7 +44,7 @@ static void history_append(char *, int, bool);
 static int history_save(void);
 static void history_recover(int32);
 static void history_remove(int32);
-static void history_exit(int) __attribute__((noreturn));
+static noreturn void history_exit(int);
 
 static void
 history_prepare_tmp_directory(void) {

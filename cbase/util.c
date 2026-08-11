@@ -160,6 +160,116 @@ strequal(char *s1, char *s2) {
     return !strcmp(s1, s2);
 }
 
+#if !CBASE_HAS_GETOPT_H
+char *optarg = NULL;
+int optind = 1;
+int opterr = 1;
+int optopt = 0;
+
+CBASE_API_DEF int
+getopt_long(
+    int argc,
+    char **argv,
+    char *optstring,
+    struct option *longopts,
+    int *longindex
+) {
+    static char *short_position;
+    char *arg;
+    char *opt;
+
+    optarg = NULL;
+    if (short_position && *short_position) {
+        opt = strchr(optstring, *short_position);
+        optopt = *short_position++;
+        if ((opt == NULL) || (*opt == ':')) {
+            return '?';
+        }
+        if (opt[1] == ':') {
+            if (*short_position) {
+                optarg = short_position;
+                short_position = NULL;
+            } else if ((optind + 1) < argc) {
+                optarg = argv[++optind];
+                short_position = NULL;
+            } else {
+                short_position = NULL;
+                return '?';
+            }
+        }
+        if ((short_position == NULL) || (*short_position == '\0')) {
+            optind += 1;
+            short_position = NULL;
+        }
+        return optopt;
+    }
+
+    if (optind >= argc) {
+        return -1;
+    }
+    arg = argv[optind];
+    if ((arg[0] != '-') || (arg[1] == '\0')) {
+        return -1;
+    }
+    if (strcmp(arg, "--") == 0) {
+        optind += 1;
+        return -1;
+    }
+
+    if (arg[1] == '-') {
+        char *name = arg + 2;
+        char *value = strchr(name, '=');
+        int64 name_len;
+
+        if (value) {
+            name_len = value - name;
+            value += 1;
+        } else {
+            name_len = (int64)strlen(name);
+        }
+
+        for (int32 i = 0; longopts[i].name; i += 1) {
+            if (((int64)strlen(longopts[i].name) != name_len)
+                || memcmp(longopts[i].name, name, (size_t)name_len)) {
+                continue;
+            }
+            if (longindex) {
+                *longindex = i;
+            }
+            if (longopts[i].has_arg == required_argument) {
+                if (value) {
+                    optarg = value;
+                } else if ((optind + 1) < argc) {
+                    optarg = argv[++optind];
+                } else {
+                    optopt = longopts[i].val;
+                    optind += 1;
+                    return '?';
+                }
+            } else if (longopts[i].has_arg == optional_argument) {
+                optarg = value;
+            } else if (value) {
+                optopt = longopts[i].val;
+                optind += 1;
+                return '?';
+            }
+            optind += 1;
+            if (longopts[i].flag) {
+                *longopts[i].flag = longopts[i].val;
+                return 0;
+            }
+            return longopts[i].val;
+        }
+
+        optind += 1;
+        return '?';
+    }
+
+    short_position = arg + 1;
+    return getopt_long(argc, argv, optstring, longopts, longindex);
+}
+#endif
+
 static void
 striqual_validate_ascii_utf8(char *string, int32 string_len) {
     int32 bad_offset = 0;
@@ -506,7 +616,7 @@ qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
     return;
 }
 
-CBASE_API_DEF int32 __attribute__((format(printf, 3, 4)))
+CBASE_API_DEF int32 ATTR_PRINTF(3, 4)
 snprintf2(char *buffer, int64 size, char *format, ...) {
     int n;
     va_list args;
@@ -635,6 +745,32 @@ util_filename_from(char *buffer, int64 size, int fd) {
 #endif
 }
 
+#if CBASE_CRT_MSVC
+CBASE_API_DEF char *
+realpath(char *path, char *resolved_path) {
+    char *buffer;
+    char *result;
+
+    if (path == NULL) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    buffer = resolved_path;
+    if ((buffer == NULL) && ((buffer = malloc(PATH_MAX)) == NULL)) {
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    result = _fullpath(buffer, path, PATH_MAX);
+    if ((result == NULL) && (resolved_path == NULL)) {
+        free(buffer);
+    }
+
+    return result;
+}
+#endif
+
 #if OS_WINDOWS
 static int
 strerror_r(int errnum, char *buffer, size_t size) {
@@ -745,6 +881,7 @@ xfclose(char *file, int32 line, char *func, FILE *f, char *filename) {
     return 0;
 }
 
+#if CBASE_HAS_DIRENT_H
 CBASE_API_DEF int
 xclosedir(DIR *dir, char *dirname) {
     if (closedir(dir)) {
@@ -753,8 +890,9 @@ xclosedir(DIR *dir, char *dirname) {
     }
     return 0;
 }
+#endif
 
-CBASE_API_DEF void __attribute__((format(printf, 4, 5)))
+CBASE_API_DEF void ATTR_PRINTF(4, 5)
 error_impl(char *file, int32 line, char *func, char *format, ...) {
     char buffer[BUFSIZ];
     char *big_buffer = NULL;
@@ -798,7 +936,7 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
         fatal(EXIT_FAILURE);
     }
 
-    if (!DEBUGGING) {
+    if (DEBUGGING) {
         p = SNPRINTF(fileline, "%s:%d %s():", file, line, func);
     } else {
         p = 0;
@@ -844,7 +982,7 @@ error_async_safe(char *message) {
     return;
 }
 
-CBASE_API_DEF void __attribute((noreturn))
+CBASE_API_DEF noreturn void
 fatal(int status) {
 #if defined(__EMSCRIPTEN__)
     char stack[8192];
@@ -865,6 +1003,7 @@ fatal(int status) {
     }
 }
 
+#if OS_UNIX
 CBASE_API_DEF void
 util_segv_handler(int32 unused) {
     char *message = "Memory error. Please send a bug report.\n";
@@ -878,23 +1017,7 @@ util_segv_handler(int32 unused) {
     _exit(EXIT_FAILURE);
 }
 
-CBASE_API_DEF int32
-util_string_int32(int32 *number, char *string) {
-    char *endptr;
-    long x;
-    errno = 0;
-    x = strtol(string, &endptr, 10);
-    if ((errno != 0) || (string == endptr) || (*endptr != 0)) {
-        return -1;
-    } else if ((x > INT32_MAX) || (x < INT32_MIN)) {
-        return -1;
-    } else {
-        *number = (int32)x;
-        return 0;
-    }
-}
-
-CBASE_API_DEF void __attribute__((noreturn))
+CBASE_API_DEF noreturn void
 util_die_notify(char *program_name, char *format, ...) {
     int32 n;
     va_list args;
@@ -915,6 +1038,23 @@ util_die_notify(char *program_name, char *format, ...) {
                buffer, NULL);
     }
     fatal(EXIT_FAILURE);
+}
+#endif
+
+CBASE_API_DEF int32
+util_string_int32(int32 *number, char *string) {
+    char *endptr;
+    long x;
+    errno = 0;
+    x = strtol(string, &endptr, 10);
+    if ((errno != 0) || (string == endptr) || (*endptr != 0)) {
+        return -1;
+    } else if ((x > INT32_MAX) || (x < INT32_MIN)) {
+        return -1;
+    } else {
+        *number = (int32)x;
+        return 0;
+    }
 }
 
 #if OS_UNIX
@@ -1132,9 +1272,9 @@ send_signal(char *executable, int32 signal_number) {
 #elif OS_UNIX
 CBASE_API_DEF void
 send_signal(char *executable, int32 signal_number) {
+    pid_t child;
     char signal_string[14];
     SNPRINTF(signal_string, "%d", signal_number);
-    pid_t child;
 
     switch (child = fork()) {
     case -1:
@@ -1234,7 +1374,9 @@ util_equal_files(char *filename_a, char *filename_b) {
         equal = false;
         goto out;
     }
-    if ((stat_a.st_dev == stat_b.st_dev) && (stat_a.st_ino == stat_b.st_ino)) {
+    if ((stat_a.st_ino != 0)
+        && (stat_a.st_dev == stat_b.st_dev)
+        && (stat_a.st_ino == stat_b.st_ino)) {
         equal = true;
         goto out;
     }
@@ -1444,7 +1586,8 @@ basename2(char *path, int32 *full_length, int32 *base_len) {
             p = bslash + 1;
         }
 
-        left -= length;
+        ASSERT(length < MAXOF(left));
+        left -= (int32)length;
     }
 
     if (base_len) {
@@ -1527,11 +1670,35 @@ timediff(struct timespec t0, struct timespec t1) {
     return diff;
 }
 
+#if OS_WINDOWS
+static int32
+windows_time_monotonic(struct timespec *time) {
+    LARGE_INTEGER counter;
+    LARGE_INTEGER frequency;
+    LONGLONG seconds;
+    LONGLONG remainder;
+
+    if (!QueryPerformanceFrequency(&frequency)
+        || !QueryPerformanceCounter(&counter)) {
+        errno = EIO;
+        return -1;
+    }
+
+    seconds = counter.QuadPart / frequency.QuadPart;
+    remainder = counter.QuadPart % frequency.QuadPart;
+    time->tv_sec = (time_t)seconds;
+    time->tv_nsec = (long)((remainder*1000000000ll) / frequency.QuadPart);
+    return 0;
+}
+#endif
+
 CBASE_API_DEF void
 time_monotonic_precise(struct timespec *time) {
     int32 status;
 
-#if defined(CLOCK_MONOTONIC_RAW)
+#if OS_WINDOWS
+    status = windows_time_monotonic(time);
+#elif defined(CLOCK_MONOTONIC_RAW)
     status = clock_gettime(CLOCK_MONOTONIC_RAW, time);
 #elif defined(CLOCK_MONOTONIC)
     status = clock_gettime(CLOCK_MONOTONIC, time);
@@ -1557,7 +1724,9 @@ CBASE_API_DEF void
 time_monotonic_coarse(struct timespec *time) {
     int32 status;
 
-#if defined(CLOCK_MONOTONIC_COARSE)
+#if OS_WINDOWS
+    status = windows_time_monotonic(time);
+#elif defined(CLOCK_MONOTONIC_COARSE)
     status = clock_gettime(CLOCK_MONOTONIC_COARSE, time);
 #elif defined(CLOCK_MONOTONIC)
     status = clock_gettime(CLOCK_MONOTONIC, time);
@@ -1607,6 +1776,7 @@ catfile(int where, char *file) {
 
 #if !OS_WINDOWS
 
+#if OS_UNIX
 #define XSIGNAL(NAME) [NAME] = #NAME
 static char *signal_names[] = {
     XSIGNAL(SIGABRT),
@@ -1668,6 +1838,8 @@ xkill(pid_t pid, int signum) {
     }
     return;
 }
+
+#endif /* OS_UNIX */
 
 #endif /* !OS_WINDOWS */
 
@@ -2345,14 +2517,15 @@ util_functions_sink(void) {
     (void)command_run_async;
     (void)command_run_capture_all;
     (void)command_run_capture_combined;
-    (void)util_segv_handler;
     (void)util_filename_from;
     (void)util_string_int32;
-    (void)util_die_notify;
     (void)remove_escape_sequences;
     (void)xfclose;
+#if CBASE_HAS_DIRENT_H
     (void)xclosedir;
+#endif
 #if OS_UNIX
+    (void)util_segv_handler;
     (void)util_copy_file_sync;
     (void)util_copy_file_async;
     (void)send_signal;
@@ -2408,7 +2581,8 @@ util_functions_sink(void) {
 }
 #endif
 
-#if TESTING && OS_UNIX
+#if TESTING
+#if OS_UNIX
 CBASE_API_DEF bool
 test_command_exists(char *command) {
     char *path;
@@ -2472,9 +2646,11 @@ test_join_path(
 
     return;
 }
+#endif
 
 CBASE_API_DEF void
 test_make_temp_dir(char *buffer, int32 capacity, char *name) {
+#if OS_UNIX
     char *tmpdir;
     int32 len;
 
@@ -2494,8 +2670,52 @@ test_make_temp_dir(char *buffer, int32 capacity, char *name) {
     }
 
     return;
+#elif OS_WINDOWS
+    DWORD temp_len;
+    int32 prefix_len;
+
+    temp_len = GetTempPathA((DWORD)capacity, buffer);
+    if ((temp_len <= 0) || (temp_len >= (DWORD)capacity)) {
+        error("Temporary directory path too long.\n");
+        fatal(EXIT_FAILURE);
+    }
+
+    prefix_len = (int32)temp_len;
+    for (int32 i = 0; i < 10000; i += 1) {
+        DWORD error_code;
+        int32 len;
+
+        len = snprintf2(buffer + prefix_len, capacity - prefix_len,
+                        "%s_%lu_%d",
+                        name, (ulong)GetCurrentProcessId(), i);
+        if ((len <= 0) || (len >= (capacity - prefix_len))) {
+            error("Temporary directory path too long.\n");
+            fatal(EXIT_FAILURE);
+        }
+        if (CreateDirectoryA(buffer, NULL)) {
+            return;
+        }
+
+        error_code = GetLastError();
+        if (error_code != ERROR_ALREADY_EXISTS) {
+            error("Error creating temporary directory %s: windows error %lu.\n",
+                  buffer, (ulong)error_code);
+            fatal(EXIT_FAILURE);
+        }
+    }
+
+    error("Could not create a unique temporary directory.\n");
+    fatal(EXIT_FAILURE);
+#else
+    (void)buffer;
+    (void)capacity;
+    (void)name;
+    error("Temporary test directories are unsupported on this platform.\n");
+    fatal(EXIT_FAILURE);
+#endif
 }
 
+#if OS_UNIX
 static void
 test_remove_tree_children(char *path) {
     DIR *dir;
@@ -2525,9 +2745,11 @@ test_remove_tree_children(char *path) {
     xclosedir(dir, path);
     return;
 }
+#endif
 
 CBASE_API_DEF void
 test_remove_tree(char *path) {
+#if OS_UNIX
     struct stat statbuf;
 
     if (lstat(path, &statbuf) < 0) {
@@ -2549,8 +2771,110 @@ test_remove_tree(char *path) {
     }
 
     return;
+#elif OS_WINDOWS
+    WIN32_FIND_DATAA find_data;
+    HANDLE find_handle;
+    DWORD attributes;
+    DWORD error_code;
+
+    attributes = GetFileAttributesA(path);
+    if (attributes == INVALID_FILE_ATTRIBUTES) {
+        error_code = GetLastError();
+        if ((error_code == ERROR_FILE_NOT_FOUND)
+            || (error_code == ERROR_PATH_NOT_FOUND)) {
+            return;
+        }
+
+        error("Error checking test path %s: windows error %lu.\n",
+              path, (ulong)error_code);
+        return;
+    }
+
+    if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
+        if (!(attributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+            char pattern[PATH_MAX];
+            int32 len;
+
+            len = snprintf2(pattern, SIZEOF(pattern), "%s/*", path);
+            if ((len <= 0) || (len >= SIZEOF(pattern))) {
+                error("Test path too long below %s.\n", path);
+                fatal(EXIT_FAILURE);
+            }
+
+            find_handle = FindFirstFileA(pattern, &find_data);
+            if (find_handle == INVALID_HANDLE_VALUE) {
+                error_code = GetLastError();
+                if (error_code != ERROR_FILE_NOT_FOUND) {
+                    error("Error reading test directory %s: windows error "
+                          "%lu.\n", path, (ulong)error_code);
+                    return;
+                }
+            } else {
+                do {
+                    char child[PATH_MAX];
+
+                    if (strequal(find_data.cFileName, ".")
+                        || strequal(find_data.cFileName, "..")) {
+                        continue;
+                    }
+
+                    len = snprintf2(child, SIZEOF(child), "%s/%s",
+                                    path, find_data.cFileName);
+                    if ((len <= 0) || (len >= SIZEOF(child))) {
+                        error("Test path too long below %s.\n", path);
+                        fatal(EXIT_FAILURE);
+                    }
+                    test_remove_tree(child);
+                } while (FindNextFileA(find_handle, &find_data));
+
+                error_code = GetLastError();
+                if ((error_code != ERROR_NO_MORE_FILES)
+                    && (error_code != ERROR_SUCCESS)) {
+                    error("Error reading test directory %s: windows error "
+                          "%lu.\n", path, (ulong)error_code);
+                }
+                if (!FindClose(find_handle)) {
+                    error("Error closing test directory %s: windows error "
+                          "%lu.\n", path, (ulong)GetLastError());
+                }
+            }
+        }
+
+        if (RemoveDirectoryA(path)) {
+            return;
+        }
+
+        error_code = GetLastError();
+        if ((error_code == ERROR_FILE_NOT_FOUND)
+            || (error_code == ERROR_PATH_NOT_FOUND)) {
+            return;
+        }
+
+        error("Error removing test directory %s: windows error %lu.\n",
+              path, (ulong)error_code);
+        return;
+    }
+
+    if (DeleteFileA(path)) {
+        return;
+    }
+
+    error_code = GetLastError();
+    if ((error_code == ERROR_FILE_NOT_FOUND)
+        || (error_code == ERROR_PATH_NOT_FOUND)) {
+        return;
+    }
+
+    error("Error removing test path %s: windows error %lu.\n",
+          path, (ulong)error_code);
+    return;
+#else
+    (void)path;
+    return;
+#endif
 }
 
+#if OS_UNIX
 CBASE_API_DEF bool
 test_symlink_supported(char *dir) {
     char link_path[PATH_MAX];
@@ -2605,6 +2929,7 @@ test_hardlink_supported(char *dir) {
     return supported;
 }
 #endif
+#endif
 
 #if TESTING_util
 #define CBASE_IMPLEMENT
@@ -2654,6 +2979,7 @@ write_file(char *path, void *data, int64 len) {
 #define WRITE_FILE(PATH, STRING) \
     write_file(PATH, STRING, strlen32(STRING))
 
+#if OS_LINUX
 static sig_atomic_t received_signal = false;
 static void
 signal_handler(int signal_number) {
@@ -2661,6 +2987,7 @@ signal_handler(int signal_number) {
     received_signal = true;
     return;
 }
+#endif
 
 static int
 util_test_qsort_cmp(void *a, void *b) {
@@ -2686,7 +3013,7 @@ main(int argc, char **argv) {
     (void)argv;
     (void)here_counter;
 
-#if TESTING && OS_UNIX
+#if TESTING
     test_make_temp_dir(temp_dir, SIZEOF(temp_dir), "util");
 #endif
 
@@ -2755,7 +3082,8 @@ main(int argc, char **argv) {
         POWER_OF2_str_free(value_name);
     }
 
-    if (OS_LINUX && !DEBUGGING) {
+#if OS_LINUX
+    if (!DEBUGGING) {
         struct sigaction signal_action;
         signal_action.sa_handler = signal_handler;
         sigemptyset(&signal_action.sa_mask);
@@ -2767,6 +3095,7 @@ main(int argc, char **argv) {
         send_signal(argv[0], SIGUSR1);
         ASSERT(received_signal);
     }
+#endif
 
     srand((uint)time(NULL));
     for (int i = 0; i < 10; i += 1) {
@@ -2893,8 +3222,8 @@ main(int argc, char **argv) {
     }
 
     if (OS_WINDOWS) {
-        char *path2 = "aa\\cc";
-        int32 path_len;
+        char path2[] = "aa\\cc";
+        int32 path_len = strlen32(path2);
         ASSERT_EQUAL(basename2(path2, &path_len, NULL), "cc");
     }
 
@@ -2942,9 +3271,8 @@ main(int argc, char **argv) {
 
         util_filename_from(buffer2, sizeof(buffer2), fd);
         ASSERT_EQUAL(realpath(name, buffer3), buffer2);
-        xunlink(name);
-
         XCLOSE(&fd);
+        xunlink(name);
 
         for (int32 i = 0; i < (SIZEOF(name2) - 1); i += 1) {
             uint32 c = (uint32)rand() % (sizeof(characters) - 1);
@@ -2981,9 +3309,9 @@ main(int argc, char **argv) {
 
     NCALLS(1);
 
-    (void)util_segv_handler;
-    (void)util_die_notify;
 #if OS_UNIX
+    (void)util_die_notify;
+    (void)util_segv_handler;
     (void)util_copy_file_sync;
     (void)util_copy_file_async;
 #endif
@@ -2994,15 +3322,17 @@ main(int argc, char **argv) {
     (void)free2_;
 
     (void)xmmap_commit;
+#if OS_UNIX
     (void)xkill;
     (void)xdup2;
     (void)xpipe;
+#endif
     (void)xunlink;
 
     (void)fwrite64;
     (void)fread64;
 
-#if TESTING && OS_UNIX
+#if TESTING
     test_remove_tree(temp_dir);
 #endif
 

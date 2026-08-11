@@ -46,7 +46,7 @@ static int32 ipc_connect_socket(bool);
 static void ipc_make_socket(void);
 static void ipc_clean_socket(void);
 
-static void *ipc_daemon_listen(void *) __attribute__((noreturn));
+static noreturn void *ipc_daemon_listen(void *);
 static void ipc_client_speak(int32, int32);
 
 void

@@ -707,7 +707,7 @@ main(void) {
                   "You can print it using the W(X) macro.";
         char buf[512];
         char expected[512];
-        char small[8];
+        char small2[8];
         FILE *fp;
         int n;
 
@@ -743,9 +743,9 @@ main(void) {
         assert(n == strlen2("custom 0001 i\n"));
         assert(strequal(buf, "custom 0001 i\n"));
 
-        n = snprint(small, SIZEOF(small), "prefix-" W(e));
+        n = snprint(small2, SIZEOF(small2), "prefix-" W(e));
         assert(n == (int)(strlen("prefix-") + strlen(e)));
-        assert(strequal(small, "prefix-"));
+        assert(strequal(small2, "prefix-"));
 
         fp = tmpfile();
         assert(fp);

@@ -75,23 +75,23 @@ allocations_unlock(void) {
 }
 #endif
 
-#define X64(FUNC) \
-CBASE_API_DEF void \
-CAT(FUNC, 64)(void *dest, void *source, int64 n) { \
-    if (n == 0) \
-        return; \
-    if (DEBUGGING) { \
-        if (n < 0) { \
-            error("Error: Invalid n = %lld\n", n); \
-            fatal(EXIT_FAILURE); \
-        } \
-        if ((ullong)n >= (ullong)SIZE_MAX) { \
+#define X64(FUNC)                                                 \
+CBASE_API_DEF void                                                \
+CAT(FUNC, 64)(void *dest, void *source, int64 n) {                \
+    if (n == 0)                                                   \
+        return;                                                   \
+    if (DEBUGGING) {                                              \
+        if (n < 0) {                                              \
+            error("Error: Invalid n = %lld\n", n);                \
+            fatal(EXIT_FAILURE);                                  \
+        }                                                         \
+        if ((ullong)n >= (ullong)SIZE_MAX) {                      \
             error("Error: n (%lld) is bigger than SIZEMAX\n", n); \
-            fatal(EXIT_FAILURE); \
-        } \
-    } \
-    FUNC(dest, source, (size_t)n); \
-    return; \
+            fatal(EXIT_FAILURE);                                  \
+        }                                                         \
+    }                                                             \
+    FUNC(dest, source, (size_t)n);                                \
+    return;                                                       \
 }
 
 X64(memcpy)
@@ -878,15 +878,18 @@ memory_functions_sink(void) {
 #include "cbase.h"
 // flags: -lm
 
+#if OS_LINUX
 static sigjmp_buf test_jump_env;
 static bool caught_expected_fail = false;
 
-static void __attribute((noreturn))
+static noreturn void
 test_expected_fail_handler(int sig) {
     (void)sig;
     caught_expected_fail = true;
     siglongjmp(test_jump_env, 1);
 }
+
+#endif
 
 typedef struct TestFlex {
     int32 count;
@@ -916,15 +919,6 @@ typedef struct TestString {
 } while (0)
 
 int main(void) {
-    struct sigaction sa = {0};
-    sa.sa_handler = test_expected_fail_handler;
-    sigemptyset(&sa.sa_mask);
-
-    if (sigaction(SIGILL, &sa, NULL) != 0) {
-        perror("sigaction");
-        return EXIT_FAILURE;
-    }
-
     printf("--- Starting Comprehensive Memory Tests ---\n");
 
     {
@@ -1108,6 +1102,16 @@ int main(void) {
     // because it leaves garbage still to be detected
     printf("\n--- Starting Failure Case Tests ---\n");
 
+    struct sigaction sa = {0};
+    sa.sa_handler = test_expected_fail_handler;
+    sigemptyset(&sa.sa_mask);
+
+    if (sigaction(SIGILL, &sa, NULL) != 0) {
+        perror("sigaction");
+        return EXIT_FAILURE;
+    }
+
+
     {
         void *untracked = (void *)0xDEADBEEF;
         ASSERT_EXPECTED_FATAL({
@@ -1228,10 +1232,10 @@ int main(void) {
         allocations_unlock();
         free(p - MEMORY_PADDING);
     }
-#endif
 
     fsync(STDOUT_FILENO);
     fsync(STDERR_FILENO);
+#endif
     printf("\nAll memory tests passed.\n");
     return EXIT_SUCCESS;
 }
