@@ -41,6 +41,7 @@ assert_file_contains(char *file, int32 line, char *func,
                      "Needle '%s' not found in file '%s'.\n", needle, path);
         TRAP();
     }
+    free2(buffer, buffer_len + 1);
     return;
 }
 
@@ -644,6 +645,16 @@ a_bool_less_equal(void *p, ...) {
 }
 
 #undef GENERATE_ASSERT_BOOLS
+
+#if 0 == TESTING_assertions
+static inline void
+assertions_functions_sink(void) {
+    (void)a_bool_more;
+    (void)a_bool_less;
+    (void)a_bool_more_equal;
+    (void)a_bool_less_equal;
+}
+#endif
 
 #if TESTING_assertions
 #define CBASE_IMPLEMENT

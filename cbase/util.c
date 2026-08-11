@@ -2539,6 +2539,7 @@ util_functions_sink(void) {
     (void)util_copy_file_sync;
     (void)util_copy_file_async;
     (void)send_signal;
+    (void)util_die_notify;
 #endif
     (void)util_equal_files;
 
