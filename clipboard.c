@@ -4,12 +4,13 @@
 #if !defined(CLIPBOARD_C)
 #define CLIPBOARD_C
 
+#include "cbase.h"
+
 #include <X11/X.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/Xfixes.h>
 
-#include "cbase.h"
 #include "clipsim.h"
 #include "history.c"
 
