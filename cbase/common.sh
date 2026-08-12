@@ -4,11 +4,26 @@
 
 set -e
 
+case ${RED:-} in
+''|'\033[01;38;2;255;000;000'|'\033[01;38;2;255;000;000m')
+    RED=$(printf '\033[01;38;2;255;000;000m')
+    ;;
+esac
+
+case ${RES:-} in
+''|'\033[0;m'|'\033[0m')
+    RES=$(printf '\033[0m')
+    ;;
+esac
+
+export RED RES
+
 error () {
     >&2 printf "$@"
     return
 }
 
+# shellcheck source=./cbase/functions_forbidden.sh
 . ./cbase/functions_forbidden.sh
 
 common_command_exists () {
