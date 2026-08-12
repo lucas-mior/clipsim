@@ -99,6 +99,7 @@ extern int32 itoa2(char *, int32, llong);
 extern long atoi2(char *);
 extern char *basename2(char *, int32 *, int32 *);
 extern char *begins_with(char *, int32, char *, int32);
+extern bool byte_matches_any(char, void *, int64);
 extern int32 bytes_pretty(char *, int64);
 extern void catfile(int, char *);
 extern double deg2rad(double);
@@ -295,6 +296,13 @@ _Generic((VAR), \
 #define ENDS_WITH_4(STRING, STRING_LEN, SUFFIX, SUFFIX_LEN) \
     ends_with(STRING, STRING_LEN, SUFFIX, SUFFIX_LEN)
 #define ENDS_WITH(...) SELECT_ON_NUM_ARGS(ENDS_WITH_, __VA_ARGS__)
+
+#define BYTE_MATCHES_ANY_2(BYTE, MEMORY) \
+    byte_matches_any(BYTE, MEMORY, strlen32(MEMORY))
+#define BYTE_MATCHES_ANY_3(BYTE, MEMORY, MEMORY_LEN) \
+    byte_matches_any(BYTE, MEMORY, MEMORY_LEN)
+#define BYTE_MATCHES_ANY(...) \
+    SELECT_ON_NUM_ARGS(BYTE_MATCHES_ANY_, __VA_ARGS__)
 
 #define ITOA(BUFFER, NUM) itoa2(BUFFER, SIZEOF(BUFFER), NUM)
 

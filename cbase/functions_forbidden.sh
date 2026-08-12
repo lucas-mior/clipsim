@@ -63,15 +63,23 @@ if [ -n "$common_libc_never" ] \
     fi
 
     {
-        if [ -n "${TEST_MAXDEPTH:-}" ]; then
-            # shellcheck disable=SC2086
-            find . -maxdepth "$TEST_MAXDEPTH" \
-                \( -iname "*.c" -o -iname "*.h" \)
-        else
-            # shellcheck disable=SC2086
-            find . \( -iname "*.c" -o -iname "*.h" \)
-        fi
-    } | sort | while read -r common_source; do
+        for common_libc_search_dir in . cbase src test tests; do
+            if [ ! -d "$common_libc_search_dir" ]; then
+                continue
+            fi
+
+            if [ "$common_libc_search_dir" = . ]; then
+                find "$common_libc_search_dir" -maxdepth 1 \
+                    \( -iname "*.c" -o -iname "*.h" \)
+            elif [ -n "${TEST_MAXDEPTH:-}" ]; then
+                find "$common_libc_search_dir" -maxdepth "$TEST_MAXDEPTH" \
+                    \( -iname "*.c" -o -iname "*.h" \)
+            else
+                find "$common_libc_search_dir" \
+                    \( -iname "*.c" -o -iname "*.h" \)
+            fi
+        done
+    } | sort -u | while read -r common_source; do
         if echo "$common_source" | grep -Eq '(^|/)stc/'; then
             continue
         fi
