@@ -372,6 +372,11 @@ memchr64(void *pointer, int32 value, int64 size) {
 #endif
 }
 
+bool
+byte_matches_any(char byte, void *memory, int64 memory_len) {
+    return memchr64(memory, byte, memory_len) != NULL;
+}
+
 int32
 optional_strlen32(char *string) {
     if (string == NULL) {
@@ -3060,6 +3065,9 @@ main(int argc, char **argv) {
     ASSERT(ENDS_WITH(s1, strlen32(s1), "aaaabbbb"));
     ASSERT(!ENDS_WITH(s1, strlen32(s1), "aaaa"));
     ASSERT(!ENDS_WITH(s1, strlen32(s1), "aaaaabbbbb"));
+
+    ASSERT(BYTE_MATCHES_ANY('a', "abc"));
+    ASSERT(!BYTE_MATCHES_ANY('d', "abc", 3));
 
     ASSERT(striqual("abc", "ABC"));
     ASSERT(striqual("ASCII 123 _-", "ascii 123 _-"));
