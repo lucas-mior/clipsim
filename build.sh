@@ -35,19 +35,19 @@ EOF_TARGETS
 )
 fi
 
-build_parse_args "$@"
-build_validate_mode "$script" "$targets"
+common_build_parse_args "$@"
+common_build_validate_mode "$script" "$targets"
 cross="$target"
 
-build_print_invocation "$script"
+common_build_print_invocation "$script"
 PREFIX="${PREFIX:-/usr/local}"
 DESTDIR="${DESTDIR:-/}"
 
-program=$(get_program "$0")
+program=$(common_get_program "$0")
 exe="bin/$program"
 mkdir -p "$(dirname "$exe")"
 
-CC=$(get_compiler "$mode")
+CC=$(common_get_compiler "$mode")
 
 CPPFLAGS="$CPPFLAGS -I$dir/$cbase"
 
@@ -173,7 +173,7 @@ assembly)
     ;;
 test)
     TEST_EXCLUDE_PATTERN='(^|/)tests/' \
-        test "$target"
+        common_test "$target"
     tests/test.bash
     exit
     ;;
@@ -186,7 +186,7 @@ fast_feedback)
     ;;
 *)
     trace_on
-    build_tags
+    common_build_tags
 
     $CC $CPPFLAGS $CFLAGS -o ${exe} main.c $LDFLAGS
     trace_off
