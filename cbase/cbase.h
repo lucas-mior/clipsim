@@ -214,7 +214,7 @@ extern int32 parallel_for_max_threads_min_items(
 extern void write_all(int, char *, int64);
 extern bool write_entire_file(char *, char *, int64);
 extern int xclose(char *, int, int *, char *, char *);
-#if CBASE_HAS_DIRENT_H
+#if HAS_POSIX_WIN_SUBSET
 extern int xclosedir(DIR *, char *);
 #endif
 extern int xfclose(char *, int32, char *, FILE *, char *);

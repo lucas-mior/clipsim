@@ -23,11 +23,11 @@
   #pragma clang diagnostic ignored "-Wreserved-identifier"
 #endif
 
-#if OS_UNIX && !defined(_XOPEN_SOURCE)
+#if (OS_UNIX || OS_WASM) && !defined(_XOPEN_SOURCE)
   #define _XOPEN_SOURCE 700
 #endif
 
-#if OS_UNIX && !defined(_DEFAULT_SOURCE)
+#if (OS_UNIX || OS_WASM) && !defined(_DEFAULT_SOURCE)
   #define _DEFAULT_SOURCE
 #endif
 
@@ -90,6 +90,9 @@
 // optional C11 headers
 #if !defined(_MSC_VER) && !defined(__STDC_NO_COMPLEX__)
 #include <complex.h>
+#if defined(I)
+#undef I
+#endif
 #endif
 
 #if !OS_WINDOWS && !defined(__STDC_NO_THREADS__)
@@ -100,41 +103,41 @@
 #include <stdatomic.h>
 #endif
 
-// POSIX-like headers provided by Unix and some Windows CRTs.
+// POSIX-like headers provided by Unix, wasm, and some Windows CRTs.
 #if CBASE_HAS_DIRECT_H
 #include <direct.h>
 #endif
-#if CBASE_HAS_DIRENT_H
+#if HAS_POSIX_WIN_SUBSET
 #include <dirent.h>
 #endif
-#if CBASE_HAS_FCNTL_H
+#if HAS_POSIX_WIN_SUBSET || CBASE_CRT_MSVC
 #include <fcntl.h>
 #endif
-#if CBASE_HAS_FTW_H
+#if HAS_POSIX_WIN_SUBSET
 #include <ftw.h>
 #endif
-#if CBASE_HAS_GETOPT_H
+#if HAS_POSIX_WIN_SUBSET
 #include <getopt.h>
 #endif
 #if CBASE_HAS_IO_H
 #include <io.h>
 #endif
-#if CBASE_HAS_LIBGEN_H
+#if HAS_POSIX_WIN_SUBSET
 #include <libgen.h>
 #endif
-#if CBASE_HAS_SYS_FILE_H
+#if HAS_POSIX_WIN_SUBSET
 #include <sys/file.h>
 #endif
-#if CBASE_HAS_SYS_STAT_H
+#if HAS_POSIX_WIN_SUBSET || CBASE_CRT_MSVC
 #include <sys/stat.h>
 #endif
-#if CBASE_HAS_SYS_TIME_H
+#if HAS_POSIX_WIN_SUBSET
 #include <sys/time.h>
 #endif
-#if CBASE_HAS_SYS_TYPES_H
+#if HAS_POSIX_WIN_SUBSET || CBASE_CRT_MSVC
 #include <sys/types.h>
 #endif
-#if CBASE_HAS_UNISTD_H
+#if HAS_POSIX_WIN_SUBSET
 #include <unistd.h>
 #endif
 
@@ -181,7 +184,7 @@
 #define S_ISLNK(mode) (((mode) & S_IFMT) == S_IFLNK)
 #endif
 
-#if !CBASE_HAS_GETOPT_H
+#if !HAS_POSIX_WIN_SUBSET
 #define no_argument       0
 #define required_argument 1
 #define optional_argument 2
