@@ -748,9 +748,9 @@ common_test () {
             "$common_libc_matches" \
             "$common_libc_matches2"
 
-        # if [ "$common_libc_status" -ne 0 ]; then
-        #     exit 1
-        # fi
+        if [ "$common_libc_status" -ne 0 ]; then
+            exit 1
+        fi
     fi
 
     {
