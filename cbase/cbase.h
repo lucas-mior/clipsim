@@ -329,7 +329,7 @@ _Generic((VAR), \
     sb_append(BUILDER, STRING, (int32)(LEN))
 #define SB_APPEND(...) SELECT_ON_NUM_ARGS(SB_APPEND_, __VA_ARGS__)
 
-#define HERE here_impl(__FILE__, __LINE__, (char *)__func__)
+#define HERE here_impl(__FILE__, __LINE__, FUNC__)
 
 #define NCALLS(INTERVAL) do { \
     static int64 ncalls_ncalls = 1; \
@@ -341,7 +341,7 @@ _Generic((VAR), \
 } while (0)
 
 #define PRINT_TIMINGS_3(N, T0, T1) \
-    print_timings(__FILE__, __LINE__, (char *)__func__, N, T0, T1)
+    print_timings(__FILE__, __LINE__, FUNC__, N, T0, T1)
 #define PRINT_TIMINGS_4(N, T0, T1, NAME) \
     print_timings(__FILE__, __LINE__, NAME, N, T0, T1)
 #define PRINT_TIMINGS(...) SELECT_ON_NUM_ARGS(PRINT_TIMINGS_, __VA_ARGS__)
