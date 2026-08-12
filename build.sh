@@ -86,10 +86,10 @@ fast_feedback)
     ;;
 test)
     CFLAGS="$CFLAGS -Wno-declaration-after-statement"
-    CFLAGS="$CFLAGS -g3 -DDEBUGGING=1 -fsanitize=undefined"
+    CFLAGS="$CFLAGS -g3 -DDEBUGGING=1"
     ;;
 debug)
-    CFLAGS="$CFLAGS -Wno-declaration-after-statement -g -fsanitize=undefined"
+    CFLAGS="$CFLAGS -Wno-declaration-after-statement -g"
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
 valgrind)
