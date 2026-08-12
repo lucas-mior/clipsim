@@ -503,7 +503,6 @@ common_test_compile_and_run_source () {
     test_name=$(basename "$test_src")
     test_module=${test_name%.c}
     test_exe=$(common_test_executable_path "$test_module")
-    test_flags=$(awk '/flags:/ { $1=$2=""; print $0 }' "$test_src")
     test_cc=$CC
     test_cmd_flags="$CPPFLAGS $TEST_CPPFLAGS $CFLAGS $TEST_CFLAGS"
     test_added_flags=""
@@ -565,7 +564,6 @@ common_test_compile_and_run_source () {
     test_added_flags="$test_added_flags $TEST_EXTRA_DEFS"
     if [ -n "$test_msvc_compiler" ]; then
         test_added_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_added_flags)
-        test_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_flags)
         test_tail_ldflags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_tail_ldflags)
     fi
     test_cmdline="$test_cmdline $test_added_flags"
@@ -574,7 +572,7 @@ common_test_compile_and_run_source () {
     else
         test_cmdline="$test_cmdline -o $test_exe $test_src"
     fi
-    test_cmdline="$test_cmdline $test_flags $test_tail_ldflags"
+    test_cmdline="$test_cmdline $test_tail_ldflags"
 
     trace_on
     if $test_cmdline < /dev/null; then
