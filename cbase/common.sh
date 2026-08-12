@@ -703,7 +703,7 @@ common_compile_cbase () {
     CC="${CC:-cc}"
 
     trace_on
-    $CC -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -c "cbase.c" -o "cbase-${CC}.o"
+    $CC $CPPFLAGS $CFLAGS -c "cbase.c" -o "cbase-${CC}.o"
     trace_off
 }
 
