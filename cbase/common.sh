@@ -4,12 +4,12 @@
 
 set -e
 
-. ./cbase/functions_forbidden.sh
-
 error () {
     >&2 printf "$@"
     return
 }
+
+. ./cbase/functions_forbidden.sh
 
 common_command_exists () {
     command -v "$1" > /dev/null 2>&1
