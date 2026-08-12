@@ -583,60 +583,60 @@ int
 main(void) {
     union Primitive primitive;
 
-    ASSERT(MINOF(primitive.afloat)  == -FLT_MAX);
-    ASSERT(MINOF(primitive.aint)    == INT_MIN);
-    ASSERT(MINOF(primitive.allong)  == LLONG_MIN);
-    ASSERT(MINOF(primitive.along)   == LONG_MIN);
-    ASSERT(MINOF(primitive.aschar)  == SCHAR_MIN);
-    ASSERT(MINOF(primitive.ashort)  == SHRT_MIN);
-    ASSERT(MINOF(primitive.auchar)  == 0);
-    ASSERT(MINOF(primitive.auint)   == 0u);
-    ASSERT(MINOF(primitive.aullong) == 0ull);
-    ASSERT(MINOF(primitive.aulong)  == 0ul);
-    ASSERT(MINOF(primitive.aushort) == 0);
+    assert(primitive.afloat  == -FLT_MAX);
+    assert(primitive.aint    == INT_MIN);
+    assert(primitive.allong  == LLONG_MIN);
+    assert(primitive.along   == LONG_MIN);
+    assert(primitive.aschar  == SCHAR_MIN);
+    assert(primitive.ashort  == SHRT_MIN);
+    assert(primitive.auchar  == 0);
+    assert(primitive.auint   == 0u);
+    assert(primitive.aullong == 0ull);
+    assert(primitive.aulong  == 0ul);
+    assert(primitive.aushort == 0);
 
-    ASSERT(MAXOF(primitive.afloat)  == FLT_MAX);
-    ASSERT(MAXOF(primitive.aschar)  == SCHAR_MAX);
-    ASSERT(MAXOF(primitive.ashort)  == SHRT_MAX);
-    ASSERT(MAXOF(primitive.aint)    == INT_MAX);
-    ASSERT(MAXOF(primitive.along)   == LONG_MAX);
-    ASSERT(MAXOF(primitive.allong)  == LLONG_MAX);
-    ASSERT(MAXOF(primitive.auchar)  == UCHAR_MAX);
-    ASSERT(MAXOF(primitive.aushort) == USHRT_MAX);
-    ASSERT(MAXOF(primitive.auint)   == UINT_MAX);
-    ASSERT(MAXOF(primitive.aulong)  == ULONG_MAX);
-    ASSERT(MAXOF(primitive.aullong) == ULLONG_MAX);
-    ASSERT(MAXOF(primitive.abool)   == 1);
+    assert(primitive.afloat  == FLT_MAX);
+    assert(primitive.aschar  == SCHAR_MAX);
+    assert(primitive.ashort  == SHRT_MAX);
+    assert(primitive.aint    == INT_MAX);
+    assert(primitive.along   == LONG_MAX);
+    assert(primitive.allong  == LLONG_MAX);
+    assert(primitive.auchar  == UCHAR_MAX);
+    assert(primitive.aushort == USHRT_MAX);
+    assert(primitive.auint   == UINT_MAX);
+    assert(primitive.aulong  == ULONG_MAX);
+    assert(primitive.aullong == ULLONG_MAX);
+    assert(primitive.abool   == 1);
 
-    ASSERT_EQUAL(TYPENAME(primitive.avoidp),
+    assert(primitive.avoidp,
                  typename(TYPEID(primitive.avoidp)));
-    ASSERT_EQUAL(TYPENAME(primitive.acharp),
+    assert(primitive.acharp,
                  typename(TYPEID(primitive.acharp)));
-    ASSERT_EQUAL(TYPENAME(primitive.abool),
+    assert(primitive.abool,
                  typename(TYPEID(primitive.abool)));
-    ASSERT_EQUAL(TYPENAME(primitive.aschar),
+    assert(primitive.aschar,
                  typename(TYPEID(primitive.aschar)));
-    ASSERT_EQUAL(TYPENAME(primitive.ashort),
+    assert(primitive.ashort,
                  typename(TYPEID(primitive.ashort)));
-    ASSERT_EQUAL(TYPENAME(primitive.aint),
+    assert(primitive.aint,
                  typename(TYPEID(primitive.aint)));
-    ASSERT_EQUAL(TYPENAME(primitive.along),
+    assert(primitive.along,
                  typename(TYPEID(primitive.along)));
-    ASSERT_EQUAL(TYPENAME(primitive.allong),
+    assert(primitive.allong,
                  typename(TYPEID(primitive.allong)));
-    ASSERT_EQUAL(TYPENAME(primitive.auchar),
+    assert(primitive.auchar,
                  typename(TYPEID(primitive.auchar)));
-    ASSERT_EQUAL(TYPENAME(primitive.aushort),
+    assert(primitive.aushort,
                  typename(TYPEID(primitive.aushort)));
-    ASSERT_EQUAL(TYPENAME(primitive.auint),
+    assert(primitive.auint,
                  typename(TYPEID(primitive.auint)));
-    ASSERT_EQUAL(TYPENAME(primitive.aulong),
+    assert(primitive.aulong,
                  typename(TYPEID(primitive.aulong)));
-    ASSERT_EQUAL(TYPENAME(primitive.aullong),
+    assert(primitive.aullong,
                  typename(TYPEID(primitive.aullong)));
-    ASSERT_EQUAL(TYPENAME(primitive.afloat),
+    assert(primitive.afloat,
                  typename(TYPEID(primitive.afloat)));
-    ASSERT_EQUAL(TYPENAME(primitive.adouble),
+    assert(primitive.adouble,
                  typename(TYPEID(primitive.adouble)));
 
     {
@@ -645,15 +645,15 @@ main(void) {
         int64 var_int64;
         uint64 var_uint64;
 
-        ASSERT(MAXOF(var_int32) == INT32_MAX);
-        ASSERT(MAXOF(var_int64) == INT64_MAX);
-        ASSERT(MAXOF(var_uint32) == UINT32_MAX);
-        ASSERT(MAXOF(var_uint64) == UINT64_MAX);
+        assert(var_int32) == INT32_MAX);
+        assert(var_int64) == INT64_MAX);
+        assert(var_uint32) == UINT32_MAX);
+        assert(var_uint64) == UINT64_MAX);
 
-        ASSERT(MINOF(var_int32) == INT32_MIN);
-        ASSERT(MINOF(var_int64) == INT64_MIN);
-        ASSERT(MINOF(var_uint32) == 0u);
-        ASSERT(MINOF(var_uint64) == 0ull);
+        assert(var_int32) == INT32_MIN);
+        assert(var_int64) == INT64_MIN);
+        assert(var_uint32) == 0u);
+        assert(var_uint64) == 0ull);
     }
 
     {
@@ -711,23 +711,23 @@ main(void) {
         FILE *fp;
         int n;
 
-        assert(strequal(S_(a), "i"));
-        assert(strequal(S_(b), "able"));
-        assert(strequal(S_(c), "1"));
-        assert(strequal(S_((uint)42), "42"));
-        assert(strequal(S_((long)-42), "-42"));
-        assert(strequal(S_((ullong)42), "42"));
-        assert(strequal(S_(true), "1"));
-        assert(strequal(S_(false), "0"));
-        assert(strequal(SF("0x%02x", 10), "0x0a"));
+        assert(a), "i"));
+        assert(b), "able"));
+        assert(c), "1"));
+        assert(uint)42), "42"));
+        assert(long)-42), "-42"));
+        assert(ullong)42), "42"));
+        assert(true), "1"));
+        assert(false), "0"));
+        assert("0x%02x", 10), "0x0a"));
 
         n = snprint(buf, SIZEOF(buf),
                     "Now you can insert var" V(a) V(b) "s in situ:\n"
                     V(c) " divided by " V(d) " equals " V(c/d) "\n");
-        assert(n == strlen2("Now you can insert variables in situ:\n"
+        assert("Now you can insert variables in situ:\n"
                             "1 divided by 8 equals 0.125\n"));
 
-        assert(strequal(buf, "Now you can insert variables in situ:\n"
+        assert(buf, "Now you can insert variables in situ:\n"
                             "1 divided by 8 equals 0.125\n"));
 
         n = snprint(buf, SIZEOF(buf),
@@ -735,32 +735,32 @@ main(void) {
         snprintf(expected, SIZEOF(expected),
                  "This is %s It's %lu characters long\n",
                  e, (ulong)strlen(e));
-        assert(n == strlen2(expected));
-        assert(strequal(buf, expected));
+        assert(expected));
+        assert(buf, expected));
 
         n = snprint(buf, SIZEOF(buf),
                     "custom " VF("%04i", c) " " VF("%c", a) "\n");
-        assert(n == strlen2("custom 0001 i\n"));
-        assert(strequal(buf, "custom 0001 i\n"));
+        assert("custom 0001 i\n"));
+        assert(buf, "custom 0001 i\n"));
 
         n = snprint(small2, SIZEOF(small2), "prefix-" W(e));
-        assert(n == (int)(strlen("prefix-") + strlen(e)));
-        assert(strequal(small2, "prefix-"));
+        assert(e)));
+        assert(small2, "prefix-"));
 
         fp = tmpfile();
         assert(fp);
         n = fprint(fp, "file ", V(c), " ", VF("%04i", c), "\n");
-        assert(n == strlen2("file 1 0001\n"));
+        assert("file 1 0001\n"));
         rewind(fp);
-        assert(fgets(buf, SIZEOF(buf), fp));
-        assert(strequal(buf, "file 1 0001\n"));
+        assert(buf), fp));
+        assert(buf, "file 1 0001\n"));
         fclose(fp);
 
         n = print0("print ", V(a), " ", W(b), "\n");
-        assert(n == strlen2("print i able\n"));
+        assert("print i able\n"));
         {
             char buffer[16];
-            assert((print0(V(c), "\n")
+            assert(c), "\n")
                     == snprintf(buffer, SIZEOF(buffer), "%d\n", c)));
         }
         print0("PRINTING a=", V(a), "; b=", V(b), "\n");
