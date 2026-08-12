@@ -403,7 +403,7 @@ utf8_random_rune_allowed(uint32 u) {
 }
 
 int32
-random_utf8_string(char *buffer, int32 capacity, int32 min_len) {
+utf8_random_string(char *buffer, int32 capacity, int32 min_len) {
     int32 max_len = capacity - 1;
     int32 target_len = min_len;
     int32 range;
@@ -488,7 +488,7 @@ utf8_functions_sink(void) {
 #if !OS_WINDOWS
     (void)utf8_cut_width;
 #endif
-    (void)random_utf8_string;
+    (void)utf8_random_string;
     return;
 }
 #endif
@@ -613,7 +613,7 @@ main(void) {
         ASSERT(!utf8_has_bom("text", 4));
     }
 
-    /* Test random_utf8_string generation and decoding validation */
+    /* Test utf8_random_string generation and decoding validation */
     {
         char test_buf[256];
 
@@ -621,7 +621,7 @@ main(void) {
         srand(205);
 
         for (int32 i = 0; i < 50; i += 1) {
-            int32 gen_len = random_utf8_string(test_buf, SIZEOF(test_buf), 10);
+            int32 gen_len = utf8_random_string(test_buf, SIZEOF(test_buf), 10);
             int32 consumed = 0;
 
             ASSERT(gen_len >= 10);
@@ -639,7 +639,7 @@ main(void) {
             ASSERT_EQUAL(consumed, gen_len);
             PRINTLN(test_buf);
         }
-        printf("random_utf8_string validation successful.\n");
+        printf("utf8_random_string validation successful.\n");
     }
 
     exit(EXIT_SUCCESS);
