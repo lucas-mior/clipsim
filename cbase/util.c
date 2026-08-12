@@ -160,7 +160,7 @@ strequal(char *s1, char *s2) {
     return !strcmp(s1, s2);
 }
 
-#if !CBASE_HAS_GETOPT_H
+#if !HAS_POSIX_WIN_SUBSET
 char *optarg = NULL;
 int optind = 1;
 int opterr = 1;
@@ -891,7 +891,7 @@ xfclose(char *file, int32 line, char *func, FILE *f, char *filename) {
     return 0;
 }
 
-#if CBASE_HAS_DIRENT_H
+#if HAS_POSIX_WIN_SUBSET
 int
 xclosedir(DIR *dir, char *dirname) {
     if (closedir(dir)) {
@@ -998,7 +998,6 @@ fatal(int status) {
     char stack[8192];
     int32 flags = EM_LOG_C_STACK
                   |EM_LOG_JS_STACK
-                  |EM_LOG_DEMANGLE
                   |EM_LOG_NO_PATHS;
 
     emscripten_get_callstack(flags, stack, SIZEOF(stack));
@@ -1702,12 +1701,27 @@ windows_time_monotonic(struct timespec *time) {
 }
 #endif
 
+#if defined(__EMSCRIPTEN__)
+static int32
+emscripten_time_monotonic(struct timespec *time) {
+    double seconds;
+
+    seconds = emscripten_get_now() / 1.0e3;
+    time->tv_sec = (time_t)seconds;
+    time->tv_nsec = (long)((seconds - (double)time->tv_sec)*1.0e9);
+
+    return 0;
+}
+#endif
+
 void
 time_monotonic_precise(struct timespec *time) {
     int32 status;
 
 #if OS_WINDOWS
     status = windows_time_monotonic(time);
+#elif defined(__EMSCRIPTEN__)
+    status = emscripten_time_monotonic(time);
 #elif defined(CLOCK_MONOTONIC_RAW)
     status = clock_gettime(CLOCK_MONOTONIC_RAW, time);
 #elif defined(CLOCK_MONOTONIC)
@@ -1736,6 +1750,8 @@ time_monotonic_coarse(struct timespec *time) {
 
 #if OS_WINDOWS
     status = windows_time_monotonic(time);
+#elif defined(__EMSCRIPTEN__)
+    status = emscripten_time_monotonic(time);
 #elif defined(CLOCK_MONOTONIC_COARSE)
     status = clock_gettime(CLOCK_MONOTONIC_COARSE, time);
 #elif defined(CLOCK_MONOTONIC)
@@ -2527,7 +2543,7 @@ util_functions_sink(void) {
     (void)util_string_int32;
     (void)remove_escape_sequences;
     (void)xfclose;
-#if CBASE_HAS_DIRENT_H
+#if HAS_POSIX_WIN_SUBSET
     (void)xclosedir;
 #endif
 #if OS_UNIX
