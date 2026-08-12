@@ -4,12 +4,12 @@
 
 set -e
 
-error () {
+common_error () {
     >&2 printf "$@"
     return
 }
 
-command_exists () {
+common_command_exists () {
     command -v "$1" > /dev/null 2>&1
 }
 
@@ -21,7 +21,7 @@ fi
 alias trace_on='set -x'
 alias trace_off='{ set +x; } 2>/dev/null'
 
-get_compiler() {
+common_get_compiler() {
     case "$1" in
     debug|test)
         CC="${CC:-tcc}"
@@ -45,15 +45,15 @@ get_compiler() {
     echo "$CC"
 }
 
-get_program() {
+common_get_program() {
     if [ -z "$1" ]; then
-        error "get_program <full_path_to_build.sh>"
+        common_error "common_get_program <full_path_to_build.sh>"
         exit 1
     fi
     basename "$(readlink -f "$(dirname "$1")")"
 }
 
-needs_rebuild_includes () {
+common_needs_rebuild_includes () {
     source_file=$1
 
     awk '
@@ -69,7 +69,7 @@ needs_rebuild_includes () {
     ' "$source_file"
 }
 
-needs_rebuild_resolve_include () {
+common_needs_rebuild_resolve_include () {
     source_file=$1
     include_file=$2
     source_dir=$(dirname "$source_file")
@@ -87,7 +87,7 @@ needs_rebuild_resolve_include () {
     return 1
 }
 
-needs_rebuild_source_is_newer () {
+common_needs_rebuild_source_is_newer () {
     rebuild_target=$1
     source_file=$2
     seen_file=$3
@@ -110,14 +110,14 @@ needs_rebuild_source_is_newer () {
         return 1
     fi
 
-    for include_file in $(needs_rebuild_includes "$source_file"); do
+    for include_file in $(common_needs_rebuild_includes "$source_file"); do
         resolved_file=$(
-            needs_rebuild_resolve_include "$source_file" "$include_file" \
+            common_needs_rebuild_resolve_include "$source_file" "$include_file" \
                 || true
         )
 
         if [ -n "$resolved_file" ] \
-                && needs_rebuild_source_is_newer \
+                && common_needs_rebuild_source_is_newer \
                     "$rebuild_target" "$resolved_file" "$seen_file"; then
             return 0
         fi
@@ -126,7 +126,7 @@ needs_rebuild_source_is_newer () {
     return 1
 }
 
-needs_rebuild () {
+common_needs_rebuild () {
     rebuild_target=$1
     shift
 
@@ -134,11 +134,11 @@ needs_rebuild () {
         return 0
     fi
 
-    seen_file=${TMPDIR:-/tmp}/needs_rebuild.$$.seen
+    seen_file=${TMPDIR:-/tmp}/common_needs_rebuild.$$.seen
     : > "$seen_file"
 
     for source_file do
-        if needs_rebuild_source_is_newer \
+        if common_needs_rebuild_source_is_newer \
                 "$rebuild_target" "$source_file" "$seen_file"; then
             rm -f "$seen_file"
             return 0
@@ -155,7 +155,7 @@ needs_rebuild () {
     return 1
 }
 
-target_supported () {
+common_target_supported () {
     target_list=$1
     wanted=$2
 
@@ -170,7 +170,7 @@ target_supported () {
 }
 
 
-build_parse_args () {
+common_build_parse_args () {
     mode=${1:-debug}
     target=${2:-}
 
@@ -187,12 +187,12 @@ build_parse_args () {
     return 0
 }
 
-build_validate_mode () {
+common_build_validate_mode () {
     build_script=$1
     build_targets=$2
 
-    if ! target_supported "$build_targets" "$target_line" \
-            && ! target_supported "$build_targets" "$mode"; then
+    if ! common_target_supported "$build_targets" "$target_line" \
+            && ! common_target_supported "$build_targets" "$mode"; then
         echo "usage: $build_script <mode> [target]"
         printf '%s\n' "$build_targets"
         exit 1
@@ -201,7 +201,7 @@ build_validate_mode () {
     return 0
 }
 
-build_print_invocation () {
+common_build_print_invocation () {
     build_script=$1
 
     if [ -n "${target:-}" ]; then
@@ -214,7 +214,7 @@ build_print_invocation () {
     return 0
 }
 
-option_remove() {
+common_option_remove() {
     remove=$2
     result=""
 
@@ -233,7 +233,7 @@ option_remove() {
     printf '%s\n' "$result"
 }
 
-gcc_flags_to_msvc() {
+common_gcc_flags_to_msvc() {
     compiler=clang-cl
     result=""
     next_is_linker_flag=0
@@ -252,7 +252,7 @@ gcc_flags_to_msvc() {
             case "$flag" in
             -I*)
                 path=${flag#-I}
-                if command_exists cygpath; then
+                if common_command_exists cygpath; then
                     path=$(cygpath -m "$path" 2>/dev/null || printf '%s\n' "$path")
                 fi
                 case "$compiler" in
@@ -364,7 +364,7 @@ gcc_flags_to_msvc() {
 }
 
 
-test_run_binary () {
+common_test_run_binary () {
     test_exe=$1
 
     if [ -n "${TEST_STDIN:-}" ]; then
@@ -374,14 +374,14 @@ test_run_binary () {
     fi
 }
 
-test_debugger () {
+common_test_debugger () {
     test_exe=$1
 
-    if command_exists gdb; then
+    if common_command_exists gdb; then
         gdb --quiet \
             -ex run -ex backtrace -ex quit \
             "$test_exe" < /dev/null 2>&1 || true
-    elif command_exists lldb; then
+    elif common_command_exists lldb; then
         lldb \
             --batch \
             --one-line "run" \
@@ -392,7 +392,7 @@ test_debugger () {
     return 0
 }
 
-test_source_matches_filter () {
+common_test_source_matches_filter () {
     test_src=$1
     test_filter=$2
 
@@ -414,7 +414,7 @@ test_source_matches_filter () {
     return 1
 }
 
-test_source_is_excluded () {
+common_test_source_is_excluded () {
     test_src=$1
     test_name=$(basename "$test_src")
     test_module=${test_name%.c}
@@ -448,7 +448,7 @@ test_source_is_excluded () {
     return 1
 }
 
-test_executable_path () {
+common_test_executable_path () {
     test_module=$1
 
     if [ -n "${TEST_EXE_PATH:-}" ]; then
@@ -498,11 +498,11 @@ test_executable_path () {
         "$test_exe_suffix"
 }
 
-test_compile_and_run_source () {
+common_test_compile_and_run_source () {
     test_src=$1
     test_name=$(basename "$test_src")
     test_module=${test_name%.c}
-    test_exe=$(test_executable_path "$test_module")
+    test_exe=$(common_test_executable_path "$test_module")
     test_flags=$(awk '/flags:/ { $1=$2=""; print $0 }' "$test_src")
     test_cc=$CC
     test_cmd_flags="$CPPFLAGS $TEST_CPPFLAGS $CFLAGS $TEST_CFLAGS"
@@ -518,13 +518,13 @@ test_compile_and_run_source () {
 
     if [ -n "${TEST_WINDOWS_SOURCE_PATTERN:-}" ] \
             && echo "$test_src" | grep -Eq "$TEST_WINDOWS_SOURCE_PATTERN"; then
-        if ! command_exists zig; then
+        if ! common_command_exists zig; then
             return 0
         fi
 
         test_cc="zig cc"
         test_cmdline="$test_cc $test_cmd_flags"
-        test_cmdline=$(option_remove "$test_cmdline" "-D_GNU_SOURCE")
+        test_cmdline=$(common_option_remove "$test_cmdline" "-D_GNU_SOURCE")
         test_cmdline="$test_cmdline -target x86_64-windows-gnu"
         test_run_after_compile=${TEST_WINDOWS_RUN:-1}
     else
@@ -541,11 +541,11 @@ test_compile_and_run_source () {
             if [ -n "$CLANG_CL_TARGET" ]; then
                 test_cmd_flags="$test_cmd_flags --target=$CLANG_CL_TARGET"
             fi
-            test_cmd_flags=$(gcc_flags_to_msvc "$test_msvc_compiler" $test_cmd_flags)
+            test_cmd_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_cmd_flags)
             ;;
         cl|*/cl|cl.exe|*/cl.exe)
             test_msvc_compiler=cl
-            test_cmd_flags=$(gcc_flags_to_msvc "$test_msvc_compiler" $test_cmd_flags)
+            test_cmd_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_cmd_flags)
             ;;
         esac
         test_cmdline="$test_cc $test_cmd_flags"
@@ -565,10 +565,10 @@ test_compile_and_run_source () {
 
     test_added_flags="$test_added_flags $TEST_EXTRA_DEFS"
     if [ -n "$test_msvc_compiler" ]; then
-        test_added_flags=$(gcc_flags_to_msvc "$test_msvc_compiler" $test_added_flags)
-        test_flags=$(gcc_flags_to_msvc "$test_msvc_compiler" $test_flags)
-        test_ldflags=$(gcc_flags_to_msvc "$test_msvc_compiler" $test_ldflags)
-        test_tail_ldflags=$(gcc_flags_to_msvc "$test_msvc_compiler" $test_tail_ldflags)
+        test_added_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_added_flags)
+        test_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_flags)
+        test_ldflags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_ldflags)
+        test_tail_ldflags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_tail_ldflags)
     fi
     test_cmdline="$test_cmdline $test_added_flags"
     if [ "$test_msvc_compiler" = cl ]; then
@@ -581,8 +581,8 @@ test_compile_and_run_source () {
     trace_on
     if $test_cmdline < /dev/null; then
         if [ "$test_run_after_compile" != 0 ] \
-                && ! test_run_binary "$test_exe"; then
-            test_debugger "$test_exe"
+                && ! common_test_run_binary "$test_exe"; then
+            common_test_debugger "$test_exe"
             exit 1
         fi
     else
@@ -593,7 +593,7 @@ test_compile_and_run_source () {
     return 0
 }
 
-test () {
+common_test () {
     TEST_FILTER=${1:-}
     if [ "$#" -gt 0 ]; then
         shift
@@ -634,36 +634,36 @@ test () {
     } | sort | while read -r test_src; do
         trace_off
 
-        if ! test_source_matches_filter "$test_src" "$TEST_FILTER"; then
+        if ! common_test_source_matches_filter "$test_src" "$TEST_FILTER"; then
             continue
         fi
 
-        if test_source_is_excluded "$test_src"; then
+        if common_test_source_is_excluded "$test_src"; then
             continue
         fi
 
-        test_compile_and_run_source "$test_src"
+        common_test_compile_and_run_source "$test_src"
     done
 
     return 0
 }
 
-build_tags () {
+common_build_tags () {
     if [ "$#" -eq 0 ]; then
         set -- .
     fi
 
-    if command_exists ctags; then
+    if common_command_exists ctags; then
         find "$@" -iname "*.[ch]" -print0 \
             | xargs --verbose -0 ctags --kinds-C=+l+d || true
     fi
 
-    if [ -f tags ] && command_exists vtags.sed; then
+    if [ -f tags ] && common_command_exists vtags.sed; then
         vtags.sed tags | sort | uniq > .tags.vim || true
     fi
 }
 
-install_file() {
+common_install_file() {
     mode=$1
     src=$2
     dst=$3
@@ -673,7 +673,7 @@ install_file() {
     install -m "$mode" "$src" "$dst"
 }
 
-install_opt () {
+common_install_opt () {
     mode="$1"
     file="$2"
     dest="$3"
@@ -686,7 +686,7 @@ install_opt () {
     fi
 }
 
-uninstall_opt () {
+common_uninstall_opt () {
     file="$1"
     dest="$2"
 
@@ -695,7 +695,7 @@ uninstall_opt () {
     fi
 }
 
-compile_cbase () {
+common_compile_cbase () {
     CC="${CC:-cc}"
 
     trace_on
@@ -704,5 +704,5 @@ compile_cbase () {
 }
 
 if [ "$(basename "$0")" = "common.sh" ]; then
-    compile_cbase
+    common_compile_cbase
 fi
