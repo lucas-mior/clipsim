@@ -15,7 +15,7 @@
 #error "RW_TYPE is not defined"
 #endif
 
-CBASE_API_DECL int64
+extern int64
 CAT(f, RW_FUNCTION, 64)(void *buffer, int64 size, int64 n, FILE *file) {
     size_t rw;
 
@@ -44,7 +44,7 @@ CAT(f, RW_FUNCTION, 64)(void *buffer, int64 size, int64 n, FILE *file) {
     return (int64)rw;
 }
 
-CBASE_API_DECL int64
+extern int64
 CAT(RW_FUNCTION, 64)(int fd, void *buffer, int64 size) {
     RW_TYPE instance = 0;
     int64 w;

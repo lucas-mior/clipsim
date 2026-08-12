@@ -12,7 +12,7 @@
 
 #include "cbase.h"
 
-CBASE_API_DEF void
+void
 assert_error(char *file, int32 line, char *func, char *format, ...) {
     va_list ap;
 
@@ -26,7 +26,7 @@ assert_error(char *file, int32 line, char *func, char *format, ...) {
     return;
 }
 
-CBASE_API_DEF void
+void
 assert_file_contains(char *file, int32 line, char *func,
                      char *path, char *needle) {
     char *buffer;
@@ -45,7 +45,7 @@ assert_file_contains(char *file, int32 line, char *func,
     return;
 }
 
-CBASE_API_DEF void
+void
 assert_contains(char *file, int32 line, char *func,
                 char *haystack, int32 haystack_len, char *needle) {
     int32 needle_len = strlen32(needle);
@@ -58,7 +58,7 @@ assert_contains(char *file, int32 line, char *func,
     }
 }
 
-CBASE_API_DEF void
+void
 assert_not_contains(char *file, int32 line, char *func,
                     char *haystack, int32 haystack_len, char *needle) {
     int32 needle_len = strlen32(needle);
@@ -72,7 +72,7 @@ assert_not_contains(char *file, int32 line, char *func,
 }
 
 #define GENERATE_ASSERT_STRINGS(MODE, SYMBOL)                                  \
-CBASE_API_DEF void                                                             \
+void                                                             \
 a_strings_##MODE(char *file, int32 line, char *func,                           \
                  char *name1, char *name2,                                     \
                  char *var1, char *var2) {                                     \
@@ -103,7 +103,7 @@ GENERATE_ASSERT_STRINGS(more_equal, >=)
 #undef GENERATE_ASSERT_STRINGS
 
 #define GENERATE_ASSERT_POINTERS(MODE, SYMBOL)                                 \
-CBASE_API_DEF void                                                             \
+void                                                             \
 a_pointers_##MODE(char *file, int32 line, char *func,                          \
                   char *name1, char *name2,                                    \
                   void *var1, void *var2) {                                    \
@@ -129,7 +129,7 @@ GENERATE_ASSERT_POINTERS(more_equal, >=)
 #undef GENERATE_ASSERT_POINTERS
 
 #define GENERATE_ASSERT_INTEGERS_SAME_SIGN(SIGN, FMT, SYMBOL, MODE)            \
-CBASE_API_DEF void                                                             \
+void                                                             \
 a_both_##SIGN##_##MODE(char *file, int32 line, char *func,                     \
                        char *name1, char *name2,                               \
                        char *type1, char *type2,                               \
@@ -179,7 +179,7 @@ compare_sign_with_unsign(llong s, ullong u) {
 }
 
 #define GENERATE_ASSERT_SIGNED_UNSIGNED(MODE, SYMBOL)                          \
-CBASE_API_DEF void                                                             \
+void                                                             \
 a_signed_unsigned##MODE(char *file, int32 line, char *func,                    \
                         char *name1, char *name2,                              \
                         char *type1, char *type2,                              \
@@ -207,7 +207,7 @@ GENERATE_ASSERT_SIGNED_UNSIGNED(more_equal, >=)
 #undef GENERATE_ASSERT_SIGNED_UNSIGNED
 
 #define GENERATE_ASSERT_UNSIGNED_SIGNED(MODE, SYMBOL)                          \
-CBASE_API_DEF void                                                             \
+void                                                             \
 a_unsigned_signed_##MODE(char *file, int32 line, char *func,                   \
                          char *name1, char *name2,                             \
                          char *type1, char *type2,                             \
@@ -235,7 +235,7 @@ GENERATE_ASSERT_UNSIGNED_SIGNED(more_equal, >=)
 #undef GENERATE_ASSERT_UNSIGNED_SIGNED
 
 #define GENERATE_ASSERT_DOUBLE(SYMBOL, MODE)                                   \
-CBASE_API_DEF void                                                             \
+void                                                             \
 a_double_##MODE(char *file, int32 line, char *func,                            \
                 char *name1, char *name2,                                      \
                 char *type1, char *type2,                                      \
@@ -541,7 +541,7 @@ assert_double_failure(char *file, int32 line, char *func,
 }
 
 #define GENERATE_A_DOUBLE_CLOSE(MODE, SYMBOL, EXPECT_CLOSE)                    \
-CBASE_API_DEF void                                                             \
+void                                                             \
 a_double_##MODE(char *file, int32 line, char *func,                            \
                 char *name1, char *name2,                                      \
                 char *type1, char *type2,                                      \
@@ -568,7 +568,7 @@ GENERATE_A_DOUBLE_CLOSE(not_close, "!~=", false)
 #undef GENERATE_A_DOUBLE_CLOSE
 
 #define GENERATE_A_DOUBLE_CLOSE_TOL(MODE, SYMBOL, EXPECT_CLOSE)                \
-CBASE_API_DEF void                                                             \
+void                                                             \
 a_double_##MODE(char *file, int32 line, char *func,                            \
                 char *name1, char *name2,                                      \
                 char *type1, char *type2,                                      \
@@ -594,7 +594,7 @@ GENERATE_A_DOUBLE_CLOSE_TOL(not_close_tol, "!~=", false)
 #undef GENERATE_A_DOUBLE_CLOSE_TOL
 
 #define GENERATE_ASSERT_BOOLS(MODE, SYMBOL)                                    \
-CBASE_API_DEF void                                                             \
+void                                                             \
 a_bool_##MODE(char *file, int32 line, char *func,                              \
               char *name1, char *name2,                                        \
               char *type1, char *type2,                                        \
@@ -623,22 +623,22 @@ a_bool_##MODE(char *file, int32 line, char *func,                              \
 GENERATE_ASSERT_BOOLS(equal, ==)
 GENERATE_ASSERT_BOOLS(not_equal, !=)
 
-CBASE_API_DEF noreturn void
+noreturn void
 a_bool_more(void *p, ...) {
     (void)p;
     TRAP();
 }
-CBASE_API_DEF noreturn void
+noreturn void
 a_bool_less(void *p, ...) {
     (void)p;
     TRAP();
 }
-CBASE_API_DEF noreturn void
+noreturn void
 a_bool_more_equal(void *p, ...) {
     (void)p;
     TRAP();
 }
-CBASE_API_DEF noreturn void
+noreturn void
 a_bool_less_equal(void *p, ...) {
     (void)p;
     TRAP();

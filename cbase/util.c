@@ -12,7 +12,7 @@
 
 #include "cbase.h"
 
-CBASE_API_DEF void
+void
 here_impl(char *file, int32 line, char *func) {
 #if OS_UNIX
     char buffer[4096];
@@ -38,29 +38,29 @@ here_impl(char *file, int32 line, char *func) {
     return;
 }
 
-#define SFA_LINKAGE CBASE_API_DEF
-#define SFA_SNPRINTF_LINKAGE CBASE_API_DECL
+#define SFA_LINKAGE 
+#define SFA_SNPRINTF_LINKAGE extern
 #define SFA_TYPE char *
 #define SFA_NAME strings
 #define SFA_FORMAT "%s"
 #include "sfa.h"
 
-#define SFA_LINKAGE CBASE_API_DEF
-#define SFA_SNPRINTF_LINKAGE CBASE_API_DECL
+#define SFA_LINKAGE 
+#define SFA_SNPRINTF_LINKAGE extern
 #define SFA_TYPE double
 #define SFA_NAME doubles
 #define SFA_FORMAT "%f"
 #include "sfa.h"
 
-#define CLAMP_LINKAGE CBASE_API_DEF
+#define CLAMP_LINKAGE 
 #define CLAMP_TYPE double
 #include "clamp.h"
 
-#define CLAMP_LINKAGE CBASE_API_DEF
+#define CLAMP_LINKAGE 
 #define CLAMP_TYPE int64
 #include "clamp.h"
 
-#define CLAMP_LINKAGE CBASE_API_DEF
+#define CLAMP_LINKAGE 
 #define CLAMP_TYPE int32
 #include "clamp.h"
 
@@ -109,7 +109,7 @@ cbase_memmem_fallback(
 }
 #endif
 
-CBASE_API_DEF void *
+void *
 memrchr64(void *pointer, int32 value, int64 size) {
     uchar *buffer;
     uchar target;
@@ -135,7 +135,7 @@ memrchr64(void *pointer, int32 value, int64 size) {
     return NULL;
 }
 
-CBASE_API_DEF void *
+void *
 memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
     void *result;
 
@@ -155,7 +155,7 @@ memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
     return result;
 }
 
-CBASE_API_DEF bool
+bool
 strequal(char *s1, char *s2) {
     return !strcmp(s1, s2);
 }
@@ -166,7 +166,7 @@ int optind = 1;
 int opterr = 1;
 int optopt = 0;
 
-CBASE_API_DEF int
+int
 getopt_long(
     int argc,
     char **argv,
@@ -305,12 +305,12 @@ striqual_ascii_lower(char c) {
     return c;
 }
 
-CBASE_API_DEF bool
+bool
 striqual(char *s1, char *s2) {
     return striqual2(s1, strlen32(s1), s2, strlen32(s2));
 }
 
-CBASE_API_DEF bool
+bool
 optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
     if ((a == NULL) || (b == NULL)) {
         return false;
@@ -319,7 +319,7 @@ optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
     return strequal2(a, a_len, b, b_len);
 }
 
-CBASE_API_DEF bool
+bool
 strequal2(char *a, int32 a_len, char *b, int32 b_len) {
     if (a_len != b_len) {
         return false;
@@ -331,7 +331,7 @@ strequal2(char *a, int32 a_len, char *b, int32 b_len) {
     return true;
 }
 
-CBASE_API_DEF bool
+bool
 striqual2(char *a, int32 a_len, char *b, int32 b_len) {
     if (DEBUGGING) {
         striqual_validate_ascii_utf8(a, a_len);
@@ -350,7 +350,7 @@ striqual2(char *a, int32 a_len, char *b, int32 b_len) {
     return true;
 }
 
-CBASE_API_DEF void *
+void *
 memchr64(void *pointer, int32 value, int64 size) {
     if (DEBUGGING) {
         if (size < 0) {
@@ -371,7 +371,7 @@ memchr64(void *pointer, int32 value, int64 size) {
 #endif
 }
 
-CBASE_API_DEF int32
+int32
 optional_strlen32(char *string) {
     if (string == NULL) {
         return 0;
@@ -379,7 +379,7 @@ optional_strlen32(char *string) {
     return strlen32(string);
 }
 
-CBASE_API_DEF int32
+int32
 strlen32(char *string) {
     size_t len;
 
@@ -396,7 +396,7 @@ strlen32(char *string) {
     return (int32)len;
 }
 
-CBASE_API_DEF char *
+char *
 strncpy32(char *dest, char *source, int64 space) {
     if (DEBUGGING) {
         if (space <= 0) {
@@ -412,7 +412,7 @@ strncpy32(char *dest, char *source, int64 space) {
     return strncpy(dest, source, (size_t)space);
 }
 
-CBASE_API_DEF int
+int
 strncmp32(char *left, char *right, int64 size) {
     int result;
     if (size == 0) {
@@ -428,7 +428,7 @@ strncmp32(char *left, char *right, int64 size) {
     return result;
 }
 
-CBASE_API_DEF char *
+char *
 begins_with(char *string, int32 string_len, char *literal, int32 length) {
     if (string_len < length) {
         return NULL;
@@ -440,7 +440,7 @@ begins_with(char *string, int32 string_len, char *literal, int32 length) {
     }
 }
 
-CBASE_API_DEF char *
+char *
 ends_with(char *string, int32 string_len, char *literal, int32 length) {
     if (string_len < length) {
         return NULL;
@@ -453,7 +453,7 @@ ends_with(char *string, int32 string_len, char *literal, int32 length) {
     }
 }
 
-CBASE_API_DEF int
+int
 memcmp64(void *left, void *right, int64 size) {
     if (size == 0) {
         return 0;
@@ -470,7 +470,7 @@ memcmp64(void *left, void *right, int64 size) {
     return memcmp(left, right, (size_t)size);
 }
 
-CBASE_API_DEF uint32
+uint32
 rand_int(void) {
     static uint64 state = 0x853c49e6748fea9bull;
     uint64 old_state = state;
@@ -486,7 +486,7 @@ rand_int(void) {
     return result;
 }
 
-CBASE_API_DEF char *
+char *
 remove_escape_sequences(char *data, int32 *data_len) {
     int32 old_len = *data_len;
     int32 read_index = 0;
@@ -526,7 +526,7 @@ remove_escape_sequences(char *data, int32 *data_len) {
     return data;
 }
 
-CBASE_API_DEF int32
+int32
 random_ascii_string(char *buffer, int32 capacity, int32 min_len) {
     int32 max_len = capacity - 1;
     int32 len = min_len;
@@ -554,7 +554,7 @@ random_ascii_string(char *buffer, int32 capacity, int32 min_len) {
     return len;
 }
 
-CBASE_API_DEF void
+void
 write_all(int fd, char *buffer, int64 left) {
     int64 written = 0;
     int64 w;
@@ -573,15 +573,15 @@ write_all(int fd, char *buffer, int64 left) {
     return;
 }
 
-#define RW_FUNCTION_LINKAGE CBASE_API_DEF
+#define RW_FUNCTION_LINKAGE 
 #define RW_FUNCTION write
 #include "rw_function.h"
 
-#define RW_FUNCTION_LINKAGE CBASE_API_DEF
+#define RW_FUNCTION_LINKAGE 
 #define RW_FUNCTION read
 #include "rw_function.h"
 
-CBASE_API_DEF void
+void
 qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
 #if CC_CLANG
 #pragma clang diagnostic push
@@ -616,7 +616,7 @@ qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
     return;
 }
 
-CBASE_API_DEF int32 ATTR_PRINTF(3, 4)
+int32 ATTR_PRINTF(3, 4)
 snprintf2(char *buffer, int64 size, char *format, ...) {
     int n;
     va_list args;
@@ -633,7 +633,7 @@ snprintf2(char *buffer, int64 size, char *format, ...) {
     return n;
 }
 
-CBASE_API_DEF int32
+int32
 itoa2(char *str, int32 size, llong num) {
     ullong magnitude;
     int i = 0;
@@ -676,12 +676,12 @@ itoa2(char *str, int32 size, llong num) {
     return i;
 }
 
-CBASE_API_DEF long
+long
 atoi2(char *str) {
     return atoi(str);
 }
 
-CBASE_API_DEF int64
+int64
 strftime2(char *buffer, int64 size, char *format, struct tm *time_info) {
     int64 n;
 
@@ -693,7 +693,7 @@ strftime2(char *buffer, int64 size, char *format, struct tm *time_info) {
     return n;
 }
 
-CBASE_API_DEF int32
+int32
 util_filename_from(char *buffer, int64 size, int fd) {
 #if OS_LINUX
     char linkpath[64];
@@ -746,7 +746,7 @@ util_filename_from(char *buffer, int64 size, int fd) {
 }
 
 #if CBASE_CRT_MSVC
-CBASE_API_DEF char *
+char *
 realpath(char *path, char *resolved_path) {
     char *buffer;
     char *result;
@@ -794,7 +794,7 @@ strerror_r(int errnum, char *buffer, size_t size) {
 }
 #endif
 
-CBASE_API_DEF int
+int
 xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
 #if DEBUGGING
     char buffer[4096];
@@ -839,7 +839,7 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
     return 0;
 }
 
-CBASE_API_DEF int
+int
 xunlink(char *filename) {
     if (unlink(filename) < 0) {
         error2("Error in unlink(%s): %s.\n", filename, strerror(errno));
@@ -848,7 +848,7 @@ xunlink(char *filename) {
     return 0;
 }
 
-CBASE_API_DEF FILE *
+FILE *
 xfopen(char *file, int32 line, char *func, char *filename, char *mode) {
     FILE *f;
     char *mode_long = "what";
@@ -881,7 +881,7 @@ xfopen(char *file, int32 line, char *func, char *filename, char *mode) {
     return f;
 }
 
-CBASE_API_DEF int
+int
 xfclose(char *file, int32 line, char *func, FILE *f, char *filename) {
     if (fclose(f)) {
         error_impl(file, line, func,
@@ -892,7 +892,7 @@ xfclose(char *file, int32 line, char *func, FILE *f, char *filename) {
 }
 
 #if CBASE_HAS_DIRENT_H
-CBASE_API_DEF int
+int
 xclosedir(DIR *dir, char *dirname) {
     if (closedir(dir)) {
         error2("Error closing directory %s: %s.\n", dirname, strerror(errno));
@@ -902,7 +902,7 @@ xclosedir(DIR *dir, char *dirname) {
 }
 #endif
 
-CBASE_API_DEF void ATTR_PRINTF(4, 5)
+void ATTR_PRINTF(4, 5)
 error_impl(char *file, int32 line, char *func, char *format, ...) {
     char buffer[BUFSIZ];
     char *big_buffer = NULL;
@@ -985,14 +985,14 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
     return;
 }
 
-CBASE_API_DEF void
+void
 error_async_safe(char *message) {
     int32 len = strlen32(message);
     write_all(STDERR_FILENO, message, len);
     return;
 }
 
-CBASE_API_DEF noreturn void
+noreturn void
 fatal(int status) {
 #if defined(__EMSCRIPTEN__)
     char stack[8192];
@@ -1014,7 +1014,7 @@ fatal(int status) {
 }
 
 #if OS_UNIX
-CBASE_API_DEF void
+void
 util_segv_handler(int32 unused) {
     char *message = "Memory error. Please send a bug report.\n";
     (void)unused;
@@ -1027,7 +1027,7 @@ util_segv_handler(int32 unused) {
     _exit(EXIT_FAILURE);
 }
 
-CBASE_API_DEF noreturn void
+noreturn void
 util_die_notify(char *program_name, char *format, ...) {
     int32 n;
     va_list args;
@@ -1051,7 +1051,7 @@ util_die_notify(char *program_name, char *format, ...) {
 }
 #endif
 
-CBASE_API_DEF int32
+int32
 util_string_int32(int32 *number, char *string) {
     char *endptr;
     long x;
@@ -1068,7 +1068,7 @@ util_string_int32(int32 *number, char *string) {
 }
 
 #if OS_UNIX
-CBASE_API_DEF int32
+int32
 util_copy_file_sync(char *destination, char *source) {
     int32 source_fd;
     int32 destination_fd;
@@ -1125,7 +1125,7 @@ util_copy_file_sync(char *destination, char *source) {
     return 0;
 }
 
-CBASE_API_DEF int32
+int32
 util_copy_file_async(char *destination, char *source, int *dest_fd) {
     int32 source_fd;
 
@@ -1155,7 +1155,7 @@ util_copy_file_async(char *destination, char *source, int *dest_fd) {
     return source_fd;
 }
 
-CBASE_API_DEF void
+void
 util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
     struct pollfd *pipes = copy_files->pipes;
     int *dests = copy_files->dests;
@@ -1215,7 +1215,7 @@ util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
 #endif
 
 #if CBASE_HAS_PROCFS
-CBASE_API_DEF void
+void
 send_signal(char *executable, int32 signal_number) {
     DIR *processes;
     struct dirent *process;
@@ -1280,7 +1280,7 @@ send_signal(char *executable, int32 signal_number) {
     return;
 }
 #elif OS_UNIX
-CBASE_API_DEF void
+void
 send_signal(char *executable, int32 signal_number) {
     pid_t child;
     char signal_string[14];
@@ -1308,7 +1308,7 @@ send_signal(char *executable, int32 signal_number) {
 #endif
 
 #if !OS_WINDOWS
-CBASE_API_DEF bool
+bool
 util_file_exists(char *filename) {
 #if defined(O_PATH) && defined(O_NOFOLLOW)
     // this should be faster than lstat()
@@ -1334,7 +1334,7 @@ util_file_exists(char *filename) {
 #endif
 }
 #else
-CBASE_API_DEF bool
+bool
 util_file_exists(char *filename) {
     DWORD attributes;
 
@@ -1347,7 +1347,7 @@ util_file_exists(char *filename) {
 }
 #endif
 
-CBASE_API_DEF bool
+bool
 util_equal_files(char *filename_a, char *filename_b) {
     int fd_a;
     int fd_b = -1;
@@ -1454,19 +1454,19 @@ out:
     return equal;
 }
 
-CBASE_API_DEF double
+double
 rad2deg(double radians) {
     double RAD2DEG = 180.0 / 3.141592653589793;
     return radians*RAD2DEG;
 }
 
-CBASE_API_DEF double
+double
 deg2rad(double degrees) {
     double DEG2RAD = 3.141592653589793 / 180.0;
     return degrees*DEG2RAD;
 }
 
-CBASE_API_DEF int32
+int32
 bytes_pretty(char *buffer, int64 raw) {
     char *suffixes[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
     double aux_pretty;
@@ -1508,7 +1508,7 @@ bytes_pretty(char *buffer, int64 raw) {
     return n;
 }
 
-CBASE_API_DEF void
+void
 normalize(char *restrict path, int32 *restrict length) {
     char *p;
     int64 off = 0;
@@ -1547,7 +1547,7 @@ normalize(char *restrict path, int32 *restrict length) {
     return;
 }
 
-CBASE_API_DEF char *
+char *
 basename2(char *path, int32 *full_length, int32 *base_len) {
     int32 left;
     char *end;
@@ -1606,7 +1606,7 @@ basename2(char *path, int32 *full_length, int32 *base_len) {
     return path;
 }
 
-CBASE_API_DEF char *
+char *
 path_basename(char *path, int32 path_len) {
     int32 slash = -1;
     int32 start;
@@ -1621,7 +1621,7 @@ path_basename(char *path, int32 path_len) {
     return xstrndup(path + start, path_len - start);
 }
 
-CBASE_API_DEF int32
+int32
 dirname2(char *buffer, char *path, int32 *path_len) {
     char *last_slash;
     int32 dir_length;
@@ -1658,7 +1658,7 @@ dirname2(char *buffer, char *path, int32 *path_len) {
     return dir_length;
 }
 
-CBASE_API_DEF void
+void
 print_timings(char *file, int32 line, char *func,
               int64 nitems, struct timespec t0, struct timespec t1) {
     llong seconds = t1.tv_sec - t0.tv_sec;
@@ -1672,7 +1672,7 @@ print_timings(char *file, int32 line, char *func,
     return;
 }
 
-CBASE_API_DEF double
+double
 timediff(struct timespec t0, struct timespec t1) {
     llong sec = t1.tv_sec - t0.tv_sec;
     llong nsec = t1.tv_nsec - t0.tv_nsec;
@@ -1702,7 +1702,7 @@ windows_time_monotonic(struct timespec *time) {
 }
 #endif
 
-CBASE_API_DEF void
+void
 time_monotonic_precise(struct timespec *time) {
     int32 status;
 
@@ -1730,7 +1730,7 @@ time_monotonic_precise(struct timespec *time) {
     return;
 }
 
-CBASE_API_DEF void
+void
 time_monotonic_coarse(struct timespec *time) {
     int32 status;
 
@@ -1760,7 +1760,7 @@ time_monotonic_coarse(struct timespec *time) {
     return;
 }
 
-CBASE_API_DEF void
+void
 catfile(int where, char *file) {
     int fd;
     char buffer[4096];
@@ -1822,7 +1822,7 @@ static char *signal_names[] = {
 };
 #undef XSIGNAL
 
-CBASE_API_DEF void
+void
 xpipe(int array[2]) {
     if (pipe(array) < 0) {
         error("Error creating pipe: %s.\n", strerror(errno));
@@ -1831,7 +1831,7 @@ xpipe(int array[2]) {
     return;
 }
 
-CBASE_API_DEF void
+void
 xdup2(int fd1, int fd2) {
     if (dup2(fd1, fd2) < 0) {
         error("Error in dup2: %s.\n", strerror(errno));
@@ -1840,7 +1840,7 @@ xdup2(int fd1, int fd2) {
     return;
 }
 
-CBASE_API_DEF void
+void
 xkill(pid_t pid, int signum) {
     if (kill(pid, signum) < 0) {
         error("Error sending signal %d=%s to %d: %s.\n",
@@ -1854,7 +1854,7 @@ xkill(pid_t pid, int signum) {
 #endif /* !OS_WINDOWS */
 
 #if OS_UNIX
-CBASE_API_DEF void
+void
 timezone_init(void) {
     time_t current_time;
     struct tm local_tm;
@@ -1882,7 +1882,7 @@ timezone_init(void) {
 }
 #endif
 
-CBASE_API_DEF bool
+bool
 path_missing(char *path) {
     if (path == NULL) {
         return true;
@@ -1894,7 +1894,7 @@ path_missing(char *path) {
     return false;
 }
 
-CBASE_API_DEF bool
+bool
 read_entire_file(char *path, char **file_bytes, int32 *file_len) {
     FILE *file;
     int64 len;
@@ -1962,7 +1962,7 @@ read_entire_file(char *path, char **file_bytes, int32 *file_len) {
     return true;
 }
 
-CBASE_API_DEF bool
+bool
 write_entire_file(char *path, char *text, int64 text_len) {
     FILE *file;
 
@@ -1990,7 +1990,7 @@ write_entire_file(char *path, char *text, int64 text_len) {
 
 #define STR_BUILDER_INITIAL_CAPACITY 16
 
-CBASE_API_DEF char *
+char *
 sb_opt_cstr(StrBuilder *buffer) {
     if (buffer == NULL) {
         return "";
@@ -2002,7 +2002,7 @@ sb_opt_cstr(StrBuilder *buffer) {
     return buffer->data;
 }
 
-CBASE_API_DEF void
+void
 sb_init(StrBuilder *str_builder) {
     str_builder->data = NULL;
     str_builder->len = 0;
@@ -2010,14 +2010,14 @@ sb_init(StrBuilder *str_builder) {
     return;
 }
 
-CBASE_API_DEF void
+void
 sb_free(StrBuilder *str_builder) {
     free2(str_builder->data, str_builder->cap);
     sb_init(str_builder);
     return;
 }
 
-CBASE_API_DEF void
+void
 sb_clear(StrBuilder *str_builder) {
     str_builder->len = 0;
     if (str_builder->data) {
@@ -2026,7 +2026,7 @@ sb_clear(StrBuilder *str_builder) {
     return;
 }
 
-CBASE_API_DEF bool
+bool
 sb_copy(StrBuilder *dest, StrBuilder *source) {
     if (dest == NULL) {
         return false;
@@ -2044,7 +2044,7 @@ sb_copy(StrBuilder *dest, StrBuilder *source) {
     return true;
 }
 
-CBASE_API_DEF void
+void
 sb_move(StrBuilder *dest, StrBuilder *source) {
     if (dest == NULL) {
         return;
@@ -2064,7 +2064,7 @@ sb_move(StrBuilder *dest, StrBuilder *source) {
     return;
 }
 
-CBASE_API_DEF bool
+bool
 sb_set(StrBuilder *str_builder, char *data, int32 data_len) {
     if (str_builder == NULL) {
         return false;
@@ -2089,7 +2089,7 @@ sb_set(StrBuilder *str_builder, char *data, int32 data_len) {
     return true;
 }
 
-CBASE_API_DEF void
+void
 sb_reserve(StrBuilder *str_builder, int32 extra) {
     int64 needed;
     int64 new_cap;
@@ -2130,7 +2130,7 @@ sb_reserve(StrBuilder *str_builder, int32 extra) {
     return;
 }
 
-CBASE_API_DEF void
+void
 sb_append(StrBuilder *str_builder, char *data, int32 data_len) {
     bool aliases = false;
     int32 data_offset = 0;
@@ -2168,7 +2168,7 @@ sb_append(StrBuilder *str_builder, char *data, int32 data_len) {
     return;
 }
 
-CBASE_API_DEF void
+void
 sb_append_byte(StrBuilder *str_builder, char byte) {
     if (byte == '\0') {
         return;
@@ -2180,7 +2180,7 @@ sb_append_byte(StrBuilder *str_builder, char byte) {
     return;
 }
 
-CBASE_API_DEF void
+void
 sb_append_byte_if_not(StrBuilder *str_builder, char byte) {
     if ((str_builder->len > 0)
         && (str_builder->data[str_builder->len - 1] == byte)) {
@@ -2190,7 +2190,7 @@ sb_append_byte_if_not(StrBuilder *str_builder, char byte) {
     return;
 }
 
-CBASE_API_DEF void
+void
 sb_printf(StrBuilder *str_builder, char *fmt, ...) {
     va_list ap;
     va_list ap2;
@@ -2218,7 +2218,7 @@ sb_printf(StrBuilder *str_builder, char *fmt, ...) {
     return;
 }
 
-CBASE_API_DEF char *
+char *
 sb_steal(StrBuilder *str_builder, int32 *len, int32 *cap) {
     char *data = str_builder->data;
 
@@ -2233,7 +2233,7 @@ sb_steal(StrBuilder *str_builder, int32 *len, int32 *cap) {
     return data;
 }
 
-CBASE_API_DEF char *
+char *
 sb_steal_exact(StrBuilder *str_builder, int32 *len) {
     char *data;
     int32 data_len;
@@ -2251,7 +2251,7 @@ sb_steal_exact(StrBuilder *str_builder, int32 *len) {
     return data;
 }
 
-CBASE_API_DEF void
+void
 str_builder_array_init(StrBuilderArray *array) {
     array->items = NULL;
     array->len = 0;
@@ -2259,7 +2259,7 @@ str_builder_array_init(StrBuilderArray *array) {
     return;
 }
 
-CBASE_API_DEF void
+void
 str_builder_array_clear(StrBuilderArray *array) {
     if (array == NULL) {
         return;
@@ -2272,7 +2272,7 @@ str_builder_array_clear(StrBuilderArray *array) {
     return;
 }
 
-CBASE_API_DEF void
+void
 str_builder_array_destroy(StrBuilderArray *array) {
     if (array == NULL) {
         return;
@@ -2284,7 +2284,7 @@ str_builder_array_destroy(StrBuilderArray *array) {
     return;
 }
 
-CBASE_API_DEF bool
+bool
 str_builder_array_copy(StrBuilderArray *dest, StrBuilderArray *source) {
     StrBuilderArray replacement;
 
@@ -2315,7 +2315,7 @@ str_builder_array_copy(StrBuilderArray *dest, StrBuilderArray *source) {
     return true;
 }
 
-CBASE_API_DEF void
+void
 str_builder_array_move(StrBuilderArray *dest, StrBuilderArray *source) {
     if (dest == NULL) {
         return;
@@ -2334,7 +2334,7 @@ str_builder_array_move(StrBuilderArray *dest, StrBuilderArray *source) {
     return;
 }
 
-CBASE_API_DEF void
+void
 str_builder_array_swap(StrBuilderArray *left, StrBuilderArray *right) {
     StrBuilderArray temp;
 
@@ -2351,7 +2351,7 @@ str_builder_array_swap(StrBuilderArray *left, StrBuilderArray *right) {
     return;
 }
 
-CBASE_API_DEF bool
+bool
 str_builder_array_reserve(StrBuilderArray *array, int32 extra) {
     int64 needed;
     int32 old_cap;
@@ -2393,7 +2393,7 @@ str_builder_array_reserve(StrBuilderArray *array, int32 extra) {
     return true;
 }
 
-CBASE_API_DEF StrBuilder *
+StrBuilder *
 str_builder_array_append(StrBuilderArray *array) {
     StrBuilder *item;
 
@@ -2407,7 +2407,7 @@ str_builder_array_append(StrBuilderArray *array) {
     return item;
 }
 
-CBASE_API_DEF bool
+bool
 str_builder_array_append_copy(StrBuilderArray *array, StrBuilder *item) {
     StrBuilder *dest;
 
@@ -2427,7 +2427,7 @@ str_builder_array_append_copy(StrBuilderArray *array, StrBuilder *item) {
     return true;
 }
 
-CBASE_API_DEF bool
+bool
 parse_option(char **parsed, char *arg, char *option_name) {
     char name_equal[256];
     char *tmp;
@@ -2445,17 +2445,17 @@ parse_option(char **parsed, char *arg, char *option_name) {
     return false;
 }
 
-CBASE_API_DEF bool
+bool
 is_ident_start_char(char c) {
     return isalpha((uint8)c) || c == '_';
 }
 
-CBASE_API_DEF bool
+bool
 is_ident_char(char c) {
     return isalnum((uint8)c) || c == '_';
 }
 
-CBASE_API_DEF void
+void
 warn(char *fmt, ...) {
     va_list ap;
 
@@ -2468,7 +2468,7 @@ warn(char *fmt, ...) {
     return;
 }
 
-CBASE_API_DEF bool
+bool
 util_is_integer(char *string) {
     char c;
 
@@ -2590,7 +2590,7 @@ util_functions_sink(void) {
 
 #if TESTING
 #if OS_UNIX
-CBASE_API_DEF bool
+bool
 test_command_exists(char *command) {
     char *path;
     int32 command_len;
@@ -2639,7 +2639,7 @@ test_command_exists(char *command) {
 }
 #endif
 
-CBASE_API_DEF void
+void
 test_join_path(
     char *buffer,
     int64 buffer_len,
@@ -2655,7 +2655,7 @@ test_join_path(
     return;
 }
 
-CBASE_API_DEF void
+void
 test_make_temp_dir(char *buffer, int32 capacity, char *name) {
 #if OS_UNIX
     char *tmpdir;
@@ -2754,7 +2754,7 @@ test_remove_tree_children(char *path) {
 }
 #endif
 
-CBASE_API_DEF void
+void
 test_remove_tree(char *path) {
 #if OS_UNIX
     struct stat statbuf;
@@ -2882,7 +2882,7 @@ test_remove_tree(char *path) {
 }
 
 #if OS_UNIX
-CBASE_API_DEF bool
+bool
 test_symlink_supported(char *dir) {
     char link_path[PATH_MAX];
     int32 len;
@@ -2902,7 +2902,7 @@ test_symlink_supported(char *dir) {
     return supported;
 }
 
-CBASE_API_DEF bool
+bool
 test_hardlink_supported(char *dir) {
     char link_path[PATH_MAX];
     char src_path[PATH_MAX];

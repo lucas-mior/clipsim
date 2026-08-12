@@ -12,13 +12,13 @@
 
 #include "cbase.h"
 
-CBASE_API_DEF void
+void
 TOKEN_str_free(char *string) {
     (void)string;
     return;
 }
 
-CBASE_API_DEF char *
+char *
 TOKEN_str(enum TokenKind value) {
     switch (value) {
     case TOKEN_UNKNOWN:
@@ -46,7 +46,7 @@ TOKEN_str(enum TokenKind value) {
     }
 }
 
-CBASE_API_DEF bool
+bool
 TOKEN_token_equals(char *token, int32 token_len, char *name) {
     int32 name_len = strlen32(name);
 
@@ -56,7 +56,7 @@ TOKEN_token_equals(char *token, int32 token_len, char *name) {
     return !strncmp32(token, name, token_len);
 }
 
-CBASE_API_DEF bool
+bool
 TOKEN_token_equals_enum_name(char *token, int32 token_len, char *name) {
     char *prefix = "TOKEN_";
     int32 prefix_len = strlen32(prefix);
@@ -70,7 +70,7 @@ TOKEN_token_equals_enum_name(char *token, int32 token_len, char *name) {
     return TOKEN_token_equals(token, token_len, name + prefix_len);
 }
 
-CBASE_API_DEF enum TokenKind
+enum TokenKind
 TOKEN_parse(char *string) {
     enum TokenKind result = TOKEN_UNKNOWN;
     char *p = string;
@@ -168,27 +168,27 @@ TOKEN_functions_sink(void) {
 }
 #endif
 
-CBASE_API_DEF int32
+int32
 token_is_val(Token token, char *what) {
     return STREQUAL(token.text, token.len, what);
 }
 
-CBASE_API_DEF int32
+int32
 token_is_ptr(Token *token, char *what) {
     return STREQUAL(token->text, token->len, what);
 }
 
-CBASE_API_DEF int32
+int32
 token_is_val_len(Token token, char *what, int32 what_len) {
     return STREQUAL(token.text, token.len, what, what_len);
 }
 
-CBASE_API_DEF int32
+int32
 token_is_ptr_len(Token *token, char *what, int32 what_len) {
     return STREQUAL(token->text, token->len, what, what_len);
 }
 
-CBASE_API_DEF int32
+int32
 precedence_of(char *op, int32 op_len) {
 #define OP_IS(STRING) STREQUAL(op, op_len, STRING)
 
