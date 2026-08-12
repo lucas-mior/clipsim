@@ -507,7 +507,6 @@ common_test_compile_and_run_source () {
     test_cc=$CC
     test_cmd_flags="$CPPFLAGS $TEST_CPPFLAGS $CFLAGS $TEST_CFLAGS"
     test_added_flags=""
-    test_ldflags="$TEST_LDFLAGS"
     test_tail_ldflags="$LDFLAGS"
     test_run_after_compile=1
     test_msvc_compiler=
@@ -567,7 +566,6 @@ common_test_compile_and_run_source () {
     if [ -n "$test_msvc_compiler" ]; then
         test_added_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_added_flags)
         test_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_flags)
-        test_ldflags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_ldflags)
         test_tail_ldflags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_tail_ldflags)
     fi
     test_cmdline="$test_cmdline $test_added_flags"
@@ -576,7 +574,7 @@ common_test_compile_and_run_source () {
     else
         test_cmdline="$test_cmdline -o $test_exe $test_src"
     fi
-    test_cmdline="$test_cmdline $test_ldflags $test_flags $test_tail_ldflags"
+    test_cmdline="$test_cmdline $test_flags $test_tail_ldflags"
 
     trace_on
     if $test_cmdline < /dev/null; then
@@ -703,7 +701,7 @@ common_compile_cbase () {
     CC="${CC:-cc}"
 
     trace_on
-    $CC $CPPFLAGS $CFLAGS -c "cbase.c" -o "cbase-${CC}.o"
+    $CC -g3 -O2 -c "cbase.c" -o "cbase.o"
     trace_off
 }
 
