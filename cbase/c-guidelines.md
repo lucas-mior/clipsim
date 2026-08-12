@@ -424,8 +424,8 @@ for (int32 i = 0; i < LENGTH(some_array); i += 1) {
 
 ### Return value for errors
 - Functions that return an index, or another form of non negative integer,
-  can use -1 to indicate that the function failed.
-- Functions that return pointer to allocated memory can return NULL in case they fail
+  can return -1 to indicate that the function failed.
+- Functions that return a pointer can return NULL in case they fail
 - Other functions can return a `bool`: `true` means that the functions succeded,
   `false` means that the function failed. If information about the error could
   be useful, organize the function to have a struct pointer parameter that fills
@@ -617,10 +617,33 @@ default:
 - Prefer to declare variable at the top of blocks
   * Exception: for loop counters (`for (int32 i = 0; i < N; i += 1)`)
   * Another exception: generated code / meta programming.
-  * Avoid mixing declarations and code (`-Wdeclaration-after-statement`)
+  * Don't mix declarations and code (`-Wdeclaration-after-statement`)
   * Sometimes it is good practice is to create artificial blocks to reduce the
     scope of variables. Only do it for reasonably long functions, for short
     functions, declare variables at the top of the function and call it a day.
+  * If a variable is only used inside a while/for loop, declare inside the
+    while/for block:
+    ```c
+    // bad
+    static void
+    function(int32 a, int32 b) {
+        int32 x;
+
+        while (a != b) {
+            x = a;
+            // some code
+        }
+    }
+
+    // good
+    static void
+    function(int32 a, int32 b) {
+        while (a != b) {
+            int32 x = a;
+            // some code
+        }
+    }
+    ```
 
 - Variable that have a "default return" value, or a "stub" value, shall be
   initialized with the declaration:

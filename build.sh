@@ -35,22 +35,11 @@ EOF_TARGETS
 )
 fi
 
-target="${1:-debug}"
-target_line=$target
-if [ "$target" = "cross" ] && [ -n "${2:-}" ]; then
-    target_line="$target $2"
-fi
+build_parse_args "$@"
+build_validate_mode "$script" "$targets"
+cross="$target"
 
-if ! target_supported "$targets" "$target_line" \
-        && ! target_supported "$targets" "$target"; then
-    echo "usage: $script <targets>"
-    printf '%s\n' "$targets"
-    exit 1
-fi
-
-cross="$2"
-
-printf "\n${script} ${RED}${1:-} ${2:-}$RES\n"
+build_print_invocation "$script"
 PREFIX="${PREFIX:-/usr/local}"
 DESTDIR="${DESTDIR:-/}"
 
@@ -58,7 +47,7 @@ program=$(get_program "$0")
 exe="bin/$program"
 mkdir -p "$(dirname "$exe")"
 
-CC=$(get_compiler "$target")
+CC=$(get_compiler "$mode")
 
 CPPFLAGS="$CPPFLAGS -I$dir/$cbase"
 
@@ -92,7 +81,7 @@ LDFLAGS="$LDFLAGS $(pkg-config xi --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config libmagic --libs)"
 LDFLAGS="$LDFLAGS -lm"
 
-case "$target" in
+case "$mode" in
 fast_feedback)
     ;;
 test)
@@ -133,7 +122,7 @@ build)
     ;;
 esac
 
-if [ "$target" = "cross" ]; then
+if [ "$mode" = "cross" ]; then
     CC="zig cc"
     CFLAGS="$CFLAGS -target $cross"
 
@@ -153,7 +142,7 @@ else
     LDFLAGS="$LDFLAGS -lpthread"
 fi
 
-case "$target" in
+case "$mode" in
 uninstall)
     trace_on
     rm -f ${DESTDIR}${PREFIX}/bin/${program}
@@ -184,7 +173,7 @@ assembly)
     ;;
 test)
     TEST_EXCLUDE_PATTERN='(^|/)tests/' \
-        test "$2"
+        test "$target"
     tests/test.bash
     exit
     ;;
@@ -204,7 +193,7 @@ fast_feedback)
     ;;
 esac
 
-case "$target" in
+case "$mode" in
 valgrind)
     vg_flags="--error-exitcode=1 --errors-for-leak-kinds=all"
     vg_flags="$vg_flags --leak-check=full --show-leak-kinds=all"
@@ -225,15 +214,15 @@ callgrind)
 esac
 
 trace_off
-if [ "$target" = "test_all" ]; then
-    printf '%s\n' "$targets" | while IFS= read -r target; do
-        echo "$target" | grep -Eq "^(# |$)" && continue
-        if echo "$target" | grep "cross"; then
-            $0 $target
+if [ "$mode" = "test_all" ]; then
+    printf '%s\n' "$targets" | while IFS= read -r build_target; do
+        echo "$build_target" | grep -Eq "^(# |$)" && continue
+        if echo "$build_target" | grep "cross"; then
+            $0 $build_target
             continue
         fi
         for compiler in gcc tcc clang "zig cc" ; do
-            CC=$compiler $0 $target || exit
+            CC=$compiler $0 $build_target || exit
         done
     done
 fi
