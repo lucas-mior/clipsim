@@ -180,7 +180,7 @@ getopt_long(
 
     optarg = NULL;
     if (short_position && *short_position) {
-        opt = strchr(optstring, *short_position);
+        opt = memchr64(optstring, *short_position, strlen32(optstring));
         optopt = *short_position++;
         if ((opt == NULL) || (*opt == ':')) {
             return '?';
@@ -218,19 +218,20 @@ getopt_long(
 
     if (arg[1] == '-') {
         char *name = arg + 2;
-        char *value = strchr(name, '=');
+        int32 arg_name_len = strlen32(name);
+        char *value = memchr64(name, '=', arg_name_len);
         int64 name_len;
 
         if (value) {
             name_len = value - name;
             value += 1;
         } else {
-            name_len = (int64)strlen(name);
+            name_len = arg_name_len;
         }
 
         for (int32 i = 0; longopts[i].name; i += 1) {
-            if (((int64)strlen(longopts[i].name) != name_len)
-                || memcmp(longopts[i].name, name, (size_t)name_len)) {
+            if ((strlen32(longopts[i].name) != name_len)
+                || memcmp64(longopts[i].name, name, name_len)) {
                 continue;
             }
             if (longindex) {
@@ -409,7 +410,17 @@ strncpy32(char *dest, char *source, int64 space) {
         }
     }
 
-    return strncpy(dest, source, (size_t)space);
+    {
+        int32 source_len = strlen32(source);
+        int64 copy_len = MIN(source_len, space);
+
+        memcpy64(dest, source, copy_len);
+        if (copy_len < space) {
+            memset64(dest + copy_len, 0, space - copy_len);
+        }
+    }
+
+    return dest;
 }
 
 int

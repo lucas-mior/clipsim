@@ -1026,26 +1026,35 @@ command_env_push(Command *command, char *assignment) {
 void
 command_push_split(Command *command, char *arguments, char *delimiters) {
     char *argument = arguments;
+    int32 delimiters_len = strlen32(delimiters);
 
     for (;;) {
-        int64 delimiter_count;
         int64 argument_len;
         int32 argument_len32;
+        char *argument_start;
 
-        delimiter_count = (int64)strspn(argument, delimiters);
-        argument += delimiter_count;
+        while ((*argument != '\0')
+               && (memchr(delimiters, *argument,
+                          (size_t)delimiters_len) != NULL)) {
+            argument += 1;
+        }
         if (*argument == '\0') {
             break;
         }
 
-        argument_len = (int64)strcspn(argument, delimiters);
+        argument_start = argument;
+        while ((*argument != '\0')
+               && (memchr(delimiters, *argument,
+                          (size_t)delimiters_len) == NULL)) {
+            argument += 1;
+        }
+        argument_len = argument - argument_start;
         if (argument_len >= MAXOF(argument_len32)) {
             error("Command argument is too long.\n");
             fatal(EXIT_FAILURE);
         }
         argument_len32 = (int32)argument_len;
-        command_push_length(command, argument, argument_len32);
-        argument += argument_len;
+        command_push_length(command, argument_start, argument_len32);
     }
     return;
 }
