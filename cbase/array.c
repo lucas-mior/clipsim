@@ -12,7 +12,7 @@
 
 #include "cbase.h"
 
-CBASE_API_DEF void *
+void *
 generic_array_init(int32 cap, int64 item_size) {
     GenericArrayHeader *header;
     int64 size;
@@ -29,7 +29,7 @@ generic_array_init(int32 cap, int64 item_size) {
     return header + 1;
 }
 
-CBASE_API_DEF void *
+void *
 generic_array_grow(void *array, int64 item_size) {
     GenericArrayHeader *header;
     int32 old_cap;
@@ -92,7 +92,7 @@ generic_array_next_capacity(int32 old_cap, int32 needed_count) {
     return new_cap;
 }
 
-CBASE_API_DEF bool
+bool
 generic_array_reserve(void **array, int32 needed_count, int64 item_size) {
     GenericArrayHeader *header;
     int32 old_cap;
@@ -142,7 +142,7 @@ generic_array_reserve(void **array, int32 needed_count, int64 item_size) {
     return true;
 }
 
-CBASE_API_DEF int32
+int32
 generic_array_capacity(void *array) {
     if (array == NULL) {
         return 0;
@@ -151,7 +151,7 @@ generic_array_capacity(void *array) {
     return ARRAY_HEADER(array)->cap;
 }
 
-CBASE_API_DEF void
+void
 generic_array_set_count(void *array, int32 count) {
     if (array == NULL) {
         return;

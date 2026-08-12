@@ -30,14 +30,14 @@ typedef struct ThreadWork {
 } ThreadWork;
 
 #if OS_WINDOWS
-CBASE_API_DEF int32
+int32
 util_nthreads(void) {
     SYSTEM_INFO sysinfo = {0};
     GetSystemInfo(&sysinfo);
     return (int32)sysinfo.dwNumberOfProcessors;
 }
 #else
-CBASE_API_DEF int32
+int32
 util_nthreads(void) {
 #if OS_LINUX
     return (int32)sysconf(_SC_NPROCESSORS_ONLN);
@@ -63,7 +63,7 @@ util_nthreads(void) {
 #endif
 
 #if OS_UNIX
-CBASE_API_DEF void
+void
 xpthread_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *attr) {
     int err;
     if ((err = pthread_mutex_init(mutex, attr))) {
@@ -73,7 +73,7 @@ xpthread_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *attr) {
     return;
 }
 
-CBASE_API_DEF void
+void
 xpthread_mutex_lock(pthread_mutex_t *mutex) {
     int err;
     if ((err = pthread_mutex_lock(mutex))) {
@@ -83,7 +83,7 @@ xpthread_mutex_lock(pthread_mutex_t *mutex) {
     return;
 }
 
-CBASE_API_DEF void
+void
 xpthread_mutex_unlock(pthread_mutex_t *mutex) {
     int err;
     if ((err = pthread_mutex_unlock(mutex))) {
@@ -93,7 +93,7 @@ xpthread_mutex_unlock(pthread_mutex_t *mutex) {
     return;
 }
 
-CBASE_API_DEF void
+void
 xpthread_cond_destroy(pthread_cond_t *cond) {
     int err;
     if ((err = pthread_cond_destroy(cond))) {
@@ -103,7 +103,7 @@ xpthread_cond_destroy(pthread_cond_t *cond) {
     return;
 }
 
-CBASE_API_DEF void
+void
 xpthread_mutex_destroy(pthread_mutex_t *mutex) {
     int err;
     if ((err = pthread_mutex_destroy(mutex))) {
@@ -113,7 +113,7 @@ xpthread_mutex_destroy(pthread_mutex_t *mutex) {
     return;
 }
 
-CBASE_API_DEF void
+void
 xpthread_create(pthread_t *thread, pthread_attr_t *attr,
                 void *(*function)(void *), void *arg) {
     int err;
@@ -124,7 +124,7 @@ xpthread_create(pthread_t *thread, pthread_attr_t *attr,
     return;
 }
 
-CBASE_API_DEF void
+void
 xpthread_join(pthread_t *thread, void **thread_return) {
     int err;
     if ((err = pthread_join(*thread, thread_return))) {
@@ -135,7 +135,7 @@ xpthread_join(pthread_t *thread, void **thread_return) {
     return;
 }
 
-CBASE_API_DEF void *
+void *
 util_copy_file_async_thread(void *arg) {
     UtilCopyFilesAsync *copy_files = arg;
     util_copy_file_async_parsed(copy_files);
@@ -459,7 +459,7 @@ thread_pool_ensure_started(int32 thread_count) {
     return;
 }
 
-CBASE_API_DEF int32
+int32
 parallel_for_max_threads_min_items(
     int64 length,
     int32 max_threads,
@@ -524,7 +524,7 @@ parallel_for_max_threads_min_items(
     return thread_count;
 }
 #else
-CBASE_API_DEF int32
+int32
 parallel_for_max_threads_min_items(
     int64 length,
     int32 max_threads,
@@ -544,7 +544,7 @@ parallel_for_max_threads_min_items(
 }
 #endif
 
-CBASE_API_DEF int32
+int32
 parallel_for_min_items(int64 length, int64 min_parallel_items,
                        ParallelForFunction *function, void *user_data) {
     return parallel_for_max_threads_min_items(length, PARALLEL_FOR_MAX_THREADS,
@@ -552,7 +552,7 @@ parallel_for_min_items(int64 length, int64 min_parallel_items,
                                              user_data);
 }
 
-CBASE_API_DEF int32
+int32
 parallel_for(int64 length, ParallelForFunction *function, void *user_data) {
     return parallel_for_min_items(length, MIN_PARALLEL_ITEMS, function,
                                   user_data);

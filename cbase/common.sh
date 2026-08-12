@@ -654,12 +654,16 @@ common_build_tags () {
     fi
 
     if common_command_exists ctags; then
+        trace_on
         find "$@" -iname "*.[ch]" -print0 \
             | xargs --verbose -0 ctags --kinds-C=+l+d || true
+        trace_off
     fi
 
     if [ -f tags ] && common_command_exists vtags.sed; then
+        trace_on
         vtags.sed tags | sort | uniq > .tags.vim || true
+        trace_off
     fi
 }
 

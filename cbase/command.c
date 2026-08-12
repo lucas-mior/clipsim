@@ -12,7 +12,7 @@
 
 #include "cbase.h"
 
-CBASE_API_DEF void
+void
 command_result_init(CommandResult *result) {
     *result = (CommandResult){0};
 
@@ -25,14 +25,14 @@ command_result_init(CommandResult *result) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_error_set(Command *command, int32 error_status) {
     command->error_status = error_status;
     command->result.error_status = error_status;
     return;
 }
 
-CBASE_API_DEF enum CommandFlag
+enum CommandFlag
 command_flags_normalized(enum CommandFlag flags) {
     if (flags & COMMAND_MERGE_STDERR) {
         if (flags & COMMAND_CAPTURE_STDERR) {
@@ -42,13 +42,13 @@ command_flags_normalized(enum CommandFlag flags) {
     return flags;
 }
 
-CBASE_API_DEF bool
+bool
 command_flags_capture(enum CommandFlag flags) {
     return flags & (COMMAND_CAPTURE_STDOUT | COMMAND_CAPTURE_STDERR);
 }
 
 #if OS_UNIX
-CBASE_API_DEF int32
+int32
 command_status_from_wait(int status, CommandResult *result) {
     result->exited = false;
     result->signaled = false;
@@ -72,7 +72,7 @@ command_status_from_wait(int status, CommandResult *result) {
 
 #endif
 
-CBASE_API_DEF void
+void
 command_result_file_descriptors_close(CommandResult *result) {
     if (result->pid == 0) {
         result->stdin_fd = -1;
@@ -93,7 +93,7 @@ command_result_file_descriptors_close(CommandResult *result) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_result_free(CommandResult *result) {
     command_result_file_descriptors_close(result);
 
@@ -105,7 +105,7 @@ command_result_free(CommandResult *result) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_result_append(
     StrBuilder *output,
     StrBuilder *stdout_output,
@@ -129,7 +129,7 @@ command_result_append(
 }
 
 #if OS_WINDOWS
-CBASE_API_DEF char *
+char *
 command_windows_argv0(
     Command *command,
     char *argv0_windows,
@@ -159,7 +159,7 @@ command_windows_argv0(
     return argv0_windows;
 }
 
-CBASE_API_DEF void
+void
 command_windows_command_line(
     Command *command,
     char *cmdline,
@@ -198,7 +198,7 @@ command_windows_command_line(
     return;
 }
 
-CBASE_API_DEF int32
+int32
 command_windows_run_process(Command *command, enum CommandFlag flags) {
     char cmdline[BUFSIZ] = {0};
     PROCESS_INFORMATION proc_info = {0};
@@ -403,7 +403,7 @@ command_result_process_output_event(
     return;
 }
 
-CBASE_API_DEF void
+void
 command_result_process_io(Command *command, enum CommandFlag flags) {
     enum {
         COMMAND_STDOUT_PIPE_INDEX = 0,
@@ -530,7 +530,7 @@ command_result_process_io(Command *command, enum CommandFlag flags) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_result_read_captured(Command *command) {
     command_result_process_io(command,
                               COMMAND_CAPTURE_STDOUT
@@ -538,7 +538,7 @@ command_result_read_captured(Command *command) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_child_env_apply(Command *command) {
     for (int32 i = 0; i < command->env_len; i += 1) {
         putenv(command->env[i]);
@@ -546,7 +546,7 @@ command_child_env_apply(Command *command) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_child_exec(
     Command *command,
     enum CommandFlag flags,
@@ -625,7 +625,7 @@ command_child_exec(
     _exit(127);
 }
 
-CBASE_API_DEF bool
+bool
 command_start(Command *command, enum CommandFlag flags) {
     int stdin_pipe[2] = {-1, -1};
     int stdout_pipe[2] = {-1, -1};
@@ -736,7 +736,7 @@ command_start(Command *command, enum CommandFlag flags) {
     return true;
 }
 
-CBASE_API_DEF bool
+bool
 command_wait(Command *command) {
     int status;
 
@@ -758,7 +758,7 @@ command_wait(Command *command) {
     return true;
 }
 
-CBASE_API_DEF bool
+bool
 command_signal(Command *command, int32 signal_number, bool process_group) {
     pid_t pid;
 
@@ -783,7 +783,7 @@ command_signal(Command *command, int32 signal_number, bool process_group) {
 }
 #endif
 
-CBASE_API_DEF bool
+bool
 command_run(Command *command, enum CommandFlag flags) {
     flags = command_flags_normalized(flags);
 
@@ -826,7 +826,7 @@ command_run(Command *command, enum CommandFlag flags) {
 #endif
 }
 
-CBASE_API_DEF bool
+bool
 command_run_sync(Command *command, int *exit_status) {
     bool success;
 
@@ -837,26 +837,26 @@ command_run_sync(Command *command, int *exit_status) {
     return success;
 }
 
-CBASE_API_DEF bool
+bool
 command_run_async(Command *command, enum CommandFlag flags) {
     flags |= COMMAND_ASYNC;
     return command_run(command, flags);
 }
 
-CBASE_API_DEF bool
+bool
 command_run_capture(Command *command, enum CommandFlag flags) {
     flags |= COMMAND_CAPTURE_STDOUT;
     return command_run(command, flags);
 }
 
-CBASE_API_DEF bool
+bool
 command_run_capture_all(Command *command) {
     return command_run(command,
                        COMMAND_CAPTURE_STDOUT
                        |COMMAND_CAPTURE_STDERR);
 }
 
-CBASE_API_DEF bool
+bool
 command_run_capture_combined(Command *command) {
     return command_run(command,
                        COMMAND_CAPTURE_STDOUT
@@ -864,7 +864,7 @@ command_run_capture_combined(Command *command) {
                        |COMMAND_MERGE_STDERR);
 }
 
-CBASE_API_DEF void
+void
 command_print(Command *command) {
     printf(RED("%s"), command->argv[0]);
     for (int32 i = 1; i < command->argc; i += 1) {
@@ -874,7 +874,7 @@ command_print(Command *command) {
     return;
 }
 
-CBASE_API_DEF char *
+char *
 command_str(Command *command, int32 *len) {
     StrBuilder str_builder = {0};
 
@@ -887,7 +887,7 @@ command_str(Command *command, int32 *len) {
     return sb_steal_exact(&str_builder, len);
 }
 
-CBASE_API_DEF void
+void
 command_vector_reserve(
     char ***items,
     int32 **item_lens,
@@ -917,7 +917,7 @@ command_vector_reserve(
     return;
 }
 
-CBASE_API_DEF void
+void
 command_push_owned_length(
     char ***items,
     int32 **item_lens,
@@ -946,7 +946,7 @@ command_push_owned_length(
     return;
 }
 
-CBASE_API_DEF void
+void
 command_push_length(Command *command, char *argument, int32 argument_len) {
     command_push_owned_length(&command->argv,
                               &command->argvs_lens,
@@ -963,7 +963,7 @@ command_push(Command *command, char *argument) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_push_array(Command *command, int32 argc, char **argv) {
     if (argv == NULL) {
         return;
@@ -974,7 +974,7 @@ command_push_array(Command *command, int32 argc, char **argv) {
     return;
 }
 
-CBASE_API_DEF bool
+bool
 command_stdin_buffer_set(Command *command, char *data, int64 data_len) {
     if (command == NULL) {
         return false;
@@ -991,7 +991,7 @@ command_stdin_buffer_set(Command *command, char *data, int64 data_len) {
     return true;
 }
 
-CBASE_API_DEF void
+void
 command_stdin_buffer_clear(Command *command) {
     if (command == NULL) {
         return;
@@ -1002,7 +1002,7 @@ command_stdin_buffer_clear(Command *command) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_env_push_length(
     Command *command,
     char *assignment,
@@ -1017,13 +1017,13 @@ command_env_push_length(
     return;
 }
 
-CBASE_API_DEF void
+void
 command_env_push(Command *command, char *assignment) {
     command_env_push_length(command, assignment, strlen32(assignment));
     return;
 }
 
-CBASE_API_DEF void
+void
 command_push_split(Command *command, char *arguments, char *delimiters) {
     char *argument = arguments;
 
@@ -1050,7 +1050,7 @@ command_push_split(Command *command, char *arguments, char *delimiters) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_argv0_set(Command *command, char *argument) {
     int32 argument_len = strlen32(argument);
 
@@ -1061,7 +1061,7 @@ command_argv0_set(Command *command, char *argument) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_cwd_clear(Command *command) {
     free2(command->cwd, command->cwd_len + 1);
     command->cwd = NULL;
@@ -1069,7 +1069,7 @@ command_cwd_clear(Command *command) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_cwd_set(Command *command, char *cwd) {
     command_cwd_clear(command);
     if (cwd) {
@@ -1079,7 +1079,7 @@ command_cwd_set(Command *command, char *cwd) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_reset(Command *command) {
     for (int32 i = 0; i < command->argc; i += 1) {
         free2(command->argv[i], command->argvs_lens[i] + 1);
@@ -1099,7 +1099,7 @@ command_reset(Command *command) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_env_clear(Command *command) {
     for (int32 i = 0; i < command->env_len; i += 1) {
         free2(command->env[i], command->env_lens[i] + 1);
@@ -1116,7 +1116,7 @@ command_env_clear(Command *command) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_free(Command *command) {
     command_reset(command);
     command_env_clear(command);
@@ -1138,7 +1138,7 @@ command_free(Command *command) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_printf(Command *command, char *fmt, ...) {
     va_list ap;
     va_list ap2;
@@ -1166,7 +1166,7 @@ command_printf(Command *command, char *fmt, ...) {
     return;
 }
 
-CBASE_API_DEF void
+void
 command_env_printf(Command *command, char *fmt, ...) {
     va_list ap;
     va_list ap2;

@@ -14,7 +14,7 @@
 
 #include "cbase.h"
 
-CBASE_API_DEF void
+void
 free_line(Line *line) {
     free_line_tokens(line);
     free2(line->text, line->len + 1);
@@ -23,7 +23,7 @@ free_line(Line *line) {
     return;
 }
 
-CBASE_API_DEF void
+void
 free_document(Document *doc) {
     for (int32 i = 0; i < doc->line_count; i += 1) {
         free_line(&doc->lines[i]);
@@ -33,7 +33,7 @@ free_document(Document *doc) {
     return;
 }
 
-CBASE_API_DEF void
+void
 document_reserve_lines(Document *doc, int32 extra) {
     int32 need;
     int32 new_capacity;
@@ -53,7 +53,7 @@ document_reserve_lines(Document *doc, int32 extra) {
     return;
 }
 
-CBASE_API_DEF void
+void
 document_add_line(Document *doc, char *text, int32 length,
                   bool *in_block_comment, int32 tokenize_flags) {
     Line *line;
@@ -73,7 +73,7 @@ document_add_line(Document *doc, char *text, int32 length,
     return;
 }
 
-CBASE_API_DEF Document *
+Document *
 parse_text_with_flags(char *text, int32 text_len, int32 tokenize_flags) {
     Document *doc;
     bool in_block_comment;
@@ -107,7 +107,7 @@ parse_text_with_flags(char *text, int32 text_len, int32 tokenize_flags) {
     return doc;
 }
 
-CBASE_API_DEF Document *
+Document *
 parse_c_text(char *text, int32 text_len) {
     Document *result;
 
@@ -115,7 +115,7 @@ parse_c_text(char *text, int32 text_len) {
     return result;
 }
 
-CBASE_API_DEF Document *
+Document *
 parse_text(char *text, int32 text_len) {
     Document *result;
 

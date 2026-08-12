@@ -25,23 +25,23 @@ enum ArenaErrors {
     EARENA_SIZE,
 };
 
-CBASE_API_DECL Arena *arena_create(int64, char *);
-CBASE_API_DECL int64 arena_data_size(Arena *);
-CBASE_API_DECL bool arena_decr(Arena *, void *);
-CBASE_API_DECL void arena_destroy(Arena *);
-CBASE_API_DECL int32 arena_nlinked(Arena *);
-CBASE_API_DECL Arena *arena_of(Arena *, void *);
-CBASE_API_DECL void arena_print(Arena *);
-CBASE_API_DECL void *arena_push(Arena *, int64);
-CBASE_API_DECL uint32 arena_push_index32(Arena *, uint32);
-CBASE_API_DECL void *arena_reset(Arena *);
-CBASE_API_DECL char *arena_strerror(int);
-CBASE_API_DECL Arena *arena_with_space(Arena *, int64);
-CBASE_API_DECL void arenas_destroy(Arena **, int32);
-CBASE_API_DECL bool arenas_pop(Arena **, int32, void *);
-CBASE_API_DECL void *arenas_push(Arena **, int32, int64);
-CBASE_API_DECL void *arenas_reset(Arena **, int32);
-CBASE_API_DECL void *xarena_push(Arena *, int64);
-CBASE_API_DECL void *xarenas_push(Arena **, int32, int64);
+extern Arena *arena_create(int64, char *);
+extern int64 arena_data_size(Arena *);
+extern bool arena_decr(Arena *, void *);
+extern void arena_destroy(Arena *);
+extern int32 arena_nlinked(Arena *);
+extern Arena *arena_of(Arena *, void *);
+extern void arena_print(Arena *);
+extern void *arena_push(Arena *, int64);
+extern uint32 arena_push_index32(Arena *, uint32);
+extern void *arena_reset(Arena *);
+extern char *arena_strerror(int);
+extern Arena *arena_with_space(Arena *, int64);
+extern void arenas_destroy(Arena **, int32);
+extern bool arenas_pop(Arena **, int32, void *);
+extern void *arenas_push(Arena **, int32, int64);
+extern void *arenas_reset(Arena **, int32);
+extern void *xarena_push(Arena *, int64);
+extern void *xarenas_push(Arena **, int32, int64);
 
 #endif /* ARENA_H */
