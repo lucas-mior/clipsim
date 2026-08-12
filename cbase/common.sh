@@ -4,7 +4,7 @@
 
 set -e
 
-. cbase/functions_forbidden.sh
+. ./cbase/functions_forbidden.sh
 
 error () {
     >&2 printf "$@"
