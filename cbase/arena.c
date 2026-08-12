@@ -171,7 +171,7 @@ xarena_push(Arena *arena, int64 size) {
             global_arena = arena_create(SIZEMB(2), "global_arena");
             arena = global_arena;
         } else {
-            error2("Error in %s: arena is NULL.\n", __func__);
+            error("arena is NULL.\n");
             fatal(EXIT_FAILURE);
         }
     }

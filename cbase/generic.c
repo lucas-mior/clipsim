@@ -553,11 +553,11 @@ _Generic((VAR), \
 )
 
 #if CC_GCC || CC_CLANG
-#define PRINT_DIAGNOSTIC_PUSH() do {                         \
+#define PRINT_DIAGNOSTIC_PUSH() do {                          \
     _Pragma("GCC diagnostic push")                            \
     _Pragma("GCC diagnostic ignored \"-Wpedantic\"")          \
 } while (0)
-#define PRINT_DIAGNOSTIC_POP() do {                          \
+#define PRINT_DIAGNOSTIC_POP() do {                           \
     _Pragma("GCC diagnostic pop")                             \
 } while (0)
 #define PRINT(VAR) do {                                       \
@@ -569,10 +569,10 @@ _Generic((VAR), \
 #define PRINT(VAR) PRINT_(VAR)
 #endif
 
-#define PRINTLN(VAR) do { \
+#define PRINTLN(VAR) do {                                         \
     fprintf(stderr, "%s:%d %s():", __FILE__, __LINE__, __func__); \
-    PRINT(VAR); \
-    fprintf(stderr, "\n"); \
+    PRINT(VAR);                                                   \
+    fprintf(stderr, "\n");                                        \
 } while (0)
 
 #if TESTING_generic
@@ -583,61 +583,61 @@ int
 main(void) {
     union Primitive primitive;
 
-    assert(MINOF(primitive.afloat)  == -FLT_MAX);
-    assert(MINOF(primitive.aint)    == INT_MIN);
-    assert(MINOF(primitive.allong)  == LLONG_MIN);
-    assert(MINOF(primitive.along)   == LONG_MIN);
-    assert(MINOF(primitive.aschar)  == SCHAR_MIN);
-    assert(MINOF(primitive.ashort)  == SHRT_MIN);
-    assert(MINOF(primitive.auchar)  == 0);
-    assert(MINOF(primitive.auint)   == 0u);
-    assert(MINOF(primitive.aullong) == 0ull);
-    assert(MINOF(primitive.aulong)  == 0ul);
-    assert(MINOF(primitive.aushort) == 0);
+    ASSERT(MINOF(primitive.afloat)  == -FLT_MAX);
+    ASSERT(MINOF(primitive.aint)    == INT_MIN);
+    ASSERT(MINOF(primitive.allong)  == LLONG_MIN);
+    ASSERT(MINOF(primitive.along)   == LONG_MIN);
+    ASSERT(MINOF(primitive.aschar)  == SCHAR_MIN);
+    ASSERT(MINOF(primitive.ashort)  == SHRT_MIN);
+    ASSERT(MINOF(primitive.auchar)  == 0);
+    ASSERT(MINOF(primitive.auint)   == 0u);
+    ASSERT(MINOF(primitive.aullong) == 0ull);
+    ASSERT(MINOF(primitive.aulong)  == 0ul);
+    ASSERT(MINOF(primitive.aushort) == 0);
 
-    assert(MAXOF(primitive.afloat)  == FLT_MAX);
-    assert(MAXOF(primitive.aschar)  == SCHAR_MAX);
-    assert(MAXOF(primitive.ashort)  == SHRT_MAX);
-    assert(MAXOF(primitive.aint)    == INT_MAX);
-    assert(MAXOF(primitive.along)   == LONG_MAX);
-    assert(MAXOF(primitive.allong)  == LLONG_MAX);
-    assert(MAXOF(primitive.auchar)  == UCHAR_MAX);
-    assert(MAXOF(primitive.aushort) == USHRT_MAX);
-    assert(MAXOF(primitive.auint)   == UINT_MAX);
-    assert(MAXOF(primitive.aulong)  == ULONG_MAX);
-    assert(MAXOF(primitive.aullong) == ULLONG_MAX);
-    assert(MAXOF(primitive.abool)   == 1);
+    ASSERT(MAXOF(primitive.afloat)  == FLT_MAX);
+    ASSERT(MAXOF(primitive.aschar)  == SCHAR_MAX);
+    ASSERT(MAXOF(primitive.ashort)  == SHRT_MAX);
+    ASSERT(MAXOF(primitive.aint)    == INT_MAX);
+    ASSERT(MAXOF(primitive.along)   == LONG_MAX);
+    ASSERT(MAXOF(primitive.allong)  == LLONG_MAX);
+    ASSERT(MAXOF(primitive.auchar)  == UCHAR_MAX);
+    ASSERT(MAXOF(primitive.aushort) == USHRT_MAX);
+    ASSERT(MAXOF(primitive.auint)   == UINT_MAX);
+    ASSERT(MAXOF(primitive.aulong)  == ULONG_MAX);
+    ASSERT(MAXOF(primitive.aullong) == ULLONG_MAX);
+    ASSERT(MAXOF(primitive.abool)   == 1);
 
-    assert(strequal(TYPENAME(primitive.avoidp),
-                    typename(TYPEID(primitive.avoidp))));
-    assert(strequal(TYPENAME(primitive.acharp),
-                    typename(TYPEID(primitive.acharp))));
-    assert(strequal(TYPENAME(primitive.abool),
-                    typename(TYPEID(primitive.abool))));
-    assert(strequal(TYPENAME(primitive.aschar),
-                    typename(TYPEID(primitive.aschar))));
-    assert(strequal(TYPENAME(primitive.ashort),
-                    typename(TYPEID(primitive.ashort))));
-    assert(strequal(TYPENAME(primitive.aint),
-                    typename(TYPEID(primitive.aint))));
-    assert(strequal(TYPENAME(primitive.along),
-                    typename(TYPEID(primitive.along))));
-    assert(strequal(TYPENAME(primitive.allong),
-                    typename(TYPEID(primitive.allong))));
-    assert(strequal(TYPENAME(primitive.auchar),
-                    typename(TYPEID(primitive.auchar))));
-    assert(strequal(TYPENAME(primitive.aushort),
-                    typename(TYPEID(primitive.aushort))));
-    assert(strequal(TYPENAME(primitive.auint),
-                    typename(TYPEID(primitive.auint))));
-    assert(strequal(TYPENAME(primitive.aulong),
-                    typename(TYPEID(primitive.aulong))));
-    assert(strequal(TYPENAME(primitive.aullong),
-                    typename(TYPEID(primitive.aullong))));
-    assert(strequal(TYPENAME(primitive.afloat),
-                    typename(TYPEID(primitive.afloat))));
-    assert(strequal(TYPENAME(primitive.adouble),
-                    typename(TYPEID(primitive.adouble))));
+    ASSERT_EQUAL(TYPENAME(primitive.avoidp),
+                 typename(TYPEID(primitive.avoidp)));
+    ASSERT_EQUAL(TYPENAME(primitive.acharp),
+                 typename(TYPEID(primitive.acharp)));
+    ASSERT_EQUAL(TYPENAME(primitive.abool),
+                 typename(TYPEID(primitive.abool)));
+    ASSERT_EQUAL(TYPENAME(primitive.aschar),
+                 typename(TYPEID(primitive.aschar)));
+    ASSERT_EQUAL(TYPENAME(primitive.ashort),
+                 typename(TYPEID(primitive.ashort)));
+    ASSERT_EQUAL(TYPENAME(primitive.aint),
+                 typename(TYPEID(primitive.aint)));
+    ASSERT_EQUAL(TYPENAME(primitive.along),
+                 typename(TYPEID(primitive.along)));
+    ASSERT_EQUAL(TYPENAME(primitive.allong),
+                 typename(TYPEID(primitive.allong)));
+    ASSERT_EQUAL(TYPENAME(primitive.auchar),
+                 typename(TYPEID(primitive.auchar)));
+    ASSERT_EQUAL(TYPENAME(primitive.aushort),
+                 typename(TYPEID(primitive.aushort)));
+    ASSERT_EQUAL(TYPENAME(primitive.auint),
+                 typename(TYPEID(primitive.auint)));
+    ASSERT_EQUAL(TYPENAME(primitive.aulong),
+                 typename(TYPEID(primitive.aulong)));
+    ASSERT_EQUAL(TYPENAME(primitive.aullong),
+                 typename(TYPEID(primitive.aullong)));
+    ASSERT_EQUAL(TYPENAME(primitive.afloat),
+                 typename(TYPEID(primitive.afloat)));
+    ASSERT_EQUAL(TYPENAME(primitive.adouble),
+                 typename(TYPEID(primitive.adouble)));
 
     {
         int32 var_int32;
@@ -645,15 +645,15 @@ main(void) {
         int64 var_int64;
         uint64 var_uint64;
 
-        assert(MAXOF(var_int32) == INT32_MAX);
-        assert(MAXOF(var_int64) == INT64_MAX);
-        assert(MAXOF(var_uint32) == UINT32_MAX);
-        assert(MAXOF(var_uint64) == UINT64_MAX);
+        ASSERT(MAXOF(var_int32) == INT32_MAX);
+        ASSERT(MAXOF(var_int64) == INT64_MAX);
+        ASSERT(MAXOF(var_uint32) == UINT32_MAX);
+        ASSERT(MAXOF(var_uint64) == UINT64_MAX);
 
-        assert(MINOF(var_int32) == INT32_MIN);
-        assert(MINOF(var_int64) == INT64_MIN);
-        assert(MINOF(var_uint32) == 0u);
-        assert(MINOF(var_uint64) == 0ull);
+        ASSERT(MINOF(var_int32) == INT32_MIN);
+        ASSERT(MINOF(var_int64) == INT64_MIN);
+        ASSERT(MINOF(var_uint32) == 0u);
+        ASSERT(MINOF(var_uint64) == 0ull);
     }
 
     {
