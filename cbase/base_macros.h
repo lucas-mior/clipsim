@@ -18,10 +18,6 @@
 #define CBASE_PRIVATE static
 #endif
 
-#if !defined(CBASE_TEMPLATE)
-#define CBASE_TEMPLATE static
-#endif
-
 #define S(...) #__VA_ARGS__
 #define QUOTE(x) S(x)
 
