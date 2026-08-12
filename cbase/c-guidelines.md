@@ -537,6 +537,9 @@ ASSERT_NULL(pointer);
   - `ASSERT_MORE(number expr 1, number expr 2)`
   - `ASSERT_LESS_EQUAL(number expr 1, number expr 2)`
   - `ASSERT_MORE_EQUAL(number expr 1, number expr 2)`
+  - `ASSERT_CONTAINS(haystack, haystack_len, needle)`
+  - `ASSERT_NOT_CONTAINS(haystack, haystack_len, needle)`
+  - `ASSERT_FILE_CONTAINS(haystack, haystack_len, needle)`
   * They all use `__builtin_unreachable` if the condition fails if not
     debugging. Don't use them for non-debugging assertions.
 - Do not use `ASSERT_EQUAL` for enums.
