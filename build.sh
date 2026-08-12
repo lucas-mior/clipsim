@@ -73,6 +73,7 @@ if [ "$CC" = "clang" ]; then
     CFLAGS="$CFLAGS -Wno-unknown-pragmas"
     CFLAGS="$CFLAGS -Wno-unsafe-buffer-usage"
     CFLAGS="$CFLAGS -Wno-unused-macros"
+    CFLAGS="$CFLAGS -Wno-used-but-marked-unused"
 fi
 
 LDFLAGS="$LDFLAGS $(pkg-config x11 --libs)"

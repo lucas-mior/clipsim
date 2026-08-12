@@ -1085,9 +1085,8 @@ test_tokenization_preprocessor_define_detection(void) {
     int_token = test_find_token(&tokenization, "int");
     ASSERT_NON_NEGATIVE(plus);
     ASSERT_NON_NEGATIVE(int_token);
-    ASSERT_EQUAL(tokenization_logical_line_start_offset(
-                     &tokenization, tokenization.tokens[plus].offset),
-                 0);
+    ASSERT_ZERO(tokenization_logical_line_start_offset(
+                     &tokenization, tokenization.tokens[plus].offset));
     ASSERT(tokenization_is_in_preprocessor_define(&tokenization, plus));
     ASSERT(!tokenization_is_in_preprocessor_define(&tokenization, int_token));
     ASSERT(!tokenization_is_in_preprocessor_define(&tokenization, -1));

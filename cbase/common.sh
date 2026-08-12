@@ -4,7 +4,7 @@
 
 set -e
 
-common_error () {
+error () {
     >&2 printf "$@"
     return
 }
@@ -47,7 +47,7 @@ common_get_compiler() {
 
 common_get_program() {
     if [ -z "$1" ]; then
-        common_error "common_get_program <full_path_to_build.sh>"
+        error "common_get_program <full_path_to_build.sh>"
         exit 1
     fi
     basename "$(readlink -f "$(dirname "$1")")"
@@ -727,12 +727,12 @@ common_test () {
         fi
 
         if [ -s "$common_libc_matches" ]; then
-            common_error "\nError: functions that must never be used:\n"
+            error "\nError: functions that must never be used:\n"
             cat "$common_libc_matches" >&2
         fi
 
         if [ -s "$common_libc_matches2" ]; then
-            common_error "\nError: functions only allowed inside cbase:\n"
+            error "\nError: functions only allowed inside cbase:\n"
             cat "$common_libc_matches2" >&2
         fi
 
