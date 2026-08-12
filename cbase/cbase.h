@@ -315,11 +315,11 @@ _Generic((VAR), \
     sb_append(BUILDER, STRING, (int32)(LEN))
 #define SB_APPEND(...) SELECT_ON_NUM_ARGS(SB_APPEND_, __VA_ARGS__)
 
-#define strequal2_3(A, A_LEN, B) strequal2(A, A_LEN, B, strlen32(B))
+#define strequal2_3(A, A_LEN, B)        strequal2(A, A_LEN, B, strlen32(B))
 #define strequal2_4(A, A_LEN, B, B_LEN) strequal2(A, A_LEN, B, B_LEN)
 #define STREQUAL(...) SELECT_ON_NUM_ARGS(strequal2_, __VA_ARGS__)
 
-#define striqual2_3(A, A_LEN, B) striqual2(A, A_LEN, B, strlen32(B))
+#define striqual2_3(A, A_LEN, B)        striqual2(A, A_LEN, B, strlen32(B))
 #define striqual2_4(A, A_LEN, B, B_LEN) striqual2(A, A_LEN, B, B_LEN)
 #define STRIQUAL(...) SELECT_ON_NUM_ARGS(striqual2_, __VA_ARGS__)
 

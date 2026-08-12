@@ -88,7 +88,7 @@ needs_rebuild_resolve_include () {
 }
 
 needs_rebuild_source_is_newer () {
-    target_file=$1
+    rebuild_target=$1
     source_file=$2
     seen_file=$3
 
@@ -102,7 +102,7 @@ needs_rebuild_source_is_newer () {
 
     printf '%s\n' "$source_file" >> "$seen_file"
 
-    if [ "$source_file" -nt "$target_file" ]; then
+    if [ "$source_file" -nt "$rebuild_target" ]; then
         return 0
     fi
 
@@ -118,7 +118,7 @@ needs_rebuild_source_is_newer () {
 
         if [ -n "$resolved_file" ] \
                 && needs_rebuild_source_is_newer \
-                    "$target_file" "$resolved_file" "$seen_file"; then
+                    "$rebuild_target" "$resolved_file" "$seen_file"; then
             return 0
         fi
     done
@@ -127,10 +127,10 @@ needs_rebuild_source_is_newer () {
 }
 
 needs_rebuild () {
-    target_file=$1
+    rebuild_target=$1
     shift
 
-    if [ ! -e "$target_file" ]; then
+    if [ ! -e "$rebuild_target" ]; then
         return 0
     fi
 
@@ -139,7 +139,7 @@ needs_rebuild () {
 
     for source_file do
         if needs_rebuild_source_is_newer \
-                "$target_file" "$source_file" "$seen_file"; then
+                "$rebuild_target" "$source_file" "$seen_file"; then
             rm -f "$seen_file"
             return 0
         fi
@@ -148,7 +148,7 @@ needs_rebuild () {
     rm -f "$seen_file"
 
     if [ -d cbase ] \
-            && find cbase -type f -newer "$target_file" | grep -q .; then
+            && find cbase -type f -newer "$rebuild_target" | grep -q .; then
         return 0
     fi
 
@@ -167,6 +167,51 @@ target_supported () {
         line == wanted { found = 1 }
         END { exit !found }
     '
+}
+
+
+build_parse_args () {
+    mode=${1:-debug}
+    target=${2:-}
+
+    if [ -n "${1:-}" ] && [ -f "$1" ]; then
+        mode=debug
+        target=$1
+    fi
+
+    target_line=$mode
+    if [ "$mode" = "cross" ] && [ -n "$target" ]; then
+        target_line="$mode $target"
+    fi
+
+    return 0
+}
+
+build_validate_mode () {
+    build_script=$1
+    build_targets=$2
+
+    if ! target_supported "$build_targets" "$target_line" \
+            && ! target_supported "$build_targets" "$mode"; then
+        echo "usage: $build_script <mode> [target]"
+        printf '%s\n' "$build_targets"
+        exit 1
+    fi
+
+    return 0
+}
+
+build_print_invocation () {
+    build_script=$1
+
+    if [ -n "${target:-}" ]; then
+        printf '\n%s %s%s %s%s\n' \
+            "$build_script" "$RED" "$mode" "$target" "$RES"
+    else
+        printf '\n%s %s%s%s\n' "$build_script" "$RED" "$mode" "$RES"
+    fi
+
+    return 0
 }
 
 option_remove() {
