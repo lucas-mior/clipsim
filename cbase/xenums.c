@@ -69,7 +69,7 @@
 #endif
 
 #if !defined(XENUMS_LINKAGE)
-#define XENUMS_LINKAGE CBASE_TEMPLATE
+#define XENUMS_LINKAGE static
 #endif
 
 #if XENUMS_FUNCTIONS_ONLY == 0
