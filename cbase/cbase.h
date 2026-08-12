@@ -44,7 +44,7 @@ extern void *memrchr64(void *, int32, int64);
 
 #define UTF_INVALID 0xFFFD
 
-extern int32 random_utf8_string(char *, int32, int32);
+extern int32 utf8_random_string(char *, int32, int32);
 extern int32 utf8_byte_position(char *, int32, int32);
 extern int32 utf8_capitalize_first_letters(char *, int32,
                                                    char *, int32);
@@ -556,6 +556,20 @@ extern void generic_array_set_count(void *, int32);
      (ARRAY)[ARRAY_HEADER(ARRAY)->count++] = (__VA_ARGS__))
 #define ARRAY_INIT(ARRAY, CAPACITY) \
     ((ARRAY) = generic_array_init((CAPACITY), SIZEOF(*(ARRAY))))
+
+#if CC_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wstrict-prototypes"
+#endif
+
+// when you need a valid symbol
+// to silence clangd warnings in include-based templates.
+typedef void ThrowAwayFunction();
+extern void throw_away_function();
+
+#if CC_CLANG
+#pragma clang diagnostic pop
+#endif
 
 #include "meta.h"
 
