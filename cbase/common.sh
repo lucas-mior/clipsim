@@ -126,7 +126,7 @@ common_needs_rebuild_source_is_newer () {
     return 1
 }
 
-common_needs_rebuild () {
+common_outdated () {
     rebuild_target=$1
     shift
 
@@ -134,7 +134,7 @@ common_needs_rebuild () {
         return 0
     fi
 
-    seen_file=${TMPDIR:-/tmp}/common_needs_rebuild.$$.seen
+    seen_file=${TMPDIR:-/tmp}/common_outdated.$$.seen
     : > "$seen_file"
 
     for source_file do
