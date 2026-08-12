@@ -53,7 +53,7 @@ common_get_program() {
     basename "$(readlink -f "$(dirname "$1")")"
 }
 
-common_needs_rebuild_includes () {
+common_outdated_includes () {
     source_file=$1
 
     awk '
@@ -69,7 +69,7 @@ common_needs_rebuild_includes () {
     ' "$source_file"
 }
 
-common_needs_rebuild_resolve_include () {
+common_outdated_resolve_include () {
     source_file=$1
     include_file=$2
     source_dir=$(dirname "$source_file")
@@ -87,7 +87,7 @@ common_needs_rebuild_resolve_include () {
     return 1
 }
 
-common_needs_rebuild_source_is_newer () {
+common_outdated_source_is_newer () {
     rebuild_target=$1
     source_file=$2
     seen_file=$3
@@ -110,14 +110,14 @@ common_needs_rebuild_source_is_newer () {
         return 1
     fi
 
-    for include_file in $(common_needs_rebuild_includes "$source_file"); do
+    for include_file in $(common_outdated_includes "$source_file"); do
         resolved_file=$(
-            common_needs_rebuild_resolve_include "$source_file" "$include_file" \
+            common_outdated_resolve_include "$source_file" "$include_file" \
                 || true
         )
 
         if [ -n "$resolved_file" ] \
-                && common_needs_rebuild_source_is_newer \
+                && common_outdated_source_is_newer \
                     "$rebuild_target" "$resolved_file" "$seen_file"; then
             return 0
         fi
@@ -138,7 +138,7 @@ common_outdated () {
     : > "$seen_file"
 
     for source_file do
-        if common_needs_rebuild_source_is_newer \
+        if common_outdated_source_is_newer \
                 "$rebuild_target" "$source_file" "$seen_file"; then
             rm -f "$seen_file"
             return 0

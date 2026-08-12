@@ -447,8 +447,8 @@ CAT(hash_insert_pre_calc_, HASH_TYPE)(struct Map *map,
 #if HASH_KEY_FIXED_LEN
     if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
 #else
-    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash,
-                                         base_index, &target_idx))
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length,
+                                    hash, base_index, &target_idx))
 #endif
     {
         return false;
@@ -529,8 +529,8 @@ CAT(hash_overwrite_pre_calc_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
 #if HASH_KEY_FIXED_LEN
     if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
 #else
-    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash,
-                                         base_index, &target_idx))
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length,
+                                    hash, base_index, &target_idx))
 #endif
     {
         target = &map->array[target_idx];
@@ -600,8 +600,8 @@ CAT(hash_lookup_pre_calc_, HASH_TYPE)(struct Map *map,
 #if HASH_KEY_FIXED_LEN
     if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
 #else
-    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash,
-                                         base_index, &target_idx))
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length,
+                                    hash, base_index, &target_idx))
 #endif
     {
 #if defined(HASH_VALUE_TYPE)
@@ -657,8 +657,8 @@ CAT(hash_remove_pre_calc_, HASH_TYPE)(struct Map *map,
 #if HASH_KEY_FIXED_LEN
     if (CAT(hash_probe_, HASH_TYPE)(map, key, hash, base_index, &target_idx))
 #else
-    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length, hash,
-                                         base_index, &target_idx))
+    if (CAT(hash_probe_, HASH_TYPE)(map, key, key_length,
+                                    hash, base_index, &target_idx))
 #endif
     {
 #if !HASH_KEY_FIXED_LEN
