@@ -21,7 +21,6 @@ install
 uninstall
 test
 check
-assembly
 valgrind
 callgrind
 test_all
@@ -164,11 +163,6 @@ install)
     install -Dm644 completions/${program}.bash ${DESTDIR}${PREFIX}/share/bash-completion/completions/${program}
     install -Dm644 completions/${program}.zsh  ${DESTDIR}${PREFIX}/share/zsh/site-functions/_${program}
     install -Dm644 LICENSE                     ${DESTDIR}${PREFIX}/share/licenses/${program}/LICENSE
-    exit
-    ;;
-assembly)
-    trace_on
-    $CC $CPPFLAGS $CFLAGS -S -o ${program}_$CC.S main.c $LDFLAGS
     exit
     ;;
 test)
