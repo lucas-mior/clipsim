@@ -14,7 +14,7 @@ fi
 # shellcheck disable=2086
 
 old_xdg_cache_home="$XDG_CACHE_HOME"
-interval=0.3
+interval=0.8
 
 reset_terminal () {
     if [ -t 0 ]; then
