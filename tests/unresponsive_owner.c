@@ -1,6 +1,7 @@
+#include "../cbase/cbase.h"
+
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
-#include "../cbase/cbase.h"
 
 int
 main(void) {
