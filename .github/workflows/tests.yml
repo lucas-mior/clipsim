@@ -98,13 +98,9 @@ jobs:
           usesh: true
           run: |
             pkg_add \
-              file \
-              libX11 \
-              libXfixes \
-              libXi \
-              pkgconf \
-              xclip \
-              Xvfb
+              libmagic \
+              xclip
+            export PKG_CONFIG_PATH=/usr/X11R6/lib/pkgconfig:/usr/local/lib/pkgconfig
             export DISPLAY=:99
             Xvfb "$DISPLAY" -screen 0 1024x768x24 &
             xvfb_pid=$!
