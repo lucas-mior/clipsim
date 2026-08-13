@@ -155,7 +155,9 @@ install)
 test)
     TEST_EXCLUDE_PATTERN='(^|/)tests/' \
         common_test "$target"
-    tests/test.bash
+    if command -v bash >/dev/null 2>&1; then
+        tests/test.bash
+    fi
     exit
     ;;
 test_all)
