@@ -22,6 +22,27 @@ reset_terminal () {
     fi
 }
 
+wait_for_clipboard_text () {
+    local expected="$1"
+    local output
+    local i
+
+    for ((i = 0; i < 30; i += 1)); do
+        if output=$(xclip -o -selection clipboard 2>/dev/null); then
+            if [ "$output" = "$expected" ]; then
+                printf "%s" "$output"
+                return 0
+            fi
+        fi
+        sleep "$interval"
+    done
+
+    if output=$(xclip -o -selection clipboard 2>/dev/null); then
+        printf "%s" "$output"
+    fi
+    return 1
+}
+
 clipsim_was_running=false
 if killall -SIGTERM clipsim 2>/dev/null; then
     clipsim_was_running=true
@@ -128,11 +149,10 @@ sleep $interval
 echo "recovery_target" | xclip -quiet -selection clipboard &
 pid_xclip=$!
 sleep $interval
-kill -SIGTERM $pid_xclip
-sleep $interval
+kill -SIGTERM $pid_xclip 2>/dev/null || true
+wait $pid_xclip 2>/dev/null || true
 
-recovered=$(xclip -o -selection clipboard)
-if [ "$recovered" != "recovery_target" ]; then
+if ! recovered=$(wait_for_clipboard_text "recovery_target"); then
     echo "FAIL: Empty clipboard did not trigger recovery of the last valid entry."
     exit 1
 fi
@@ -174,13 +194,11 @@ sleep $interval
 $clipsim_bin -p > "$TEST_DIR/before_xclip"
 sleep $interval
 
-CLIP_DATA=$(xclip -o -selection clipboard)
-sleep $interval
-
-if [ "$CLIP_DATA" != "not me" ]; then
+if ! CLIP_DATA=$(wait_for_clipboard_text "not me"); then
     echo "FAIL: --copy resulted in an empty clipboard."
     exit 1
 fi
+sleep $interval
 
 $clipsim_bin -s
 sleep $interval
