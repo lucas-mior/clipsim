@@ -185,9 +185,9 @@ fast_feedback)
     trace_off
     ;;
 *)
-    trace_on
     common_build_tags
 
+    trace_on
     $CC $CPPFLAGS $CFLAGS -o ${exe} main.c $LDFLAGS
     trace_off
     ;;
