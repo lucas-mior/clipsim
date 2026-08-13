@@ -149,6 +149,7 @@ jobs:
             PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/pkg/lib/pkgconfig"
             export PKG_CONFIG_PATH
 
+            LDFLAGS="${LDFLAGS:-}"
             LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/pkg/lib"
             LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/X11R7/lib"
             export LDFLAGS
