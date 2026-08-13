@@ -10,31 +10,8 @@ cd "$dir" || exit
 
 script=$(basename "$0")
 
-if [ -f ./targets ]; then
-    . ./targets
-else
-    targets=$(cat <<'EOF_TARGETS'
-build
-debug
-fast_feedback
-install
-uninstall
-test
-check
-valgrind
-callgrind
-test_all
-cross x86_64-linux
-cross aarch64-linux
-cross x86_64-macos
-cross aarch64-macos
-cross x86_64-windows-gnu
-EOF_TARGETS
-)
-fi
 
 common_build_parse_args "$@"
-common_build_validate_mode "$script" "$targets"
 cross="$target"
 
 common_build_print_invocation "$script"
@@ -116,8 +93,10 @@ check)
 build)
     CFLAGS="$CFLAGS -O2 -flto -march=native -ftree-vectorize"
     ;;
-*)
+cross)
     CFLAGS="$CFLAGS -O2"
+    ;;
+*)
     ;;
 esac
 
@@ -178,7 +157,7 @@ fast_feedback)
     $CC $CPPFLAGS $CFLAGS main.c -o "$exe" $LDFLAGS && "$exe"
     trace_off
     ;;
-*)
+build|callgrind|cross|debug|valgrind)
     common_build_tags
 
     trace_on
@@ -209,14 +188,29 @@ esac
 
 trace_off
 if [ "$mode" = "test_all" ]; then
-    printf '%s\n' "$targets" | while IFS= read -r build_target; do
-        echo "$build_target" | grep -Eq "^(# |$)" && continue
-        if echo "$build_target" | grep "cross"; then
-            $0 $build_target
-            continue
-        fi
-        for compiler in gcc tcc clang "zig cc" ; do
-            CC=$compiler $0 $build_target || exit
+    for build_target in debug build test; do
+        echo "target=$build_target"
+
+        for compiler in gcc tcc clang "zig cc"; do
+            printf '\nCC=%s%s%s\n' "$RED" "$compiler" "$RES"
+            CC="$compiler" $0 "$build_target" || exit 3
         done
     done
+
+    for cross_target in $cross_targets; do
+        echo "target=cross $cross_target"
+        $0 cross "$cross_target" || exit 3
+    done
+
+    exit
 fi
+
+
+case "$mode" in
+build|callgrind|check|cross|debug|fast_feedback|install|test|test_all|uninstall|valgrind)
+    ;;
+*)
+    echo "Unknown mode $mode"
+    exit 1
+    ;;
+esac

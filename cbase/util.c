@@ -709,7 +709,7 @@ strftime2(char *buffer, int64 size, char *format, struct tm *time_info) {
     return n;
 }
 
-int32
+bool
 util_filename_from(char *buffer, int64 size, int fd) {
 #if OS_LINUX
     char linkpath[64];
@@ -717,47 +717,47 @@ util_filename_from(char *buffer, int64 size, int fd) {
 
     SNPRINTF(linkpath, "/proc/self/fd/%d", fd);
     if ((len = readlink(linkpath, buffer, (size_t)(size - 1))) < 0) {
-        return -1;
+        return false;
     }
     buffer[len] = '\0';
-    return 0;
+    return true;
 #elif CBASE_HAS_F_GETPATH
     static char buffer2[MAXPATHLEN];
     int64 len;
 
     if (fcntl(fd, F_GETPATH, buffer2) < 0) {
-        return -1;
+        return false;
     }
     len = MIN(strlen32(buffer2), size - 1);
     memcpy64(buffer, buffer2, len + 1);
     buffer[len] = '\0';
-    return 0;
+    return true;
 #elif OS_WINDOWS
     HANDLE h;
     DWORD len;
     intptr h2 = _get_osfhandle(fd);
 
     if ((h = (HANDLE)h2) == INVALID_HANDLE_VALUE) {
-        return -1;
+        return false;
     }
 
     len = GetFinalPathNameByHandleA(h, buffer, (DWORD)size,
                                     FILE_NAME_NORMALIZED);
 
     if ((len <= 0) || (len >= size)) {
-        return -1;
+        return false;
     }
 
     if (strncmp32(buffer, "\\\\?\\", 4) == 0) {
         memmove64(buffer, buffer + 4, len - 3);
     }
 
-    return 0;
+    return true;
 #else
     (void)size;
     (void)fd;
     (void)buffer;
-    return -1;
+    return false;
 #endif
 }
 
@@ -816,10 +816,10 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
     char buffer[4096];
 
     if (filename == NULL) {
-        if (util_filename_from(buffer, sizeof(buffer), *fd) < 0) {
-            filename = fd_var_name;
-        } else {
+        if (util_filename_from(buffer, sizeof(buffer), *fd)) {
             filename = buffer;
+        } else {
+            filename = fd_var_name;
         }
     }
 #else
@@ -1088,8 +1088,8 @@ util_copy_file_sync(char *destination, char *source) {
     int32 source_fd;
     int32 destination_fd;
     char buffer[BUFSIZ];
-    ssize_t r = 0;
-    ssize_t w = 0;
+    int64 r = 0;
+    int64 w = 0;
 
     if ((source_fd = open(source, O_RDONLY)) < 0) {
         error("Error opening %s for reading: %s.\n", source, strerror(errno));
@@ -1246,7 +1246,7 @@ send_signal(char *executable, int32 signal_number) {
         char command[256];
         int32 pid;
         int32 cmdline;
-        ssize_t r;
+        int64 r;
         char *last;
 
 #if CBASE_DIRENT_HAS_D_TYPE
@@ -1266,7 +1266,6 @@ send_signal(char *executable, int32 signal_number) {
 
         errno = 0;
         if ((r = read64(cmdline, command, sizeof(command))) <= 0) {
-            (void)r;
             XCLOSE(&cmdline, buffer);
             continue;
         }
