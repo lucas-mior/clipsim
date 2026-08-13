@@ -248,6 +248,83 @@ common_build_print_invocation () {
 }
 
 
+common_build_unknown_mode () {
+    if [ ! -f "${mode:-}" ]; then
+        echo "Unknown mode $mode"
+        exit 1
+    fi
+
+    return 0
+}
+
+common_build_cross_all () {
+    if [ "${target:-}" != "all" ]; then
+        return 0
+    fi
+
+    ncross=$(printf '%s\n' "$cross_targets" | wc -l)
+    i=1
+
+    for cross_target in $cross_targets; do
+        echo "$i / $ncross"
+        i=$((i+1))
+        if ! "$0" cross "$cross_target" 2>&1 | head -n 200; then
+            exit 1
+        fi
+    done
+
+    exit 0
+}
+
+common_build_test_all () {
+    if [ "$#" -lt 2 ]; then
+        error "common_build_test_all <targets> <compiler> [compiler...]\n"
+        exit 1
+    fi
+
+    test_all_targets=$1
+    shift
+
+    for build_target in $test_all_targets; do
+        echo "target=$build_target"
+
+        for compiler do
+            printf '\nCC=%s%s%s\n' "$RED" "$compiler" "$RES"
+            CC="$compiler" "$0" "$build_target" || exit 3
+        done
+    done
+
+    for cross_target in $cross_targets; do
+        echo "target=cross $cross_target"
+        "$0" cross "$cross_target" || exit 3
+    done
+
+    exit 0
+}
+
+common_build_run_analyzers () {
+    analyzer_mode=${1:-build}
+    analyzer_gcc_cflags=${2:-}
+
+    if [ -z "$analyzer_gcc_cflags" ]; then
+        analyzer_gcc_cflags="-fanalyzer -fdiagnostics-color=never"
+    fi
+
+    set +e
+
+    CC=gcc CFLAGS="$analyzer_gcc_cflags" "$0" "$analyzer_mode"
+
+    analyzer_clang_cflags="--analyze -Xanalyzer -analyzer-output=text"
+    analyzer_clang_cflags="$analyzer_clang_cflags -Xanalyzer -analyzer-werror"
+    analyzer_clang_cflags="$analyzer_clang_cflags -Xanalyzer"
+    analyzer_clang_cflags="$analyzer_clang_cflags -analyzer-opt-analyze-headers"
+    analyzer_clang_cflags="$analyzer_clang_cflags -Wno-unused-command-line-argument"
+    analyzer_clang_cflags="$analyzer_clang_cflags -fno-color-diagnostics"
+    CC=clang CFLAGS="$analyzer_clang_cflags" "$0" "$analyzer_mode"
+
+    exit 0
+}
+
 common_build_incremental_roots_are_newer () {
     incremental_rebuild_target=$1
     incremental_rebuild_roots=${COMMON_BUILD_INCREMENTAL_ROOTS:-cbase}

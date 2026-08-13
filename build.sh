@@ -12,6 +12,14 @@ script=$(basename "$0")
 
 
 common_build_parse_args "$@"
+
+case "$mode" in
+build|callgrind|check|cross|debug|fast_feedback|install|test|test_all|uninstall|valgrind)
+    ;;
+*)
+    common_build_unknown_mode
+    ;;
+esac
 cross="$target"
 
 common_build_print_invocation "$script"
@@ -77,26 +85,19 @@ callgrind)
     CPPFLAGS="$CPPFLAGS"
     ;;
 check)
-    set +e
-
-    CC=gcc CFLAGS="-fanalyzer -fdiagnostics-color=never" "$0" build
-
-    CFLAGS="--analyze -Xanalyzer -analyzer-output=text"
-    CFLAGS="$CFLAGS -Xanalyzer -analyzer-werror"
-    CFLAGS="$CFLAGS -Xanalyzer -analyzer-opt-analyze-headers"
-    CFLAGS="$CFLAGS -Wno-unused-command-line-argument"
-    CFLAGS="$CFLAGS -fno-color-diagnostics"
-    CC=clang CFLAGS="$CFLAGS" "$0" build
-
-    exit
+    common_build_run_analyzers build
     ;;
 build)
     CFLAGS="$CFLAGS -O2 -flto -march=native -ftree-vectorize"
     ;;
 cross)
+    common_build_cross_all
     CFLAGS="$CFLAGS -O2"
     ;;
+build|callgrind|check|cross|debug|fast_feedback|install|test|test_all|uninstall|valgrind)
+    ;;
 *)
+    common_build_unknown_mode
     ;;
 esac
 
@@ -188,29 +189,5 @@ esac
 
 trace_off
 if [ "$mode" = "test_all" ]; then
-    for build_target in debug build test; do
-        echo "target=$build_target"
-
-        for compiler in gcc tcc clang "zig cc"; do
-            printf '\nCC=%s%s%s\n' "$RED" "$compiler" "$RES"
-            CC="$compiler" $0 "$build_target" || exit 3
-        done
-    done
-
-    for cross_target in $cross_targets; do
-        echo "target=cross $cross_target"
-        $0 cross "$cross_target" || exit 3
-    done
-
-    exit
+    common_build_test_all "debug build test" gcc tcc clang "zig cc"
 fi
-
-
-case "$mode" in
-build|callgrind|check|cross|debug|fast_feedback|install|test|test_all|uninstall|valgrind)
-    ;;
-*)
-    echo "Unknown mode $mode"
-    exit 1
-    ;;
-esac
