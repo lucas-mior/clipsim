@@ -80,7 +80,7 @@ enum {
     COMMAND_HELP,
 };
 
-static Entry entries[HISTORY_BUFFER_SIZE] = {0};
+static Entry clipsim_entries[HISTORY_BUFFER_SIZE] = {0};
 static bool is_image[HISTORY_BUFFER_SIZE] = {0};
 static char TEXT_TAG = (char)0x01;
 static char IMAGE_TAG = (char)0x02;

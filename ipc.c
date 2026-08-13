@@ -464,7 +464,7 @@ ipc_daemon_pipe_entries(int32 fd) {
     }
 
     for (int32 i = history_length - 1; i >= 0; i -= 1) {
-        Entry *e = &entries[i];
+        Entry *e = &clipsim_entries[i];
         int64 size = e->trimmed_length + 1;
         char *trimmed = &e->content[e->trimmed];
 
@@ -505,7 +505,7 @@ ipc_daemon_pipe_id(int32 fd, int32 id) {
         return;
     }
 
-    e = &entries[id];
+    e = &clipsim_entries[id];
     if (is_image[id]) {
         if (!ipc_write_all(fd, &IMAGE_TAG, tag_size, ipc_socket.name)) {
             return;

@@ -186,7 +186,7 @@ history_save(void) {
 
     for (int32 i = 0; i < history_length; i += 1) {
         int64 tag_size = sizeof(*(&IMAGE_TAG));
-        Entry *e = &entries[i];
+        Entry *e = &clipsim_entries[i];
 
         if (is_image[i]) {
             char image_save[PATH_MAX];
@@ -404,11 +404,11 @@ history_read(void) {
             goto next_entry;
         }
         if (history_length >= HISTORY_BUFFER_SIZE) {
-            error("History buffer is full; skipping remaining entries.\n");
+            error("History buffer is full; skipping remaining clipsim_entries.\n");
             break;
         }
 
-        e = &entries[history_length];
+        e = &clipsim_entries[history_length];
         e->content_length = content_length;
 
         if (type == IMAGE_TAG) {
@@ -462,7 +462,7 @@ history_repeated_index(char *content, int32 length) {
     }
 
     for (int32 i = history_length - 1; i >= 0; i -= 1) {
-        Entry *e = &entries[i];
+        Entry *e = &clipsim_entries[i];
 
         if (e->content_length != length) {
             continue;
@@ -588,7 +588,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
         history_prune();
     }
 
-    e = &entries[history_length];
+    e = &clipsim_entries[history_length];
     e->content_length = length;
     length_counts[length] += 1;
 
@@ -653,13 +653,13 @@ history_prune(void) {
     }
 
     for (int32 i = 0; i < to_remove; i += 1) {
-        history_free_entry(&entries[i], i);
+        history_free_entry(&clipsim_entries[i], i);
     }
 
-    memcpy64(&entries[0], &entries[to_remove],
-             HISTORY_KEEP_SIZE*SIZEOF(*entries));
-    memset64(&entries[HISTORY_KEEP_SIZE], 0,
-             to_remove*SIZEOF(*entries));
+    memcpy64(&clipsim_entries[0], &clipsim_entries[to_remove],
+             HISTORY_KEEP_SIZE*SIZEOF(*clipsim_entries));
+    memset64(&clipsim_entries[HISTORY_KEEP_SIZE], 0,
+             to_remove*SIZEOF(*clipsim_entries));
 
     memcpy64(&is_image[0], &is_image[to_remove],
              HISTORY_KEEP_SIZE*SIZEOF(*is_image));
@@ -694,7 +694,7 @@ history_recover(int32 id) {
         return;
     }
 
-    e = &entries[id];
+    e = &clipsim_entries[id];
 
     if ((istext = (is_image[id] == false))) {
         if (pipe(fd) < 0) {
@@ -757,16 +757,16 @@ history_remove(int32 id) {
         return;
     }
 
-    history_free_entry(&entries[id], id);
+    history_free_entry(&clipsim_entries[id], id);
 
     if (id < (history_length - 1)) {
-        memmove64(&entries[id], &entries[id + 1],
-                  (history_length - 1 - id)*SIZEOF(*entries));
+        memmove64(&clipsim_entries[id], &clipsim_entries[id + 1],
+                  (history_length - 1 - id)*SIZEOF(*clipsim_entries));
         memmove64(&is_image[id], &is_image[id + 1],
                   (history_length - 1 - id)*SIZEOF(*is_image));
     }
 
-    memset64(&entries[history_length - 1], 0, sizeof(*entries));
+    memset64(&clipsim_entries[history_length - 1], 0, sizeof(*clipsim_entries));
     memset64(&is_image[history_length - 1], 0, sizeof(*is_image));
     history_length -= 1;
 
@@ -776,16 +776,16 @@ history_remove(int32 id) {
 void
 history_reorder(int32 oldindex) {
     DEBUG_PRINT("%d", oldindex)
-    Entry aux = entries[oldindex];
+    Entry aux = clipsim_entries[oldindex];
     bool aux2 = is_image[oldindex];
     int32 n = history_length - 1 - oldindex;
 
     if (n > 0) {
-        memmove64(&entries[oldindex], &entries[oldindex + 1], n*SIZEOF(*entries));
+        memmove64(&clipsim_entries[oldindex], &clipsim_entries[oldindex + 1], n*SIZEOF(*clipsim_entries));
         memmove64(&is_image[oldindex], &is_image[oldindex + 1], n*SIZEOF(*is_image));
     }
     
-    memmove64(&entries[history_length - 1], &aux, SIZEOF(*entries));
+    memmove64(&clipsim_entries[history_length - 1], &aux, SIZEOF(*clipsim_entries));
     memmove64(&is_image[history_length - 1], &aux2, SIZEOF(*is_image));
     return;
 }
@@ -838,18 +838,18 @@ main(void) {
 
         history_length = 3;
 
-        entries[0].content = "alpha";
-        entries[0].content_length = 5;
+        clipsim_entries[0].content = "alpha";
+        clipsim_entries[0].content_length = 5;
         is_image[0] = false;
         length_counts[5] += 1;
 
-        entries[1].content = "beta";
-        entries[1].content_length = 4;
+        clipsim_entries[1].content = "beta";
+        clipsim_entries[1].content_length = 4;
         is_image[1] = false;
         length_counts[4] += 1;
 
-        entries[2].content = "gamma";
-        entries[2].content_length = 5;
+        clipsim_entries[2].content = "gamma";
+        clipsim_entries[2].content_length = 5;
         is_image[2] = false;
         length_counts[5] += 1;
 
@@ -860,9 +860,9 @@ main(void) {
         ASSERT_EQUAL(idx, -1);
 
         history_reorder(0);
-        ASSERT_EQUAL(entries[0].content_length, 4);
-        ASSERT_EQUAL(entries[1].content_length, 5);
-        ASSERT_EQUAL(entries[2].content_length, 5);
+        ASSERT_EQUAL(clipsim_entries[0].content_length, 4);
+        ASSERT_EQUAL(clipsim_entries[1].content_length, 5);
+        ASSERT_EQUAL(clipsim_entries[2].content_length, 5);
 
         history_length = 0;
         length_counts[4] = 0;
@@ -879,19 +879,19 @@ main(void) {
 
         memcpy64(text1, testing12, len12 + 1);
         history_append(text1, len12, true);
-        ASSERT_EQUAL(entries[0].content_length, len12);
+        ASSERT_EQUAL(clipsim_entries[0].content_length, len12);
         ASSERT_EQUAL(history_length, 1);
 
         memcpy64(text2, testing34, len34 + 1);
         history_append(text2, len34, true);
-        ASSERT_EQUAL(entries[0].content_length, len34);
+        ASSERT_EQUAL(clipsim_entries[0].content_length, len34);
         ASSERT_EQUAL(history_length, 2);
     }
 
     {
         history_remove(0);
         ASSERT_EQUAL(history_length, 1);
-        ASSERT_EQUAL(entries[0].content_length, 9);
+        ASSERT_EQUAL(clipsim_entries[0].content_length, 9);
     }
 
     {
@@ -905,7 +905,7 @@ main(void) {
 
         history_read();
         ASSERT_EQUAL(history_length, 1);
-        ASSERT_EQUAL(entries[0].content_length, 9);
+        ASSERT_EQUAL(clipsim_entries[0].content_length, 9);
     }
 
     {
