@@ -19,7 +19,7 @@ jobs:
       - name: Build and Test
         run: ./build.sh test
   ubuntu:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -42,7 +42,7 @@ jobs:
         run: xvfb-run -a ./build.sh test
 
   freebsd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: FreeBSD VM
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +56,7 @@ jobs:
             ./build.sh test
 
   openbsd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: OpenBSD VM
     steps:
       - uses: actions/checkout@v4
@@ -70,7 +70,7 @@ jobs:
             ./build.sh test
 
   netbsd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     name: NetBSD VM
     steps:
       - uses: actions/checkout@v4
