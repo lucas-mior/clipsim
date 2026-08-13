@@ -486,15 +486,27 @@ memcmp64(void *left, void *right, int64 size) {
     return memcmp(left, right, (size_t)size);
 }
 
+static uint64 rand_int_state = 0x853c49e6748fea9bull;
+
+void
+rand_int_seed(uint64 seed) {
+    if (seed == 0) {
+        seed = 0x853c49e6748fea9bull;
+    }
+    rand_int_state = seed;
+
+    return;
+}
+
 uint32
 rand_int(void) {
-    static uint64 state = 0x853c49e6748fea9bull;
-    uint64 old_state = state;
+    uint64 old_state = rand_int_state;
     uint32 xorshifted;
     uint32 rot;
     uint32 result;
 
-    state = old_state*6364136223846793005ull + 1442695040888963407ull;
+    rand_int_state = old_state*6364136223846793005ull
+                     + 1442695040888963407ull;
     xorshifted = (uint32)(((old_state >> 18u) ^ old_state) >> 27u);
     rot = (uint32)(old_state >> 59u);
     result = (xorshifted >> rot) | (xorshifted << ((0u - rot) & 31u));
@@ -2517,6 +2529,7 @@ util_is_integer(char *string) {
 static inline void
 util_functions_sink(void) {
     (void)util_functions_sink;
+    (void)rand_int_seed;
     (void)rand_int;
     (void)util_is_integer;
     (void)is_ident_start_char;
