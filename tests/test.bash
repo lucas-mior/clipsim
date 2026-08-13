@@ -35,6 +35,7 @@ dir=$(dirname "$(realpath "$0")")
 cd "$dir" || exit
 
 x11_cflags=$(pkg-config x11 --cflags)
+libmagic_cflags=$(pkg-config libmagic --cflags)
 x11_libs=$(pkg-config x11 --libs)
 
 clipsim_bin="../bin/clipsim"
@@ -94,7 +95,8 @@ incr_owner_bin="./incr_owner"
 
 trace_on
 gcc -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -I../cbase -I../ -O2 \
-    $x11_cflags $incr_owner_c $x11_libs -lm -o $incr_owner_bin
+    $x11_cflags $libmagic_cflags $incr_owner_c $x11_libs -lm \
+    -o $incr_owner_bin
 trace_off
 
 echo "Triggering normal INCR..."
