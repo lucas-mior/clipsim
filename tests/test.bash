@@ -20,7 +20,7 @@ clipsim_was_running=false
 if killall -SIGTERM clipsim 2>/dev/null; then
     clipsim_was_running=true
     sleep $interval
-    killall -SIGKILL clipsim
+    killall -SIGKILL clipsim 2>/dev/null || true
 fi
 
 set -e
@@ -41,12 +41,12 @@ $clipsim_bin --daemon &
 clipsim_daemon_pid=$!
 
 cleanup () {
-    kill -SIGKILL $clipsim_daemon_pid 2>/dev/null
+    kill -SIGKILL $clipsim_daemon_pid 2>/dev/null || true
     rm -rf "$TEST_DIR"
 
     if [ "$clipsim_was_running" = true ]; then
         XDG_CACHE_HOME="$old_xdg_cache_home" \
-            setsid -f clipsim -d > /dev/null 2>&1
+            setsid -f clipsim --daemon > /dev/null 2>&1
     fi
 }
 trap cleanup EXIT
