@@ -1,9 +1,9 @@
+#define CBASE_IMPLEMENT
+#include "cbase.h"
+
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include "../clipsim.h"
-
-#define CBASE_IMPLEMENT
-#include "cbase.h"
 
 int
 main(int argc, char **argv) {
