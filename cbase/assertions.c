@@ -646,7 +646,7 @@ a_bool_less_equal(void *p, ...) {
 
 #undef GENERATE_ASSERT_BOOLS
 
-#if 0 == TESTING_assert
+#if 0 == TESTING_assertions
 static inline void
 assert_functions_sink(void) {
     (void)assert_functions_sink;
