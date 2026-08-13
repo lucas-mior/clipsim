@@ -235,13 +235,13 @@ common_build_validate_mode () {
 }
 
 common_build_print_invocation () {
-    build_script=$1
+    project=$1
 
     if [ -n "${target:-}" ]; then
         printf '\n%s %s%s %s%s\n' \
-            "$build_script" "$RED" "$mode" "$target" "$RES"
+            "$project" "$RED" "$mode" "$target" "$RES"
     else
-        printf '\n%s %s%s%s\n' "$build_script" "$RED" "$mode" "$RES"
+        printf '\n%s %s%s%s\n' "$project" "$RED" "$mode" "$RES"
     fi
 
     return 0
