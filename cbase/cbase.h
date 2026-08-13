@@ -248,7 +248,6 @@ extern void xpthread_mutex_lock(pthread_mutex_t *);
 extern void xpthread_mutex_unlock(pthread_mutex_t *);
 #endif
 extern int xunlink(char *);
-#if TESTING
 extern void test_make_temp_dir(char *, int32, char *);
 extern void test_remove_tree(char *);
 extern void test_join_path(char *, int64, char *, char *);
@@ -256,7 +255,6 @@ extern void test_join_path(char *, int64, char *, char *);
 extern bool test_command_exists(char *);
 extern bool test_hardlink_supported(char *);
 extern bool test_symlink_supported(char *);
-#endif
 #endif
 extern void here_impl(char *, int32, char *);
 
