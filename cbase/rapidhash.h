@@ -286,27 +286,28 @@ readSmall(uint8 *p, uint64 k) {
  *  Returns a 64-bit hash.
  */
 RAPIDHASH_INLINE uint64
-rapidhash_internal(void *key, size_t len, uint64 seed, const uint64 *secret) {
+rapidhash_internal(void *key, int64 len, uint64 seed, const uint64 *secret) {
     uint8 *p = key;
     uint64 *s = (uint64 *)secret;
     uint64 a;
     uint64 b;
+    uint64 ulen = (uint64)len;
 
-    seed ^= rapid_mix(seed ^ secret[0], secret[1]) ^ len;
-    if (LIKELY(len <= 16)) {
-        if (LIKELY(len >= 4)) {
-            uint8 *plast = p + len - 4;
-            uint64 delta = ((len & 24) >> (len >> 3));
+    seed ^= rapid_mix(seed ^ secret[0], secret[1]) ^ ulen;
+    if (LIKELY(ulen <= 16)) {
+        if (LIKELY(ulen >= 4)) {
+            uint8 *plast = p + ulen - 4;
+            uint64 delta = ((ulen & 24) >> (ulen >> 3));
             a = (read32(p) << 32) | read32(plast);
             b = ((read32(p + delta) << 32) | read32(plast - delta));
-        } else if (LIKELY(len > 0)) {
-            a = readSmall(p, len);
+        } else if (LIKELY(ulen > 0)) {
+            a = readSmall(p, ulen);
             b = 0;
         } else {
             a = b = 0;
         }
     } else {
-        uint64 i = len;
+        uint64 i = ulen;
         if (UNLIKELY(i > 48)) {
             uint64 see1 = seed;
             uint64 see2 = seed;
@@ -351,17 +352,17 @@ rapidhash_internal(void *key, size_t len, uint64 seed, const uint64 *secret) {
     a ^= secret[1];
     b ^= seed;
     rapid_mum(&a, &b);
-    return rapid_mix(a ^ secret[0] ^ len, b ^ secret[1]);
+    return rapid_mix(a ^ secret[0] ^ ulen, b ^ secret[1]);
 }
 
 RAPIDHASH_INLINE uint64
-rapidhash_withSeed(void *key, uint64 len, uint64 seed) {
+rapidhash_withSeed(void *key, int64 len, uint64 seed) {
     return rapidhash_internal(key, len, seed, rapid_secret);
 }
 
 static uint64
 rapidhash(void *key, int64 len) {
-    return rapidhash_withSeed(key, (uint64)len, rapid_seed);
+    return rapidhash_withSeed(key, len, rapid_seed);
 }
 
 typedef struct {

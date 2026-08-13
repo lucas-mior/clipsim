@@ -180,7 +180,7 @@ extern int32 util_copy_file_sync(char *, char *);
 extern void util_die_notify(char *, char *, ...);
 extern bool util_equal_files(char *, char *);
 extern bool util_file_exists(char *);
-extern int32 util_filename_from(char *, int64, int);
+extern bool util_filename_from(char *, int64, int);
 extern int32 util_nthreads(void);
 extern int32 util_string_int32(int32 *, char *);
 extern void warn(char *, ...);
