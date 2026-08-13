@@ -121,15 +121,35 @@ jobs:
         with:
           usesh: true
           run: |
-            pkg_add pkgin
+            netbsd_release=$(uname -r)
+            netbsd_release=${netbsd_release%%_*}
+            netbsd_machine=$(uname -m)
+            case "$netbsd_machine" in
+            x86_64)
+              netbsd_machine=amd64
+              ;;
+            esac
+            netbsd_sets_url="https://cdn.netbsd.org/pub/NetBSD"
+            netbsd_sets_url="$netbsd_sets_url/NetBSD-$netbsd_release"
+            netbsd_sets_url="$netbsd_sets_url/$netbsd_machine/binary/sets"
+            if [ ! -x /usr/X11R7/bin/Xvfb ]; then
+              for netbsd_xset in xbase xcomp xetc xfont xserver; do
+                ftp -V -o "/tmp/$netbsd_xset.tar.xz" \
+                  "$netbsd_sets_url/$netbsd_xset.tar.xz"
+                tar -C / -xpf "/tmp/$netbsd_xset.tar.xz"
+              done
+            fi
+            export PATH="/usr/X11R7/bin:$PATH"
+            PKG_CONFIG_PATH=/usr/X11R7/lib/pkgconfig
+            PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/pkg/lib/pkgconfig"
+            export PKG_CONFIG_PATH
+            if ! command -v pkgin >/dev/null 2>&1; then
+              pkg_add pkgin
+            fi
             pkgin -y install \
               file \
-              libX11 \
-              libXfixes \
-              libXi \
               pkgconf \
-              xclip \
-              Xvfb
+              xclip
             export DISPLAY=:99
             Xvfb "$DISPLAY" -screen 0 1024x768x24 &
             xvfb_pid=$!
