@@ -303,7 +303,7 @@ common_build_test_all () {
 }
 
 common_build_run_analyzers () {
-    analyzer_mode=${1:-build}
+    analyzer_mode=${1:-debug}
     analyzer_gcc_cflags=${2:-}
 
     if [ -z "$analyzer_gcc_cflags" ]; then
