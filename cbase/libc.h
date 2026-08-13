@@ -43,7 +43,7 @@
   #define _NETBSD_SOURCE
 #endif
 
-#if OS_OPENBSD && !defined(_BSD_SOURCE)
+#if (OS_FREEBSD || OS_OPENBSD) && !defined(_BSD_SOURCE)
   #define _BSD_SOURCE
 #endif
 
