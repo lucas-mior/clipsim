@@ -258,14 +258,25 @@ common_build_unknown_mode () {
 }
 
 common_build_cross_all () {
+    cross_grep_out=${1:-}
+
     if [ "${target:-}" != "all" ]; then
         return 0
     fi
 
-    ncross=$(printf '%s\n' "$cross_targets" | wc -l)
+    cross_all_targets=$cross_targets
+    if [ -n "$cross_grep_out" ]; then
+        cross_all_targets=$(
+            printf '%s\n' "$cross_targets" \
+                | grep -v -- "$cross_grep_out" \
+                || true
+        )
+    fi
+
+    ncross=$(printf '%s\n' "$cross_all_targets" | wc -l)
     i=1
 
-    for cross_target in $cross_targets; do
+    for cross_target in $cross_all_targets; do
         echo "$i / $ncross"
         i=$((i+1))
         if ! "$0" cross "$cross_target" 2>&1 | head -n 200; then

@@ -94,7 +94,9 @@ clipboard_daemon_watch(void) {
             CLIPSIM_SIGNAL_NUMBER = NULL;
             CLIPSIM_SIGNAL_PROGRAM = NULL;
         }
+#if defined(SIGRTMIN)
         signal_number += SIGRTMIN;
+#endif
     } else {
         CLIPSIM_SIGNAL_NUMBER = NULL;
         CLIPSIM_SIGNAL_PROGRAM = NULL;
