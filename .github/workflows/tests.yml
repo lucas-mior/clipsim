@@ -13,11 +13,26 @@ jobs:
 
       - name: Install build deps
         run: |
-          xcode-select --install 2>/dev/null || true
+          brew install \
+            libmagic \
+            libx11 \
+            libxfixes \
+            libxi \
+            pkgconf \
+            xclip \
+            xorg-server
           cc --version
+          pkg-config --version
+          pkg-config --libs x11 xfixes xi libmagic
 
       - name: Build and Test
-        run: ./build.sh test
+        run: |
+          export DISPLAY=:99
+          Xvfb "$DISPLAY" -screen 0 1024x768x24 &
+          xvfb_pid=$!
+          trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
+          sleep 1
+          ./build.sh test
   ubuntu:
     runs-on: ubuntu-24.04
     steps:
