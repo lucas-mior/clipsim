@@ -14,7 +14,7 @@ fi
 # shellcheck disable=2086
 
 old_xdg_cache_home="$XDG_CACHE_HOME"
-interval=0.8
+interval=0.3
 
 reset_terminal () {
     if [ -t 0 ]; then
@@ -40,6 +40,23 @@ wait_for_clipboard_text () {
     if output=$(xclip -o -selection clipboard 2>/dev/null); then
         printf "%s" "$output"
     fi
+    return 1
+}
+
+wait_for_history_text () {
+    local expected="$1"
+    local dump="$TEST_DIR/history_wait"
+    local i
+
+    for ((i = 0; i < 30; i += 1)); do
+        if $clipsim_bin -p > "$dump" 2>/dev/null; then
+            if grep -aFq "$expected" "$dump"; then
+                return 0
+            fi
+        fi
+        sleep "$interval"
+    done
+
     return 1
 }
 
@@ -148,7 +165,12 @@ sleep $interval
 
 echo "recovery_target" | xclip -quiet -selection clipboard &
 pid_xclip=$!
-sleep $interval
+if ! wait_for_history_text "recovery_target"; then
+    kill -SIGTERM $pid_xclip 2>/dev/null || true
+    wait $pid_xclip 2>/dev/null || true
+    echo "FAIL: Daemon did not save recovery target before owner shutdown."
+    exit 1
+fi
 kill -SIGTERM $pid_xclip 2>/dev/null || true
 wait $pid_xclip 2>/dev/null || true
 
