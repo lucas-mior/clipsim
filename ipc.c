@@ -38,6 +38,7 @@ static bool ipc_daemon_dprintf(int32, char *, char *, ...)
 static void ipc_client_print_entries(int32 *);
 static void ipc_resolve_socket_name(void);
 static void ipc_make_directory(void);
+static int32 ipc_lock_exclusive_nonblock(int32);
 static void ipc_lock_daemon(void);
 static bool ipc_set_close_on_exec(int32, char *);
 static bool ipc_set_socket_timeout(int32, char *);
@@ -127,6 +128,17 @@ ipc_make_directory(void) {
     return;
 }
 
+int32
+ipc_lock_exclusive_nonblock(int32 fd) {
+    struct flock lock;
+
+    memset64(&lock, 0, sizeof(lock));
+    lock.l_type = F_WRLCK;
+    lock.l_whence = SEEK_SET;
+
+    return fcntl(fd, F_SETLK, &lock);
+}
+
 void
 ipc_lock_daemon(void) {
     DEBUG_PRINT("%s", ipc_lock.name)
@@ -141,8 +153,9 @@ ipc_lock_daemon(void) {
         fatal(EXIT_FAILURE);
     }
 
-    if (flock(ipc_lock.fd, LOCK_EX | LOCK_NB) < 0) {
-        if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+    if (ipc_lock_exclusive_nonblock(ipc_lock.fd) < 0) {
+        if ((errno == EACCES) || (errno == EAGAIN)
+            || (errno == EWOULDBLOCK)) {
             error("clipsim --daemon is already running.\n");
         } else {
             error("Error locking daemon lock %s: %s.\n",
