@@ -97,7 +97,21 @@ jobs:
         with:
           usesh: true
           run: |
+            pkg_add \
+              file \
+              libX11 \
+              libXfixes \
+              libXi \
+              pkgconf \
+              xclip \
+              Xvfb
+            export DISPLAY=:99
+            Xvfb "$DISPLAY" -screen 0 1024x768x24 &
+            xvfb_pid=$!
+            trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
+            sleep 1
             cc --version
+            pkg-config --version
             ./build.sh test
 
   netbsd:
@@ -111,5 +125,19 @@ jobs:
         with:
           usesh: true
           run: |
+            pkgin -y install \
+              file \
+              libX11 \
+              libXfixes \
+              libXi \
+              pkgconf \
+              xclip \
+              Xvfb
+            export DISPLAY=:99
+            Xvfb "$DISPLAY" -screen 0 1024x768x24 &
+            xvfb_pid=$!
+            trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
+            sleep 1
             cc --version
+            pkg-config --version
             ./build.sh test
