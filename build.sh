@@ -14,7 +14,9 @@ script=$(basename "$0")
 common_build_parse_args "$@"
 
 case "$mode" in
-build|callgrind|check|cross|debug|fast_feedback|install|test|test_all|uninstall|valgrind)
+build|callgrind|check|cross|debug|fast_feedback)
+    ;;
+install|test|test_all|uninstall|valgrind)
     ;;
 *)
     common_build_unknown_mode
