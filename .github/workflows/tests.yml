@@ -1,0 +1,72 @@
+name: Test on various platforms CI
+
+on:
+  push:
+    branches:
+  pull_request:
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          xcode-select --install 2>/dev/null || true
+          cc --version
+
+      - name: Build and Test
+        run: ./build.sh test
+  ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: cc --version
+
+      - name: Build and Test
+        run: ./build.sh test
+
+  freebsd:
+    runs-on: ubuntu-latest
+    name: FreeBSD VM
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and Test
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          run: |
+            cc --version
+            ./build.sh test
+
+  openbsd:
+    runs-on: ubuntu-latest
+    name: OpenBSD VM
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and Test
+        uses: vmactions/openbsd-vm@v1
+        with:
+          usesh: true
+          run: |
+            cc --version
+            ./build.sh test
+
+  netbsd:
+    runs-on: ubuntu-latest
+    name: NetBSD VM
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and Test
+        uses: vmactions/netbsd-vm@v1
+        with:
+          usesh: true
+          run: |
+            cc --version
+            ./build.sh test
