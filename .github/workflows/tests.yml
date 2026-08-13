@@ -52,7 +52,23 @@ jobs:
         with:
           usesh: true
           run: |
+            pkg install -y \
+              bash \
+              file \
+              gcc \
+              libX11 \
+              libXfixes \
+              libXi \
+              pkgconf \
+              xclip \
+              xorg-vfbserver
+            export DISPLAY=:99
+            Xvfb "$DISPLAY" -screen 0 1024x768x24 &
+            xvfb_pid=$!
+            trap 'kill "$xvfb_pid" 2>/dev/null || true' EXIT
+            sleep 1
             cc --version
+            pkg-config --version
             ./build.sh test
 
   openbsd:
