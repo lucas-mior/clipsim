@@ -125,6 +125,7 @@ jobs:
         with:
           usesh: true
           run: |
+            pkg_add pkgin
             pkgin -y install \
               file \
               libX11 \
