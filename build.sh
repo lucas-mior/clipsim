@@ -61,6 +61,11 @@ if [ "$CC" = "clang" ] || [ "$CC" = "zig cc" ]; then
     CFLAGS="$CFLAGS -Wno-used-but-marked-unused"
 fi
 
+CPPFLAGS="$CPPFLAGS $(pkg-config x11 --cflags)"
+CPPFLAGS="$CPPFLAGS $(pkg-config xfixes --cflags)"
+CPPFLAGS="$CPPFLAGS $(pkg-config xi --cflags)"
+CPPFLAGS="$CPPFLAGS $(pkg-config libmagic --cflags)"
+
 LDFLAGS="$LDFLAGS $(pkg-config x11 --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config xfixes --libs)"
 LDFLAGS="$LDFLAGS $(pkg-config xi --libs)"

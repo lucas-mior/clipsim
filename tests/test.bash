@@ -34,6 +34,9 @@ set -e
 dir=$(dirname "$(realpath "$0")")
 cd "$dir" || exit
 
+x11_cflags=$(pkg-config x11 --cflags)
+x11_libs=$(pkg-config x11 --libs)
+
 clipsim_bin="../bin/clipsim"
 TEST_DIR="/tmp/clipsim_test_bash"
 XDG_CACHE_HOME="$TEST_DIR/.cache"
@@ -90,7 +93,8 @@ incr_owner_c="./incr_owner.c"
 incr_owner_bin="./incr_owner"
 
 trace_on
-gcc -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -I../cbase -I../ -O2 $incr_owner_c -lX11 -lm -o $incr_owner_bin
+gcc -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -I../cbase -I../ -O2 \
+    $x11_cflags $incr_owner_c $x11_libs -lm -o $incr_owner_bin
 trace_off
 
 echo "Triggering normal INCR..."
@@ -201,7 +205,7 @@ unresponsive_bin="./unresponsive_owner"
 
 trace_on
 
-gcc -O2 $unresponsive_c -lX11 -lm -o $unresponsive_bin
+gcc -O2 $x11_cflags $unresponsive_c $x11_libs -lm -o $unresponsive_bin
 $unresponsive_bin &
 unresponsive_pid=$!
 
