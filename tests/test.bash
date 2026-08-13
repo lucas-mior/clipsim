@@ -16,6 +16,12 @@ fi
 old_xdg_cache_home="$XDG_CACHE_HOME"
 interval=0.3
 
+reset_terminal () {
+    if [ -t 0 ]; then
+        reset || true
+    fi
+}
+
 clipsim_was_running=false
 if killall -SIGTERM clipsim 2>/dev/null; then
     clipsim_was_running=true
@@ -74,7 +80,7 @@ sleep $interval
 
 echo "Triggering unsupported clipboard format..."
 head -n 5 /dev/random > $TEST_DIR/some_binary_format
-reset
+reset_terminal
 xclip -selection clipboard -t application/x-custom-format $TEST_DIR/some_binary_format
 od $TEST_DIR/some_binary_format > $TEST_DIR/some_binary_format.txt
 sleep $interval
@@ -211,7 +217,7 @@ fi
 kill -SIGKILL $unresponsive_pid 2>/dev/null
 sleep $interval
 
-reset
+reset_terminal
 
 printf "Resetted terminal after random garbage.\n"
 printf "All tests passed successfully!\n"
