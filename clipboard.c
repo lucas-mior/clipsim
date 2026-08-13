@@ -126,6 +126,7 @@ clipboard_daemon_watch(void) {
         char *save = NULL;
         ulong length;
         bool incr;
+        int32 clipboard_result;
 
         (void)XNextEvent(display, &xevent);
         if (DEBUGGING) {
@@ -145,9 +146,11 @@ clipboard_daemon_watch(void) {
             send_signal(CLIPSIM_SIGNAL_PROGRAM, signal_number);
         }
 
+        clipboard_result = clipboard_get_clipboard(&save, &length, &incr);
+
         xpthread_mutex_lock(&lock);
 
-        switch (clipboard_get_clipboard(&save, &length, &incr)) {
+        switch (clipboard_result) {
         case CLIPBOARD_TEXT:
             history_append(save, (int32)length, incr);
             break;
