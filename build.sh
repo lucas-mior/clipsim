@@ -59,6 +59,8 @@ if [ "$CC" = "clang" ] || [ "$CC" = "zig cc" ]; then
     CFLAGS="$CFLAGS -Wno-unsafe-buffer-usage"
     CFLAGS="$CFLAGS -Wno-unused-macros"
     CFLAGS="$CFLAGS -Wno-used-but-marked-unused"
+
+    CFLAGS="$CFLAGS -Wno-error=unneeded-internal-declaration"
 fi
 
 LDFLAGS="$LDFLAGS $(pkg-config x11 --libs)"
