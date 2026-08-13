@@ -383,6 +383,24 @@ clipboard_incremental_case(char **save, ulong *length) {
 
 #include "clipsim.c"
 
+static void
+clipboard_test_sleep_milliseconds(int32 milliseconds) {
+    struct timespec remaining;
+    struct timespec pause;
+
+    pause.tv_sec = milliseconds / 1000;
+    pause.tv_nsec = (milliseconds % 1000)*1000*1000;
+
+    while (nanosleep(&pause, &remaining) != 0) {
+        if (errno != EINTR) {
+            break;
+        }
+        pause = remaining;
+    }
+
+    return;
+}
+
 int
 main(void) {
     {
@@ -405,7 +423,7 @@ main(void) {
                 clipboard_daemon_watch();
             } else {
                 int32 status = 0;
-                usleep(200000);
+                clipboard_test_sleep_milliseconds(200);
                 kill(pid, SIGTERM);
                 wait(&status);
             }
@@ -504,7 +522,7 @@ main(void) {
                     free(big_chunk);
                     exit(0);
                 } else {
-                    usleep(100000);
+                    clipboard_test_sleep_milliseconds(100);
                     clipboard_incremental_case(&large_save, &large_len);
                     ASSERT_EQUAL(large_len, 0);
                     if (large_save != NULL) {
@@ -547,7 +565,7 @@ main(void) {
                     XCloseDisplay(d2);
                     exit(0);
                 } else {
-                    usleep(100000);
+                    clipboard_test_sleep_milliseconds(100);
                     clipboard_incremental_case(&small_save, &small_len);
                     ASSERT_EQUAL(small_len, 15);
                     ASSERT_EQUAL(memcmp64(small_save, "small_incr_test", 15), 0);
