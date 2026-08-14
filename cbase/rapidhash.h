@@ -33,8 +33,8 @@
  *   - rapidhash source repository: https://github.com/Nicoshev/rapidhash
  */
 
-#if !defined(RAPIDHASH_C)
-#define RAPIDHASH_C
+#if !defined(RAPIDHASH_H)
+#define RAPIDHASH_H
 
 #include "cbase.h"
 #if defined(_MSC_VER)
@@ -48,9 +48,9 @@
 #define RAPIDHASH_CONSTEXPR static const
 #if !defined(RAPIDHASH_INLINE)
 #if CC_GCC || CC_CLANG
-#define RAPIDHASH_INLINE inline __attribute__((always_inline))
+#define RAPIDHASH_INLINE static inline __attribute__((always_inline))
 #else
-#define RAPIDHASH_INLINE inline
+#define RAPIDHASH_INLINE static inline
 #endif
 #endif
 
@@ -360,7 +360,7 @@ rapidhash_withSeed(void *key, int64 len, uint64 seed) {
     return rapidhash_internal(key, len, seed, rapid_secret);
 }
 
-uint64
+static uint64
 rapidhash(void *key, int64 len) {
     return rapidhash_withSeed(key, len, rapid_seed);
 }
@@ -433,4 +433,4 @@ rapidhash128(void *key, uint64 len) {
     return rapidhash128_internal(key, len, rapid_seed, rapid_secret);
 }
 
-#endif /* RAPIDHASH_C */
+#endif /* RAPIDHASH_H */

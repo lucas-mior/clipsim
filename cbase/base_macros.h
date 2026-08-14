@@ -121,12 +121,12 @@ _Generic((SIZE), \
 #endif
 
 #if DEBUGGING
-  #define INLINE
+  #define INLINE static
 #else
   #if CC_GCC || CC_CLANG
-    #define INLINE inline __attribute__((always_inline))
+    #define INLINE static inline __attribute__((always_inline))
   #else
-    #define INLINE inline
+    #define INLINE static inline
   #endif
 #endif
 

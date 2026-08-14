@@ -23,10 +23,8 @@ error () {
     return
 }
 
-if [ "$(basename "$0")" != "common.sh" ]; then
 # shellcheck source=./cbase/functions_forbidden.sh
 . ./cbase/functions_forbidden.sh
-fi
 
 common_command_exists () {
     command -v "$1" > /dev/null 2>&1
