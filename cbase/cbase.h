@@ -165,11 +165,32 @@ extern int64 clamp_int64(int64, int64, int64);
 extern int32 clamp_int32(int32, int32, int32);
 extern int64 square_int64(int64);
 extern int32 square_int32(int32);
-extern bool32 strequal(char *, char *);
-extern bool32 strequal2(char *, int32, char *, int32);
+
+INLINE bool32
+strequal(char *s1, char *s2) {
+    return !strcmp(s1, s2);
+}
+
+INLINE bool32
+strequal2(char *a, int32 a_len, char *b, int32 b_len) {
+    if (a_len != b_len) {
+        return false;
+    }
+
+    return !memcmp64(a, b, a_len);
+}
+
+INLINE bool32
+optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
+    if ((a == NULL) || (b == NULL)) {
+        return false;
+    }
+
+    return strequal2(a, a_len, b, b_len);
+}
+
 extern bool32 striqual(char *, char *);
 extern bool32 striqual2(char *, int32, char *, int32);
-bool32 optional_strequal(char *a, int32 a_len, char *b, int32 b_len);
 extern int64 strftime2(char *, int64, char *, struct tm *);
 extern int strncmp32(char *, char *, int64);
 extern char *strncpy32(char *, char *, int64);
