@@ -638,7 +638,7 @@ common_gcc_flags_to_msvc() {
                 cl) continue ;;
                 esac
                 ;;
-            -lm|-lpthread)
+            -lm|-lpthread|-pthread)
                 case "$compiler" in
                 clang-cl)
                     case "$CLANG_CL_TARGET" in
