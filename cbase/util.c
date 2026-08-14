@@ -155,7 +155,7 @@ memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
     return result;
 }
 
-bool
+INLINE bool32
 strequal(char *s1, char *s2) {
     return !strcmp(s1, s2);
 }
@@ -306,12 +306,12 @@ striqual_ascii_lower(char c) {
     return c;
 }
 
-bool
+bool32
 striqual(char *s1, char *s2) {
     return striqual2(s1, strlen32(s1), s2, strlen32(s2));
 }
 
-bool
+bool32
 optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
     if ((a == NULL) || (b == NULL)) {
         return false;
@@ -320,7 +320,7 @@ optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
     return strequal2(a, a_len, b, b_len);
 }
 
-bool
+bool32
 strequal2(char *a, int32 a_len, char *b, int32 b_len) {
     if (a_len != b_len) {
         return false;
@@ -332,7 +332,7 @@ strequal2(char *a, int32 a_len, char *b, int32 b_len) {
     return true;
 }
 
-bool
+bool32
 striqual2(char *a, int32 a_len, char *b, int32 b_len) {
     if (DEBUGGING) {
         striqual_validate_ascii_utf8(a, a_len);
@@ -340,15 +340,15 @@ striqual2(char *a, int32 a_len, char *b, int32 b_len) {
     }
 
     if (a_len != b_len) {
-        return false;
+        return 0;
     }
     for (int32 i = 0; i < a_len; i += 1) {
         if (striqual_ascii_lower(a[i]) != striqual_ascii_lower(b[i])) {
-            return false;
+            return 0;
         }
     }
 
-    return true;
+    return 1;
 }
 
 void *
