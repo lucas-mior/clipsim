@@ -36,7 +36,8 @@ if [ -n "$BASH_VERSION" ]; then
 fi
 
 alias trace_on='set -x'
-alias trace_off='{ set +x; } 2>/dev/null'
+alias trace_off='set -x'
+# alias trace_off='{ set +x; } 2>/dev/null'
 
 common_get_compiler() {
     case "$1" in

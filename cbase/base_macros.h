@@ -156,6 +156,19 @@ _Generic((SIZE), \
   #define __has_builtin(x) 0
 #endif
 
+#if !defined(__has_attribute)
+  #define __has_attribute(x) 0
+#endif
+
+#if !defined(FALLTHROUGH)
+  #if (CC_GCC && (__GNUC__ >= 7)) \
+    || (CC_CLANG && __has_attribute(fallthrough))
+    #define FALLTHROUGH __attribute__((fallthrough))
+  #else
+    #define FALLTHROUGH ((void)0)
+  #endif
+#endif
+
 #if __has_builtin(__builtin_unreachable)
   #define UNREACHABLE() __builtin_unreachable()
 #elif defined(_MSC_VER)
