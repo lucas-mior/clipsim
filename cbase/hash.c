@@ -13,7 +13,7 @@
 #include "libc.h"
 #include "base_macros.h"
 #include "primitives.h"
-#include "rapidhash.c"
+#include "rapidhash.h"
 
 #define HASH_SLOT_USED     1
 #define HASH_SLOT_FREE     0
@@ -370,7 +370,7 @@ CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
     return;
 }
 
-static INLINE bool
+INLINE bool
 CAT(hash_probe_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
 #if !HASH_KEY_FIXED_LEN
                             , int32 key_length
@@ -584,7 +584,7 @@ CAT(hash_overwrite_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
 
 #endif /* HASH_VALUE_TYPE: overwrite is only for maps, not sets. */
 
-static INLINE bool
+INLINE bool
 CAT(hash_lookup_pre_calc_, HASH_TYPE)(struct Map *map,
                                       HASH_KEY_TYPE *key
 #if !HASH_KEY_FIXED_LEN
@@ -613,7 +613,7 @@ CAT(hash_lookup_pre_calc_, HASH_TYPE)(struct Map *map,
     return false;
 }
 
-static INLINE bool
+INLINE bool
 CAT(hash_lookup_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
 #if !HASH_KEY_FIXED_LEN
                              , int32 key_length

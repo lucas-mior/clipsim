@@ -155,7 +155,7 @@ memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
     return result;
 }
 
-INLINE bool32
+inline bool32
 strequal(char *s1, char *s2) {
     return !strcmp(s1, s2);
 }
