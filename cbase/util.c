@@ -155,11 +155,6 @@ memmem64(void *haystack, int64 hay_len, void *needle, int64 needle_len) {
     return result;
 }
 
-inline bool32
-strequal(char *s1, char *s2) {
-    return !strcmp(s1, s2);
-}
-
 #if !HAS_POSIX_WIN_SUBSET
 char *optarg = NULL;
 int optind = 1;
@@ -309,27 +304,6 @@ striqual_ascii_lower(char c) {
 bool32
 striqual(char *s1, char *s2) {
     return striqual2(s1, strlen32(s1), s2, strlen32(s2));
-}
-
-bool32
-optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
-    if ((a == NULL) || (b == NULL)) {
-        return false;
-    }
-
-    return strequal2(a, a_len, b, b_len);
-}
-
-bool32
-strequal2(char *a, int32 a_len, char *b, int32 b_len) {
-    if (a_len != b_len) {
-        return false;
-    }
-    if (memcmp64(a, b, a_len)) {
-        return false;
-    }
-
-    return true;
 }
 
 bool32

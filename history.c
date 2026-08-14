@@ -696,9 +696,7 @@ history_recover(int32 id) {
     e = &clipsim_entries[id];
 
     if ((istext = (is_image[id] == false))) {
-        if (pipe(fd) < 0) {
-            util_die_notify("Error creating pipe: %s\n", strerror(errno));
-        }
+        xpipe(fd);
     }
 
     switch (fork()) {
@@ -715,9 +713,11 @@ history_recover(int32 id) {
                    "image/png", e->content, NULL);
         }
 
-        util_die_notify("Error in exec(%s): %s", xclip, strerror(errno));
+        error("Error executing xclip: %s\n", strerror(errno));
+        _exit(EXIT_FAILURE);
     case -1:
-        util_die_notify("Error in fork(%s): %s", xclip, strerror(errno));
+        error("Error forking: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
     default:
         if (istext) {
             XCLOSE(&fd[0]);
