@@ -45,12 +45,12 @@
 #endif
 
 #define NOEXCEPT
-#define RAPIDHASH_CONSTEXPR static const
+#define RAPIDHASH_CONSTEXPR const
 #if !defined(RAPIDHASH_INLINE)
 #if CC_GCC || CC_CLANG
-#define RAPIDHASH_INLINE static inline __attribute__((always_inline))
+#define RAPIDHASH_INLINE inline __attribute__((always_inline))
 #else
-#define RAPIDHASH_INLINE static inline
+#define RAPIDHASH_INLINE inline
 #endif
 #endif
 
@@ -360,7 +360,7 @@ rapidhash_withSeed(void *key, int64 len, uint64 seed) {
     return rapidhash_internal(key, len, seed, rapid_secret);
 }
 
-static uint64
+uint64
 rapidhash(void *key, int64 len) {
     return rapidhash_withSeed(key, len, rapid_seed);
 }
