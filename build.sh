@@ -10,7 +10,6 @@ cd "$dir" || exit
 
 script=$(basename "$0")
 
-
 common_build_parse_args "$@"
 
 case "$mode" in
@@ -28,8 +27,8 @@ common_build_print_invocation "$script"
 PREFIX="${PREFIX:-/usr/local}"
 DESTDIR="${DESTDIR:-/}"
 
-program=$(common_get_program "$0")
-exe="bin/$program"
+project=$(common_get_program "$0")
+exe="bin/$project"
 mkdir -p "$(dirname "$exe")"
 
 CC=$(common_get_compiler "$mode")
@@ -118,7 +117,7 @@ if [ "$mode" = "cross" ]; then
         LDFLAGS="$LDFLAGS -lpthread"
         ;;
     *windows*)
-        exe="bin/$program.exe"
+        exe="bin/$project.exe"
         ;;
     *)
         LDFLAGS="$LDFLAGS -lpthread"
@@ -131,25 +130,25 @@ fi
 case "$mode" in
 uninstall)
     trace_on
-    rm -f ${DESTDIR}${PREFIX}/bin/${program}
-    rm -f ${DESTDIR}${PREFIX}/man/man1/${program}.1
-    rm -f ${DESTDIR}${PREFIX}/share/fish/vendor_completions.d/${program}.fish
-    rm -f ${DESTDIR}${PREFIX}/share/bash-completion/completions/${program}
-    rm -f ${DESTDIR}${PREFIX}/share/zsh/site-functions/_${program}
-    rm -f ${DESTDIR}${PREFIX}/share/licenses/${program}/LICENSE
+    rm -f ${DESTDIR}${PREFIX}/bin/${project}
+    rm -f ${DESTDIR}${PREFIX}/man/man1/${project}.1
+    rm -f ${DESTDIR}${PREFIX}/share/fish/vendor_completions.d/${project}.fish
+    rm -f ${DESTDIR}${PREFIX}/share/bash-completion/completions/${project}
+    rm -f ${DESTDIR}${PREFIX}/share/zsh/site-functions/_${project}
+    rm -f ${DESTDIR}${PREFIX}/share/licenses/${project}/LICENSE
     exit
     ;;
 install)
-    if [ ! -f bin/$program ]; then
+    if [ ! -f bin/$project ]; then
         $0 build
     fi
     trace_on
-    install -Dm755 bin/${program}              ${DESTDIR}${PREFIX}/bin/${program}
-    install -Dm644 ${program}.1                ${DESTDIR}${PREFIX}/man/man1/${program}.1
-    install -Dm644 completions/${program}.fish ${DESTDIR}${PREFIX}/share/fish/vendor_completions.d/${program}.fish
-    install -Dm644 completions/${program}.bash ${DESTDIR}${PREFIX}/share/bash-completion/completions/${program}
-    install -Dm644 completions/${program}.zsh  ${DESTDIR}${PREFIX}/share/zsh/site-functions/_${program}
-    install -Dm644 LICENSE                     ${DESTDIR}${PREFIX}/share/licenses/${program}/LICENSE
+    install -Dm755 bin/${project}              ${DESTDIR}${PREFIX}/bin/${project}
+    install -Dm644 ${project}.1                ${DESTDIR}${PREFIX}/man/man1/${project}.1
+    install -Dm644 completions/${project}.fish ${DESTDIR}${PREFIX}/share/fish/vendor_completions.d/${project}.fish
+    install -Dm644 completions/${project}.bash ${DESTDIR}${PREFIX}/share/bash-completion/completions/${project}
+    install -Dm644 completions/${project}.zsh  ${DESTDIR}${PREFIX}/share/zsh/site-functions/_${project}
+    install -Dm644 LICENSE                     ${DESTDIR}${PREFIX}/share/licenses/${project}/LICENSE
     exit
     ;;
 test)
