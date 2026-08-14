@@ -45,6 +45,8 @@ typedef ushort uint16;
 typedef uint   uint32;
 typedef ullong uint64;
 
+typedef int32 bool32;
+
 typedef uintptr_t uintptr;
 typedef intptr_t  intptr;
 
