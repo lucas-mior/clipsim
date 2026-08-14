@@ -11,18 +11,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create Homebrew cache dir
+        run: mkdir -p .cache/homebrew
+
       - name: Cache Homebrew downloads
         uses: actions/cache@v5
         with:
-          path: ~/Library/Caches/Homebrew
-          key: ${{ runner.os }}-homebrew-${{ runner.arch }}-${{ hashFiles('.github/workflows/tests.yml') }}
+          path: .cache/homebrew
+          key: ${{ runner.os }}-homebrew-${{ runner.arch }}-clipsim-v1
           restore-keys: |
-            ${{ runner.os }}-homebrew-${{ runner.arch }}-
+            ${{ runner.os }}-homebrew-${{ runner.arch }}-clipsim-
 
       - name: Install build deps
         env:
+          HOMEBREW_CACHE: ${{ github.workspace }}/.cache/homebrew
           HOMEBREW_NO_INSTALL_CLEANUP: 1
         run: |
+          brew --cache
           brew install \
             libmagic \
             libx11 \
@@ -130,7 +135,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: .cache/netbsd-xsets
-          key: netbsd-xsets-${{ hashFiles('.github/workflows/tests.yml') }}
+          key: netbsd-xsets-v1
           restore-keys: |
             netbsd-xsets-
 
