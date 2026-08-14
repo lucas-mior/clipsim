@@ -7,15 +7,11 @@
 #include "primitives.h"
 #include "base_macros.h"
 
-#if !defined(ALIGNMENT)
-#define ALIGNMENT 16
-#endif
-
 #define MEM_FREED 0xDC
 #define MEM_MALLOCED_UNINITIALIZED 0xCD
 #define MEM_DONT_READ 0xBD
 
-#define MEMORY_PADDING ((int32)ALIGNMENT)
+#define MEMORY_PADDING ((int32)32)
 
 #if !defined(TESTING_memory)
 #define TESTING_memory 0

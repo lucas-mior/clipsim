@@ -25,14 +25,42 @@ static int64 UNUSED here_counter = 0;
 
 #define error(...)  error_impl(__FILE__, __LINE__, FUNC__, __VA_ARGS__)
 #define error2(...) fprintf(stderr, __VA_ARGS__)
-extern int32 optional_strlen32(char *);
-extern int32 strlen32(char *);
 extern noreturn void fatal(int32);
 extern void error_impl(char *, int32, char *, char *, ...)
     ATTR_PRINTF(4, 5);
 extern int memcmp64(void *, void *, int64);
 extern void *memmem64(void *, int64, void *, int64);
+extern void *memchr64(void *, int32, int64);
 extern void *memrchr64(void *, int32, int64);
+
+INLINE int32
+strlen32(char *string) {
+    size_t len;
+
+    if (DEBUGGING) {
+        if (string == NULL) {
+            TRAP();
+        }
+    }
+    len = strlen(string);
+
+    if (DEBUGGING) {
+        if (len >= INT32_MAX) {
+            error("Error: string (%.*s ...) is too long.\n", 50, string);
+            fatal(EXIT_FAILURE);
+        }
+    }
+
+    return (int32)len;
+}
+
+INLINE int32
+optional_strlen32(char *string) {
+    if (string == NULL) {
+        return 0;
+    }
+    return strlen32(string);
+}
 
 #include "i18n.h"
 #include "memory.h"
@@ -114,12 +142,11 @@ extern char *ends_with(char *, int32, char *, int32);
 extern void error_async_safe(char *);
 extern bool is_ident_char(char);
 extern bool is_ident_start_char(char);
-extern void *memchr64(void *, int32, int64);
 extern void normalize(char *restrict, int32 *restrict);
 extern bool parse_option(char **, char *, char *);
 extern char *path_basename(char *, int32);
 extern void print_timings(char *, int32, char *, int64,
-                                  struct timespec, struct timespec);
+                          struct timespec, struct timespec);
 extern void qsort64(void *, int64, int64, int (*)(void *, void *));
 extern void rand_int_seed(uint64);
 extern uint32 rand_int(void);
@@ -145,18 +172,14 @@ extern char *sb_opt_cstr(StrBuilder *buffer);
 extern void send_signal(char *, int32);
 extern int32 snprintf2(char *, int64, char *, ...);
 extern StrBuilder *str_builder_array_append(StrBuilderArray *);
-extern bool str_builder_array_append_copy(StrBuilderArray *,
-                                                  StrBuilder *);
+extern bool str_builder_array_append_copy(StrBuilderArray *, StrBuilder *);
 extern void str_builder_array_clear(StrBuilderArray *);
-extern bool str_builder_array_copy(StrBuilderArray *,
-                                           StrBuilderArray *);
+extern bool str_builder_array_copy(StrBuilderArray *, StrBuilderArray *);
 extern void str_builder_array_destroy(StrBuilderArray *);
 extern void str_builder_array_init(StrBuilderArray *);
-extern void str_builder_array_move(StrBuilderArray *,
-                                           StrBuilderArray *);
+extern void str_builder_array_move(StrBuilderArray *, StrBuilderArray *);
 extern bool str_builder_array_reserve(StrBuilderArray *, int32);
-extern void str_builder_array_swap(StrBuilderArray *,
-                                           StrBuilderArray *);
+extern void str_builder_array_swap(StrBuilderArray *, StrBuilderArray *);
 extern int32 string_from_strings(char *, int32, char *, char **, int32);
 extern int32 string_from_doubles(char *, int32, char *, double *, int32);
 extern double clamp_double(double, double, double);
@@ -166,12 +189,41 @@ extern int32 clamp_int32(int32, int32, int32);
 extern int64 square_int64(int64);
 extern int32 square_int32(int32);
 
-INLINE bool32
+#define MEM_LITERAL_SHORT_N 2
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 3
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 4
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 5
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 6
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 7
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 8
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 9
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 10
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 11
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 12
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 13
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 14
+#include "mem_literal_short.h"
+#define MEM_LITERAL_SHORT_N 15
+#include "mem_literal_short.h"
+
+INLINE UNUSED bool32
 strequal(char *s1, char *s2) {
     return !strcmp(s1, s2);
 }
 
-INLINE bool32
+INLINE UNUSED bool32
 strequal2(char *a, int32 a_len, char *b, int32 b_len) {
     if (a_len != b_len) {
         return false;
@@ -180,7 +232,7 @@ strequal2(char *a, int32 a_len, char *b, int32 b_len) {
     return !memcmp64(a, b, a_len);
 }
 
-INLINE bool32
+INLINE UNUSED bool32
 optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
     if ((a == NULL) || (b == NULL)) {
         return false;
@@ -314,6 +366,39 @@ _Generic((VAR), \
 #define MEMMEM_4(LONG, LONG_LEN, SHORT, LEN) \
     memmem64(LONG, LONG_LEN, SHORT, LEN)
 #define MEMMEM(...) SELECT_ON_NUM_ARGS(MEMMEM_, __VA_ARGS__)
+
+#define STRLIT_ARRAY(LITERAL, SIZE) \
+    ((void)SIZEOF(struct { \
+        _Static_assert(sizeof(LITERAL) <= ((SIZE) + 1), \
+                       "string literal does not fit in STRLIT_ARRAY"); \
+        char dummy; \
+    }), \
+    (char[SIZE]){ LITERAL })
+
+#define MEM_LITERAL_SHORT_LENGTHS(X) \
+    X(2), \
+    X(3), \
+    X(4), \
+    X(5), \
+    X(6), \
+    X(7), \
+    X(8), \
+    X(9), \
+    X(10), \
+    X(11), \
+    X(12), \
+    X(13), \
+    X(14), \
+    X(15)
+
+#define MEM_LITERAL_SHORT_GENERIC_SLOT(N) \
+    char (*)[N]: CAT(mem_literal_short_, N)
+
+#define MEM_LITERAL_SHORT(HAYSTACK, HAYSTACK_LEN, LITERAL) \
+_Generic(&(char [STRLIT_LEN(LITERAL)]){0}, \
+    MEM_LITERAL_SHORT_LENGTHS(MEM_LITERAL_SHORT_GENERIC_SLOT), \
+    default: memmem64 \
+)(HAYSTACK, HAYSTACK_LEN, LITERAL, STRLIT_LEN(LITERAL))
 
 #define BEGINS_WITH_3(STRING, STRING_LEN, PREFIX) \
     begins_with(STRING, STRING_LEN, PREFIX, strlen32(PREFIX))

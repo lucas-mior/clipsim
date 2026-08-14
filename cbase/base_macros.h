@@ -100,7 +100,14 @@ _Generic((SIZE), \
     int:    ALIGN_POWER_OF_2_((uint)SIZE,   (uint)A)    \
 )
 
+#if defined(__AVX2__) || defined(__AVX__)
+#define ALIGNMENT 32ul
+#elif defined(__SSE__) || defined(__x86_64__)
 #define ALIGNMENT 16ul
+#else
+#define ALIGNMENT 8ul
+#endif
+
 #if defined(ALIGN)
 #undef ALIGN
 #endif
