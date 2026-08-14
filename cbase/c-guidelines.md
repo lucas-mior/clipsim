@@ -793,6 +793,12 @@ int main(void) {
   * Exceptions: Some files in `cbase/` are not allowed to include `cbase.h`
     because `cbase.h` itself depends on them.
 
+## libc functions
+In general, avoid using libc functions.  In particular, never use any function
+listed in `functions_never_use.txt`; Functions listed in
+`functions_allowed_cbase_only.txt` may be used (only to write a wrapper for it)
+in `cbase/`, but not in any project main code (use the wrapper instead).
+
 ## Missing cases
 
 If these guides miss some case, decide based on the files in `cbase/`. If you
