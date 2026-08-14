@@ -60,6 +60,46 @@ wait_for_history_text () {
     return 1
 }
 
+run_with_timeout () {
+    local seconds="$1"
+    local command_pid
+    local watcher_pid
+    local status
+
+    shift
+
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "$seconds" "$@"
+        return
+    fi
+    if command -v gtimeout >/dev/null 2>&1; then
+        gtimeout "$seconds" "$@"
+        return
+    fi
+
+    "$@" &
+    command_pid=$!
+
+    (
+        sleep "$seconds"
+        kill -SIGTERM "$command_pid" 2>/dev/null || true
+        sleep 1
+        kill -SIGKILL "$command_pid" 2>/dev/null || true
+    ) &
+    watcher_pid=$!
+
+    if wait "$command_pid"; then
+        status=0
+    else
+        status=$?
+    fi
+
+    kill -SIGTERM "$watcher_pid" 2>/dev/null || true
+    wait "$watcher_pid" 2>/dev/null || true
+
+    return "$status"
+}
+
 clipsim_was_running=false
 if killall -SIGTERM clipsim 2>/dev/null; then
     clipsim_was_running=true
@@ -255,7 +295,7 @@ unresponsive_pid=$!
 trace_off
 sleep 1
 
-if ! timeout 2 $clipsim_bin -i 0 > /dev/null 2>&1; then
+if ! run_with_timeout 2 "$clipsim_bin" -i 0 > /dev/null 2>&1; then
     echo "FAIL: Daemon deadlocked trying to read from unresponsive clipboard owner."
     kill -SIGKILL $unresponsive_pid 2>/dev/null
     exit 1
