@@ -11,7 +11,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache Homebrew downloads
+        uses: actions/cache@v5
+        with:
+          path: ~/Library/Caches/Homebrew
+          key: ${{ runner.os }}-homebrew-${{ runner.arch }}-${{ hashFiles('.github/workflows/tests.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-homebrew-${{ runner.arch }}-
+
       - name: Install build deps
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
         run: |
           brew install \
             libmagic \
@@ -116,6 +126,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache NetBSD X sets
+        uses: actions/cache@v5
+        with:
+          path: .cache/netbsd-xsets
+          key: netbsd-xsets-${{ hashFiles('.github/workflows/tests.yml') }}
+          restore-keys: |
+            netbsd-xsets-
+
       - name: Build and Test
         uses: vmactions/netbsd-vm@v1
         with:
@@ -134,11 +152,18 @@ jobs:
             netbsd_sets_url="$netbsd_sets_url/NetBSD-$netbsd_release"
             netbsd_sets_url="$netbsd_sets_url/$netbsd_machine/binary/sets"
 
+            netbsd_xsets_cache="${GITHUB_WORKSPACE:-$PWD}/.cache/netbsd-xsets"
+            netbsd_xsets_cache="$netbsd_xsets_cache/$netbsd_release/$netbsd_machine"
+            mkdir -p "$netbsd_xsets_cache"
+
             if [ ! -x /usr/X11R7/bin/Xvfb ]; then
               for netbsd_xset in xbase xcomp xetc xfont xserver; do
-                ftp -V -o "/tmp/$netbsd_xset.tar.xz" \
-                  "$netbsd_sets_url/$netbsd_xset.tar.xz"
-                tar -C / -xpf "/tmp/$netbsd_xset.tar.xz"
+                netbsd_xset_file="$netbsd_xsets_cache/$netbsd_xset.tar.xz"
+                if [ ! -f "$netbsd_xset_file" ]; then
+                  ftp -V -o "$netbsd_xset_file" \
+                    "$netbsd_sets_url/$netbsd_xset.tar.xz"
+                fi
+                tar -C / -xpf "$netbsd_xset_file"
               done
             fi
 
