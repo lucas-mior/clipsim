@@ -1028,28 +1028,6 @@ util_segv_handler(int32 unused) {
     _exit(EXIT_FAILURE);
 }
 
-noreturn void
-util_die_notify(char *program_name, char *format, ...) {
-    int32 n;
-    va_list args;
-    char buffer[BUFSIZ];
-
-    va_start(args, format);
-    n = vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-
-    if ((n < 0) || (n >= SIZEOF(buffer))) {
-        fatal(EXIT_FAILURE);
-    }
-
-    buffer[n] = '\0';
-    write64(STDERR_FILENO, buffer, (uint32)n + 1);
-    for (uint32 i = 0; i < LENGTH(notifiers); i += 1) {
-        execlp(notifiers[i], notifiers[i], "-u", "critical", program_name,
-               buffer, NULL);
-    }
-    fatal(EXIT_FAILURE);
-}
 #endif
 
 int32
@@ -2553,7 +2531,6 @@ util_functions_sink(void) {
     (void)util_copy_file_sync;
     (void)util_copy_file_async;
     (void)send_signal;
-    (void)util_die_notify;
 #endif
     (void)util_equal_files;
 
@@ -3344,7 +3321,6 @@ main(int argc, char **argv) {
     NCALLS(1);
 
 #if OS_UNIX
-    (void)util_die_notify;
     (void)util_segv_handler;
     (void)util_copy_file_sync;
     (void)util_copy_file_async;
