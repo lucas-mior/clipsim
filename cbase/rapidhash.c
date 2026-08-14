@@ -45,7 +45,7 @@
 #endif
 
 #define NOEXCEPT
-#define RAPIDHASH_CONSTEXPR const
+#define RAPIDHASH_CONSTEXPR static const
 #if !defined(RAPIDHASH_INLINE)
 #if CC_GCC || CC_CLANG
 #define RAPIDHASH_INLINE inline __attribute__((always_inline))
