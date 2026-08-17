@@ -515,11 +515,11 @@ random_ascii_string(char *buffer, int32 capacity, int32 min_len) {
 
     range = max_len - len + 1;
     if (range > 1) {
-        len = len + (rand() % range);
+        len = len + (rand_int() % range);
     }
 
     for (int32 i = 0; i < len; i += 1) {
-        int32 ascii_val = 32 + (rand() % 95);
+        int32 ascii_val = 32 + (rand_int() % 95);
         buffer[i] = (char)ascii_val;
     }
     buffer[len] = '\0';
@@ -3144,9 +3144,9 @@ main(int argc, char **argv) {
     }
 #endif
 
-    srand((uint)time(NULL));
+    rand_int_seed((uint64)time(NULL));
     for (int i = 0; i < 10; i += 1) {
-        int n = rand() - RAND_MAX / 2;
+        int n = rand_int() - INT32_MAX / 2;
         char itoa_buffer[32];
         ITOA(itoa_buffer, n);
         ASSERT_EQUAL(atoi2(itoa_buffer), n);
@@ -3328,7 +3328,7 @@ main(int argc, char **argv) {
         ASSERT_POSITIVE(name2_len);
 #endif
         for (int32 i = 0; i < name2_len; i += 1) {
-            uint32 c = (uint32)rand() % (sizeof(characters) - 1);
+            uint32 c = (uint32)rand_int() % (sizeof(characters) - 1);
             name2[i] = characters[c];
         }
         name2[name2_len] = '\0';

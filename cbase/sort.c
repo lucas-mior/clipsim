@@ -39,8 +39,8 @@ sort_shuffle(void *array, int64 n, int64 size) {
 
     if (n > 1) {
         for (int64 i = 0; i < n - 1; i += 1) {
-            int64 rnd = rand();
-            int64 j = i + rnd / (RAND_MAX / (n - i) + 1);
+            int64 rnd = rand_int();
+            int64 j = i + rnd / (INT32_MAX / (n - i) + 1);
 
             memcpy64(tmp, arr + j*size, size);
             memcpy64(arr + j*size, arr + i*size, size);
@@ -215,9 +215,9 @@ test_sorting(int32 n, int32 p) {
 
     printf("n_sub[P - 1] = %d\n", n_sub[p - 1]);
 
-    srand(42);
+    rand_int_seed(42);
     for (int32 i = 0; i < n; i += 1) {
-        array[i] = rand() % MAXI;
+        array[i] = rand_int() % MAXI;
     }
 
     sort_shuffle(array, n, SIZEOF(*array));
