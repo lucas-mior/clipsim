@@ -841,18 +841,19 @@ static String
 random_string(Arena *arena, uint32 nbytes) {
     char characters[] = "abcdefghijklmnopqrstuvwxyz1234567890";
     String string;
-    int32 len = (int32)(nbytes + (uint)rand() % 16u);
+    int32 len = (int32)(nbytes + (uint32)rand_int() % 16u);
     int32 size = len + 1;
 
     string.s = arena_push(arena, size);
 
     for (int32 i = 0; i < len; i += 1) {
-        int32 ci = (int32)((size_t)rand() % (sizeof(characters) - 1));
+        int32 ci = (int32)((uint32)rand_int()
+                           % (sizeof(characters) - 1));
         string.s[i] = characters[ci];
     }
     string.s[len] = '\0';
     string.len = len;
-    string.value = rand();
+    string.value = rand_int();
 
     return string;
 }
@@ -896,7 +897,7 @@ main(void) {
 
     ASSERT(!hash_lookup_map(map, "does_not_exist", 14, &test));
 
-    srand(42);
+    rand_int_seed(42);
     for (uint32 i = 0; i < NSTRINGS; i += 1) {
         strings[i] = random_string(arena, NBYTES);
     }

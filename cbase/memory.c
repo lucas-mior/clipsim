@@ -1067,7 +1067,7 @@ int main(void) {
         printf("Starting High-Volume Variable String Stress Tests.\n");
         v_strings = malloc2(num_strings*SIZEOF(*v_strings));
 
-        srand(1337);
+        rand_int_seed(1337);
         for (int32 i = 0; i < num_strings; i += 1) {
             char stack_buf[128];
             int32 v_len = random_ascii_string(stack_buf,
