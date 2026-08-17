@@ -369,7 +369,7 @@ main(void) {
         int64 total_pushed = 0;
 
         for (int32 i = 0; i < LENGTH(objs); i += 1) {
-            int64 size = ALIGN(1 + (rand_int() % 10000u));
+            int64 size = ALIGN(1 + (rand_int() % 10000));
             ASSERT((objs[i] = arena_push(arena, size)));
 
             total_size += size;
@@ -394,8 +394,8 @@ main(void) {
         int32 nallocated = LENGTH(objs);
 
         while (nallocated > 0) {
-            int32 j = (int32)(rand_int() % (uint32)LENGTH(objs));
-            int32 k = (int32)(rand_int() % (uint32)LENGTH(objs));
+            int32 j = rand_int() % LENGTH(objs);
+            int32 k = rand_int() % LENGTH(objs);
             if (objs[j]) {
                 ASSERT(arena_decr(arena, objs[j]));
                 objs[j] = NULL;
