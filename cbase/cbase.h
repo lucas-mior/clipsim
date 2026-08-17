@@ -149,7 +149,7 @@ extern void print_timings(char *, int32, char *, int64,
                           struct timespec, struct timespec);
 extern void qsort64(void *, int64, int64, int (*)(void *, void *));
 extern void rand_int_seed(uint64);
-extern uint32 rand_int(void);
+extern int32 rand_int(void);
 extern double rad2deg(double);
 extern int32 random_ascii_string(char *, int32, int32);
 extern bool path_missing(char *);

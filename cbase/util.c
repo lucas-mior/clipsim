@@ -443,7 +443,7 @@ rand_int_seed(uint64 seed) {
     return;
 }
 
-uint32
+int32
 rand_int(void) {
     uint64 old_state = rand_int_state;
     uint32 xorshifted;
@@ -456,7 +456,7 @@ rand_int(void) {
     rot = (uint32)(old_state >> 59u);
     result = (xorshifted >> rot) | (xorshifted << ((0u - rot) & 31u));
 
-    return result;
+    return (int32)(result >> 1);
 }
 
 char *
