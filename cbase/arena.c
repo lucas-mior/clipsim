@@ -22,7 +22,7 @@ arena_print(Arena *arena) {
     while (arena) {
         error2("Arena %p {\n", (void *)arena);
         error2("  name: %s\n", arena->name);
-        error2("  begin: %p\n", arena->begin);
+        error2("  begin: %p\n", (void *)arena->begin);
         error2("  pos: %p\n", arena->pos);
         error2("  size: %lld\n", arena->size);
         error2("  npushed: %lld\n", arena->npushed);
