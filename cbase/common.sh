@@ -632,6 +632,12 @@ common_gcc_flags_to_msvc() {
             -fsanitize=undefined)
                 continue
                 ;;
+            -fuse-ld=*)
+                case "$compiler" in
+                clang-cl) flag="/clang:$flag" ;;
+                cl) continue ;;
+                esac
+                ;;
             -flto|-march=*|-ftree-vectorize)
                 case "$compiler" in
                 clang-cl) flag="/clang:$flag" ;;
