@@ -282,7 +282,14 @@ assert_double_is_infinite(double x) {
 
 static bool
 assert_double_is_negative(double x) {
-    return signbit(x) != 0;
+    union {
+        double as_double;
+        uint64 as_uint;
+    } bits;
+    uint64 sign_mask = 0x8000000000000000ull;
+
+    bits.as_double = x;
+    return (bits.as_uint & sign_mask) != 0;
 }
 
 static bool

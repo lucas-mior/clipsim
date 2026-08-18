@@ -786,13 +786,45 @@ hash_length(void *map) {
 }
 
 #if DEBUGGING
+
+INLINE double
+hash_pow(double x, double n) {
+    double base = x;
+    double result = 1.0;
+    uint32 exponent;
+
+    ASSERT_MORE_EQUAL(n, 0.0);
+    ASSERT_LESS_EQUAL(n, (double)UINT32_MAX);
+    exponent = (uint32)n;
+    ASSERT_EQUAL((double)exponent, n);
+
+    while (exponent > 0) {
+        if (exponent & 1u) {
+            result *= base;
+        }
+        exponent >>= 1;
+        base *= base;
+    }
+
+    return result;
+}
+
+INLINE double
+hash_round(double x) {
+    if (x < 0.0) {
+        return (double)((int64)(x - 0.5));
+    }
+
+    return (double)((int64)(x + 0.5));
+}
+
 INLINE uint32
 hash_expected_collisions(void *map) {
     CommonMap *map2 = map;
     double n = map2->length;
     double m = map2->capacity;
-    double result = n - m*(1 - pow((m - 1) / m, n));
-    return (uint32)(round(result));
+    double result = n - m*(1 - hash_pow((m - 1) / m, n));
+    return (uint32)(hash_round(result));
 }
 #endif
 
@@ -858,7 +890,6 @@ random_string(Arena *arena, uint32 nbytes) {
     return string;
 }
 
-// flags: -lm
 int
 main(void) {
     struct timespec t0;
@@ -873,6 +904,14 @@ main(void) {
 
     ASSERT(map);
     initial_capacity = map->capacity;
+
+#if DEBUGGING
+    ASSERT_EQUAL(hash_pow(2.0, 10.0), 1024.0);
+    ASSERT_EQUAL(hash_pow(0.5, 3.0), 0.125);
+    ASSERT_EQUAL(hash_round(1.49), 1.0);
+    ASSERT_EQUAL(hash_round(1.50), 2.0);
+    ASSERT_EQUAL(hash_round(-1.50), -2.0);
+#endif
 
     str1.len = strlen32(str1.s);
     str2.len = strlen32(str2.s);
