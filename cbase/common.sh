@@ -944,7 +944,7 @@ common_build_tags () {
     if common_command_exists ctags; then
         trace_on
         find "$@" -iname "*.[ch]" -print0 \
-            | xargs --verbose -0 ctags --kinds-C=+l+d || true
+            | xargs -0 ctags --kinds-C=+l+d || true
         trace_off
     fi
 

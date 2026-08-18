@@ -23,7 +23,7 @@
   #pragma clang diagnostic ignored "-Wreserved-identifier"
 #endif
 
-#if (OS_UNIX || OS_WASM) && !defined(_XOPEN_SOURCE)
+#if ((OS_LINUX || OS_MAC || OS_WASM) && !defined(_XOPEN_SOURCE))
   #define _XOPEN_SOURCE 700
 #endif
 
@@ -80,12 +80,6 @@
 #include <stdnoreturn.h>
 #endif
 #include <string.h>
-#if !defined(_MSC_VER)
-#include <tgmath.h>
-#endif
-#include <time.h>
-#include <wchar.h>
-#include <wctype.h>
 
 // optional C11 headers
 #if !defined(_MSC_VER) && !defined(__STDC_NO_COMPLEX__)
@@ -94,6 +88,10 @@
 #undef I
 #endif
 #endif
+
+#include <time.h>
+#include <wchar.h>
+#include <wctype.h>
 
 #if !OS_WINDOWS && !defined(__STDC_NO_THREADS__)
 #include <threads.h>

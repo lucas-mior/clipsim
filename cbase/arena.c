@@ -335,7 +335,6 @@ arena_functions_sink(void) {
 #if TESTING_arena
 #define CBASE_IMPLEMENT
 #include "cbase.h"
-// flags: -lm
 
 int
 main(void) {

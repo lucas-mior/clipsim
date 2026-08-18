@@ -879,7 +879,6 @@ memory_functions_sink(void) {
 #if TESTING_memory
 #define CBASE_IMPLEMENT
 #include "cbase.h"
-// flags: -lm
 
 #if OS_LINUX
 static sigjmp_buf test_jump_env;
