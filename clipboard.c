@@ -54,15 +54,11 @@ int32
 clipboard_daemon_watch(void) {
     DEBUG_PRINT("void")
     ulong color;
-    struct timespec pause;
     char *CLIPSIM_SIGNAL_NUMBER;
     char *CLIPSIM_SIGNAL_PROGRAM;
     int32 signal_number = 0;
     int32 xfixes_event_base;
     int32 xfixes_error_base;
-
-    pause.tv_sec = 0;
-    pause.tv_nsec = 1000*1000*10;
 
     if ((display = XOpenDisplay(NULL)) == NULL) {
         error("Error opening X display.");
@@ -140,7 +136,7 @@ clipboard_daemon_watch(void) {
         if (xevent.type != (xfixes_event_base + XFixesSelectionNotify)) {
             continue;
         }
-        nanosleep(&pause, NULL);
+        sleep_ms(10);
 
         if (CLIPSIM_SIGNAL_PROGRAM) {
             send_signal(CLIPSIM_SIGNAL_PROGRAM, signal_number);
@@ -269,15 +265,11 @@ clipboard_get_clipboard(char **save, ulong *length, bool *incr) {
 Atom
 clipboard_check_target(Atom target) {
     int32 retries = 50;
-    struct timespec pause;
     DEBUG_PRINT("%lu", target)
 
     XEvent xevent;
 
     XConvertSelection(display, CLIPBOARD, target, XSEL_DATA, window, CurrentTime);
-    
-    pause.tv_sec = 0;
-    pause.tv_nsec = 1000 * 1000 * 10;
 
     while (true) {
         if (XCheckTypedWindowEvent(display, window, SelectionNotify, &xevent)) {
@@ -289,7 +281,7 @@ clipboard_check_target(Atom target) {
         if (retries <= 0) {
             return 0;
         }
-        nanosleep(&pause, NULL);
+        sleep_ms(10);
     }
 }
 
@@ -315,10 +307,6 @@ clipboard_incremental_case(char **save, ulong *length) {
         XEvent event;
         bool got_event = false;
         int32 retries = 100;
-        struct timespec pause;
-        
-        pause.tv_sec = 0;
-        pause.tv_nsec = 1000 * 1000 * 10;
 
         while (true) {
             if (XCheckTypedWindowEvent(display, window, PropertyNotify, &event)) {
@@ -331,7 +319,7 @@ clipboard_incremental_case(char **save, ulong *length) {
             if (retries <= 0) {
                 break;
             }
-            nanosleep(&pause, NULL);
+            sleep_ms(10);
         }
 
         if (!got_event) {
@@ -386,24 +374,6 @@ clipboard_incremental_case(char **save, ulong *length) {
 
 #include "clipsim.c"
 
-static void
-clipboard_test_sleep_milliseconds(int32 milliseconds) {
-    struct timespec remaining;
-    struct timespec pause;
-
-    pause.tv_sec = milliseconds / 1000;
-    pause.tv_nsec = (milliseconds % 1000)*1000*1000;
-
-    while (nanosleep(&pause, &remaining) != 0) {
-        if (errno != EINTR) {
-            break;
-        }
-        pause = remaining;
-    }
-
-    return;
-}
-
 int
 main(void) {
     {
@@ -426,7 +396,7 @@ main(void) {
                 clipboard_daemon_watch();
             } else {
                 int32 status = 0;
-                clipboard_test_sleep_milliseconds(200);
+                sleep_ms(200);
                 kill(pid, SIGTERM);
                 wait(&status);
             }
@@ -525,7 +495,7 @@ main(void) {
                     free(big_chunk);
                     exit(0);
                 } else {
-                    clipboard_test_sleep_milliseconds(100);
+                    sleep_ms(100);
                     clipboard_incremental_case(&large_save, &large_len);
                     ASSERT_EQUAL(large_len, 0);
                     if (large_save != NULL) {
@@ -568,7 +538,7 @@ main(void) {
                     XCloseDisplay(d2);
                     exit(0);
                 } else {
-                    clipboard_test_sleep_milliseconds(100);
+                    sleep_ms(100);
                     clipboard_incremental_case(&small_save, &small_len);
                     ASSERT_EQUAL(small_len, 15);
                     ASSERT_EQUAL(memcmp64(small_save, "small_incr_test", 15), 0);

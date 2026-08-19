@@ -135,24 +135,6 @@ xi_daemon_loop(void *unused) {
 #define CBASE_IMPLEMENT
 #include "cbase.h"
 
-static void
-xi_test_sleep_milliseconds(int32 milliseconds) {
-    struct timespec remaining;
-    struct timespec pause;
-
-    pause.tv_sec = milliseconds / 1000;
-    pause.tv_nsec = (milliseconds % 1000)*1000*1000;
-
-    while (nanosleep(&pause, &remaining) != 0) {
-        if (errno != EINTR) {
-            break;
-        }
-        pause = remaining;
-    }
-
-    return;
-}
-
 int
 main(void) {
     {
@@ -162,7 +144,7 @@ main(void) {
         create_result = pthread_create(&thread_identifier, NULL, xi_daemon_loop, NULL);
         ASSERT_EQUAL(create_result, 0);
 
-        xi_test_sleep_milliseconds(100);
+        sleep_ms(100);
 
         pthread_cancel(thread_identifier);
         pthread_join(thread_identifier, NULL);
