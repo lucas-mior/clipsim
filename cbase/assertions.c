@@ -810,6 +810,9 @@ main(void) {
         ASSERT_LESS_EQUAL(a, b);
         ASSERT_MORE_EQUAL(b, a);
     } {
+        char *a = "aaabbb";
+        ASSERT_EQUAL(a, 3, "aaa");
+    } {
         char *a = "aaa";
         char *b = "bbb";
         ASSERT_NOT_EQUAL(a, b);
@@ -959,6 +962,12 @@ main(void) {
 
         if (sigsetjmp(assert_env, 1) == 0) {
             ASSERT_EQUAL(string_null, string_some);
+        }
+        ASSERT(assertion_failed);
+        assertion_failed = false;
+
+        if (sigsetjmp(assert_env, 1) == 0) {
+            ASSERT_EQUAL(string_some, 3, "none");
         }
         ASSERT(assertion_failed);
         assertion_failed = false;

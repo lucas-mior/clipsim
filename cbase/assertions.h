@@ -431,7 +431,7 @@ _Generic((VAR1),                                                        \
     ASSERT_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL);                    \
     ASSERT_DIAGNOSTIC_POP();                                           \
 } while (0)
-#define ASSERT_EQUAL(VAR1, VAR2) \
+#define ASSERT_EQUAL_2(VAR1, VAR2) \
     ASSERT_COMPARE_DIAGNOSTIC(equal, VAR1, VAR2)
 #define ASSERT_NOT_EQUAL(VAR1, VAR2) \
     ASSERT_COMPARE_DIAGNOSTIC(not_equal, VAR1, VAR2)
@@ -444,13 +444,39 @@ _Generic((VAR1),                                                        \
 #define ASSERT_MORE_EQUAL(VAR1, VAR2) \
     ASSERT_COMPARE_DIAGNOSTIC(more_equal, VAR1, VAR2)
 #else
-#define ASSERT_EQUAL(VAR1, VAR2)      ASSERT_COMPARE(equal,      VAR1, VAR2)
+#define ASSERT_EQUAL_2(VAR1, VAR2)    ASSERT_COMPARE(equal,      VAR1, VAR2)
 #define ASSERT_NOT_EQUAL(VAR1, VAR2)  ASSERT_COMPARE(not_equal,  VAR1, VAR2)
 #define ASSERT_LESS(VAR1, VAR2)       ASSERT_COMPARE(less,       VAR1, VAR2)
 #define ASSERT_LESS_EQUAL(VAR1, VAR2) ASSERT_COMPARE(less_equal, VAR1, VAR2)
 #define ASSERT_MORE(VAR1, VAR2)       ASSERT_COMPARE(more,       VAR1, VAR2)
 #define ASSERT_MORE_EQUAL(VAR1, VAR2) ASSERT_COMPARE(more_equal, VAR1, VAR2)
 #endif
+
+#define ASSERT_EQUAL_3(VAR1, VAR1_LEN, VAR2) do {                             \
+    char *ASSERT_EQUAL_VAR1 = VAR1;                                            \
+    int32 ASSERT_EQUAL_VAR1_LEN = VAR1_LEN;                                    \
+    char *ASSERT_EQUAL_VAR2 = VAR2;                                            \
+    int32 ASSERT_EQUAL_VAR2_LEN;                                               \
+    if (ASSERT_EQUAL_VAR1 == NULL) {                                           \
+        assert_error(__FILE__, __LINE__, FUNC__, "%s is NULL.\n", #VAR1);      \
+        TRAP();                                                                \
+    }                                                                          \
+    if (ASSERT_EQUAL_VAR2 == NULL) {                                           \
+        assert_error(__FILE__, __LINE__, FUNC__, "%s is NULL.\n", #VAR2);      \
+        TRAP();                                                                \
+    }                                                                          \
+    ASSERT_EQUAL_VAR2_LEN = strlen32(ASSERT_EQUAL_VAR2);                       \
+    if (!strequal2(ASSERT_EQUAL_VAR1, ASSERT_EQUAL_VAR1_LEN,                   \
+                   ASSERT_EQUAL_VAR2, ASSERT_EQUAL_VAR2_LEN)) {                \
+        assert_error(__FILE__, __LINE__, FUNC__,                               \
+                     "%s = %.*s == %s = %s\n",                                \
+                     #VAR1, ASSERT_EQUAL_VAR1_LEN, ASSERT_EQUAL_VAR1,          \
+                     #VAR2, ASSERT_EQUAL_VAR2);                                \
+        TRAP();                                                                \
+    }                                                                          \
+} while (0)
+
+#define ASSERT_EQUAL(...) SELECT_ON_NUM_ARGS(ASSERT_EQUAL_, __VA_ARGS__)
 
 #define A_BOTH_DOUBLE_CLOSE(MODE, VAR1, VAR2, TYPE1, TYPE2)                   \
     a_double_##MODE(__FILE__, __LINE__, FUNC__,                               \

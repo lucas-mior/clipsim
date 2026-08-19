@@ -533,6 +533,7 @@ ASSERT_NULL(pointer);
   - `ASSERT_NON_POSITIVE(integer expression)`
   - `ASSERT_NON_NEGATIVE(integer expression)`
   - `ASSERT_EQUAL(number or string or pointer 1, number or string or pointer 2)`
+  - `ASSERT_EQUAL(string, string_len, other_string)`
   - `ASSERT_LESS(number expr 1, number expr 2)`
   - `ASSERT_MORE(number expr 1, number expr 2)`
   - `ASSERT_LESS_EQUAL(number expr 1, number expr 2)`
