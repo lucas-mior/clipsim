@@ -33,6 +33,7 @@
 #define OS_FREEBSD 0
 #define OS_NETBSD  0
 #define OS_OPENBSD 0
+#define OS_CYGWIN  0
 #define OS_WINDOWS 0
 #define OS_WASM    0
 
@@ -51,6 +52,9 @@
 #elif defined(__OpenBSD__)
   #undef OS_OPENBSD
   #define OS_OPENBSD 1
+#elif defined(__CYGWIN__) || defined(__MSYS__)
+  #undef OS_CYGWIN
+  #define OS_CYGWIN 1
 #elif defined(_WIN32) || defined(_WIN64)
   #undef OS_WINDOWS
   #define OS_WINDOWS 1
@@ -60,7 +64,7 @@
 #endif
 
 #define OS_BSD (OS_FREEBSD | OS_NETBSD | OS_OPENBSD)
-#define OS_UNIX (OS_LINUX || OS_MAC || OS_BSD)
+#define OS_UNIX (OS_LINUX || OS_MAC || OS_BSD || OS_CYGWIN)
 
 #if defined(_MSC_VER)
 #define CBASE_CRT_MSVC 1

@@ -554,6 +554,9 @@ command_child_exec(
     int stdout_pipe[2],
     int stderr_pipe[2]
 ) {
+    char *command_text;
+    int32 command_text_len;
+
     if (command->cwd) {
         if (chdir(command->cwd) < 0) {
             error("Error changing directory to %s: %s.\n",
@@ -613,15 +616,14 @@ command_child_exec(
     }
 
     command_child_env_apply(command);
-    execvp(command->argv[0], command->argv);
-    {
-        char *command_text;
-        int32 command_text_len;
-
-        command_text = command_str(command, &command_text_len);
-        error("Error executing\n%s\n%s.\n", command_text, strerror(errno));
-        free2(command_text, command_text_len + 1);
+    command_text = command_str(command, &command_text_len);
+    if (DEBUGGING && !TESTING_command) {
+        error2("Running %s \n", command_text);
     }
+
+    execvp(command->argv[0], command->argv);
+    error("Error executing\n%s\n%s.\n", command_text, strerror(errno));
+    free2(command_text, command_text_len + 1);
     _exit(127);
 }
 
@@ -1044,8 +1046,7 @@ command_push_split(Command *command, char *arguments, char *delimiters) {
 
         argument_start = argument;
         while ((*argument != '\0')
-               && (memchr(delimiters, *argument,
-                          (size_t)delimiters_len) == NULL)) {
+               && (memchr64(delimiters, *argument, delimiters_len) == NULL)) {
             argument += 1;
         }
         argument_len = argument - argument_start;
