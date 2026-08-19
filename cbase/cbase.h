@@ -300,6 +300,7 @@ extern int xclose(char *, int, int *, char *, char *);
 #if HAS_POSIX_WIN_SUBSET
 extern int xclosedir(DIR *, char *);
 #endif
+extern char *cbase_mkdtemp(char *);
 extern int xfclose(char *, int32, char *, FILE *, char *);
 extern FILE *xfopen(char *, int32, char *, char *, char *);
 #if OS_WINDOWS

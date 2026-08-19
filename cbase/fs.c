@@ -12,6 +12,23 @@
 
 #include "cbase.h"
 
+#if OS_WINDOWS
+#include "fs_windows.c"
+#endif
+
+#if !OS_WINDOWS
+char *
+cbase_mkdtemp(char *template) {
+#if OS_UNIX
+    return mkdtemp(template);
+#else
+    (void)template;
+    errno = ENOSYS;
+    return NULL;
+#endif
+}
+#endif
+
 void
 write_all(int fd, char *buffer, int64 left) {
     int64 written = 0;
@@ -305,7 +322,24 @@ util_copy_file_sync(char *destination, char *source) {
     XCLOSE(&destination_fd, destination);
     return 0;
 }
+#elif OS_WINDOWS
+int32
+util_copy_file_sync(char *destination, char *source) {
+    DWORD error_code;
 
+    if (CopyFileA(source, destination, false)) {
+        return 0;
+    }
+
+    error_code = GetLastError();
+    windows_set_errno(error_code);
+    error("Error copying %s to %s: windows error %lu.\n",
+          source, destination, (ulong)error_code);
+    return -1;
+}
+#endif
+
+#if OS_UNIX
 int32
 util_copy_file_async(char *destination, char *source, int *dest_fd) {
     int32 source_fd;
@@ -827,6 +861,7 @@ fs_functions_sink(void) {
     (void)fs_functions_sink;
     (void)basename2;
     (void)catfile;
+    (void)cbase_mkdtemp;
     (void)dirname2;
     (void)fread64;
     (void)fwrite64;
@@ -851,6 +886,8 @@ fs_functions_sink(void) {
 #if OS_UNIX
     (void)util_copy_file_async;
     (void)util_copy_file_async_parsed;
+#endif
+#if OS_UNIX || OS_WINDOWS
     (void)util_copy_file_sync;
 #endif
     return;
@@ -876,62 +913,44 @@ test_join_path(
 
 void
 test_make_temp_dir(char *buffer, int32 capacity, char *name) {
-#if OS_UNIX
+#if OS_UNIX || OS_WINDOWS
     char *tmpdir;
     int32 len;
+    int32 prefix_len = 0;
 
-    if ((tmpdir = getenv("TMPDIR")) == NULL) {
+    tmpdir = getenv("TMPDIR");
+#if OS_WINDOWS
+    if (tmpdir == NULL) {
+        DWORD temp_len;
+
+        temp_len = GetTempPathA((DWORD)capacity, buffer);
+        if ((temp_len <= 0) || (temp_len >= (DWORD)capacity)) {
+            error("Temporary directory path too long.\n");
+            fatal(EXIT_FAILURE);
+        }
+        prefix_len = (int32)temp_len;
+        len = snprintf2(buffer + prefix_len, capacity - prefix_len,
+                        "%s_XXXXXX", name);
+    } else {
+        len = snprintf2(buffer, capacity, "%s/%s_XXXXXX", tmpdir, name);
+    }
+#else
+    if (tmpdir == NULL) {
         tmpdir = "/tmp";
     }
-
     len = snprintf2(buffer, capacity, "%s/%s_XXXXXX", tmpdir, name);
-    if ((len <= 0) || (len >= capacity)) {
+#endif
+    if ((len <= 0) || (len >= (capacity - prefix_len))) {
         error("Temporary directory path too long.\n");
         fatal(EXIT_FAILURE);
     }
-    if (mkdtemp(buffer) == NULL) {
+    if (cbase_mkdtemp(buffer) == NULL) {
         error("Error creating temporary directory %s: %s.\n",
               buffer, strerror(errno));
         fatal(EXIT_FAILURE);
     }
 
     return;
-#elif OS_WINDOWS
-    DWORD temp_len;
-    int32 prefix_len;
-
-    temp_len = GetTempPathA((DWORD)capacity, buffer);
-    if ((temp_len <= 0) || (temp_len >= (DWORD)capacity)) {
-        error("Temporary directory path too long.\n");
-        fatal(EXIT_FAILURE);
-    }
-
-    prefix_len = (int32)temp_len;
-    for (int32 i = 0; i < 10000; i += 1) {
-        DWORD error_code;
-        int32 len;
-
-        len = snprintf2(buffer + prefix_len, capacity - prefix_len,
-                        "%s_%lu_%d",
-                        name, (ulong)GetCurrentProcessId(), i);
-        if ((len <= 0) || (len >= (capacity - prefix_len))) {
-            error("Temporary directory path too long.\n");
-            fatal(EXIT_FAILURE);
-        }
-        if (CreateDirectoryA(buffer, NULL)) {
-            return;
-        }
-
-        error_code = GetLastError();
-        if (error_code != ERROR_ALREADY_EXISTS) {
-            error("Error creating temporary directory %s: windows error %lu.\n",
-                  buffer, (ulong)error_code);
-            fatal(EXIT_FAILURE);
-        }
-    }
-
-    error("Could not create a unique temporary directory.\n");
-    fatal(EXIT_FAILURE);
 #else
     (void)buffer;
     (void)capacity;

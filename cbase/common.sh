@@ -916,7 +916,7 @@ common_test () {
     fi
 
     if [ -z "${TEST_WINDOWS_SOURCE_PATTERN:-}" ]; then
-        TEST_WINDOWS_SOURCE_PATTERN='(^|/)windows_functions\.c$'
+        TEST_WINDOWS_SOURCE_PATTERN='.*windows\.c$'
     fi
 
     {
