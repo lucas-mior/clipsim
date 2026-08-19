@@ -561,9 +561,7 @@ free_line_tokens(Line *line) {
     for (int32 i = 0; i < line->token_count; i += 1) {
         free2(line->tokens[i].text, line->tokens[i].len + 1);
     }
-    if (line->tokens) {
-        free2(line->tokens, line->token_capacity*SIZEOF(*line->tokens));
-    }
+    free2(line->tokens, line->token_capacity*SIZEOF(*line->tokens));
 
     line->tokens = NULL;
     line->token_count = 0;

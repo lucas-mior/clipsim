@@ -192,7 +192,9 @@ static void
 CAT(hash_zero_, HASH_TYPE)(struct Map *map) {
     map->length = 0;
     map->occupied = 0;
-    memset64(map->array, 0, map->capacity*sizeof(Bucket));
+    for (uint32 i = 0; i < map->capacity; i += 1) {
+        map->array[i] = (Bucket){0};
+    }
     memset64(map->slot_states, 0, map->capacity*sizeof(*map->slot_states));
 #if HASH_DUPLICATE_KEYS
     arena_reset(map->arena_keys);
