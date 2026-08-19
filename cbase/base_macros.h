@@ -159,6 +159,10 @@ _Generic((SIZE), \
 #define PI2 2*PI
 #define TAU 2*PI
 
+#if !defined(M_PI)
+#define M_PI PI
+#endif
+
 #if !defined(__has_builtin)
   #define __has_builtin(x) 0
 #endif

@@ -23,7 +23,8 @@
   #pragma clang diagnostic ignored "-Wreserved-identifier"
 #endif
 
-#if ((OS_LINUX || OS_MAC || OS_WASM) && !defined(_XOPEN_SOURCE))
+#if ((OS_LINUX || OS_MAC || OS_WASM || OS_CYGWIN) \
+     && !defined(_XOPEN_SOURCE))
   #define _XOPEN_SOURCE 700
 #endif
 
