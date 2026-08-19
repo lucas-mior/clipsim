@@ -680,12 +680,20 @@ common_gcc_flags_to_msvc() {
 
 common_test_run_binary () {
     test_exe=$1
+    test_status=0
 
     if [ -n "${TEST_STDIN:-}" ]; then
-        "$test_exe" < "$TEST_STDIN"
+        "$test_exe" < "$TEST_STDIN" || test_status=$?
     else
-        "$test_exe" < /dev/null
+        "$test_exe" < /dev/null || test_status=$?
     fi
+
+    if [ "$test_status" != 0 ]; then
+        error "Test executable failed: %s\n" "$test_exe"
+        error "Exit status: %s\n" "$test_status"
+    fi
+
+    return "$test_status"
 }
 
 common_test_debugger () {
