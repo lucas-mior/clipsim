@@ -246,6 +246,9 @@ extern bool32 striqual2(char *, int32, char *, int32);
 extern int64 strftime2(char *, int64, char *, struct tm *);
 extern int strncmp32(char *, char *, int64);
 extern char *strncpy32(char *, char *, int64);
+extern void sleep_ms(int64);
+extern void sleep_ns(int64);
+extern void sleep_us(int64);
 extern double timediff(struct timespec, struct timespec);
 extern void time_monotonic_coarse(struct timespec *);
 extern void time_monotonic_precise(struct timespec *);
@@ -700,6 +703,8 @@ extern void throw_away_function();
 #include "utf8.c"
 #include "util.c"
 #include "string.c"
+#include "time.c"
+#include "fs.c"
 #if OS_WINDOWS
 #include "windows.c"
 #endif
