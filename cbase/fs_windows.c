@@ -233,6 +233,14 @@ lstat(const char *path, struct stat *statbuf) {
     return 0;
 }
 
+#if 0 == TESTING_fs_windows
+static inline void
+fs_windows_functions_sink(void) {
+    (void)fs_windows_functions_sink;
+    (void)lstat;
+}
+#endif
+
 #if TESTING_fs_windows
 #define CBASE_IMPLEMENT
 #include "cbase.h"
@@ -266,6 +274,7 @@ contains(
 
 int
 main(void) {
+    (void)lstat;
     {
         char *string = "aaa/bbb/ccc";
         int64 length = strlen32(string);
