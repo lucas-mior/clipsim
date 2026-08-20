@@ -12,6 +12,270 @@
 
 #include "cbase.h"
 
+#if OS_WINDOWS
+#include "fs_windows.c"
+#endif
+
+#if !OS_WINDOWS
+char *
+cbase_mkdtemp(char *template) {
+#if OS_UNIX
+    return mkdtemp(template);
+#else
+    (void)template;
+    errno = ENOSYS;
+    return NULL;
+#endif
+}
+#endif
+
+int32
+cbase_mkdir(char *path) {
+#if OS_WINDOWS
+    if (CreateDirectoryA(path, NULL)) {
+        return 0;
+    }
+    windows_set_errno(GetLastError());
+    return -1;
+#elif HAS_POSIX_WIN_SUBSET
+    return mkdir(path, 0777);
+#else
+    (void)path;
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int32
+cbase_rmdir(char *path) {
+#if OS_WINDOWS
+    if (RemoveDirectoryA(path)) {
+        return 0;
+    }
+    windows_set_errno(GetLastError());
+    return -1;
+#elif HAS_POSIX_WIN_SUBSET
+    return rmdir(path);
+#else
+    (void)path;
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int32
+cbase_unlink(char *path) {
+#if OS_WINDOWS
+    if (DeleteFileA(path)) {
+        return 0;
+    }
+    windows_set_errno(GetLastError());
+    return -1;
+#elif HAS_POSIX_WIN_SUBSET
+    return unlink(path);
+#else
+    (void)path;
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int32
+cbase_remove_file(char *path) {
+    return cbase_unlink(path);
+}
+
+int32
+cbase_remove_empty_dir(char *path) {
+    return cbase_rmdir(path);
+}
+
+int32
+cbase_mkstemps(char *template_path, int32 suffix_len) {
+    char characters[] =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    int64 len;
+    int64 x_start;
+
+    if ((template_path == NULL) || (suffix_len < 0)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    len = strlen32(template_path);
+    if (suffix_len > len - 6) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    x_start = len - suffix_len - 6;
+    if (memcmp64(template_path + x_start, "XXXXXX", 6) != 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    for (int32 attempt = 0; attempt < 10000; attempt += 1) {
+        uint32 state;
+        int32 fd;
+        int32 flags = O_RDWR |O_CREAT |O_EXCL;
+
+#if defined(O_BINARY)
+        flags |= O_BINARY;
+#endif
+
+        state = (uint32)time(NULL);
+        state ^= (uint32)(uintptr_t)template_path;
+        state ^= (uint32)attempt*2654435761u;
+#if OS_WINDOWS
+        state ^= (uint32)GetCurrentProcessId();
+        state ^= (uint32)GetCurrentThreadId();
+        state ^= (uint32)GetTickCount64();
+#elif HAS_POSIX_WIN_SUBSET
+        state ^= (uint32)getpid();
+#endif
+
+        for (int32 i = 0; i < 6; i += 1) {
+            state = state*1103515245u + 12345u;
+            template_path[x_start + i]
+                = characters[state % (SIZEOF(characters) - 1)];
+        }
+
+        fd = open(template_path, flags, S_IRUSR |S_IWUSR);
+        if (fd >= 0) {
+            return fd;
+        }
+        if (errno != EEXIST) {
+            return -1;
+        }
+    }
+
+    errno = EEXIST;
+    return -1;
+}
+
+int32
+cbase_make_temp_file(
+    char *buffer,
+    int32 capacity,
+    char *prefix,
+    char *suffix
+) {
+#if OS_UNIX || OS_WINDOWS
+    char *tmpdir;
+    int32 len;
+    int32 suffix_len;
+    int32 prefix_len = 0;
+
+    if ((buffer == NULL) || (capacity <= 0) || (prefix == NULL)) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (suffix == NULL) {
+        suffix = "";
+    }
+    suffix_len = strlen32(suffix);
+
+    tmpdir = getenv("TMPDIR");
+#if OS_WINDOWS
+    if (tmpdir == NULL) {
+        DWORD temp_len;
+
+        temp_len = GetTempPathA((DWORD)capacity, buffer);
+        if ((temp_len <= 0) || (temp_len >= (DWORD)capacity)) {
+            windows_set_errno(GetLastError());
+            return -1;
+        }
+        prefix_len = (int32)temp_len;
+        len = snprintf2(buffer + prefix_len, capacity - prefix_len,
+                        "%s_XXXXXX%s", prefix, suffix);
+    } else {
+        len = snprintf2(buffer, capacity, "%s/%s_XXXXXX%s",
+                        tmpdir, prefix, suffix);
+    }
+#else
+    if (tmpdir == NULL) {
+        tmpdir = "/tmp";
+    }
+    len = snprintf2(buffer, capacity, "%s/%s_XXXXXX%s",
+                    tmpdir, prefix, suffix);
+#endif
+    if ((len <= 0) || (len >= (capacity - prefix_len))) {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+
+    return cbase_mkstemps(buffer, suffix_len);
+#else
+    (void)buffer;
+    (void)capacity;
+    (void)prefix;
+    (void)suffix;
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+char *
+cbase_getcwd(char *buffer, int64 size) {
+    if (size <= 0) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+#if OS_WINDOWS
+    {
+        DWORD len;
+
+        if (size > MAXOF((DWORD)0)) {
+            errno = EINVAL;
+            return NULL;
+        }
+
+        len = GetCurrentDirectoryA((DWORD)size, buffer);
+        if (len == 0) {
+            windows_set_errno(GetLastError());
+            return NULL;
+        }
+        if (len >= (DWORD)size) {
+            errno = ERANGE;
+            return NULL;
+        }
+        return buffer;
+    }
+#elif HAS_POSIX_WIN_SUBSET
+    return getcwd(buffer, (size_t)size);
+#else
+    (void)buffer;
+    errno = ENOSYS;
+    return NULL;
+#endif
+}
+
+bool
+xregular_file_exists(char *path) {
+#if HAS_POSIX_WIN_SUBSET || CBASE_CRT_MSVC
+    struct stat st;
+
+    if (stat(path, &st) < 0) {
+        if (errno == ENOENT) {
+            return false;
+        }
+        error("stat(%s) failed: %s", path, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    if (!S_ISREG(st.st_mode)) {
+        error("expected regular file: %s", path);
+        fatal(EXIT_FAILURE);
+    }
+    return true;
+#else
+    (void)path;
+    errno = ENOSYS;
+    error("regular-file checks are unsupported on this platform");
+    fatal(EXIT_FAILURE);
+#endif
+}
+
 void
 write_all(int fd, char *buffer, int64 left) {
     int64 written = 0;
@@ -187,8 +451,8 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
 
 int
 xunlink(char *filename) {
-    if (unlink(filename) < 0) {
-        error2("Error in unlink(%s): %s.\n", filename, strerror(errno));
+    if (cbase_unlink(filename) < 0) {
+        error2("Error removing file %s: %s.\n", filename, strerror(errno));
         return -1;
     }
     return 0;
@@ -305,7 +569,24 @@ util_copy_file_sync(char *destination, char *source) {
     XCLOSE(&destination_fd, destination);
     return 0;
 }
+#elif OS_WINDOWS
+int32
+util_copy_file_sync(char *destination, char *source) {
+    DWORD error_code;
 
+    if (CopyFileA(source, destination, false)) {
+        return 0;
+    }
+
+    error_code = GetLastError();
+    windows_set_errno(error_code);
+    error("Error copying %s to %s: windows error %lu.\n",
+          source, destination, (ulong)error_code);
+    return -1;
+}
+#endif
+
+#if OS_UNIX
 int32
 util_copy_file_async(char *destination, char *source, int *dest_fd) {
     int32 source_fd;
@@ -827,6 +1108,7 @@ fs_functions_sink(void) {
     (void)fs_functions_sink;
     (void)basename2;
     (void)catfile;
+    (void)cbase_mkdtemp;
     (void)dirname2;
     (void)fread64;
     (void)fwrite64;
@@ -851,6 +1133,8 @@ fs_functions_sink(void) {
 #if OS_UNIX
     (void)util_copy_file_async;
     (void)util_copy_file_async_parsed;
+#endif
+#if OS_UNIX || OS_WINDOWS
     (void)util_copy_file_sync;
 #endif
     return;
@@ -859,12 +1143,7 @@ fs_functions_sink(void) {
 
 #if TESTING
 void
-test_join_path(
-    char *buffer,
-    int64 buffer_len,
-    char *dir,
-    char *name
-) {
+test_join_path(char *buffer, int64 buffer_len, char *dir, char *name) {
     int32 len;
 
     len = snprintf2(buffer, buffer_len, "%s/%s", dir, name);
@@ -876,62 +1155,44 @@ test_join_path(
 
 void
 test_make_temp_dir(char *buffer, int32 capacity, char *name) {
-#if OS_UNIX
+#if OS_UNIX || OS_WINDOWS
     char *tmpdir;
     int32 len;
+    int32 prefix_len = 0;
 
-    if ((tmpdir = getenv("TMPDIR")) == NULL) {
+    tmpdir = getenv("TMPDIR");
+#if OS_WINDOWS
+    if (tmpdir == NULL) {
+        DWORD temp_len;
+
+        temp_len = GetTempPathA((DWORD)capacity, buffer);
+        if ((temp_len <= 0) || (temp_len >= (DWORD)capacity)) {
+            error("Temporary directory path too long.\n");
+            fatal(EXIT_FAILURE);
+        }
+        prefix_len = (int32)temp_len;
+        len = snprintf2(buffer + prefix_len, capacity - prefix_len,
+                        "%s_XXXXXX", name);
+    } else {
+        len = snprintf2(buffer, capacity, "%s/%s_XXXXXX", tmpdir, name);
+    }
+#else
+    if (tmpdir == NULL) {
         tmpdir = "/tmp";
     }
-
     len = snprintf2(buffer, capacity, "%s/%s_XXXXXX", tmpdir, name);
-    if ((len <= 0) || (len >= capacity)) {
+#endif
+    if ((len <= 0) || (len >= (capacity - prefix_len))) {
         error("Temporary directory path too long.\n");
         fatal(EXIT_FAILURE);
     }
-    if (mkdtemp(buffer) == NULL) {
+    if (cbase_mkdtemp(buffer) == NULL) {
         error("Error creating temporary directory %s: %s.\n",
               buffer, strerror(errno));
         fatal(EXIT_FAILURE);
     }
 
     return;
-#elif OS_WINDOWS
-    DWORD temp_len;
-    int32 prefix_len;
-
-    temp_len = GetTempPathA((DWORD)capacity, buffer);
-    if ((temp_len <= 0) || (temp_len >= (DWORD)capacity)) {
-        error("Temporary directory path too long.\n");
-        fatal(EXIT_FAILURE);
-    }
-
-    prefix_len = (int32)temp_len;
-    for (int32 i = 0; i < 10000; i += 1) {
-        DWORD error_code;
-        int32 len;
-
-        len = snprintf2(buffer + prefix_len, capacity - prefix_len,
-                        "%s_%lu_%d",
-                        name, (ulong)GetCurrentProcessId(), i);
-        if ((len <= 0) || (len >= (capacity - prefix_len))) {
-            error("Temporary directory path too long.\n");
-            fatal(EXIT_FAILURE);
-        }
-        if (CreateDirectoryA(buffer, NULL)) {
-            return;
-        }
-
-        error_code = GetLastError();
-        if (error_code != ERROR_ALREADY_EXISTS) {
-            error("Error creating temporary directory %s: windows error %lu.\n",
-                  buffer, (ulong)error_code);
-            fatal(EXIT_FAILURE);
-        }
-    }
-
-    error("Could not create a unique temporary directory.\n");
-    fatal(EXIT_FAILURE);
 #else
     (void)buffer;
     (void)capacity;
@@ -988,11 +1249,11 @@ test_remove_tree(char *path) {
 
     if (S_ISDIR(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
         test_remove_tree_children(path);
-        if (rmdir(path) < 0) {
+        if (cbase_remove_empty_dir(path) < 0) {
             error("Error removing test directory %s: %s.\n",
                   path, strerror(errno));
         }
-    } else if (unlink(path) < 0) {
+    } else if (cbase_remove_file(path) < 0) {
         error("Error removing test path %s: %s.\n", path, strerror(errno));
     }
 
@@ -1112,10 +1373,10 @@ test_symlink_supported(char *dir) {
         return false;
     }
 
-    unlink(link_path);
+    cbase_remove_file(link_path);
     supported = symlink("target", link_path) == 0;
     if (supported) {
-        unlink(link_path);
+        cbase_remove_file(link_path);
     }
 
     return supported;
@@ -1139,298 +1400,21 @@ test_hardlink_supported(char *dir) {
         return false;
     }
 
-    unlink(src_path);
-    unlink(link_path);
-    fd = open(src_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
-    if (fd < 0) {
+    cbase_remove_file(src_path);
+    cbase_remove_file(link_path);
+
+    if ((fd = open(src_path, O_CREAT | O_WRONLY | O_TRUNC, 0644)) < 0) {
         return false;
     }
     write64(fd, "x", 1);
     XCLOSE(&fd, src_path);
 
     supported = link(src_path, link_path) == 0;
-    unlink(link_path);
-    unlink(src_path);
+    cbase_remove_file(link_path);
+    cbase_remove_file(src_path);
 
     return supported;
 }
-#endif
-#endif
-
-#if OS_WINDOWS
-#if !defined(WINDOWS_FUNCTIONS_C)
-#define WINDOWS_FUNCTIONS_C
-
-#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
-#define TESTING_windows_functions 1
-#elif !defined(TESTING_windows_functions)
-#define TESTING_windows_functions 0
-#endif
-
-#include "cbase.h"
-
-#if !OS_WINDOWS
-#error "ONLY INCLUDE THIS FILE IF COMPILING FOR WINDOWS"
-#endif
-
-#if !defined(S_IFLNK)
-#define S_IFLNK 0120000
-#endif
-
-#if CBASE_CRT_MSVC
-static int
-mkstemp(char *template) {
-    char characters[] =
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    int64 len;
-
-    if (template == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    len = strlen32(template);
-    if ((len < 6) || (memcmp64(template + len - 6, "XXXXXX", 6) != 0)) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    for (int32 attempt = 0; attempt < 100; attempt += 1) {
-        uint32 state;
-
-        state = (uint32)GetCurrentProcessId();
-        state ^= (uint32)GetCurrentThreadId();
-        state ^= (uint32)GetTickCount64();
-        state ^= (uint32)(attempt*2654435761u);
-        for (int32 i = 0; i < 6; i += 1) {
-            state = state*1103515245u + 12345u;
-            template[len - 6 + i]
-                = characters[state % (SIZEOF(characters) - 1)];
-        }
-
-        {
-            int fd = open(template, O_RDWR |O_CREAT |O_EXCL |O_BINARY,
-                          S_IREAD |S_IWRITE);
-            if (fd >= 0) {
-                return fd;
-            }
-            if (errno != EEXIST) {
-                return -1;
-            }
-        }
-    }
-
-    errno = EEXIST;
-    return -1;
-}
-#endif
-
-static time_t
-filetime_to_time_t(FILETIME *filetime) {
-    ULARGE_INTEGER u_large_integer;
-    u_large_integer.LowPart = filetime->dwLowDateTime;
-    u_large_integer.HighPart = filetime->dwHighDateTime;
-    // Convert from Windows epoch (1601) to Unix epoch (1970)
-    return (time_t)(
-        (u_large_integer.QuadPart - 116444736000000000ULL) / 10000000ULL);
-}
-
-static int
-lstat(const char *path, struct stat *statbuf) {
-    wchar_t *wide_path;
-    WIN32_FILE_ATTRIBUTE_DATA fd;
-    ULARGE_INTEGER ull_size;
-    DWORD error_code;
-    int64 wide_path_size;
-    int32 wide_path_length;
-
-    if ((path == NULL) || (statbuf == NULL)) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    wide_path_length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-                                           path, -1, NULL, 0);
-    if (wide_path_length <= 0) {
-        windows_set_errno(GetLastError());
-        return -1;
-    }
-
-    wide_path_size = (int64)wide_path_length*SIZEOF(*wide_path);
-    wide_path = malloc2(wide_path_size);
-    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1,
-                            wide_path, wide_path_length)
-        != wide_path_length) {
-        error_code = GetLastError();
-        free2(wide_path, wide_path_size);
-        windows_set_errno(error_code);
-        return -1;
-    }
-
-    if (!GetFileAttributesExW(wide_path, GetFileExInfoStandard, &fd)) {
-        error_code = GetLastError();
-        free2(wide_path, wide_path_size);
-        windows_set_errno(error_code);
-        return -1;
-    }
-
-    memset64(statbuf, 0, SIZEOF(*statbuf));
-
-    // File type
-    if (fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-        FILE_ATTRIBUTE_TAG_INFO tag_info;
-        HANDLE file_handle;
-
-        file_handle = CreateFileW(
-            wide_path,
-            0,
-            FILE_SHARE_READ |FILE_SHARE_WRITE |FILE_SHARE_DELETE,
-            NULL,
-            OPEN_EXISTING,
-            FILE_FLAG_BACKUP_SEMANTICS |FILE_FLAG_OPEN_REPARSE_POINT,
-            NULL);
-        if (file_handle == INVALID_HANDLE_VALUE) {
-            error_code = GetLastError();
-            free2(wide_path, wide_path_size);
-            windows_set_errno(error_code);
-            return -1;
-        }
-
-        if (!GetFileInformationByHandleEx(file_handle,
-                                          FileAttributeTagInfo,
-                                          &tag_info,
-                                          (DWORD)SIZEOF(tag_info))) {
-            error_code = GetLastError();
-            CloseHandle(file_handle);
-            free2(wide_path, wide_path_size);
-            windows_set_errno(error_code);
-            return -1;
-        }
-
-        if (!CloseHandle(file_handle)) {
-            error_code = GetLastError();
-            free2(wide_path, wide_path_size);
-            windows_set_errno(error_code);
-            return -1;
-        }
-
-        if (tag_info.ReparseTag == IO_REPARSE_TAG_SYMLINK) {
-            statbuf->st_mode = S_IFLNK;
-        } else if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            statbuf->st_mode = S_IFDIR;
-        } else {
-            statbuf->st_mode = S_IFREG;
-        }
-    } else if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-        statbuf->st_mode = S_IFDIR;
-    } else {
-        statbuf->st_mode = S_IFREG;
-    }
-
-    free2(wide_path, wide_path_size);
-
-    ull_size.LowPart = fd.nFileSizeLow;
-    ull_size.HighPart = fd.nFileSizeHigh;
-    if (ull_size.QuadPart > LONG_MAX) {
-        error("Warning: file is too large, size will be wrong.\n");
-    }
-    statbuf->st_size = (long)ull_size.QuadPart;
-
-    // Convert FILETIME -> time_t
-    statbuf->st_mtime = filetime_to_time_t(&fd.ftLastWriteTime);
-    statbuf->st_ctime = filetime_to_time_t(&fd.ftCreationTime);
-    statbuf->st_atime = filetime_to_time_t(&fd.ftLastAccessTime);
-
-    return 0;
-}
-
-#if TESTING_windows_functions
-#define CBASE_IMPLEMENT
-#include "cbase.h"
-
-static bool
-contains(
-    char *buffer,
-    int64 length,
-    DirEntry *directory_entries,
-    int32 *number_files
-) {
-    for (int32 i = 0; i < *number_files; i += 1) {
-        char *from_scan = directory_entries[i].name;
-
-        if (strlen32(from_scan) != length) {
-            continue;
-        }
-
-        if (!memcmp64(buffer, from_scan, length)) {
-            printf("%s == %s\n", buffer, from_scan);
-            *number_files -= 1;
-            if (i < *number_files) {
-                memmove64(&directory_entries[i], &directory_entries[i + 1],
-                          (*number_files - i)*SIZEOF(*directory_entries));
-            }
-            return true;
-        }
-    }
-    return false;
-}
-
-int
-main(void) {
-    {
-        char *string = "aaa/bbb/ccc";
-        int64 length = strlen32(string);
-
-        ASSERT(memmem64(string, length, "aaa", 3) == string);
-        ASSERT(memmem64(string, length, "bbb", 3) == string + 4);
-        ASSERT(memmem64(string, length, "aaaa", 4) == NULL);
-        ASSERT(memmem64(string, length, "bbbb", 4) == NULL);
-        ASSERT(memmem64(string, length, "/", 1) == string + 3);
-    }
-
-    {
-        struct stat stat;
-        ASSERT(lstat("LICENSE", &stat) == 0);
-        ASSERT(stat.st_size == 34523);
-        ASSERT(stat.st_mtime == 1735689600);
-        ASSERT(stat.st_ctime == 1735689600);
-        error("stat.atime: %lld\n", stat.st_atime);
-    }
-
-    {
-        DirEntry *dirent;
-        FILE *ls_pipe;
-        char buffer[1024];
-        int32 dirent_capacity;
-        int32 nfiles;
-
-        if ((nfiles = get_directory_entries("./", &dirent)) <= 0) {
-            error("Error in scandir for windows.\n");
-            fatal(EXIT_FAILURE);
-        }
-        dirent_capacity = nfiles;
-
-        if ((ls_pipe = popen("dir /b", "r")) == NULL) {
-            error("Error in popen: %s.\n", strerror(errno));
-            fatal(EXIT_FAILURE);
-        }
-        while (fgets(buffer, SIZEOF(buffer), ls_pipe)) {
-            int64 length = strlen32(buffer);
-
-            if ((length > 0) && (buffer[length - 1] == '\n')) {
-                length -= 1;
-            }
-            buffer[length] = '\0';
-            ASSERT(contains(buffer, length, dirent, &nfiles));
-        }
-
-        free2(dirent, (int64)dirent_capacity*SIZEOF(*dirent));
-    }
-
-    exit(EXIT_SUCCESS);
-}
-#endif
-
 #endif
 #endif
 
@@ -1462,6 +1446,47 @@ main(void) {
     char temp_dir[PATH_MAX];
 
     test_make_temp_dir(temp_dir, SIZEOF(temp_dir), "fs");
+
+    {
+        char dir_path[PATH_MAX];
+        char file_path[PATH_MAX];
+        char template_path[PATH_MAX];
+        char temp_file_path[PATH_MAX];
+        int32 fd;
+
+        SNPRINTF(dir_path, "%s/wrapped_dir", temp_dir);
+        ASSERT_EQUAL(cbase_mkdir(dir_path), 0);
+        ASSERT_EQUAL(cbase_remove_empty_dir(dir_path), 0);
+
+        SNPRINTF(file_path, "%s/wrapped_file", temp_dir);
+        WRITE_FILE(file_path, "x");
+        ASSERT(util_file_exists(file_path));
+        ASSERT_ZERO(cbase_unlink(file_path));
+        ASSERT(!util_file_exists(file_path));
+
+        WRITE_FILE(file_path, "x");
+        ASSERT(util_file_exists(file_path));
+        ASSERT_ZERO(cbase_remove_file(file_path));
+        ASSERT(!util_file_exists(file_path));
+
+        SNPRINTF(template_path, "%s/stem_XXXXXX.txt", temp_dir);
+        fd = cbase_mkstemps(template_path, STRLIT_LEN(".txt"));
+        ASSERT(fd >= 0);
+        ASSERT(write64(fd, "x", 1) == 1);
+        XCLOSE(&fd, template_path);
+        ASSERT(util_file_exists(template_path));
+        ASSERT_EQUAL(cbase_remove_file(template_path), 0);
+
+        fd = cbase_make_temp_file(temp_file_path,
+                                  SIZEOF(temp_file_path),
+                                  "fs_file",
+                                  ".tmp");
+        ASSERT(fd >= 0);
+        ASSERT(write64(fd, "y", 1) == 1);
+        XCLOSE(&fd, temp_file_path);
+        ASSERT(util_file_exists(temp_file_path));
+        ASSERT_ZERO(cbase_remove_file(temp_file_path));
+    }
 
     {
         char paths[][30] = {
