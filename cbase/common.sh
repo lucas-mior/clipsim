@@ -541,6 +541,27 @@ common_option_remove() {
     printf '%s\n' "$result"
 }
 
+common_msvc_add_utf8_cflags() {
+    result="$*"
+
+    for flag do
+        case "$flag" in
+        /utf-8)
+            printf '%s\n' "$result"
+            return
+            ;;
+        esac
+    done
+
+    if [ -z "$result" ]; then
+        printf '%s\n' "/utf-8"
+    else
+        printf '%s\n' "$result /utf-8"
+    fi
+
+    return
+}
+
 common_gcc_flags_to_msvc() {
     compiler=clang-cl
     result=""
@@ -824,6 +845,7 @@ common_test_compile_and_run_source () {
         test_cmdline="$test_cc $test_cmd_flags"
         test_cmdline=$(common_option_remove "$test_cmdline" "-D_GNU_SOURCE")
         test_cmdline="$test_cmdline -target x86_64-windows-gnu"
+        test_tail_ldflags=${TEST_WINDOWS_LDFLAGS:-}
         test_run_after_compile=${TEST_WINDOWS_RUN:-1}
     else
         case "$test_cc" in
@@ -840,10 +862,12 @@ common_test_compile_and_run_source () {
                 test_cmd_flags="$test_cmd_flags --target=$CLANG_CL_TARGET"
             fi
             test_cmd_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_cmd_flags)
+            test_cmd_flags=$(common_msvc_add_utf8_cflags $test_cmd_flags)
             ;;
         cl|*/cl|cl.exe|*/cl.exe)
             test_msvc_compiler=cl
             test_cmd_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_cmd_flags)
+            test_cmd_flags=$(common_msvc_add_utf8_cflags $test_cmd_flags)
             ;;
         esac
         test_cmdline="$test_cc $test_cmd_flags"
