@@ -1,7 +1,5 @@
 # shellcheck shell=sh
 
-echo "sourcing functions_forbidden.sh..."
-
 common_libc_never=
 common_libc_cbase_only=
 common_libc_cbase_dir=

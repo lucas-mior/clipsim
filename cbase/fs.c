@@ -29,6 +29,253 @@ cbase_mkdtemp(char *template) {
 }
 #endif
 
+int32
+cbase_mkdir(char *path) {
+#if OS_WINDOWS
+    if (CreateDirectoryA(path, NULL)) {
+        return 0;
+    }
+    windows_set_errno(GetLastError());
+    return -1;
+#elif HAS_POSIX_WIN_SUBSET
+    return mkdir(path, 0777);
+#else
+    (void)path;
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int32
+cbase_rmdir(char *path) {
+#if OS_WINDOWS
+    if (RemoveDirectoryA(path)) {
+        return 0;
+    }
+    windows_set_errno(GetLastError());
+    return -1;
+#elif HAS_POSIX_WIN_SUBSET
+    return rmdir(path);
+#else
+    (void)path;
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int32
+cbase_unlink(char *path) {
+#if OS_WINDOWS
+    if (DeleteFileA(path)) {
+        return 0;
+    }
+    windows_set_errno(GetLastError());
+    return -1;
+#elif HAS_POSIX_WIN_SUBSET
+    return unlink(path);
+#else
+    (void)path;
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int32
+cbase_remove_file(char *path) {
+    return cbase_unlink(path);
+}
+
+int32
+cbase_remove_empty_dir(char *path) {
+    return cbase_rmdir(path);
+}
+
+int32
+cbase_mkstemps(char *template_path, int32 suffix_len) {
+    char characters[] =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    int64 len;
+    int64 x_start;
+
+    if ((template_path == NULL) || (suffix_len < 0)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    len = strlen32(template_path);
+    if (suffix_len > len - 6) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    x_start = len - suffix_len - 6;
+    if (memcmp64(template_path + x_start, "XXXXXX", 6) != 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    for (int32 attempt = 0; attempt < 10000; attempt += 1) {
+        uint32 state;
+        int32 fd;
+        int32 flags = O_RDWR |O_CREAT |O_EXCL;
+
+#if defined(O_BINARY)
+        flags |= O_BINARY;
+#endif
+
+        state = (uint32)time(NULL);
+        state ^= (uint32)(uintptr_t)template_path;
+        state ^= (uint32)attempt*2654435761u;
+#if OS_WINDOWS
+        state ^= (uint32)GetCurrentProcessId();
+        state ^= (uint32)GetCurrentThreadId();
+        state ^= (uint32)GetTickCount64();
+#elif HAS_POSIX_WIN_SUBSET
+        state ^= (uint32)getpid();
+#endif
+
+        for (int32 i = 0; i < 6; i += 1) {
+            state = state*1103515245u + 12345u;
+            template_path[x_start + i]
+                = characters[state % (SIZEOF(characters) - 1)];
+        }
+
+        fd = open(template_path, flags, S_IRUSR |S_IWUSR);
+        if (fd >= 0) {
+            return fd;
+        }
+        if (errno != EEXIST) {
+            return -1;
+        }
+    }
+
+    errno = EEXIST;
+    return -1;
+}
+
+int32
+cbase_make_temp_file(
+    char *buffer,
+    int32 capacity,
+    char *prefix,
+    char *suffix
+) {
+#if OS_UNIX || OS_WINDOWS
+    char *tmpdir;
+    int32 len;
+    int32 suffix_len;
+    int32 prefix_len = 0;
+
+    if ((buffer == NULL) || (capacity <= 0) || (prefix == NULL)) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (suffix == NULL) {
+        suffix = "";
+    }
+    suffix_len = strlen32(suffix);
+
+    tmpdir = getenv("TMPDIR");
+#if OS_WINDOWS
+    if (tmpdir == NULL) {
+        DWORD temp_len;
+
+        temp_len = GetTempPathA((DWORD)capacity, buffer);
+        if ((temp_len <= 0) || (temp_len >= (DWORD)capacity)) {
+            windows_set_errno(GetLastError());
+            return -1;
+        }
+        prefix_len = (int32)temp_len;
+        len = snprintf2(buffer + prefix_len, capacity - prefix_len,
+                        "%s_XXXXXX%s", prefix, suffix);
+    } else {
+        len = snprintf2(buffer, capacity, "%s/%s_XXXXXX%s",
+                        tmpdir, prefix, suffix);
+    }
+#else
+    if (tmpdir == NULL) {
+        tmpdir = "/tmp";
+    }
+    len = snprintf2(buffer, capacity, "%s/%s_XXXXXX%s",
+                    tmpdir, prefix, suffix);
+#endif
+    if ((len <= 0) || (len >= (capacity - prefix_len))) {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+
+    return cbase_mkstemps(buffer, suffix_len);
+#else
+    (void)buffer;
+    (void)capacity;
+    (void)prefix;
+    (void)suffix;
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+char *
+cbase_getcwd(char *buffer, int64 size) {
+    if (size <= 0) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+#if OS_WINDOWS
+    {
+        DWORD len;
+
+        if (size > MAXOF((DWORD)0)) {
+            errno = EINVAL;
+            return NULL;
+        }
+
+        len = GetCurrentDirectoryA((DWORD)size, buffer);
+        if (len == 0) {
+            windows_set_errno(GetLastError());
+            return NULL;
+        }
+        if (len >= (DWORD)size) {
+            errno = ERANGE;
+            return NULL;
+        }
+        return buffer;
+    }
+#elif HAS_POSIX_WIN_SUBSET
+    return getcwd(buffer, (size_t)size);
+#else
+    (void)buffer;
+    errno = ENOSYS;
+    return NULL;
+#endif
+}
+
+bool
+xregular_file_exists(char *path) {
+#if HAS_POSIX_WIN_SUBSET || CBASE_CRT_MSVC
+    struct stat st;
+
+    if (stat(path, &st) < 0) {
+        if (errno == ENOENT) {
+            return false;
+        }
+        error("stat(%s) failed: %s", path, strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+    if (!S_ISREG(st.st_mode)) {
+        error("expected regular file: %s", path);
+        fatal(EXIT_FAILURE);
+    }
+    return true;
+#else
+    (void)path;
+    errno = ENOSYS;
+    error("regular-file checks are unsupported on this platform");
+    fatal(EXIT_FAILURE);
+#endif
+}
+
 void
 write_all(int fd, char *buffer, int64 left) {
     int64 written = 0;
@@ -204,8 +451,8 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
 
 int
 xunlink(char *filename) {
-    if (unlink(filename) < 0) {
-        error2("Error in unlink(%s): %s.\n", filename, strerror(errno));
+    if (cbase_unlink(filename) < 0) {
+        error2("Error removing file %s: %s.\n", filename, strerror(errno));
         return -1;
     }
     return 0;
@@ -896,12 +1143,7 @@ fs_functions_sink(void) {
 
 #if TESTING
 void
-test_join_path(
-    char *buffer,
-    int64 buffer_len,
-    char *dir,
-    char *name
-) {
+test_join_path(char *buffer, int64 buffer_len, char *dir, char *name) {
     int32 len;
 
     len = snprintf2(buffer, buffer_len, "%s/%s", dir, name);
@@ -1007,11 +1249,11 @@ test_remove_tree(char *path) {
 
     if (S_ISDIR(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
         test_remove_tree_children(path);
-        if (rmdir(path) < 0) {
+        if (cbase_remove_empty_dir(path) < 0) {
             error("Error removing test directory %s: %s.\n",
                   path, strerror(errno));
         }
-    } else if (unlink(path) < 0) {
+    } else if (cbase_remove_file(path) < 0) {
         error("Error removing test path %s: %s.\n", path, strerror(errno));
     }
 
@@ -1131,10 +1373,10 @@ test_symlink_supported(char *dir) {
         return false;
     }
 
-    unlink(link_path);
+    cbase_remove_file(link_path);
     supported = symlink("target", link_path) == 0;
     if (supported) {
-        unlink(link_path);
+        cbase_remove_file(link_path);
     }
 
     return supported;
@@ -1158,18 +1400,18 @@ test_hardlink_supported(char *dir) {
         return false;
     }
 
-    unlink(src_path);
-    unlink(link_path);
-    fd = open(src_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
-    if (fd < 0) {
+    cbase_remove_file(src_path);
+    cbase_remove_file(link_path);
+
+    if ((fd = open(src_path, O_CREAT | O_WRONLY | O_TRUNC, 0644)) < 0) {
         return false;
     }
     write64(fd, "x", 1);
     XCLOSE(&fd, src_path);
 
     supported = link(src_path, link_path) == 0;
-    unlink(link_path);
-    unlink(src_path);
+    cbase_remove_file(link_path);
+    cbase_remove_file(src_path);
 
     return supported;
 }
@@ -1204,6 +1446,47 @@ main(void) {
     char temp_dir[PATH_MAX];
 
     test_make_temp_dir(temp_dir, SIZEOF(temp_dir), "fs");
+
+    {
+        char dir_path[PATH_MAX];
+        char file_path[PATH_MAX];
+        char template_path[PATH_MAX];
+        char temp_file_path[PATH_MAX];
+        int32 fd;
+
+        SNPRINTF(dir_path, "%s/wrapped_dir", temp_dir);
+        ASSERT_EQUAL(cbase_mkdir(dir_path), 0);
+        ASSERT_EQUAL(cbase_remove_empty_dir(dir_path), 0);
+
+        SNPRINTF(file_path, "%s/wrapped_file", temp_dir);
+        WRITE_FILE(file_path, "x");
+        ASSERT(util_file_exists(file_path));
+        ASSERT_ZERO(cbase_unlink(file_path));
+        ASSERT(!util_file_exists(file_path));
+
+        WRITE_FILE(file_path, "x");
+        ASSERT(util_file_exists(file_path));
+        ASSERT_ZERO(cbase_remove_file(file_path));
+        ASSERT(!util_file_exists(file_path));
+
+        SNPRINTF(template_path, "%s/stem_XXXXXX.txt", temp_dir);
+        fd = cbase_mkstemps(template_path, STRLIT_LEN(".txt"));
+        ASSERT(fd >= 0);
+        ASSERT(write64(fd, "x", 1) == 1);
+        XCLOSE(&fd, template_path);
+        ASSERT(util_file_exists(template_path));
+        ASSERT_EQUAL(cbase_remove_file(template_path), 0);
+
+        fd = cbase_make_temp_file(temp_file_path,
+                                  SIZEOF(temp_file_path),
+                                  "fs_file",
+                                  ".tmp");
+        ASSERT(fd >= 0);
+        ASSERT(write64(fd, "y", 1) == 1);
+        XCLOSE(&fd, temp_file_path);
+        ASSERT(util_file_exists(temp_file_path));
+        ASSERT_ZERO(cbase_remove_file(temp_file_path));
+    }
 
     {
         char paths[][30] = {

@@ -518,15 +518,9 @@ if (pointer) {
 }
 ```
 
-For asserting that a pointer is NULL, use:
-```c
-ASSERT_NULL(pointer);
-```
-
 ## Assertions
 - Use the assertions defined in `cbase/assertions.c`.
   - `ASSERT(expression)`
-  - `ASSERT_NULL(pointer)`
   - `ASSERT_ZERO(integer expression)`
   - `ASSERT_POSITIVE(integer expression)`
   - `ASSERT_NEGATIVE(integer expression)`
@@ -543,6 +537,8 @@ ASSERT_NULL(pointer);
   - `ASSERT_FILE_CONTAINS(haystack, haystack_len, needle)`
   * They all use `__builtin_unreachable` if the condition fails if not
     debugging. Don't use them for non-debugging assertions.
+    + Assertions that must happen in non-debugging builds, must be explicit code
+      with a clear error message, not an assertion macro.
 - Do not use `ASSERT_EQUAL` for enums.
   * Use `ASSERT(enumvalue1 == enumvalue2)` instead, so that the compiler does
     not complain.
