@@ -129,6 +129,181 @@ command_result_append(
 }
 
 #if OS_WINDOWS
+typedef struct CommandWindowsCaptureFile {
+    HANDLE handle;
+    char path[PATH_MAX];
+} CommandWindowsCaptureFile;
+
+CBASE_PRIVATE void
+command_windows_capture_file_init(CommandWindowsCaptureFile *capture) {
+    *capture = (CommandWindowsCaptureFile){0};
+    capture->handle = INVALID_HANDLE_VALUE;
+    return;
+}
+
+CBASE_PRIVATE void
+command_windows_error_set(Command *command, DWORD error_code) {
+    windows_set_errno(error_code);
+    command_error_set(command, (int32)error_code);
+    return;
+}
+
+CBASE_PRIVATE bool
+command_windows_capture_file_open(
+    Command *command,
+    CommandWindowsCaptureFile *capture,
+    char *prefix
+) {
+    char temp_dir[PATH_MAX];
+    SECURITY_ATTRIBUTES security_attributes = {0};
+    DWORD temp_dir_len;
+
+    temp_dir_len = GetTempPathA((DWORD)SIZEOF(temp_dir), temp_dir);
+    if ((temp_dir_len == 0) || (temp_dir_len >= (DWORD)SIZEOF(temp_dir))) {
+        command_windows_error_set(command, GetLastError());
+        return false;
+    }
+
+    if (GetTempFileNameA(temp_dir, prefix, 0, capture->path) == 0) {
+        command_windows_error_set(command, GetLastError());
+        return false;
+    }
+
+    security_attributes.nLength = (DWORD)SIZEOF(security_attributes);
+    security_attributes.lpSecurityDescriptor = NULL;
+    security_attributes.bInheritHandle = TRUE;
+
+    capture->handle = CreateFileA(capture->path,
+                                  GENERIC_WRITE,
+                                  FILE_SHARE_READ |FILE_SHARE_WRITE,
+                                  &security_attributes,
+                                  CREATE_ALWAYS,
+                                  FILE_ATTRIBUTE_TEMPORARY,
+                                  NULL);
+    if (capture->handle == INVALID_HANDLE_VALUE) {
+        command_windows_error_set(command, GetLastError());
+        DeleteFileA(capture->path);
+        capture->path[0] = '\0';
+        return false;
+    }
+
+    return true;
+}
+
+CBASE_PRIVATE bool
+command_windows_capture_file_close(
+    Command *command,
+    CommandWindowsCaptureFile *capture
+) {
+    if (capture->handle == INVALID_HANDLE_VALUE) {
+        return true;
+    }
+
+    if (!CloseHandle(capture->handle)) {
+        command_windows_error_set(command, GetLastError());
+        capture->handle = INVALID_HANDLE_VALUE;
+        return false;
+    }
+
+    capture->handle = INVALID_HANDLE_VALUE;
+    return true;
+}
+
+CBASE_PRIVATE void
+command_windows_capture_file_cleanup(CommandWindowsCaptureFile *capture) {
+    if (capture->handle != INVALID_HANDLE_VALUE) {
+        CloseHandle(capture->handle);
+    }
+    if (capture->path[0] != '\0') {
+        DeleteFileA(capture->path);
+    }
+    command_windows_capture_file_init(capture);
+    return;
+}
+
+CBASE_PRIVATE bool
+command_windows_capture_file_read(
+    Command *command,
+    CommandWindowsCaptureFile *capture,
+    char **output,
+    int32 *output_len
+) {
+    if (!command_windows_capture_file_close(command, capture)) {
+        return false;
+    }
+
+    if (!read_entire_file(capture->path, output, output_len)) {
+        command_error_set(command, errno);
+        return false;
+    }
+
+    return true;
+}
+
+CBASE_PRIVATE bool
+command_windows_result_read_captured(
+    Command *command,
+    enum CommandFlag flags,
+    CommandWindowsCaptureFile *stdout_capture,
+    CommandWindowsCaptureFile *stderr_capture
+) {
+    StrBuilder output = {0};
+    char *stdout_output = NULL;
+    char *stderr_output = NULL;
+    int32 stdout_len = 0;
+    int32 stderr_len = 0;
+
+    if ((flags & COMMAND_CAPTURE_STDOUT)
+        && !command_windows_capture_file_read(command,
+                                             stdout_capture,
+                                             &stdout_output,
+                                             &stdout_len)) {
+        return false;
+    }
+
+    if (flags & COMMAND_CAPTURE_STDERR) {
+        if (flags & COMMAND_MERGE_STDERR) {
+            stderr_output = xstrndup(STRLIT(""));
+            stderr_len = 0;
+        } else if (!command_windows_capture_file_read(command,
+                                                      stderr_capture,
+                                                      &stderr_output,
+                                                      &stderr_len)) {
+            free2(stdout_output, stdout_len + 1);
+            return false;
+        }
+    }
+
+    if (command_flags_capture(flags)) {
+        if (flags & COMMAND_CAPTURE_STDOUT) {
+            sb_append(&output, stdout_output, stdout_len);
+        }
+        if ((flags & COMMAND_CAPTURE_STDERR)
+            && !(flags & COMMAND_MERGE_STDERR)) {
+            sb_append(&output, stderr_output, stderr_len);
+        }
+        command->result.output = sb_steal_exact(&output,
+                                                &command->result.output_len);
+    }
+
+    if (flags & COMMAND_CAPTURE_STDOUT) {
+        command->result.stdout_output = stdout_output;
+        command->result.stdout_len = stdout_len;
+        stdout_output = NULL;
+        stdout_len = 0;
+    }
+    if (flags & COMMAND_CAPTURE_STDERR) {
+        command->result.stderr_output = stderr_output;
+        command->result.stderr_len = stderr_len;
+        stderr_output = NULL;
+        stderr_len = 0;
+    }
+
+    free2(stdout_output, stdout_len + 1);
+    free2(stderr_output, stderr_len + 1);
+    return true;
+}
+
 char *
 command_windows_argv0(
     Command *command,
@@ -200,133 +375,61 @@ command_windows_command_line(
 
 int32
 command_windows_run_process(Command *command, enum CommandFlag flags) {
-#define COMMAND_WINDOWS_CLOSE_HANDLE(HANDLE_) do {      \
-    if ((HANDLE_) != INVALID_HANDLE_VALUE) {            \
-        CloseHandle(HANDLE_);                           \
-        (HANDLE_) = INVALID_HANDLE_VALUE;               \
-    }                                                   \
-} while (0)
-#define COMMAND_WINDOWS_DELETE_FILE(PATH_) do {         \
-    if ((PATH_)[0] != '\0') {                           \
-        DeleteFileA(PATH_);                             \
-        (PATH_)[0] = '\0';                              \
-    }                                                   \
-} while (0)
-
     char cmdline[BUFSIZ] = {0};
-    char stderr_path[MAX_PATH] = {0};
-    char stdout_path[MAX_PATH] = {0};
-    char temp_path[MAX_PATH] = {0};
+    CommandWindowsCaptureFile stdout_capture;
+    CommandWindowsCaptureFile stderr_capture;
     PROCESS_INFORMATION proc_info = {0};
-    SECURITY_ATTRIBUTES security_attributes = {0};
     STARTUPINFO startup_info = {0};
     DWORD exit_code = 0;
-    DWORD path_len;
-    HANDLE stderr_handle = INVALID_HANDLE_VALUE;
-    HANDLE stdin_handle = INVALID_HANDLE_VALUE;
-    HANDLE stdout_handle = INVALID_HANDLE_VALUE;
+    BOOL inherit_handles = TRUE;
     BOOL success;
-    bool capture_stderr;
-    bool capture_stdout;
-    bool merge_stderr;
+
+    command_windows_capture_file_init(&stdout_capture);
+    command_windows_capture_file_init(&stderr_capture);
+    flags = command_flags_normalized(flags);
+
+    if ((flags & COMMAND_CAPTURE_STDOUT)
+        && !command_windows_capture_file_open(command,
+                                             &stdout_capture,
+                                             "cos")) {
+        return -1;
+    }
+    if ((flags & COMMAND_CAPTURE_STDERR)
+        && !(flags & COMMAND_MERGE_STDERR)
+        && !command_windows_capture_file_open(command,
+                                             &stderr_capture,
+                                             "ces")) {
+        command_windows_capture_file_cleanup(&stdout_capture);
+        return -1;
+    }
 
     command_windows_command_line(command, cmdline, SIZEOF(cmdline));
-    flags = command_flags_normalized(flags);
-    capture_stdout = flags & COMMAND_CAPTURE_STDOUT;
-    capture_stderr = flags & COMMAND_CAPTURE_STDERR;
-    merge_stderr = flags & COMMAND_MERGE_STDERR;
 
-    security_attributes.nLength = sizeof(security_attributes);
-    security_attributes.bInheritHandle = TRUE;
-    security_attributes.lpSecurityDescriptor = NULL;
-
+    startup_info.cb = sizeof(startup_info);
     if (command_flags_capture(flags)) {
-        path_len = GetTempPathA((DWORD)SIZEOF(temp_path), temp_path);
-        if ((path_len == 0) || (path_len >= SIZEOF(temp_path))) {
-            command_error_set(command, (int32)GetLastError());
-            return -1;
-        }
-
-        if (capture_stdout) {
-            if (!GetTempFileNameA(temp_path, "cbs", 0, stdout_path)) {
-                command_error_set(command, (int32)GetLastError());
-                return -1;
-            }
-            stdout_handle = CreateFileA(stdout_path,
-                                        GENERIC_READ | GENERIC_WRITE,
-                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                        &security_attributes,
-                                        CREATE_ALWAYS,
-                                        FILE_ATTRIBUTE_TEMPORARY,
-                                        NULL);
-            if (stdout_handle == INVALID_HANDLE_VALUE) {
-                command_error_set(command, (int32)GetLastError());
-                DeleteFileA(stdout_path);
-                return -1;
-            }
-        }
-
-        if (capture_stderr && !merge_stderr) {
-            if (!GetTempFileNameA(temp_path, "cbs", 0, stderr_path)) {
-                command_error_set(command, (int32)GetLastError());
-                COMMAND_WINDOWS_CLOSE_HANDLE(stdout_handle);
-                COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-                return -1;
-            }
-            stderr_handle = CreateFileA(stderr_path,
-                                        GENERIC_READ | GENERIC_WRITE,
-                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                        &security_attributes,
-                                        CREATE_ALWAYS,
-                                        FILE_ATTRIBUTE_TEMPORARY,
-                                        NULL);
-            if (stderr_handle == INVALID_HANDLE_VALUE) {
-                command_error_set(command, (int32)GetLastError());
-                COMMAND_WINDOWS_CLOSE_HANDLE(stdout_handle);
-                COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-                COMMAND_WINDOWS_DELETE_FILE(stderr_path);
-                return -1;
-            }
-        }
-
-        stdin_handle = CreateFileA("NUL",
-                                   GENERIC_READ,
-                                   FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                   &security_attributes,
-                                   OPEN_EXISTING,
-                                   FILE_ATTRIBUTE_NORMAL,
-                                   NULL);
-        if (stdin_handle == INVALID_HANDLE_VALUE) {
-            command_error_set(command, (int32)GetLastError());
-            COMMAND_WINDOWS_CLOSE_HANDLE(stdout_handle);
-            COMMAND_WINDOWS_CLOSE_HANDLE(stderr_handle);
-            COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-            COMMAND_WINDOWS_DELETE_FILE(stderr_path);
-            return -1;
-        }
-
-        startup_info.dwFlags = STARTF_USESTDHANDLES;
-        startup_info.hStdInput = stdin_handle;
+        startup_info.dwFlags |= STARTF_USESTDHANDLES;
+        startup_info.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
         startup_info.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
         startup_info.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-        if (capture_stdout) {
-            startup_info.hStdOutput = stdout_handle;
+        inherit_handles = TRUE;
+
+        if (flags & COMMAND_CAPTURE_STDOUT) {
+            startup_info.hStdOutput = stdout_capture.handle;
         }
-        if (capture_stderr) {
-            if (merge_stderr) {
-                startup_info.hStdError = stdout_handle;
+        if (flags & COMMAND_CAPTURE_STDERR) {
+            if (flags & COMMAND_MERGE_STDERR) {
+                startup_info.hStdError = stdout_capture.handle;
             } else {
-                startup_info.hStdError = stderr_handle;
+                startup_info.hStdError = stderr_capture.handle;
             }
         }
     }
 
-    startup_info.cb = sizeof(startup_info);
     success = CreateProcessA(NULL,
                              cmdline,
                              NULL,
                              NULL,
-                             TRUE,
+                             inherit_handles,
                              0,
                              NULL,
                              command->cwd,
@@ -335,99 +438,63 @@ command_windows_run_process(Command *command, enum CommandFlag flags) {
     if (!success) {
         DWORD err = GetLastError();
 
-        command_error_set(command, (int32)err);
+        command_windows_capture_file_cleanup(&stdout_capture);
+        command_windows_capture_file_cleanup(&stderr_capture);
+        command_windows_error_set(command, err);
         error("Error running '%s': %llu.\n", cmdline, (ullong)err);
         if (err == ERROR_PATH_NOT_FOUND) {
             error("Path not found.\n");
         }
-        COMMAND_WINDOWS_CLOSE_HANDLE(stdin_handle);
-        COMMAND_WINDOWS_CLOSE_HANDLE(stdout_handle);
-        COMMAND_WINDOWS_CLOSE_HANDLE(stderr_handle);
-        COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-        COMMAND_WINDOWS_DELETE_FILE(stderr_path);
-        if ((err == ERROR_FILE_NOT_FOUND) || (err == ERROR_PATH_NOT_FOUND)) {
-            return 127;
-        }
         return -1;
     }
 
-    COMMAND_WINDOWS_CLOSE_HANDLE(stdin_handle);
+    command->result.pid = proc_info.dwProcessId;
 
     if (WaitForSingleObject(proc_info.hProcess, INFINITE) != WAIT_OBJECT_0) {
-        command_error_set(command, (int32)GetLastError());
+        command_windows_error_set(command, GetLastError());
         CloseHandle(proc_info.hThread);
         CloseHandle(proc_info.hProcess);
-        COMMAND_WINDOWS_CLOSE_HANDLE(stdout_handle);
-        COMMAND_WINDOWS_CLOSE_HANDLE(stderr_handle);
-        COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-        COMMAND_WINDOWS_DELETE_FILE(stderr_path);
+        command_windows_capture_file_cleanup(&stdout_capture);
+        command_windows_capture_file_cleanup(&stderr_capture);
         return -1;
     }
 
     if (!GetExitCodeProcess(proc_info.hProcess, &exit_code)) {
-        command_error_set(command, (int32)GetLastError());
+        command_windows_error_set(command, GetLastError());
         CloseHandle(proc_info.hThread);
         CloseHandle(proc_info.hProcess);
-        COMMAND_WINDOWS_CLOSE_HANDLE(stdout_handle);
-        COMMAND_WINDOWS_CLOSE_HANDLE(stderr_handle);
-        COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-        COMMAND_WINDOWS_DELETE_FILE(stderr_path);
+        command_windows_capture_file_cleanup(&stdout_capture);
+        command_windows_capture_file_cleanup(&stderr_capture);
         return -1;
     }
 
     if (!CloseHandle(proc_info.hThread)) {
-        command_error_set(command, (int32)GetLastError());
+        command_windows_error_set(command, GetLastError());
         CloseHandle(proc_info.hProcess);
-        COMMAND_WINDOWS_CLOSE_HANDLE(stdout_handle);
-        COMMAND_WINDOWS_CLOSE_HANDLE(stderr_handle);
-        COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-        COMMAND_WINDOWS_DELETE_FILE(stderr_path);
+        command_windows_capture_file_cleanup(&stdout_capture);
+        command_windows_capture_file_cleanup(&stderr_capture);
         return -1;
     }
 
     if (!CloseHandle(proc_info.hProcess)) {
-        command_error_set(command, (int32)GetLastError());
-        COMMAND_WINDOWS_CLOSE_HANDLE(stdout_handle);
-        COMMAND_WINDOWS_CLOSE_HANDLE(stderr_handle);
-        COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-        COMMAND_WINDOWS_DELETE_FILE(stderr_path);
+        command_windows_error_set(command, GetLastError());
+        command_windows_capture_file_cleanup(&stdout_capture);
+        command_windows_capture_file_cleanup(&stderr_capture);
         return -1;
     }
 
-    COMMAND_WINDOWS_CLOSE_HANDLE(stdout_handle);
-    COMMAND_WINDOWS_CLOSE_HANDLE(stderr_handle);
-    if (capture_stdout) {
-        if (!read_entire_file(stdout_path,
-                              &command->result.stdout_output,
-                              &command->result.stdout_len)) {
-            command_error_set(command, errno);
-            COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-            COMMAND_WINDOWS_DELETE_FILE(stderr_path);
-            return -1;
-        }
-        command->result.output = xstrndup(command->result.stdout_output,
-                                          command->result.stdout_len);
-        command->result.output_len = command->result.stdout_len;
+    if (command_flags_capture(flags)
+        && !command_windows_result_read_captured(command,
+                                                flags,
+                                                &stdout_capture,
+                                                &stderr_capture)) {
+        command_windows_capture_file_cleanup(&stdout_capture);
+        command_windows_capture_file_cleanup(&stderr_capture);
+        return -1;
     }
-    if (capture_stderr && !merge_stderr) {
-        if (!read_entire_file(stderr_path,
-                              &command->result.stderr_output,
-                              &command->result.stderr_len)) {
-            command_error_set(command, errno);
-            COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-            COMMAND_WINDOWS_DELETE_FILE(stderr_path);
-            return -1;
-        }
-        if (!capture_stdout) {
-            command->result.output = xstrndup(command->result.stderr_output,
-                                              command->result.stderr_len);
-            command->result.output_len = command->result.stderr_len;
-        }
-    }
-    COMMAND_WINDOWS_DELETE_FILE(stdout_path);
-    COMMAND_WINDOWS_DELETE_FILE(stderr_path);
-#undef COMMAND_WINDOWS_DELETE_FILE
-#undef COMMAND_WINDOWS_CLOSE_HANDLE
+
+    command_windows_capture_file_cleanup(&stdout_capture);
+    command_windows_capture_file_cleanup(&stderr_capture);
     return (int32)exit_code;
 }
 #endif
@@ -977,12 +1044,14 @@ command_run(Command *command, enum CommandFlag flags) {
         command_error_set(command, EINVAL);
         return false;
     }
-    if ((flags & COMMAND_ASYNC)
-        || (command->stdin_buffer != NULL)) {
+    if ((flags & COMMAND_ASYNC) || (command->stdin_buffer != NULL)) {
         command_error_set(command, ENOSYS);
         return false;
     }
     command->result.status = command_windows_run_process(command, flags);
+    if (command->error_status) {
+        return false;
+    }
     command->result.exit_status = command->result.status;
     command->result.exited = true;
     return true;
@@ -1635,6 +1704,45 @@ main(int argc, char **argv) {
         ASSERT(command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT));
         ASSERT_EQUAL(cmd.result.stdout_output, "works:42");
         command_env_clear(&cmd);
+
+        command_reset(&cmd);
+        ASSERT_ZERO(cmd.argc);
+#endif
+
+#if OS_WINDOWS
+        COMMAND_PUSH(&cmd, "cmd", "/C", "exit /B 7");
+        ASSERT(command_run_sync(&cmd, NULL));
+        ASSERT_EQUAL(cmd.result.status, 7);
+        ASSERT(cmd.result.exited);
+        ASSERT_EQUAL(cmd.result.exit_status, 7);
+
+        command_reset(&cmd);
+        ASSERT_ZERO(cmd.argc);
+
+        COMMAND_PUSH(&cmd,
+                     "cmd",
+                     "/C",
+                     "echo stdout& echo stderr 1>&2& exit /B 7");
+        ASSERT(command_run_capture_combined(&cmd));
+        ASSERT_EQUAL(cmd.result.output, "stdout\r\nstderr\r\n");
+        ASSERT_EQUAL(cmd.result.stdout_output, "stdout\r\nstderr\r\n");
+        ASSERT_EQUAL(cmd.result.stderr_output, "");
+        ASSERT_EQUAL(cmd.result.output_len, 16);
+        ASSERT_EQUAL(cmd.result.status, 7);
+
+        command_reset(&cmd);
+        ASSERT_ZERO(cmd.argc);
+
+        COMMAND_PUSH(&cmd,
+                     "cmd",
+                     "/C",
+                     "echo stdout& echo stderr 1>&2& exit /B 6");
+        ASSERT(command_run_capture_all(&cmd));
+        ASSERT_EQUAL(cmd.result.stdout_output, "stdout\r\n");
+        ASSERT_EQUAL(cmd.result.stderr_output, "stderr\r\n");
+        ASSERT_EQUAL(cmd.result.stdout_len, 8);
+        ASSERT_EQUAL(cmd.result.stderr_len, 8);
+        ASSERT_EQUAL(cmd.result.status, 6);
 
         command_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
