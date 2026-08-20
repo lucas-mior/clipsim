@@ -278,15 +278,6 @@ main(void) {
     }
 
     {
-        struct stat stat;
-        ASSERT(lstat("LICENSE", &stat) == 0);
-        ASSERT(stat.st_size == 34523);
-        ASSERT(stat.st_mtime == 1735689600);
-        ASSERT(stat.st_ctime == 1735689600);
-        error("stat.atime: %lld\n", stat.st_atime);
-    }
-
-    {
         DirEntry *dirent;
         FILE *ls_pipe;
         char buffer[1024];

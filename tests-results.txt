@@ -1,0 +1,147 @@
+
+build.sh [01;38;2;255;000;000mtest[0m
+
+Testing [01;38;2;255;000;000m./cbase/arena.c[0m ...
++ tcc -Icbase -std=c11 -Wfatal-errors -Wextra -Wall -Werror=all -Werror=extra -Wno-declaration-after-statement -g3 -DDEBUGGING=1 -Wno-unused-variable -DTESTING_arena=1 -DTESTING=1 -o /tmp/arena_test ./cbase/arena.c -lX11 -lXfixes -lXi -lmagic -lm -lpthread
++ [ 1 != 0 ]
++ common_test_run_binary /tmp/arena_test
++ test_exe=/tmp/arena_test
++ test_status=0
++ [ -n  ]
++ /tmp/arena_test
+Expected error in arena_push: Object is too big for arena.
+Arena 0x7f6330200000 {
+  name: arena
+  begin: 0x7f6330200030
+  pos: 0x7f6330200070
+  size: 4194304
+  npushed: 2
+  next:    0x7f632fe00000
+} -> Arena 0x7f632fe00000 {
+  name: (null)
+  begin: 0x7f632fe00030
+  pos: 0x7f632fe00030
+  size: 4194304
+  npushed: 0
+  next:    (nil)
+}
++ [ 0 != 0 ]
++ return 0
+
+Testing [01;38;2;255;000;000m./cbase/array.c[0m ...
++ tcc -Icbase -std=c11 -Wfatal-errors -Wextra -Wall -Werror=all -Werror=extra -Wno-declaration-after-statement -g3 -DDEBUGGING=1 -Wno-unused-variable -DTESTING_array=1 -DTESTING=1 -o /tmp/array_test ./cbase/array.c -lX11 -lXfixes -lXi -lmagic -lm -lpthread
++ [ 1 != 0 ]
++ common_test_run_binary /tmp/array_test
++ test_exe=/tmp/array_test
++ test_status=0
++ [ -n  ]
++ /tmp/array_test
++ [ 0 != 0 ]
++ return 0
+
+Testing [01;38;2;255;000;000m./cbase/assertions.c[0m ...
++ tcc -Icbase -std=c11 -Wfatal-errors -Wextra -Wall -Werror=all -Werror=extra -Wno-declaration-after-statement -g3 -DDEBUGGING=1 -Wno-unused-variable -DTESTING_assertions=1 -DTESTING=1 -o /tmp/assertions_test ./cbase/assertions.c -lX11 -lXfixes -lXi -lmagic -lm -lpthread
++ [ 1 != 0 ]
++ common_test_run_binary /tmp/assertions_test
++ test_exe=/tmp/assertions_test
++ test_status=0
++ [ -n  ]
++ /tmp/assertions_test
+
+The following assertions are supposed to fail
+and then check the 'assertion_failed' variable
+./cbase/assertions.c:958:[0;31mmain()[0m: Assertion failed:
+[int32]a = 0.000000 == 1.000000 = b[double64]
+./cbase/assertions.c:964:[0;31mmain()[0m: Assertion failed:
+string_null is NULL.
+./cbase/assertions.c:970:[0;31mmain()[0m: Assertion failed:
+string_some = som == "none" = none
+./cbase/assertions.c:976:[0;31mmain()[0m: Assertion failed:
+[int32]a = 0.000000 > 1.000000 = b[double64]
+./cbase/assertions.c:982:[0;31mmain()[0m: Assertion failed:
+[double64]b = 1.000000 < 0.000000 = a[int32]
+./cbase/assertions.c:988:[0;31mmain()[0m: Assertion failed:
+[int32]a = 0.000000 >= 1.000000 = b[double64]
+./cbase/assertions.c:994:[0;31mmain()[0m: Assertion failed:
+[double64]b = 1.000000 <= 0.000000 = a[int32]
+./cbase/assertions.c:1000:[0;31mmain()[0m: Assertion failed:
+(void *)&array[1] = 0x7fff8ce548a4 < 0x7fff8ce548a0 = (void *)&array[0]
+./cbase/assertions.c:1006:[0;31mmain()[0m: Assertion failed:
+[int32]1 = 1 == 0 = 0[int32]
+./cbase/assertions.c:1012:[0;31mmain()[0m: Assertion failed:
+[double64]close_a = 0.30000000000000004 !~= 0.29999999999999999 = close_b[double64]
+floating diff = 5.5511151231257827e-17, ulps = 1, max_ulps = 16
+./cbase/assertions.c:1018:[0;31mmain()[0m: Assertion failed:
+[double64]close_a = 0.30000000000000004 !~= 0.29999999999999999 = close_b[double64]
+floating diff = 5.5511151231257827e-17, tolerance = 0.01
+./cbase/assertions.c:1024:[0;31mmain()[0m: Assertion failed:
+expected to find substring'''
+[0;32mdelta
+[0m''' in '''[0;34malpha beta gamma
+[0m'''
+./cbase/assertions.c:1030:[0;31mmain()[0m: Assertion failed:
+expected to not find substring'''
+[0;32mbeta
+[0m''' in '''[0;34malpha beta
+ gamma
+[0m'''
+All assertions tests passed.
++ [ 0 != 0 ]
++ return 0
+
+Testing [01;38;2;255;000;000m./cbase/cbase.c[0m ...
++ tcc -Icbase -std=c11 -Wfatal-errors -Wextra -Wall -Werror=all -Werror=extra -Wno-declaration-after-statement -g3 -DDEBUGGING=1 -Wno-unused-variable -DTESTING_cbase=1 -DTESTING=1 -o /tmp/cbase_test ./cbase/cbase.c -lX11 -lXfixes -lXi -lmagic -lm -lpthread
++ [ 1 != 0 ]
++ common_test_run_binary /tmp/cbase_test
++ test_exe=/tmp/cbase_test
++ test_status=0
++ [ -n  ]
++ /tmp/cbase_test
++ [ 0 != 0 ]
++ return 0
+
+Testing [01;38;2;255;000;000m./cbase/command.c[0m ...
++ tcc -Icbase -std=c11 -Wfatal-errors -Wextra -Wall -Werror=all -Werror=extra -Wno-declaration-after-statement -g3 -DDEBUGGING=1 -Wno-unused-variable -DTESTING_command=1 -DTESTING=1 -o /tmp/command_test ./cbase/command.c -lX11 -lXfixes -lXi -lmagic -lm -lpthread
++ [ 1 != 0 ]
++ common_test_run_binary /tmp/command_test
++ test_exe=/tmp/command_test
++ test_status=0
++ [ -n  ]
++ /tmp/command_test
+./cbase/command.c:1807:main: called 1 times
+[0;31mecho[0m --val=123 test
+
+time elapsed ./cbase/command.c:1810:main
+0.0407487s = 40748.7us per item.
++ [ 0 != 0 ]
++ return 0
+
+Testing [01;38;2;255;000;000m./cbase/directory.c[0m ...
++ tcc -Icbase -std=c11 -Wfatal-errors -Wextra -Wall -Werror=all -Werror=extra -Wno-declaration-after-statement -g3 -DDEBUGGING=1 -Wno-unused-variable -DTESTING_directory=1 -DTESTING=1 -o /tmp/directory_test ./cbase/directory.c -lX11 -lXfixes -lXi -lmagic -lm -lpthread
++ [ 1 != 0 ]
++ common_test_run_binary /tmp/directory_test
++ test_exe=/tmp/directory_test
++ test_status=0
++ [ -n  ]
++ /tmp/directory_test
++ [ 0 != 0 ]
++ return 0
+
+Testing [01;38;2;255;000;000m./cbase/fs.c[0m ...
++ tcc -Icbase -std=c11 -Wfatal-errors -Wextra -Wall -Werror=all -Werror=extra -Wno-declaration-after-statement -g3 -DDEBUGGING=1 -Wno-unused-variable -DTESTING_fs=1 -DTESTING=1 -o /tmp/fs_test ./cbase/fs.c -lX11 -lXfixes -lXi -lmagic -lm -lpthread
++ [ 1 != 0 ]
++ common_test_run_binary /tmp/fs_test
++ test_exe=/tmp/fs_test
++ test_status=0
++ [ -n  ]
++ /tmp/fs_test
++ [ 0 != 0 ]
++ return 0
+
+Testing [01;38;2;255;000;000m./cbase/fs_windows.c[0m ...
++ zig cc -Icbase -std=c11 -Wfatal-errors -Wextra -Wall -Werror=all -Werror=extra -Wno-declaration-after-statement -g3 -DDEBUGGING=1 -target x86_64-windows-gnu -Wno-unused-variable -DTESTING_fs_windows=1 -DTESTING=1 -o /tmp/fs_windows_test ./cbase/fs_windows.c
+./cbase/fs_windows.c:128:1: fatal error: unused function 'lstat' [-Wunused-function]
+  128 | lstat(const char *path, struct stat *statbuf) {
+      | ^~~~~
+1 error generated.
++ exit 1
