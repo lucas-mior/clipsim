@@ -356,15 +356,34 @@ command_windows_command_line(
             argument_len = command->argvs_lens[i];
         }
 
-        if ((j + argument_len + 3) >= cmdline_len) {
-            error("Command line is too long.\n");
-            fatal(EXIT_FAILURE);
+        bool needs_quotes = argument_len == 0;
+
+        for (int32 k = 0; k < argument_len; k += 1) {
+            if ((argument[k] == ' ') || (argument[k] == '\t')) {
+                needs_quotes = true;
+                break;
+            }
         }
 
-        cmdline[j] = '"';
-        memcpy64(&cmdline[j + 1], argument, argument_len);
-        cmdline[j + argument_len + 1] = '"';
-        j += argument_len + 2;
+        if (needs_quotes) {
+            if ((j + argument_len + 3) >= cmdline_len) {
+                error("Command line is too long.\n");
+                fatal(EXIT_FAILURE);
+            }
+
+            cmdline[j] = '"';
+            memcpy64(&cmdline[j + 1], argument, argument_len);
+            cmdline[j + argument_len + 1] = '"';
+            j += argument_len + 2;
+        } else {
+            if ((j + argument_len + 1) >= cmdline_len) {
+                error("Command line is too long.\n");
+                fatal(EXIT_FAILURE);
+            }
+
+            memcpy64(&cmdline[j], argument, argument_len);
+            j += argument_len;
+        }
         if (i < command->argc - 1) {
             cmdline[j++] = ' ';
         }
@@ -1499,7 +1518,7 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(cmd.argv[1], "second");
         ASSERT_EQUAL(cmd.argvs_lens[0], 5);
         ASSERT_EQUAL(cmd.argvs_lens[1], 6);
-        ASSERT_EQUAL(cmd.argv[cmd.argc], NULL);
+        ASSERT_NULL(cmd.argv[cmd.argc]);
 
         command_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
@@ -1722,7 +1741,7 @@ main(int argc, char **argv) {
         COMMAND_PUSH(&cmd,
                      "cmd",
                      "/C",
-                     "echo stdout& echo stderr 1>&2& exit /B 7");
+                     "echo stdout&echo stderr>&2&exit /B 7");
         ASSERT(command_run_capture_combined(&cmd));
         ASSERT_EQUAL(cmd.result.output, "stdout\r\nstderr\r\n");
         ASSERT_EQUAL(cmd.result.stdout_output, "stdout\r\nstderr\r\n");
@@ -1736,7 +1755,7 @@ main(int argc, char **argv) {
         COMMAND_PUSH(&cmd,
                      "cmd",
                      "/C",
-                     "echo stdout& echo stderr 1>&2& exit /B 6");
+                     "echo stdout&echo stderr>&2&exit /B 6");
         ASSERT(command_run_capture_all(&cmd));
         ASSERT_EQUAL(cmd.result.stdout_output, "stdout\r\n");
         ASSERT_EQUAL(cmd.result.stderr_output, "stderr\r\n");
