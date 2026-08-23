@@ -130,6 +130,8 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
 
 XENUMS_LINKAGE void CAT(ENUM_PREFIX_, str_free)(char *);
 XENUMS_LINKAGE char *CAT(ENUM_PREFIX_, str)(enum ENUM_NAME);
+XENUMS_LINKAGE void CAT(ENUM_PREFIX_, alias_free)(char *);
+XENUMS_LINKAGE char *CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME);
 XENUMS_LINKAGE enum ENUM_NAME CAT(ENUM_PREFIX_, parse)(char *);
 
 #if XENUMS_DECLARE_ONLY == 0
@@ -139,6 +141,12 @@ CAT(ENUM_PREFIX_, str_free)(char *str) {
 #if ENUM_BITFLAGS
     free2(str, optional_strlen32(str) + 1);
 #endif
+    return;
+}
+
+XENUMS_LINKAGE void
+CAT(ENUM_PREFIX_, alias_free)(char *str) {
+    CAT(ENUM_PREFIX_, str_free)(str);
     return;
 }
 
@@ -226,6 +234,31 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
 
     buffer[buffer_len] = '\0';
     return buffer;
+#endif
+}
+
+XENUMS_LINKAGE char *
+CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME val) {
+#if ENUM_BITFLAGS == 0
+    switch (val) {
+        #define XENUM_ALIAS_ST_1(e)        case e: \
+                                               return #e;
+        #define XENUM_ALIAS_ST_2(e, alias) case e: \
+                                               return #alias;
+        #define X(...) SELECT_ON_NUM_ARGS(XENUM_ALIAS_ST_, __VA_ARGS__)
+
+        ENUM_FIELDS
+
+        #undef X
+        #undef XENUM_ALIAS_ST_1
+        #undef XENUM_ALIAS_ST_2
+        case CAT(ENUM_PREFIX_, LAST):
+            return QUOTE(ENUM_PREFIX_) "LAST";
+        default:
+            return "Invalid enum value";
+    }
+#else
+    return CAT(ENUM_PREFIX_, str)(val);
 #endif
 }
 
@@ -361,6 +394,8 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
     (void)CAT(ENUM_PREFIX_, functions_sink);
     (void)CAT(ENUM_PREFIX_, str);
     (void)CAT(ENUM_PREFIX_, str_free);
+    (void)CAT(ENUM_PREFIX_, alias);
+    (void)CAT(ENUM_PREFIX_, alias_free);
     (void)CAT(ENUM_PREFIX_, parse);
     return;
 }
@@ -404,9 +439,17 @@ main(void) {
     ASSERT_EQUAL(s, "TEST_FLAGS_READ");
     TEST_FLAGS_str_free(s);
 
+    s = TEST_FLAGS_alias(TEST_FLAGS_READ);
+    ASSERT_EQUAL(s, "TEST_FLAGS_READ");
+    TEST_FLAGS_alias_free(s);
+
     s = TEST_FLAGS_str(TEST_FLAGS_READ | TEST_FLAGS_EXEC);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_EXEC");
     TEST_FLAGS_str_free(s);
+
+    s = TEST_FLAGS_alias(TEST_FLAGS_READ | TEST_FLAGS_EXEC);
+    ASSERT_EQUAL(s, "TEST_FLAGS_READ|TEST_FLAGS_EXEC");
+    TEST_FLAGS_alias_free(s);
 
     s = TEST_FLAGS_str(TEST_FLAGS_READ_WRITE);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ_WRITE");
@@ -437,13 +480,25 @@ main(void) {
     ASSERT_EQUAL(s, "TEST_NORMAL_APPLE");
     TEST_NORMAL_str_free(s);
 
+    s = TEST_NORMAL_alias(TEST_NORMAL_APPLE);
+    ASSERT_EQUAL(s, "TEST_NORMAL_APPLE");
+    TEST_NORMAL_alias_free(s);
+
     s = TEST_NORMAL_str(TEST_NORMAL_BANANA);
     ASSERT_EQUAL(s, "TEST_NORMAL_BANANA");
     TEST_NORMAL_str_free(s);
 
+    s = TEST_NORMAL_alias(TEST_NORMAL_BANANA);
+    ASSERT_EQUAL(s, "banana");
+    TEST_NORMAL_alias_free(s);
+
     s = TEST_NORMAL_str(TEST_NORMAL_CHERRY);
     ASSERT_EQUAL(s, "TEST_NORMAL_CHERRY");
     TEST_NORMAL_str_free(s);
+
+    s = TEST_NORMAL_alias(TEST_NORMAL_CHERRY);
+    ASSERT_EQUAL(s, "cherry");
+    TEST_NORMAL_alias_free(s);
 
     ASSERT(TEST_NORMAL_parse("TEST_NORMAL_APPLE") == TEST_NORMAL_APPLE);
     ASSERT(TEST_NORMAL_parse("BANANA") == TEST_NORMAL_BANANA);

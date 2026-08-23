@@ -67,7 +67,7 @@ optional_strlen32(char *string) {
 #include "arena.h"
 
 #include "assertions.h"
-#include "generic.c"
+#include "generic.h"
 #include "minmax.c"
 
 #define UTF_INVALID 0xFFFD
@@ -708,6 +708,7 @@ extern void throw_away_function();
 
 #include "arena.c"
 #include "memory.c"
+#include "generic.c"
 #include "assertions.c"
 #include "array.c"
 #include "utf8.c"

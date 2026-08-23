@@ -18,6 +18,8 @@ For formatting-only style rules, see `c-format.md`.
   proportional to scope. Do not give `too_much_descriptive_name` to a variable
   that is only used inside a short loop.
 - Use `i`, `j`, and `k` for `for` loop counters.
+- Don't use `error` for names of variables, it is already used to print error
+  messages. Use something like `${some_prefix}_error`.
 
 ## for loops
 - Use the pattern `for (int32 i = 0; i < N; i += 1)` for loops.

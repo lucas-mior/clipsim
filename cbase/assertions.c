@@ -76,12 +76,14 @@ void                                                                           \
 a_strings_##MODE(char *file, int32 line, char *func,                           \
                  char *name1, char *name2,                                     \
                  char *var1, char *var2) {                                     \
-    if (var1 == NULL) {                                                        \
-        assert_error(file, line, func, "%s is NULL.\n", name1);                \
+    if (var2 && (var1 == NULL)) {                                              \
+        assert_error(file, line, func,                                         \
+                     "%s is NULL, %s is \"%s\"\n", name1, name2, var2);        \
         TRAP();                                                                \
     }                                                                          \
-    if (var2 == NULL) {                                                        \
-        assert_error(file, line, func, "%s is NULL.\n", name2);                \
+    if (var1 && (var2 == NULL)) {                                              \
+        assert_error(file, line, func,                                         \
+                     "%s is NULL, %s is \"%s\"\n", name2, name1, var1);        \
         TRAP();                                                                \
     }                                                                          \
     if (!(strcmp(var1, var2) SYMBOL 0)) {                                      \
@@ -383,7 +385,8 @@ assert_double_ulp_distance(double var1, double var2) {
 
 static bool
 assert_double_special_close(double var1, double var2,
-                            double *diff_out, bool *handled_out) {
+                            double *diff_out, bool *handled_out,
+                            bool reject_opposite_sign) {
     bool sign1;
     bool sign2;
 
@@ -414,6 +417,10 @@ assert_double_special_close(double var1, double var2,
     if (sign1 != sign2) {
         if (assert_double_is_zero(var1) && assert_double_is_zero(var2)) {
             return true;
+        }
+        if (!reject_opposite_sign) {
+            *handled_out = false;
+            return false;
         }
         if (diff_out != NULL) {
             *diff_out = assert_double_abs(var1 - var2);
@@ -451,7 +458,7 @@ assert_double_close_ulps(double var1, double var2,
         *max_ulps_out = max_ulps;
     }
 
-    if (assert_double_special_close(var1, var2, diff_out, &handled)) {
+    if (assert_double_special_close(var1, var2, diff_out, &handled, true)) {
         return true;
     }
     if (handled) {
@@ -505,7 +512,7 @@ assert_double_close_tol(double var1, double var2,
         *tolerance_out = tolerance;
     }
 
-    if (assert_double_special_close(var1, var2, diff_out, &handled)) {
+    if (assert_double_special_close(var1, var2, diff_out, &handled, false)) {
         return true;
     }
     if (handled) {
@@ -837,14 +844,18 @@ main(void) {
     } {
         double a = 0.1 + 0.2;
         double b = 0.3;
+        double c = -1.0e-16;
         ASSERT_CLOSE(a, b);
         ASSERT_CLOSE(b, a);
         ASSERT_NOT_EQUAL(a, b + 1.0e-9);
         ASSERT_LESS(b, a);
         ASSERT_MORE(a, b);
         ASSERT_CLOSE(a, b, 0.01);
+        ASSERT_CLOSE(c, 0.0, 0.01);
+        ASSERT_CLOSE(0.0, c, 0.01);
         ASSERT_NOT_CLOSE(a, b + 1.0e-9);
         ASSERT_NOT_CLOSE(a, b + 0.02, 0.01);
+        ASSERT_NOT_CLOSE(c, 0.02, 0.01);
     } {
         float a = 0.3f;
         double b = 0.3;

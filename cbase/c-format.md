@@ -78,6 +78,101 @@ if ((flags & MY_FLAG_EXAMPLE1)
 }
 ```
 
+When formatting printf-like function calls, if the entire call does not fit in a
+single line, either keep the format string and all format arguments together on
+the same continuation line, or put the format string on its own line and put the
+format arguments together on the next line. For functions such as `fprintf`,
+arguments before the format string, such as the output file, are prefix
+arguments. The rule below applies to the format string and to the arguments
+consumed by that format string.
+```c
+static void
+function(void) {
+    FILE *file = fopen("blabla", "w");
+    int32 x = 1;
+    int32 y = 2;
+
+    // good (all arguments fit in a single line)
+    fprintf(file, "this fits in one line: %d\n", x);
+
+    // bad (unnecessarly breaking lines)
+    fprintf(file,
+            "this fits in one line: %d\n",
+            x);
+
+    // bad (format arguments are split across lines)
+    fprintf(file, "this does not fit in a single line because of: %d, %d\n", x,
+                  y);
+
+    // good (format arguments are on the same line)
+    fprintf(file, "this does not fit in a single line because of: %d, %d\n",
+                  x, y);
+
+    // also good (format string is separate; format arguments stay together)
+    fprintf(file,
+            "this does not fit in a single line because of: %d, %d\n", x, y);
+
+    // bad (passes the 80 column limit)
+    fprintf(file, "this is a format string for writing the numbers %d and %d.", x, y);
+
+    // also bad (format string is with some format arguments, but not all)
+    fprintf(file, "this is a format string for writing the numbers %d and %d.",
+            x, y);
+
+    // good (format string and all format arguments fit on the same line)
+    fprintf(file,
+            "this is a format string for writing the numbers %d and %d.", x, y);
+
+    // also good (format string is separate; format arguments stay together)
+    fprintf(file,
+            "this is a format string for writing the numbers %d and %d.",
+            x, y);
+
+    // also good (format arguments are aligned with the format string)
+    fprintf(file, "this is a format string for writing the numbers %d and %d.",
+                  x, y);
+
+    // bad (one format argument is left on the format-string line)
+    printf("%s = %.17g\n", states[i],
+           X[final_step*nstates + i]);
+
+    // good (format string is separate; format arguments stay together)
+    printf("%s = %.17g\n",
+           states[i], X[final_step*nstates + i]);
+
+    return;
+}
+```
+
+If the format string itself does not fit in a single line, you can split it into
+multiple lines or maybe break the printing into multiple calls:
+```c
+static void
+function(void) {
+    FILE *file = fopen("blabla", "w");
+    int32 x = 1;
+    int32 y = 2;
+
+    // bad
+    fprintf(file,
+            "this is a huge huge huge huge huge huge huge huge huge huge format string = %d",
+            x);
+
+    // good
+    fprintf(file,
+            "this is a"
+            " huge huge huge huge huge huge huge huge huge huge"
+            " format string = %d", x);
+
+    // also good
+    fprintf(file, "this is a");
+    fprintf(file, " huge huge huge huge huge huge huge huge huge huge"
+    fprintf(file, " format string = %d", x);
+
+    return;
+}
+```
+
 ## Switch formatting
 
 `case` must align with `switch`.
