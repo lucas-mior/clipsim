@@ -428,10 +428,9 @@ thread_pool_default_thread_count(
         available_threads = 1;
     }
 
-    thread_count = (int32)MIN((int64)available_threads,
-                             (int64)PARALLEL_FOR_MAX_THREADS);
-    thread_count = (int32)MIN((int64)thread_count, (int64)max_threads);
-    thread_count = (int32)MIN((int64)thread_count, length);
+    thread_count = MIN(available_threads, PARALLEL_FOR_MAX_THREADS);
+    thread_count = MIN(thread_count, max_threads);
+    thread_count = (int32)MIN(thread_count, length);
     if (thread_count < 1) {
         thread_count = 1;
     }
