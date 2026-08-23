@@ -10,6 +10,14 @@
 
 #include "platform_detection.h"
 
+#if !defined(NOLIBC)
+#define NOLIBC 0
+#endif
+
+#if NOLIBC && !OS_LINUX
+#error "NOLIBC mode is only supported on linux"
+#endif
+
 #if CBASE_CRT_MSVC && !defined(_CRT_SECURE_NO_WARNINGS)
 #define _CRT_SECURE_NO_WARNINGS
 #endif
