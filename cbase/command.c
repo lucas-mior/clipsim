@@ -407,6 +407,12 @@ command_windows_run_process(Command *command, enum CommandFlag flags) {
     command_windows_capture_file_init(&stderr_capture);
     flags = command_flags_normalized(flags);
 
+    if ((flags & COMMAND_STDIN_TTY)
+        && (freopen("CONIN$", "r", stdin) == NULL)) {
+        command_error_set(command, errno);
+        return -1;
+    }
+
     if ((flags & COMMAND_CAPTURE_STDOUT)
         && !command_windows_capture_file_open(command,
                                              &stdout_capture,
@@ -425,13 +431,18 @@ command_windows_run_process(Command *command, enum CommandFlag flags) {
     command_windows_command_line(command, cmdline, SIZEOF(cmdline));
 
     startup_info.cb = sizeof(startup_info);
-    if (command_flags_capture(flags)) {
+    if (command_flags_capture(flags) || (flags & COMMAND_STDIN_TTY)) {
         startup_info.dwFlags |= STARTF_USESTDHANDLES;
         startup_info.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
         startup_info.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
         startup_info.hStdError = GetStdHandle(STD_ERROR_HANDLE);
         inherit_handles = TRUE;
 
+#if CBASE_CRT_MSVC
+        if (flags & COMMAND_STDIN_TTY) {
+            startup_info.hStdInput = (HANDLE)_get_osfhandle(STDIN_FILENO);
+        }
+#endif
         if (flags & COMMAND_CAPTURE_STDOUT) {
             startup_info.hStdOutput = stdout_capture.handle;
         }

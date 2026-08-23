@@ -844,6 +844,10 @@ main(void) {
         char *a = "aaabbb";
         ASSERT_EQUAL(a, 3, "aaa");
     } {
+        char *a = "aaabbb";
+        char *b = "aaaccc";
+        ASSERT_EQUAL(a, 3, b, 3);
+    } {
         char *a = "aaa";
         char *b = "bbb";
         ASSERT_NOT_EQUAL(a, b);

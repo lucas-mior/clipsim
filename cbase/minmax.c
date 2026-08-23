@@ -239,7 +239,6 @@ _Generic((VAR1),                                                     \
 #undef MAX
 #endif
 
-#if CC_GCC || CC_CLANG
 #define MINMAX_COMPARE_SAME_TYPE(SYMBOL, VAR1, VAR2) \
     ((VAR1) SYMBOL (VAR2) ? (VAR1) : (VAR2))
 
@@ -247,6 +246,8 @@ _Generic((VAR1),                                                     \
     MINMAX_COMPARE_SAME_TYPE(<, VAR1, VAR2)
 #define MINMAX_COMPARE_SAME_TYPE_max(VAR1, VAR2) \
     MINMAX_COMPARE_SAME_TYPE(>, VAR1, VAR2)
+
+#if CC_GCC || CC_CLANG
 
 #define MINMAX_COMPARE_TYPE_PRESERVING(VAR) \
 _Generic((VAR),                             \
@@ -286,6 +287,22 @@ _Generic((VAR),                             \
 
 #define MIN(VAR1, VAR2) MINMAX_COMPARE_DIAGNOSTIC(min, VAR1, VAR2)
 #define MAX(VAR1, VAR2) MINMAX_COMPARE_DIAGNOSTIC(max, VAR1, VAR2)
+#elif CC_MSVC
+#define MINMAX_COMPARE_MSVC_TYPE(MODE, VAR1, VAR2, TYPE) \
+_Generic((VAR2),                                         \
+    TYPE: CAT(MINMAX_COMPARE_SAME_TYPE_, MODE)(VAR1, VAR2), \
+    default: MINMAX_COMPARE(MODE, VAR1, VAR2)             \
+)
+
+#define MINMAX_COMPARE_MSVC(MODE, VAR1, VAR2)             \
+_Generic((VAR1),                                         \
+    int:    MINMAX_COMPARE_MSVC_TYPE(MODE, VAR1, VAR2, int), \
+    llong:   MINMAX_COMPARE_MSVC_TYPE(MODE, VAR1, VAR2, llong), \
+    default: MINMAX_COMPARE(MODE, VAR1, VAR2)              \
+)
+
+#define MIN(VAR1, VAR2) MINMAX_COMPARE_MSVC(min, VAR1, VAR2)
+#define MAX(VAR1, VAR2) MINMAX_COMPARE_MSVC(max, VAR1, VAR2)
 #else
 #define MIN(VAR1, VAR2) MINMAX_COMPARE(min, VAR1, VAR2)
 #define MAX(VAR1, VAR2) MINMAX_COMPARE(max, VAR1, VAR2)
@@ -382,7 +399,7 @@ main(void) {
         int32 a = MIN(x, y);  // NOLINT
         (void)a;
     }
-    {
+    if (OS_LINUX) {
         Command command = {0};
 
         COMMAND_PUSH(&command, "gcc", "-std=c11");

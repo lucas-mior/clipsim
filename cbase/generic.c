@@ -104,6 +104,9 @@ toString(char *restrict buf, int64 bufSize, char *restrict fmt, ...) {
     return buf;
 }
 
+MSVC_WARNING_PUSH()
+MSVC_WARNING_DISABLE(4702)
+
 double
 double_from_voidp(void *x) {
     (void)x;
@@ -131,6 +134,8 @@ double_from_char(char x) {
     TRAP();
     return 0.0;  // NOLINT
 }
+
+MSVC_WARNING_POP()
 
 static void
 check_integer_fits_in_double(llong x) {
@@ -274,6 +279,9 @@ typename(enum Type type) {
     }
 }
 
+MSVC_WARNING_PUSH()
+MSVC_WARNING_DISABLE(4702)
+
 double
 double_get(union Primitive var, enum Type type) {
     switch (type) {
@@ -332,6 +340,8 @@ double_get(union Primitive var, enum Type type) {
     }
     return (double)0.0;
 }
+
+MSVC_WARNING_POP()
 
 #if TESTING_generic
 #define CBASE_IMPLEMENT
@@ -489,10 +499,10 @@ main(void) {
                           "1 divided by 8 equals 0.125\n");
 
         n = snprint(buf, SIZEOF(buf),
-                    "This is " W(e) " It's " V(strlen(e)) " characters long\n");
+                    "This is " W(e) " It's " V(strlen32(e)) " characters long\n");
         snprintf(expected, SIZEOF(expected),
                  "This is %s It's %lu characters long\n",
-                 e, (ulong)strlen(e));
+                 e, (ulong)strlen32(e));
         ASSERT(n == strlen32(expected));
         ASSERT_EQUAL(buf, expected);
 
@@ -502,7 +512,7 @@ main(void) {
         ASSERT_EQUAL(buf, "custom 0001 i\n");
 
         n = snprint(small2, SIZEOF(small2), "prefix-" W(e));
-        ASSERT(n == (int)(strlen("prefix-") + strlen(e)));
+        ASSERT(n == (int)(strlen32("prefix-") + strlen32(e)));
         ASSERT_EQUAL(small2, "prefix-");
 
         fp = tmpfile();

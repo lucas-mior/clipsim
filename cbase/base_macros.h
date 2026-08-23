@@ -155,6 +155,16 @@ _Generic((SIZE), \
 #define ATTR_PRINTF(A, B)
 #endif
 
+#if CC_MSVC
+#define MSVC_WARNING_PUSH() __pragma(warning(push))
+#define MSVC_WARNING_DISABLE(W) __pragma(warning(disable: W))
+#define MSVC_WARNING_POP() __pragma(warning(pop))
+#else
+#define MSVC_WARNING_PUSH()
+#define MSVC_WARNING_DISABLE(W)
+#define MSVC_WARNING_POP()
+#endif
+
 #define PI  3.14159265358979323846264338327950288
 #define PI2 2*PI
 #define TAU 2*PI
