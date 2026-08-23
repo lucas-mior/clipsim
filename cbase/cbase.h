@@ -32,6 +32,7 @@ extern int memcmp64(void *, void *, int64);
 extern void *memmem64(void *, int64, void *, int64);
 extern void *memchr64(void *, int32, int64);
 extern void *memrchr64(void *, int32, int64);
+extern bool util_glob_match(char *, int32, char *, int32);
 
 INLINE int32
 strlen32(char *string) {

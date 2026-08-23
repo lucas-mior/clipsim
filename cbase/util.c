@@ -286,6 +286,54 @@ memcmp64(void *left, void *right, int64 size) {
     return memcmp(left, right, (size_t)size);
 }
 
+bool
+util_glob_match(char *string, int32 string_len, char *glob, int32 glob_len) {
+    int32 string_i = 0;
+    int32 glob_i = 0;
+    int32 star_glob_i = -1;
+    int32 star_string_i = 0;
+
+    if (DEBUGGING) {
+        if ((string_len < 0) || (glob_len < 0)) {
+            error("Error: Invalid string_len=%d or glob_len=%d.\n",
+                  string_len, glob_len);
+            fatal(EXIT_FAILURE);
+        }
+        if (((string == NULL) && (string_len > 0))
+            || ((glob == NULL) && (glob_len > 0))) {
+            error("Error: NULL glob match input with non-zero length.\n");
+            fatal(EXIT_FAILURE);
+        }
+    }
+
+    while (string_i < string_len) {
+        if ((glob_i < glob_len) && (glob[glob_i] == '*')) {
+            star_glob_i = glob_i;
+            glob_i += 1;
+            star_string_i = string_i;
+            continue;
+        }
+        if ((glob_i < glob_len) && (glob[glob_i] == string[string_i])) {
+            glob_i += 1;
+            string_i += 1;
+            continue;
+        }
+        if (star_glob_i >= 0) {
+            glob_i = star_glob_i + 1;
+            star_string_i += 1;
+            string_i = star_string_i;
+            continue;
+        }
+        return false;
+    }
+
+    while ((glob_i < glob_len) && (glob[glob_i] == '*')) {
+        glob_i += 1;
+    }
+
+    return glob_i == glob_len;
+}
+
 static uint64 rand_int_state = 0x853c49e6748fea9bull;
 
 void
@@ -833,6 +881,7 @@ util_functions_sink(void) {
     (void)rand_int_seed;
     (void)rand_int;
     (void)util_is_integer;
+    (void)util_glob_match;
     (void)is_ident_start_char;
     (void)warn;
     (void)here_impl;
@@ -1073,6 +1122,30 @@ main(int argc, char **argv) {
     (void)here_counter;
 
     util_test_mem_literal_short();
+
+    {
+        ASSERT_GLOB_MATCH("", "");
+        ASSERT_GLOB_MATCH("", "*");
+        ASSERT_GLOB_MATCH("abc", "abc");
+        ASSERT_GLOB_MATCH("abc", "*");
+        ASSERT_GLOB_MATCH("abc", "a*");
+        ASSERT_GLOB_MATCH("abc", "*c");
+        ASSERT_GLOB_MATCH("abc", "a*c");
+        ASSERT_GLOB_MATCH("abc", "a**c");
+        ASSERT_GLOB_MATCH("abc", "*b*");
+        ASSERT_GLOB_MATCH("abc", "a*b*c");
+        ASSERT_GLOB_MATCH("abbc", "a*bc");
+        ASSERT_GLOB_MATCH("abc", "abc*");
+        ASSERT_GLOB_MATCH("abc", "*abc");
+
+        ASSERT_GLOB_NO_MATCH("", "a");
+        ASSERT_GLOB_NO_MATCH("abc", "");
+        ASSERT_GLOB_NO_MATCH("abc", "abd");
+        ASSERT_GLOB_NO_MATCH("abc", "a*d");
+        ASSERT_GLOB_NO_MATCH("abc", "ab*d");
+        ASSERT_GLOB_NO_MATCH("abc", "*d");
+        ASSERT_GLOB_NO_MATCH("abc", "a*c*d");
+    }
 
     {
         int a = 10;

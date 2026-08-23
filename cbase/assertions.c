@@ -71,6 +71,30 @@ assert_not_contains(char *file, int32 line, char *func,
     }
 }
 
+void
+assert_glob_match_failed(char *file, int32 line, char *func,
+                         char *string_name, char *glob_name,
+                         char *string, int32 string_len,
+                         char *glob, int32 glob_len,
+                         bool expected) {
+    char *expected_text;
+
+    if (expected) {
+        expected_text = "expected glob to match";
+    } else {
+        expected_text = "expected glob to not match";
+    }
+
+    assert_error(file, line, func,
+                 "%s:\n"
+                 "  string: %s[%d] = '''"BLUE("%.*s")"'''\n"
+                 "  glob:   %s[%d] = '''"GREEN("%.*s")"'''\n",
+                 expected_text,
+                 string_name, string_len, string_len, string,
+                 glob_name, glob_len, glob_len, glob);
+    return;
+}
+
 #define GENERATE_ASSERT_STRINGS(MODE, SYMBOL)                                  \
 void                                                                           \
 a_strings_##MODE(char *file, int32 line, char *func,                           \
@@ -932,6 +956,10 @@ main(void) {
         ASSERT_NOT_CONTAINS(haystack, SIZEOF(haystack) - 1, "delta");
         ASSERT_NOT_CONTAINS(haystack, 10, "gamma");
         ASSERT_NOT_CONTAINS(binary_haystack, SIZEOF(binary_haystack), "bc");
+        ASSERT_GLOB_MATCH(haystack, "alpha*gamma");
+        ASSERT_GLOB_MATCH(binary_haystack, SIZEOF(binary_haystack), "a*d");
+        ASSERT_GLOB_NO_MATCH(haystack, "alpha*delta");
+        ASSERT_GLOB_NO_MATCH(binary_haystack, SIZEOF(binary_haystack), "a*c");
     } {
         // uncomment to trigger linking error
         /* double x = 0.1; */
@@ -1039,6 +1067,18 @@ main(void) {
 
         if (sigsetjmp(assert_env, 1) == 0) {
             ASSERT_NOT_CONTAINS("alpha beta\n gamma\n", 18, "beta\n");
+        }
+        ASSERT(assertion_failed);
+        assertion_failed = false;
+
+        if (sigsetjmp(assert_env, 1) == 0) {
+            ASSERT_GLOB_MATCH("alpha beta gamma", "alpha*delta");
+        }
+        ASSERT(assertion_failed);
+        assertion_failed = false;
+
+        if (sigsetjmp(assert_env, 1) == 0) {
+            ASSERT_GLOB_NO_MATCH("alpha beta gamma", "alpha*gamma");
         }
         ASSERT(assertion_failed);
         assertion_failed = false;

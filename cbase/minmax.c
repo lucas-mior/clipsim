@@ -371,6 +371,46 @@ main(void) {
         ASSERT_EQUAL(min, a);
         ASSERT_EQUAL(max, b);
     }
+
+    // Testing if conversion warnings are correctly given
+    // when using MIN with integers of different signedness.
+    // This block only is compiled from the self-compiling block below,
+    // so that normal compilation (TESTING=1) does not give warnings
+    if (!TESTING) {
+        int32 x = 0;
+        uint32 y = 1;
+        int32 a = MIN(x, y);  // NOLINT
+        (void)a;
+    }
+    {
+        Command command = {0};
+
+        COMMAND_PUSH(&command, "gcc", "-std=c11");
+        COMMAND_PUSH(&command, "-Wconversion");
+        COMMAND_PUSH(&command, "-o", "/tmp/a.out");
+        command_printf(&command, "%s", __FILE__);
+
+        if (!command_run(&command,
+                         COMMAND_CAPTURE_STDOUT|COMMAND_CAPTURE_STDERR)) {
+            exit(EXIT_FAILURE);
+        } else {
+            ASSERT_GLOB_MATCH(command.result.stderr_output,
+                              command.result.stderr_len,
+                              "*minmax.c*warning: conversion from*");
+        }
+
+        command_argv0_set(&command, "clang");
+        COMMAND_PUSH(&command, "-Wshorten-64-to-32");
+
+        if (!command_run(&command,
+                         COMMAND_CAPTURE_STDOUT|COMMAND_CAPTURE_STDERR)) {
+            exit(EXIT_FAILURE);
+        } else {
+            ASSERT_GLOB_MATCH(command.result.stderr_output,
+                              command.result.stderr_len,
+                              "*minmax.c*warning: implicit conversion*loses*");
+        }
+    }
     exit(EXIT_SUCCESS);
 }
 #endif
