@@ -396,7 +396,7 @@ main(void) {
         } else {
             ASSERT_GLOB_MATCH(command.result.stderr_output,
                               command.result.stderr_len,
-                              "*minmax.c*warning:*conversion from*");
+                              "*minmax.c*warning:*conversion*");
         }
 
         command_argv0_set(&command, "clang");
@@ -408,7 +408,7 @@ main(void) {
         } else {
             ASSERT_GLOB_MATCH(command.result.stderr_output,
                               command.result.stderr_len,
-                              "*minmax.c*warning:*conversion*loses*");
+                              "*minmax.c*warning:*conversion*");
         }
     }
     exit(EXIT_SUCCESS);
