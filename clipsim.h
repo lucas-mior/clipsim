@@ -12,25 +12,25 @@
 #endif
 
 #if DEBUGGING
-#define DEBUG_PRINT(...) \
-do { \
-    char debug_buffer[4096]; \
-    int32 debug_len = snprintf2(debug_buffer, sizeof(debug_buffer), __VA_ARGS__); \
-    if (debug_len > 0) { \
-        int32 debug_limit = 0; \
-        if (debug_len < (int32)sizeof(debug_buffer)) { \
-            debug_limit = debug_len; \
-        } else { \
-            debug_limit = (int32)sizeof(debug_buffer) - 1; \
-        } \
-        for (int32 _i = 0; _i < debug_limit; _i += 1) { \
-            if (debug_buffer[_i] == '\n') { \
-                debug_buffer[_i] = ' '; \
-            } \
-        } \
-        dprintf(STDERR_FILENO, \
-                "%s:%d -> %s(%s)\n", __FILE__, __LINE__, __func__, debug_buffer); \
-    } \
+#define DEBUG_PRINT(...)                                                       \
+do {                                                                           \
+    char debug_buffer[4096];                                                   \
+    int32 debug_len = snprintf2(debug_buffer, sizeof(debug_buffer), __VA_ARGS__);\
+    if (debug_len > 0) {                                                       \
+        int32 debug_limit = 0;                                                 \
+        if (debug_len < (int32)sizeof(debug_buffer)) {                         \
+            debug_limit = debug_len;                                           \
+        } else {                                                               \
+            debug_limit = (int32)sizeof(debug_buffer) - 1;                     \
+        }                                                                      \
+        for (int32 _i = 0; _i < debug_limit; _i += 1) {                        \
+            if (debug_buffer[_i] == '\n') {                                    \
+                debug_buffer[_i] = ' ';                                        \
+            }                                                                  \
+        }                                                                      \
+        dprintf(STDERR_FILENO,                                                 \
+                "%s:%d -> %s(%s)\n", __FILE__, __LINE__, __func__, debug_buffer);\
+    }                                                                          \
 } while (0);
 #else
 #define DEBUG_PRINT(...)
