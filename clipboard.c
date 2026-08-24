@@ -71,14 +71,8 @@ clipboard_daemon_watch(void) {
     }
 
     GETENV(CLIPSIM_SIGNAL_PROGRAM);
-    if (CLIPSIM_SIGNAL_PROGRAM == NULL) {
-        error("CLIPSIM_SIGNAL_PROGRAM is not defined.\n");
-    }
-
     GETENV(CLIPSIM_SIGNAL_NUMBER);
-    if (CLIPSIM_SIGNAL_NUMBER == NULL) {
-        error("CLIPSIM_SIGNAL_NUMBER is not defined.\n");
-    }
+
     if (CLIPSIM_SIGNAL_PROGRAM && CLIPSIM_SIGNAL_NUMBER) {
         if ((signal_number = atoi(CLIPSIM_SIGNAL_NUMBER)) <= 0) {
             error("Invalid CLIPSIM_SIGNAL_NUMBER environment variable: %s.\n",
@@ -94,6 +88,7 @@ clipboard_daemon_watch(void) {
         signal_number += SIGRTMIN;
 #endif
     } else {
+        error("No program will be signaled when clipboard content changes.");
         CLIPSIM_SIGNAL_NUMBER = NULL;
         CLIPSIM_SIGNAL_PROGRAM = NULL;
     }
