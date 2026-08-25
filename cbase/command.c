@@ -1130,25 +1130,25 @@ command_run_async(Command *command, enum CommandFlag flags) {
     return command_run(command, flags);
 }
 
-bool
+int32
 command_run_capture(Command *command, enum CommandFlag flags) {
     flags |= COMMAND_CAPTURE_STDOUT;
-    return command_run(command, flags) == 0;
+    return command_run(command, flags);
 }
 
-bool
+int32
 command_run_capture_all(Command *command) {
     return command_run(command,
                        COMMAND_CAPTURE_STDOUT
-                       |COMMAND_CAPTURE_STDERR) == 0;
+                       |COMMAND_CAPTURE_STDERR);
 }
 
-bool
+int32
 command_run_capture_combined(Command *command) {
     return command_run(command,
                        COMMAND_CAPTURE_STDOUT
                        |COMMAND_CAPTURE_STDERR
-                       |COMMAND_MERGE_STDERR) == 0;
+                       |COMMAND_MERGE_STDERR);
 }
 
 void
@@ -1630,7 +1630,7 @@ main(int argc, char **argv) {
                      "sh",
                      "-c",
                      "printf stdout; printf stderr >&2; exit 7");
-        ASSERT(command_run_capture_combined(&cmd));
+        ASSERT_ZERO((command_run_capture_combined(&cmd)));
         ASSERT_EQUAL(cmd.result.output, "stdoutstderr");
         ASSERT_EQUAL(cmd.result.stdout_output, "stdoutstderr");
         ASSERT_EQUAL(cmd.result.stderr_output, "");
@@ -1644,7 +1644,7 @@ main(int argc, char **argv) {
                      "sh",
                      "-c",
                      "printf stdout; printf stderr >&2; exit 6");
-        ASSERT(command_run_capture_all(&cmd));
+        ASSERT_ZERO((command_run_capture_all(&cmd)));
         ASSERT_EQUAL(cmd.result.stdout_output, "stdout");
         ASSERT_EQUAL(cmd.result.stderr_output, "stderr");
         ASSERT_EQUAL(cmd.result.stdout_len, 6);
@@ -1656,7 +1656,7 @@ main(int argc, char **argv) {
 
         COMMAND_PUSH(&cmd, "cat");
         ASSERT_ZERO((command_stdin_buffer_set(&cmd, STRLIT("stdin-buffer"))));
-        ASSERT(command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT));
+        ASSERT_ZERO((command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT)));
         ASSERT_EQUAL(cmd.result.stdout_output, "stdin-buffer");
         ASSERT_ZERO(cmd.result.status);
 
@@ -1680,7 +1680,7 @@ main(int argc, char **argv) {
             ASSERT_ZERO((command_stdin_buffer_set(&cmd,
                                                   stdin_data,
                                                   COMMAND_STDIN_TEST_LEN)));
-            ASSERT(command_run_capture_all(&cmd));
+            ASSERT_ZERO((command_run_capture_all(&cmd)));
             ASSERT_EQUAL(cmd.result.stdout_output, "done");
             ASSERT_ZERO(cmd.result.status);
             free2(stdin_data, COMMAND_STDIN_TEST_LEN);
@@ -1701,7 +1701,7 @@ main(int argc, char **argv) {
             ASSERT_ZERO((command_stdin_buffer_set(&cmd,
                                                   stdin_data,
                                                   COMMAND_EPIPE_TEST_LEN)));
-            ASSERT(command_run_capture_all(&cmd));
+            ASSERT_ZERO((command_run_capture_all(&cmd)));
             ASSERT_EQUAL(cmd.result.status, 3);
             free2(stdin_data, COMMAND_EPIPE_TEST_LEN);
         }
@@ -1714,7 +1714,7 @@ main(int argc, char **argv) {
 
             COMMAND_PUSH(&cmd, "cat");
             ASSERT_ZERO((command_stdin_buffer_set(&cmd, empty_input, 0)));
-            ASSERT(command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT));
+            ASSERT_ZERO((command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT)));
             ASSERT_EQUAL(cmd.result.stdout_output, "");
             ASSERT_ZERO(cmd.result.status);
         }
@@ -1736,7 +1736,7 @@ main(int argc, char **argv) {
 
             command_cwd_set(&cmd, test_cwd);
             COMMAND_PUSH(&cmd, "pwd", "-P");
-            ASSERT(command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT));
+            ASSERT_ZERO((command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT)));
             ASSERT_EQUAL(cmd.result.stdout_output, expected_cwd);
             command_cwd_clear(&cmd);
             test_remove_tree(test_cwd);
@@ -1753,7 +1753,7 @@ main(int argc, char **argv) {
                      "printf %s:%s "
                      "$COMMAND_TEST_VALUE "
                      "$COMMAND_TEST_NUMBER");
-        ASSERT(command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT));
+        ASSERT_ZERO((command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT)));
         ASSERT_EQUAL(cmd.result.stdout_output, "works:42");
         command_env_clear(&cmd);
 
@@ -1775,7 +1775,7 @@ main(int argc, char **argv) {
                      "cmd",
                      "/C",
                      "echo stdout&echo stderr>&2&exit /B 7");
-        ASSERT(command_run_capture_combined(&cmd));
+        ASSERT_ZERO((command_run_capture_combined(&cmd)));
         ASSERT_EQUAL(cmd.result.output, "stdout\r\nstderr\r\n");
         ASSERT_EQUAL(cmd.result.stdout_output, "stdout\r\nstderr\r\n");
         ASSERT_EQUAL(cmd.result.stderr_output, "");
@@ -1789,7 +1789,7 @@ main(int argc, char **argv) {
                      "cmd",
                      "/C",
                      "echo stdout&echo stderr>&2&exit /B 6");
-        ASSERT(command_run_capture_all(&cmd));
+        ASSERT_ZERO((command_run_capture_all(&cmd)));
         ASSERT_EQUAL(cmd.result.stdout_output, "stdout\r\n");
         ASSERT_EQUAL(cmd.result.stderr_output, "stderr\r\n");
         ASSERT_EQUAL(cmd.result.stdout_len, 8);
