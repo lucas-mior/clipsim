@@ -373,6 +373,21 @@ rand_int(void) {
 }
 
 void
+random_filename_inplace(char *buffer, int32 buffer_len) {
+    char allowed[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                     "abcdefghijklmnopqrstuvwxyz"
+                     "!@#$%&*()[]-=_+<>,"
+                     "0123456789";
+
+    for (int32 i = 0; i < buffer_len; i += 1) {
+        int32 j = rand_int() % (SIZEOF(allowed) - 1);
+        buffer[i] = allowed[j];
+    }
+
+    return;
+}
+
+void
 qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
 #if CC_CLANG
 #pragma clang diagnostic push
@@ -829,22 +844,22 @@ xkill(pid_t pid, int signum) {
 
 #endif /* !OS_WINDOWS */
 
-bool
+int32
 parse_option(char **parsed, char *arg, char *option_name) {
     char name_equal[256];
     char *tmp;
     int32 length = SNPRINTF(name_equal, "%s=", option_name);
     int32 arg_len;
     if (arg == NULL) {
-        return false;
+        return -1;
     }
     arg_len = strlen32(arg);
 
     if ((tmp = BEGINS_WITH(arg, arg_len, name_equal, length))) {
         *parsed = tmp;
-        return true;
+        return 0;
     }
-    return false;
+    return -1;
 }
 
 bool
@@ -890,6 +905,7 @@ util_functions_sink(void) {
     (void)util_functions_sink;
     (void)rand_int_seed;
     (void)rand_int;
+    (void)random_filename_inplace;
     (void)util_is_integer;
     (void)util_glob_match;
     (void)is_ident_start_char;

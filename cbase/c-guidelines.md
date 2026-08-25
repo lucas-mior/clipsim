@@ -425,13 +425,53 @@ for (int32 i = 0; i < LENGTH(some_array); i += 1) {
 - Avoid `goto`. Use it only for common cleanup logic.
 
 ### Return value for errors
-- Functions that return an index, or another form of non negative integer,
-  can return -1 to indicate that the function failed.
-- Functions that return a pointer can return NULL in case they fail
-- Other functions can return a `bool`: `true` means that the functions succeded,
-  `false` means that the function failed. If information about the error could
-  be useful, organize the function to have a struct pointer parameter that fills
-  with data about the error/success status.
+- Only model failures that callers can reasonably handle. Programmer errors
+  should be asserted with `cbase/assertions.h`. Unrecoverable application errors
+  may print a diagnostic and exit. Out of memory is currently unrecoverable and
+  should always exit; see `cbase/memory.h` and `cbase/memory.c`.
+
+- Functions that cannot fail should not return an error value.
+
+- Functions that return an index, count, length, file descriptor, or another
+  non-negative integer result may return a negative value to report failure.
+  These functions must use a signed return type.
+  * Check for errors in those functions by doing:
+    ```c
+    if ((idx = my_function()) < 0) {
+        // error condition
+    }
+    ```
+
+- Functions that return a pointer may return `NULL` when the natural result is
+  optional or absent, such as lookup/find functions. Do not use `NULL` for
+  general failure when the caller may need to know why the operation failed.
+
+- Use `bool` only for predicates. Names like `is_*`, `has_*`, `can_*`,
+  `contains_*`, and `matches_*` should return boolean answers. Failure to answer
+  the question should usually be impossible, asserted, or represented some other
+  way.
+
+- Use signed integer status for fallible actions. Names like `read_*`,
+  `write_*`, `parse_*`, `rename_*`, `init_*`, `open_*`, `build_*`,
+  `resolve_*`, and `normalize_*` should return a signed status/result. `0`
+  means success when there is no payload; non-negative values may be successful
+  counts, indices, lengths, or other results; negative values are errors.
+
+- Convert libc `errno` to the project convention at the boundary. For example,
+  after a failing libc call, capture `errno` immediately and return `-errno`
+  or the equivalent project error code.
+
+- Project/domain errors should also be negative values. Define positive error
+  constants and return their negation, so callers can pass `-err` to an error
+  string function.
+
+- Use out-parameters when the natural return value is data. For operations that
+  need to return a pointer, string, struct, or multiple outputs, return the
+  status/result code and write the data through out-parameters.
+
+- Do not return `bool` from fallible action functions just because the caller
+  currently ignores the reason for failure. Return a signed status/result and let
+  the caller ignore the specific negative value if it does not care.
 
 ## More on if expressions
 Don't use logical negation and equality for bounds checking:
