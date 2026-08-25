@@ -243,13 +243,16 @@ strequal(char *s1, char *s2) {
 // don't call directly, use STREQUAL macro instead
 INLINE UNUSED bool32
 strequal2(char *a, int32 a_len, char *b, int32 b_len) {
+    if (a_len != b_len) {
+        return false;
+    }
+    if (a_len == 0) {
+        return true;
+    }
     if (DEBUGGING) {
         if ((a == NULL) || (b == NULL)) {
             TRAP();
         }
-    }
-    if (a_len != b_len) {
-        return false;
     }
 
     return !memcmp64(a, b, a_len);
