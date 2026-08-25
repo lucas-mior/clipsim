@@ -308,7 +308,7 @@ int32 parallel_for_max_threads_min_items(
     void *
 );
 void write_all(int, char *, int64);
-bool write_entire_file(char *, char *, int64);
+int64 write_entire_file(char *, char *, int64);
 int xclose(char *, int, int *, char *, char *);
 #if HAS_POSIX_WIN_SUBSET
 int xclosedir(DIR *, char *);

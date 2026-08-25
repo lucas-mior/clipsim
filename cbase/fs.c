@@ -500,10 +500,15 @@ xfopen(char *file, int32 line, char *func, char *filename, char *mode) {
 
 int
 xfclose(char *file, int32 line, char *func, FILE *f, char *filename) {
+    int err;
     if (fclose(f)) {
+        err = errno;
+        if (err == 0) {
+            err = EIO;
+        }
         error_impl(file, line, func,
-                   "Error closing %s: %s.\n", filename, strerror(errno));
-        return -1;
+                   "Error closing %s: %s.\n", filename, strerror(err));
+        return -err;
     }
     return 0;
 }
@@ -1089,47 +1094,63 @@ read_entire_file(char *path, char **file_bytes) {
         return -err;
     }
     bytes[read_len] = '\0';
-    if (XFCLOSE(file, path) != 0) {
-        err = errno;
-        if (err == 0) {
-            err = EIO;
-        }
+    if ((err = XFCLOSE(file, path)) < 0) {
         free2(bytes, (len + 1)*SIZEOF(*bytes));
-        return -err;
+        return err;
     }
 
     *file_bytes = bytes;
     return (int32)read_len;
 }
 
-bool
+int64
 write_entire_file(char *path, char *text, int64 text_len) {
     FILE *file;
+    int64 write_len;
+    int32 err;
 
+    if (path_missing(path)) {
+        error("Error writing file: invalid path.\n");
+        return -EINVAL;
+    }
     if (text_len < 0) {
-        error("Error writing negative length %lld to %s.",
+        error("Error writing negative length %lld to %s.", text_len, path);
+        return -EINVAL;
+    }
+    if ((text_len > 0) && (text == NULL)) {
+        error("Error writing %lld bytes to %s: invalid buffer.",
               text_len, path);
-        return false;
+        return -EINVAL;
     }
 
     if ((file = fopen(path, "wb")) == NULL) {
-        error("Error opening %s for writing: %s", path, strerror(errno));
-        return false;
+        err = errno;
+        if (err == 0) {
+            err = EIO;
+        }
+        error("Error opening %s for writing: %s", path, strerror(err));
+        return -err;
     }
 
-    if (text_len == 0) {
-        return true;
+    write_len = 0;
+    if (text_len > 0) {
+        write_len = fwrite64(text, 1, text_len, file);
     }
-
-    if (fwrite64(text, 1, text_len, file) != text_len) {
+    if (write_len != text_len) {
+        err = errno;
+        if (err == 0) {
+            err = EIO;
+        }
         error("Error writing %lld bytes to %s: %s.",
-              text_len, path, strerror(errno));
+              text_len, path, strerror(err));
         XFCLOSE(file, path);
-        return false;
+        return -err;
     }
 
-    XFCLOSE(file, path);
-    return true;
+    if ((err = XFCLOSE(file, path)) < 0) {
+        return err;
+    }
+    return write_len;
 }
 
 #if 0 == TESTING_fs
@@ -1615,7 +1636,7 @@ main(void) {
         ASSERT(!path_missing(path));
         ASSERT(!util_file_exists(path));
 
-        ASSERT(write_entire_file(path, "abcdef", 6));
+        ASSERT(write_entire_file(path, "abcdef", 6) == 6);
         ASSERT(util_file_exists(path));
         ASSERT((contents_len = read_entire_file(path, &contents)) >= 0);
         ASSERT_EQUAL(contents_len, 6);

@@ -81,15 +81,10 @@ command_result_file_descriptors_close(CommandResult *result) {
         return;
     }
 
-    if (result->stdin_fd >= 0) {
-        XCLOSE(&result->stdin_fd);
-    }
-    if (result->stdout_fd >= 0) {
-        XCLOSE(&result->stdout_fd);
-    }
-    if (result->stderr_fd >= 0) {
-        XCLOSE(&result->stderr_fd);
-    }
+    XCLOSE(&result->stdin_fd);
+    XCLOSE(&result->stdout_fd);
+    XCLOSE(&result->stderr_fd);
+
     return;
 }
 

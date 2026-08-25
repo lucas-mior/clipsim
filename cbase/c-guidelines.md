@@ -237,7 +237,7 @@ That means to also avoid calling `strlen32`:
 Exceptions to this rule are:
 
 - Macros `ENDS_WITH` and `BEGINS_WITH`: they use a macro trick to allow passing
-  only the string, or also passing the string length. See `util.c`.
+  only the string, or also passing the string length. See `cbase.h`.
 - Functions that in general only operate on short strings, commonly literals.
   For instance, a function that wants to know where in the buffer a fragment
   `"needle"` is can simply pass the `"needle"` argument and let the function
