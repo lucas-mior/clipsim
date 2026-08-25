@@ -1124,10 +1124,10 @@ command_run_sync(Command *command, int *exit_status) {
     return err;
 }
 
-bool
+int32
 command_run_async(Command *command, enum CommandFlag flags) {
     flags |= COMMAND_ASYNC;
-    return command_run(command, flags) == 0;
+    return command_run(command, flags);
 }
 
 bool
@@ -1815,7 +1815,7 @@ main(int argc, char **argv) {
 
 #if OS_UNIX
         COMMAND_PUSH(&cmd, "sh", "-c", "exit 9");
-        ASSERT(command_run_async(&cmd, COMMAND_NEW_PROCESS_GROUP));
+        ASSERT_ZERO((command_run_async(&cmd, COMMAND_NEW_PROCESS_GROUP)));
         ASSERT_POSITIVE(cmd.result.pid);
         ASSERT_ZERO(command_wait(&cmd));
         ASSERT_EQUAL(cmd.result.status, 9);
@@ -1827,9 +1827,9 @@ main(int argc, char **argv) {
                      "sh",
                      "-c",
                      "printf asyncout; printf asyncerr >&2");
-        ASSERT(command_run_async(&cmd,
-                                 COMMAND_CAPTURE_STDOUT
-                                 |COMMAND_CAPTURE_STDERR));
+        ASSERT_ZERO((command_run_async(&cmd,
+                                       COMMAND_CAPTURE_STDOUT
+                                       |COMMAND_CAPTURE_STDERR)));
         ASSERT_POSITIVE(cmd.result.pid);
         command_result_read_captured(&cmd);
         ASSERT_ZERO(command_wait(&cmd));
