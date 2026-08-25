@@ -12,6 +12,57 @@
 
 #include "cbase.h"
 
+#if OS_UNIX
+sigjmp_buf assert_traps_env;
+volatile sig_atomic_t assert_traps_caught = false;
+
+static struct sigaction assert_traps_old_signal_action;
+static bool assert_traps_signal_installed = false;
+
+static noreturn void
+assert_traps_signal_handler(int signal_number) {
+    (void)signal_number;
+    assert_traps_caught = true;
+    siglongjmp(assert_traps_env, 1);
+}
+
+void
+assert_traps_install(char *file, int32 line, char *func) {
+    struct sigaction signal_action = {0};
+
+    assert_traps_caught = false;
+    signal_action.sa_handler = assert_traps_signal_handler;
+    sigemptyset(&signal_action.sa_mask);
+    signal_action.sa_flags = SA_RESTART;
+
+    if (sigaction(SIGILL, &signal_action,
+                  &assert_traps_old_signal_action) != 0) {
+        assert_error(file, line, func,
+                     "Error in sigaction: %s.\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    assert_traps_signal_installed = true;
+    return;
+}
+
+void
+assert_traps_restore(char *file, int32 line, char *func) {
+    if (!assert_traps_signal_installed) {
+        return;
+    }
+
+    if (sigaction(SIGILL, &assert_traps_old_signal_action, NULL) != 0) {
+        assert_error(file, line, func,
+                     "Error in sigaction: %s.\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    assert_traps_signal_installed = false;
+    return;
+}
+#endif
+
 void
 assert_error(char *file, int32 line, char *func, char *format, ...) {
     va_list ap;

@@ -882,19 +882,6 @@ memory_functions_sink(void) {
 #define CBASE_IMPLEMENT
 #include "cbase.h"
 
-#if OS_LINUX
-static sigjmp_buf test_jump_env;
-static bool caught_expected_fail = false;
-
-static noreturn void
-test_expected_fail_handler(int sig) {
-    (void)sig;
-    caught_expected_fail = true;
-    siglongjmp(test_jump_env, 1);
-}
-
-#endif
-
 typedef struct TestFlex {
     int32 count;
     int32 padding;
@@ -906,21 +893,6 @@ typedef struct TestString {
     int32 len;
     int32 padding;
 } TestString;
-
-#define ASSERT_EXPECTED_FATAL(BLOCK) do { \
-    caught_expected_fail = false; \
-    if (sigsetjmp(test_jump_env, 1) == 0) { \
-        BLOCK; \
-        fprintf(stderr, \
-                "Error: Code block at %s:%d " \
-                "did not fail as expected.\n", \
-                __FILE__, __LINE__); \
-        exit(EXIT_FAILURE); \
-    } \
-    ASSERT(caught_expected_fail); \
-    printf("Successfully caught expected failure at %s:%d\n", \
-           __FILE__, __LINE__); \
-} while (0)
 
 int main(void) {
     printf("--- Starting Comprehensive Memory Tests ---\n");
@@ -1106,21 +1078,11 @@ int main(void) {
         // this block has to execute last,
         // because it leaves garbage still to be detected
 
-        struct sigaction sa = {0};
-        sa.sa_handler = test_expected_fail_handler;
-        sigemptyset(&sa.sa_mask);
-
         printf("\n--- Starting Failure Case Tests ---\n");
-
-        if (sigaction(SIGILL, &sa, NULL) != 0) {
-            perror("sigaction");
-            return EXIT_FAILURE;
-        }
-
 
         {
             void *untracked = (void *)0xDEADBEEF;
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 free2(untracked, 16);
             });
             allocations_unlock();
@@ -1129,7 +1091,7 @@ int main(void) {
         {
             int64 size = 64;
             uchar *p = malloc2(size);
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 free2(p, size + 1); // Incorrect size
             });
             allocations_unlock();
@@ -1140,7 +1102,7 @@ int main(void) {
             int64 size = 16;
             uchar *p = malloc2(size);
             free2(p, size);
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 free2(p, size); // Double free
             });
             allocations_unlock();
@@ -1150,7 +1112,7 @@ int main(void) {
         {
             int64 count = 10;
             int64 *arr = malloc2(count*SIZEOF(int64));
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 // Realloc with wrong old size
                 realloc2(arr, count + 5, 20, SIZEOF(int64));
             });
@@ -1166,7 +1128,7 @@ int main(void) {
             initial_size = SIZEOF(TestFlex) + (count*SIZEOF(int64));
             flex = malloc2(initial_size);
 
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 // Realloc flex with wrong old capacity
                 realloc_flex(flex, count + 2, 10, SIZEOF(int64));
             });
@@ -1176,7 +1138,7 @@ int main(void) {
 
         {
             void *invalid_ptr = (void *)0xBAADF00D;
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 // Realloc with untracked pointer
                 realloc2(invalid_ptr, 1, 10, SIZEOF(int64));
             });
@@ -1186,7 +1148,7 @@ int main(void) {
         {
             int64 size = 64;
             uchar *p = malloc2(size);
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 p[-MEMORY_PADDING] = 0x00; // Corrupt underflow canary
                 memory_check();
             });
@@ -1197,7 +1159,7 @@ int main(void) {
         {
             int64 size = 64;
             uchar *p = malloc2(size);
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 p[size] = 0x00; // Corrupt overflow canary
                 memory_check();
             });
@@ -1208,7 +1170,7 @@ int main(void) {
         {
             int64 size = 32;
             uchar *p = malloc2(size);
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 p[-4] = 0xFF; // Corrupt underflow canary
                 free2(p, size);
             });
@@ -1219,7 +1181,7 @@ int main(void) {
         {
             int64 size = 32;
             uchar *p = malloc2(size);
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 p[size] = 0xFF; // Corrupt overflow canary
                 free2(p, size);
             });
@@ -1231,7 +1193,7 @@ int main(void) {
             int64 size = 32;
             uchar *p = malloc2(size);
             free2(p, size);
-            ASSERT_EXPECTED_FATAL({
+            ASSERT_TRAPS({
                 p[0] = 0xAA; // Use after free
                 memory_check();
             });

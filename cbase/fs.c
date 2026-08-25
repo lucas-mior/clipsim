@@ -310,58 +310,64 @@ util_filename_from(char *buffer, int64 size, int fd) {
     }
 
 #if OS_LINUX
-    char linkpath[64];
-    ssize_t len;
+    {
+        char linkpath[64];
+        ssize_t len;
 
-    SNPRINTF(linkpath, "/proc/self/fd/%d", fd);
-    if ((len = readlink(linkpath, buffer, (size_t)(size - 1))) < 0) {
-        return -errno;
+        SNPRINTF(linkpath, "/proc/self/fd/%d", fd);
+        if ((len = readlink(linkpath, buffer, (size_t)(size - 1))) < 0) {
+            return -errno;
+        }
+        if (len > MAXOF((int32)0)) {
+            return -ENAMETOOLONG;
+        }
+        buffer[len] = '\0';
+        return (int32)len;
     }
-    if (len > MAXOF((int32)0)) {
-        return -ENAMETOOLONG;
-    }
-    buffer[len] = '\0';
-    return (int32)len;
 #elif CBASE_HAS_F_GETPATH
-    static char buffer2[MAXPATHLEN];
-    int64 len;
+    {
+        static char buffer2[MAXPATHLEN];
+        int64 len;
 
-    if (fcntl(fd, F_GETPATH, buffer2) < 0) {
-        return -errno;
+        if (fcntl(fd, F_GETPATH, buffer2) < 0) {
+            return -errno;
+        }
+        len = MIN(strlen32(buffer2), size - 1);
+        memcpy64(buffer, buffer2, len + 1);
+        buffer[len] = '\0';
+        return (int32)len;
     }
-    len = MIN(strlen32(buffer2), size - 1);
-    memcpy64(buffer, buffer2, len + 1);
-    buffer[len] = '\0';
-    return (int32)len;
 #elif OS_WINDOWS
-    HANDLE h;
-    DWORD len;
-    intptr h2 = _get_osfhandle(fd);
+    {
+        HANDLE h;
+        DWORD len;
+        intptr h2 = _get_osfhandle(fd);
 
-    if ((h = (HANDLE)h2) == INVALID_HANDLE_VALUE) {
-        return -EINVAL;
-    }
-    if (size > MAXOF((DWORD)0)) {
-        return -EINVAL;
-    }
+        if ((h = (HANDLE)h2) == INVALID_HANDLE_VALUE) {
+            return -EINVAL;
+        }
+        if (size > MAXOF((DWORD)0)) {
+            return -EINVAL;
+        }
 
-    len = GetFinalPathNameByHandleA(h, buffer, (DWORD)size,
-                                    FILE_NAME_NORMALIZED);
+        len = GetFinalPathNameByHandleA(h, buffer, (DWORD)size,
+                                        FILE_NAME_NORMALIZED);
 
-    if (len <= 0) {
-        windows_set_errno(GetLastError());
-        return -errno;
-    }
-    if (len >= size) {
-        return -ENAMETOOLONG;
-    }
+        if (len <= 0) {
+            windows_set_errno(GetLastError());
+            return -errno;
+        }
+        if (len >= size) {
+            return -ENAMETOOLONG;
+        }
 
-    if (strncmp32(buffer, "\\\\?\\", 4) == 0) {
-        memmove64(buffer, buffer + 4, len - 3);
-        len -= 4;
-    }
+        if (strncmp32(buffer, "\\\\?\\", 4) == 0) {
+            memmove64(buffer, buffer + 4, len - 3);
+            len -= 4;
+        }
 
-    return (int32)len;
+        return (int32)len;
+    }
 #else
     (void)fd;
     return -ENOSYS;

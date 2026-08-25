@@ -245,6 +245,33 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
     }                                                                          \
 } while (0)
 
+#if OS_UNIX
+extern sigjmp_buf assert_traps_env;
+extern volatile sig_atomic_t assert_traps_caught;
+
+void assert_traps_install(char *, int32, char *);
+void assert_traps_restore(char *, int32, char *);
+
+#define ASSERT_TRAPS(BLOCK) do {                                               \
+    assert_traps_install(__FILE__, __LINE__, FUNC__);                          \
+    if (sigsetjmp(assert_traps_env, 1) == 0) {                                 \
+        BLOCK;                                                                 \
+        assert_traps_restore(__FILE__, __LINE__, FUNC__);                      \
+        assert_error(__FILE__, __LINE__, FUNC__,                               \
+                     "Code block did not trap: %s\n", #BLOCK);                 \
+        exit(EXIT_FAILURE);                                                    \
+    }                                                                          \
+    assert_traps_restore(__FILE__, __LINE__, FUNC__);                          \
+    ASSERT(assert_traps_caught);                                               \
+} while (0)
+#else
+#define ASSERT_TRAPS(BLOCK) do {                                               \
+    assert_error(__FILE__, __LINE__, FUNC__,                                   \
+                 "ASSERT_TRAPS is only supported on Unix.\n");                 \
+    exit(EXIT_FAILURE);                                                        \
+} while (0)
+#endif
+
 #define ASSERT_FILE_CONTAINS(PATH, NEEDLE)                                     \
     assert_file_contains(__FILE__, __LINE__, FUNC__,                           \
                          PATH, NEEDLE)
