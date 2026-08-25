@@ -910,7 +910,7 @@ main(void) {
 #if DEBUGGING
     ASSERT_EQUAL(hash_pow(2.0, 10.0), 1024.0);
     ASSERT_EQUAL(hash_pow(0.5, 3.0), 0.125);
-    ASSERT_EQUAL(hash_round(1.49), 1.0);
+    ASSERT_EQUAL(hash_round(2.49), 2.0);
     ASSERT_EQUAL(hash_round(1.50), 2.0);
     ASSERT_EQUAL(hash_round(-1.50), -2.0);
 #endif

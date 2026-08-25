@@ -34,6 +34,8 @@ void *memchr64(void *, int32, int64);
 void *memrchr64(void *, int32, int64);
 extern bool util_glob_match(char *, int32, char *, int32);
 
+int fdtruncate64(int32 fd, int64 len);
+
 INLINE int32
 strlen32(char *string) {
     size_t len;
@@ -147,7 +149,7 @@ void normalize(char *restrict, int32 *restrict);
 extern bool parse_option(char **, char *, char *);
 extern char *path_basename(char *, int32);
 void print_timings(char *, int32, char *, int64,
-                          struct timespec, struct timespec);
+                   struct timespec, struct timespec);
 void qsort64(void *, int64, int64, int (*)(void *, void *));
 void rand_int_seed(uint64);
 extern int32 rand_int(void);
@@ -330,8 +332,10 @@ void xpthread_create(
 void xpthread_join(pthread_t *, void **);
 void xpthread_mutex_destroy(pthread_mutex_t *);
 void xpthread_mutex_init(pthread_mutex_t *, pthread_mutexattr_t *);
-void xpthread_mutex_lock(pthread_mutex_t *);
-void xpthread_mutex_unlock(pthread_mutex_t *);
+void xpthread_mutex_lock(pthread_mutex_t *mutex)
+    ATTR_EXCLUSIVE_LOCK(*mutex);
+void xpthread_mutex_unlock(pthread_mutex_t *mutex)
+    ATTR_UNLOCK(*mutex);
 #endif
 extern int xunlink(char *);
 extern bool xregular_file_exists(char *);
@@ -503,11 +507,9 @@ _Generic((char (*)[STRLIT_LEN(LITERAL)])0, \
     X(COMMAND_STDIN_TTY)           \
     X(COMMAND_CLOSE_STDIN)
 #define XENUMS_DECLARE_ONLY 1
-#define XENUMS_LINKAGE extern
 #define XENUMS_NO_TESTS 1
 #include "xenums.c"
 #undef XENUMS_NO_TESTS
-#undef XENUMS_LINKAGE
 
 typedef struct CommandResult {
     int64 pid;
@@ -726,6 +728,7 @@ void throw_away_function();
 #define ENUM_NAME CommandFlag
 #define ENUM_BITFLAGS 1
 #define ENUM_PREFIX_ COMMAND_
+#define ENUM_UNDERLYING_TYPE uint32
 #define ENUM_FIELDS \
     X(COMMAND_CAPTURE_STDOUT)      \
     X(COMMAND_CAPTURE_STDERR)      \
@@ -737,11 +740,9 @@ void throw_away_function();
     X(COMMAND_STDIN_TTY)           \
     X(COMMAND_CLOSE_STDIN)
 #define XENUMS_FUNCTIONS_ONLY 1
-#define XENUMS_LINKAGE 
 #define XENUMS_NO_TESTS 1
 #include "xenums.c"
 #undef XENUMS_NO_TESTS
-#undef XENUMS_LINKAGE
 
 #include "command.c"
 #include "cbase.h"

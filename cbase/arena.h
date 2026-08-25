@@ -25,23 +25,23 @@ enum ArenaErrors {
     EARENA_SIZE,
 };
 
-extern Arena *arena_create(int64, char *);
-extern int64 arena_data_size(Arena *);
-extern bool arena_decr(Arena *, void *);
-extern void arena_destroy(Arena *);
-extern int32 arena_nlinked(Arena *);
-extern Arena *arena_of(Arena *, void *);
-extern void arena_print(Arena *);
-extern void *arena_push(Arena *, int64);
-extern uint32 arena_push_index32(Arena *, uint32);
-extern void *arena_reset(Arena *);
-extern char *arena_strerror(int);
-extern Arena *arena_with_space(Arena *, int64);
-extern void arenas_destroy(Arena **, int32);
-extern bool arenas_pop(Arena **, int32, void *);
-extern void *arenas_push(Arena **, int32, int64);
-extern void *arenas_reset(Arena **, int32);
-extern void *xarena_push(Arena *, int64);
-extern void *xarenas_push(Arena **, int32, int64);
+Arena *arena_create(int64 size, char *name);
+int64 arena_data_size(Arena *arena);
+bool arena_decr(Arena *arena, void *p);
+void arena_destroy(Arena *arena);
+int32 arena_nlinked(Arena *arena);
+Arena *arena_of(Arena *arena, void *p);
+void arena_print(Arena *arena);
+void *arena_push(Arena *arena, int64 size);
+uint32 arena_push_index32(Arena *arena, uint32 size);
+void *arena_reset(Arena *arena);
+char *arena_strerror(int arena_errno);
+Arena *arena_with_space(Arena *arena, int64 size);
+void arenas_destroy(Arena **arenas, int32 number);
+bool arenas_pop(Arena **arenas, int32 narenas, void *p);
+void *arenas_push(Arena **arenas, int32 number, int64 size);
+void *arenas_reset(Arena **arenas, int32 number);
+void *xarena_push(Arena *arena, int64 size);
+void *xarenas_push(Arena **arenas, int32 narenas, int64 size);
 
 #endif /* ARENA_H */

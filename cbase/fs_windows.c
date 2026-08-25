@@ -85,7 +85,7 @@ cbase_mkdtemp(char *template) {
         return NULL;
     }
 
-    for (int32 attempt = 0; attempt < 10000; attempt += 1) {
+    for (uint32 attempt = 0; attempt < 10000; attempt += 1) {
         DWORD error_code;
         uint32 state;
 

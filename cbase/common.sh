@@ -60,6 +60,18 @@ common_get_compiler() {
         CC=cc
     fi
 
+    if [ "$CC" = "cc" ]; then
+        CC=$(basename "$(realpath "$(command -v cc)")")
+        
+        if [ "$CC" = "cc" ]; then
+            if cc --version 2>&1 | grep -qi "clang"; then
+                CC="clang"
+            elif cc --version 2>&1 | grep -qi "gcc"; then
+                CC="gcc"
+            fi
+        fi
+    fi
+
     echo "$CC"
 }
 
@@ -644,6 +656,9 @@ common_gcc_flags_to_msvc() {
             -Wextra|-Wpedantic)
                 continue
                 ;;
+            -Werror)
+                flag="/WX"
+                ;;
             -Wfatal-errors|-Wno-*|-W*)
                 case "$compiler" in
                 clang-cl) flag="/clang:$flag" ;;
@@ -870,6 +885,9 @@ common_test_compile_and_run_source () {
             test_cmd_flags=$(common_msvc_add_utf8_cflags $test_cmd_flags)
             ;;
         esac
+        if [ -n "$test_msvc_compiler" ]; then
+            test_cmd_flags="$test_cmd_flags /nologo"
+        fi
         test_cmdline="$test_cc $test_cmd_flags"
     fi
 

@@ -131,24 +131,25 @@ command_result_append(
 #if OS_WINDOWS
 typedef struct CommandWindowsCaptureFile {
     HANDLE handle;
+    uint32 padding;
     char path[PATH_MAX];
 } CommandWindowsCaptureFile;
 
-CBASE_PRIVATE void
+static void
 command_windows_capture_file_init(CommandWindowsCaptureFile *capture) {
     *capture = (CommandWindowsCaptureFile){0};
     capture->handle = INVALID_HANDLE_VALUE;
     return;
 }
 
-CBASE_PRIVATE void
+static void
 command_windows_error_set(Command *command, DWORD error_code) {
     windows_set_errno(error_code);
     command_error_set(command, (int32)error_code);
     return;
 }
 
-CBASE_PRIVATE bool
+static bool
 command_windows_capture_file_open(
     Command *command,
     CommandWindowsCaptureFile *capture,
@@ -190,7 +191,7 @@ command_windows_capture_file_open(
     return true;
 }
 
-CBASE_PRIVATE bool
+static bool
 command_windows_capture_file_close(
     Command *command,
     CommandWindowsCaptureFile *capture
@@ -209,7 +210,7 @@ command_windows_capture_file_close(
     return true;
 }
 
-CBASE_PRIVATE void
+static void
 command_windows_capture_file_cleanup(CommandWindowsCaptureFile *capture) {
     if (capture->handle != INVALID_HANDLE_VALUE) {
         CloseHandle(capture->handle);
@@ -221,7 +222,7 @@ command_windows_capture_file_cleanup(CommandWindowsCaptureFile *capture) {
     return;
 }
 
-CBASE_PRIVATE bool
+static bool
 command_windows_capture_file_read(
     Command *command,
     CommandWindowsCaptureFile *capture,
@@ -240,7 +241,7 @@ command_windows_capture_file_read(
     return true;
 }
 
-CBASE_PRIVATE bool
+static bool
 command_windows_result_read_captured(
     Command *command,
     enum CommandFlag flags,
@@ -346,6 +347,7 @@ command_windows_command_line(
     for (int32 i = 0; i < command->argc; i += 1) {
         char *argument;
         int32 argument_len;
+        bool needs_quotes;
 
         if (i == 0) {
             argument = command_windows_argv0(command,
@@ -356,7 +358,7 @@ command_windows_command_line(
             argument_len = command->argvs_lens[i];
         }
 
-        bool needs_quotes = argument_len == 0;
+        needs_quotes = argument_len == 0;
 
         for (int32 k = 0; k < argument_len; k += 1) {
             if ((argument[k] == ' ') || (argument[k] == '\t')) {
@@ -530,7 +532,7 @@ command_windows_run_process(Command *command, enum CommandFlag flags) {
 #endif
 
 #if OS_UNIX
-CBASE_PRIVATE bool
+static bool
 command_pipe_set_nonblock(int32 fd) {
     int flags;
 
@@ -545,7 +547,7 @@ command_pipe_set_nonblock(int32 fd) {
     return true;
 }
 
-CBASE_PRIVATE void
+static void
 command_result_close_poll_fd(struct pollfd *pipe, int32 *fd, int32 *left) {
     if (*fd >= 0) {
         XCLOSE(fd);
@@ -557,7 +559,7 @@ command_result_close_poll_fd(struct pollfd *pipe, int32 *fd, int32 *left) {
     return;
 }
 
-CBASE_PRIVATE void
+static void
 command_result_process_stdin_event(
     Command *command,
     struct pollfd *pipe,
@@ -623,7 +625,7 @@ command_result_process_stdin_event(
     return;
 }
 
-CBASE_PRIVATE void
+static void
 command_result_process_output_event(
     Command *command,
     struct pollfd *pipe,
@@ -1224,7 +1226,7 @@ command_push_length(Command *command, char *argument, int32 argument_len) {
     return;
 }
 
-CBASE_PRIVATE void
+static void
 command_push(Command *command, char *argument) {
     command_push_length(command, argument, strlen32(argument));
     return;

@@ -54,29 +54,29 @@ union Primitive {
     double adouble;
 };
 
-extern int fprint_0(FILE *restrict, ...);
-extern int snprint_0(char *restrict, int64, ...);
-extern char *toString(char *restrict, int64, char *restrict, ...);
-extern double double_from_voidp(void *);
-extern double double_from_charp(char *);
-extern double double_from_bool(bool);
-extern double double_from_char(char);
-extern double double_from_schar(schar);
-extern double double_from_short(short);
-extern double double_from_int(int);
-extern double double_from_long(long);
-extern double double_from_llong(llong);
-extern double double_from_uchar(uchar);
-extern double double_from_ushort(ushort);
-extern double double_from_uint(uint);
-extern double double_from_ulong(ulong);
-extern double double_from_ullong(ullong);
-extern double double_from_float(float);
-extern double double_from_double(double);
-extern llong typebits(enum Type);
-extern char *typename(enum Type);
-extern double double_get(union Primitive, enum Type);
-extern void UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC(void);
+int fprint_0(FILE *restrict, ...);
+int snprint_0(char *restrict, int64, ...);
+char *toString(char *restrict, int64, char *restrict, ...);
+double double_from_voidp(void *);
+double double_from_charp(char *);
+double double_from_bool(bool);
+double double_from_char(char);
+double double_from_schar(schar);
+double double_from_short(short);
+double double_from_int(int);
+double double_from_long(long);
+double double_from_llong(llong);
+double double_from_uchar(uchar);
+double double_from_ushort(ushort);
+double double_from_uint(uint);
+double double_from_ulong(ulong);
+double double_from_ullong(ullong);
+double double_from_float(float);
+double double_from_double(double);
+llong typebits(enum Type);
+char *typename(enum Type);
+double double_get(union Primitive, enum Type);
+void UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC(void);
 
 #if !defined(S_BSZ)
 #define S_BSZ 64

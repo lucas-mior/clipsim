@@ -74,7 +74,9 @@ xpthread_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *attr) {
 }
 
 void
-xpthread_mutex_lock(pthread_mutex_t *mutex) {
+xpthread_mutex_lock(pthread_mutex_t *mutex)
+    ATTR_EXCLUSIVE_LOCK(*mutex)
+    ATTR_NO_THREAD_SAFETY_ANALYSIS {
     int err;
     if ((err = pthread_mutex_lock(mutex))) {
         error("Error locking mutex %p: %s.\n", (void *)mutex, strerror(err));
@@ -84,7 +86,9 @@ xpthread_mutex_lock(pthread_mutex_t *mutex) {
 }
 
 void
-xpthread_mutex_unlock(pthread_mutex_t *mutex) {
+xpthread_mutex_unlock(pthread_mutex_t *mutex)
+    ATTR_UNLOCK(*mutex)
+    ATTR_NO_THREAD_SAFETY_ANALYSIS {
     int err;
     if ((err = pthread_mutex_unlock(mutex))) {
         error("Error unlocking mutex %p: %s.\n", (void *)mutex, strerror(err));
@@ -184,25 +188,29 @@ thread_pool_platform_destroy(void) {
 }
 
 static void
-thread_pool_lock(void) {
+thread_pool_lock(void)
+    ATTR_NO_THREAD_SAFETY_ANALYSIS {
     xpthread_mutex_lock(&thread_pool_mutex);
     return;
 }
 
 static void
-thread_pool_unlock(void) {
+thread_pool_unlock(void)
+    ATTR_NO_THREAD_SAFETY_ANALYSIS {
     xpthread_mutex_unlock(&thread_pool_mutex);
     return;
 }
 
 static void
-thread_pool_wait_new_work(void) {
+thread_pool_wait_new_work(void)
+    ATTR_NO_THREAD_SAFETY_ANALYSIS {
     pthread_cond_wait(&thread_pool_new_work, &thread_pool_mutex);
     return;
 }
 
 static void
-thread_pool_wait_done_work(void) {
+thread_pool_wait_done_work(void)
+    ATTR_NO_THREAD_SAFETY_ANALYSIS {
     pthread_cond_wait(&thread_pool_done_work, &thread_pool_mutex);
     return;
 }

@@ -14,10 +14,6 @@
 #include "platform_detection.h"
 #include "libc.h"
 
-#if !defined(CBASE_PRIVATE)
-#define CBASE_PRIVATE static
-#endif
-
 #define S(...) #__VA_ARGS__
 #define QUOTE(x) S(x)
 
@@ -179,6 +175,26 @@ _Generic((SIZE), \
 
 #if !defined(__has_attribute)
   #define __has_attribute(x) 0
+#endif
+
+#if CC_CLANG && OS_FREEBSD && __has_attribute(exclusive_lock_function)
+  #define ATTR_EXCLUSIVE_LOCK(...) \
+    __attribute__((exclusive_lock_function(__VA_ARGS__)))
+#else
+  #define ATTR_EXCLUSIVE_LOCK(...)
+#endif
+
+#if CC_CLANG && OS_FREEBSD && __has_attribute(unlock_function)
+  #define ATTR_UNLOCK(...) __attribute__((unlock_function(__VA_ARGS__)))
+#else
+  #define ATTR_UNLOCK(...)
+#endif
+
+#if CC_CLANG && __has_attribute(no_thread_safety_analysis)
+  #define ATTR_NO_THREAD_SAFETY_ANALYSIS \
+    __attribute__((no_thread_safety_analysis))
+#else
+  #define ATTR_NO_THREAD_SAFETY_ANALYSIS
 #endif
 
 #if !defined(FALLTHROUGH)

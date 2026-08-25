@@ -406,6 +406,9 @@ main(void) {
                  typename(TYPEID(primitive.afloat)));
     ASSERT_EQUAL(TYPENAME(primitive.adouble),
                  typename(TYPEID(primitive.adouble)));
+#if CC_MSVC
+    (void)primitive;
+#endif
 
     {
         int32 var_int32;
@@ -422,6 +425,14 @@ main(void) {
         ASSERT(MINOF(var_int64) == INT64_MIN);
         ASSERT(MINOF(var_uint32) == 0u);
         ASSERT(MINOF(var_uint64) == 0ull);
+
+#if CC_MSVC
+        // msvc does not silence warnings of variables used in _Generic
+        (void)var_int32;
+        (void)var_uint32;
+        (void)var_int64;
+        (void)var_uint64;
+#endif
     }
 
     {
@@ -466,6 +477,7 @@ main(void) {
     }
 
     {
+        char *s;
         char a = 'i';
         char *b = "able";
         int c = 1;
@@ -479,15 +491,26 @@ main(void) {
         FILE *fp;
         int n;
 
-        ASSERT_EQUAL(S_(a), "i");
-        ASSERT_EQUAL(S_(b), "able");
-        ASSERT_EQUAL(S_(c), "1");
-        ASSERT_EQUAL(S_((uint)42), "42");
-        ASSERT_EQUAL(S_((long)-42), "-42");
-        ASSERT_EQUAL(S_((ullong)42), "42");
-        ASSERT_EQUAL(S_(true), "1");
-        ASSERT_EQUAL(S_(false), "0");
-        ASSERT_EQUAL(SF("0x%02x", 10), "0x0a");
+
+        s = S_(a);
+        ASSERT_EQUAL(s, "i");
+        s = S_(b);
+        ASSERT_EQUAL(s, "able");
+        s = S_(c);
+        ASSERT_EQUAL(s, "1");
+
+        s = S_((uint)42);
+        ASSERT_EQUAL(s, "42");
+        s = S_((long)-42);
+        ASSERT_EQUAL(s, "-42");
+        s = S_((ullong)42);
+        ASSERT_EQUAL(s, "42");
+        s = S_(true);
+        ASSERT_EQUAL(s, "1");
+        s = S_(false);
+        ASSERT_EQUAL(s, "0");
+        s = SF("0x%02x", 10);
+        ASSERT_EQUAL(s, "0x0a");
 
         n = snprint(buf, SIZEOF(buf),
                     "Now you can insert var" V(a) V(b) "s in situ:\n"

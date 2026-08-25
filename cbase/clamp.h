@@ -12,11 +12,7 @@
 #error "Error: CLAMP_TYPE not defined"
 #endif
 
-#if !defined(CLAMP_LINKAGE)
-#define CLAMP_LINKAGE static
-#endif
-
-CLAMP_LINKAGE CLAMP_TYPE
+CLAMP_TYPE
 CAT(clamp_, CLAMP_TYPE)(CLAMP_TYPE var, CLAMP_TYPE min, CLAMP_TYPE max) {
     if (var < min) {
         return min;
@@ -27,7 +23,7 @@ CAT(clamp_, CLAMP_TYPE)(CLAMP_TYPE var, CLAMP_TYPE min, CLAMP_TYPE max) {
     return var;
 }
 
-CLAMP_LINKAGE CLAMP_TYPE
+CLAMP_TYPE
 CAT(square_, CLAMP_TYPE)(CLAMP_TYPE var) {
     return var*var;
 }
@@ -39,4 +35,3 @@ CAT(CLAMP_TYPE, _sink)(void) {
 }
 
 #undef CLAMP_TYPE
-#undef CLAMP_LINKAGE

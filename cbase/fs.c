@@ -431,7 +431,14 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
         char itoa_buffer[32];
         ITOA(itoa_buffer, line);
 
+#if CC_GCC || CC_CLANG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+#endif
         strerror_r(errno, error_buffer, sizeof(error_buffer));
+#if CC_GCC || CC_CLANG
+#pragma GCC diagnostic pop
+#endif
 
         error_async_safe(file);
         error_async_safe(":");

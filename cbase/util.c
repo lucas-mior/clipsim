@@ -38,19 +38,29 @@ here_impl(char *file, int32 line, char *func) {
     return;
 }
 
-#define CLAMP_LINKAGE 
 #define CLAMP_TYPE double
 #include "clamp.h"
 
-#define CLAMP_LINKAGE 
 #define CLAMP_TYPE int64
 #include "clamp.h"
 
-#define CLAMP_LINKAGE 
 #define CLAMP_TYPE int32
 #include "clamp.h"
 
 static char *notifiers[2] = {"dunstify", "notify-send"};
+
+#if OS_UNIX
+int
+fdtruncate64(int32 fd, int64 len) {
+    off_t len_offt;
+    if (len >= MAXOF(len_offt)) {
+        error("ftruncate with length bigger than off_t supports.\n");
+        fatal(EXIT_FAILURE);
+    }
+    len_offt = (off_t)len;
+    return ftruncate(fd, len_offt);
+}
+#endif
 
 #if !CBASE_HAS_SYSTEM_MEMMEM
 static void *
@@ -1237,7 +1247,7 @@ main(int argc, char **argv) {
     ASSERT_EQUAL(rad2deg(3.141592653589793), 180.0);
     ASSERT_POSITIVE(util_nthreads());
 
-    ASSERT_EQUAL(CLAMP(0.0, -0.1, 0.1),   0.0);
+    ASSERT_EQUAL(CLAMP(2.0, -2.1, 2.1),   2.0);
     ASSERT_EQUAL(CLAMP(0.2, -0.1, 0.1),   0.1);
     ASSERT_EQUAL(CLAMP(-0.2, -0.1, 0.1), -0.1);
 
