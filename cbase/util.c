@@ -285,6 +285,9 @@ memcmp64(void *left, void *right, int64 size) {
         return 0;
     }
     if (DEBUGGING) {
+        if ((left == NULL) || (right == NULL)) {
+            TRAP();
+        }
         if (size < 0) {
             error("Error: size=%lld < 0.\n", size);
         }

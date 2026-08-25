@@ -263,22 +263,22 @@ sb_clear(StrBuilder *str_builder) {
     return;
 }
 
-bool
+int32
 sb_copy(StrBuilder *dest, StrBuilder *source) {
     if (dest == NULL) {
-        return false;
+        return -EINVAL;
     }
     if (dest == source) {
-        return true;
+        return dest->len;
     }
     if (source == NULL) {
         sb_free(dest);
-        return true;
+        return dest->len;
     }
 
     sb_clear(dest);
     sb_append(dest, source->data, source->len);
-    return true;
+    return dest->len;
 }
 
 void
@@ -521,35 +521,36 @@ str_builder_array_destroy(StrBuilderArray *array) {
     return;
 }
 
-bool
+int32
 str_builder_array_copy(StrBuilderArray *dest, StrBuilderArray *source) {
     StrBuilderArray replacement;
+    int32 err;
 
     if (dest == NULL) {
-        return false;
+        return -EINVAL;
     }
     if (dest == source) {
-        return true;
+        return dest->len;
     }
 
     str_builder_array_init(&replacement);
     if (source) {
-        if (!str_builder_array_reserve(&replacement, source->len)) {
+        if ((err = str_builder_array_reserve(&replacement, source->len)) < 0) {
             str_builder_array_destroy(&replacement);
-            return false;
+            return err;
         }
         for (int32 i = 0; i < source->len; i += 1) {
-            if (!str_builder_array_append_copy(&replacement,
-                                               &source->items[i])) {
+            if ((err = str_builder_array_append_copy(
+                     &replacement, &source->items[i])) < 0) {
                 str_builder_array_destroy(&replacement);
-                return false;
+                return err;
             }
         }
     }
 
     str_builder_array_destroy(dest);
     *dest = replacement;
-    return true;
+    return dest->len;
 }
 
 void
@@ -588,22 +589,25 @@ str_builder_array_swap(StrBuilderArray *left, StrBuilderArray *right) {
     return;
 }
 
-bool
+int32
 str_builder_array_reserve(StrBuilderArray *array, int32 extra) {
     int64 needed;
     int32 old_cap;
     int32 new_cap;
 
     if (array == NULL) {
-        return false;
+        return -EINVAL;
     }
-    if (extra <= 0) {
-        return true;
+    if (extra < 0) {
+        return -EINVAL;
+    }
+    if (extra == 0) {
+        return array->cap;
     }
 
     needed = (int64)array->len + extra;
     if (needed <= array->cap) {
-        return true;
+        return array->cap;
     }
     if (needed >= MAXOF(array->cap)) {
         error("StrBuilderArray only supports fewer than 2GB items.\n");
@@ -624,17 +628,17 @@ str_builder_array_reserve(StrBuilderArray *array, int32 extra) {
         }
     }
 
-    array->items = realloc2(array->items, old_cap, new_cap,
-                            SIZEOF(*array->items));
+    array->items = realloc2(array->items,
+                            old_cap, new_cap, SIZEOF(*array->items));
     array->cap = new_cap;
-    return true;
+    return array->cap;
 }
 
 StrBuilder *
 str_builder_array_append(StrBuilderArray *array) {
     StrBuilder *item;
 
-    if (!str_builder_array_reserve(array, 1)) {
+    if (str_builder_array_reserve(array, 1) < 0) {
         return NULL;
     }
 
@@ -644,24 +648,30 @@ str_builder_array_append(StrBuilderArray *array) {
     return item;
 }
 
-bool
+int32
 str_builder_array_append_copy(StrBuilderArray *array, StrBuilder *item) {
     StrBuilder *dest;
+    int32 err;
+    int32 index;
 
-    if (item == NULL) {
-        return false;
+    if ((array == NULL) || (item == NULL)) {
+        return -EINVAL;
     }
 
-    dest = str_builder_array_append(array);
-    if (dest == NULL) {
-        return false;
+    if ((err = str_builder_array_reserve(array, 1)) < 0) {
+        return err;
     }
-    if (!sb_copy(dest, item)) {
+
+    index = array->len;
+    dest = &array->items[index];
+    array->len += 1;
+    sb_init(dest);
+    if ((err = sb_copy(dest, item)) < 0) {
         array->len -= 1;
         sb_free(dest);
-        return false;
+        return err;
     }
-    return true;
+    return index;
 }
 
 #if 0 == TESTING_string

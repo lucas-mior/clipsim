@@ -173,6 +173,30 @@ function(void) {
 }
 ```
 
+## Style for realloc2.
+Try to fit in a single line (good(1));
+If does not fit, use good(2);
+if still does not fit, use good(3).
+```c
+// good(1)
+pointer = realloc2(pointer, old_capacity, new_capacity, SIZEOF(*pointer);
+
+// good(2)
+pointer_name = realloc2(pointer_name,
+                        old_capacity, new_capacity, SIZEOF(*pointer_name);
+// good(3)
+pointer_name_long = realloc2(pointer_name_long,
+                             old_capacity, new_capacity,
+                             SIZEOF(*pointer_name_long);
+
+// bad
+pointer_name = realloc2(pointer_name, old_capacity,
+                        new_capacity, SIZEOF(*pointer_name);
+// bad
+pointer_name_long = realloc2(pointer_name_long, old_capacity, new_capacity,
+                             SIZEOF(*pointer_name_long);
+```
+
 ## Switch formatting
 
 `case` must align with `switch`.

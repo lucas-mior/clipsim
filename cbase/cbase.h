@@ -164,7 +164,7 @@ void sb_append(StrBuilder *, char *, int32);
 void sb_append_byte(StrBuilder *, char);
 void sb_append_byte_if_not(StrBuilder *, char);
 void sb_clear(StrBuilder *);
-bool sb_copy(StrBuilder *, StrBuilder *);
+int32 sb_copy(StrBuilder *, StrBuilder *);
 void sb_free(StrBuilder *);
 void sb_init(StrBuilder *);
 void sb_move(StrBuilder *, StrBuilder *);
@@ -177,13 +177,13 @@ char *sb_opt_cstr(StrBuilder *buffer);
 void send_signal(char *, int32);
 int32 snprintf2(char *, int64, char *, ...);
 StrBuilder *str_builder_array_append(StrBuilderArray *);
-bool str_builder_array_append_copy(StrBuilderArray *, StrBuilder *);
+int32 str_builder_array_append_copy(StrBuilderArray *, StrBuilder *);
 void str_builder_array_clear(StrBuilderArray *);
-bool str_builder_array_copy(StrBuilderArray *, StrBuilderArray *);
+int32 str_builder_array_copy(StrBuilderArray *, StrBuilderArray *);
 void str_builder_array_destroy(StrBuilderArray *);
 void str_builder_array_init(StrBuilderArray *);
 void str_builder_array_move(StrBuilderArray *, StrBuilderArray *);
-bool str_builder_array_reserve(StrBuilderArray *, int32);
+int32 str_builder_array_reserve(StrBuilderArray *, int32);
 void str_builder_array_swap(StrBuilderArray *, StrBuilderArray *);
 int32 string_from_strings(char *, int32, char *, char **, int32);
 int32 string_from_doubles(char *, int32, char *, double *, int32);
@@ -223,13 +223,28 @@ int32 square_int32(int32);
 #define MEM_LITERAL_SHORT_N 15
 #include "mem_literal_short.h"
 
+// only call on null terminated strings
+// avoid this function,
+// prefer to always know the length of at least the first string
+// and use the STREQUAL macro.
 INLINE UNUSED bool32
 strequal(char *s1, char *s2) {
+    if (DEBUGGING) {
+        if ((s1 == NULL) || (s2 == NULL)) {
+            TRAP();
+        }
+    }
     return !strcmp(s1, s2);
 }
 
+// don't call directly, use STREQUAL macro instead
 INLINE UNUSED bool32
 strequal2(char *a, int32 a_len, char *b, int32 b_len) {
+    if (DEBUGGING) {
+        if ((a == NULL) || (b == NULL)) {
+            TRAP();
+        }
+    }
     if (a_len != b_len) {
         return false;
     }
@@ -239,8 +254,14 @@ strequal2(char *a, int32 a_len, char *b, int32 b_len) {
 
 INLINE UNUSED bool32
 optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
-    if ((a == NULL) || (b == NULL)) {
+    if (a && (b == NULL)) {
         return false;
+    }
+    if (b && (a == NULL)) {
+        return false;
+    }
+    if ((a == NULL) && (b == NULL)) {
+        return true;
     }
 
     return strequal2(a, a_len, b, b_len);

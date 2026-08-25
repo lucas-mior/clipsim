@@ -597,8 +597,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
         size = history_text_allocation_size(e);
         if (incr_buffer) {
             e->content = realloc2(content,
-                                  ENTRY_MAX_LENGTH, size,
-                                  SIZEOF(char));
+                                  ENTRY_MAX_LENGTH, size, SIZEOF(char));
         } else {
             e->content = malloc2(size);
             memcpy64(e->content, content, e->content_length + 1);
@@ -614,8 +613,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
 
         if (incr_buffer) {
             e->content = realloc2(content,
-                                  ENTRY_MAX_LENGTH, length + 1,
-                                  SIZEOF(char));
+                                  ENTRY_MAX_LENGTH, length + 1, SIZEOF(char));
         } else {
             e->content = malloc2(length + 1);
             memcpy64(e->content, content, length + 1);
