@@ -611,7 +611,7 @@ bool command_run_async(Command *, enum CommandFlag);
 bool command_run_capture(Command *, enum CommandFlag);
 bool command_run_capture_all(Command *);
 bool command_run_capture_combined(Command *);
-bool command_run_sync(Command *, int *);
+int32 command_run_sync(Command *, int *);
 int32 command_signal(Command *, int32, bool);
 int32 command_start(Command *, enum CommandFlag);
 int32 command_status_from_wait(int, CommandResult *);

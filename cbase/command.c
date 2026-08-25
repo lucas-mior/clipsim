@@ -1113,7 +1113,7 @@ command_run(Command *command, enum CommandFlag flags) {
 #endif
 }
 
-bool
+int32
 command_run_sync(Command *command, int *exit_status) {
     int32 err;
 
@@ -1121,7 +1121,7 @@ command_run_sync(Command *command, int *exit_status) {
     if ((err == 0) && exit_status) {
         *exit_status = command->result.status;
     }
-    return err == 0;
+    return err;
 }
 
 bool
@@ -1618,7 +1618,7 @@ main(int argc, char **argv) {
 
 #if OS_UNIX
         COMMAND_PUSH(&cmd, "sh", "-c", "exit 7");
-        ASSERT(command_run_sync(&cmd, NULL));
+        ASSERT_ZERO((command_run_sync(&cmd, NULL)));
         ASSERT_EQUAL(cmd.result.status, 7);
         ASSERT(cmd.result.exited);
         ASSERT_EQUAL(cmd.result.exit_status, 7);
@@ -1763,7 +1763,7 @@ main(int argc, char **argv) {
 
 #if OS_WINDOWS
         COMMAND_PUSH(&cmd, "cmd", "/C", "exit /B 7");
-        ASSERT(command_run_sync(&cmd, NULL));
+        ASSERT_ZERO((command_run_sync(&cmd, NULL)));
         ASSERT_EQUAL(cmd.result.status, 7);
         ASSERT(cmd.result.exited);
         ASSERT_EQUAL(cmd.result.exit_status, 7);

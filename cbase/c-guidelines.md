@@ -446,8 +446,7 @@ for (int32 i = 0; i < LENGTH(some_array); i += 1) {
 
 - Use `bool` only for predicates. Names like `is_*`, `has_*`, `can_*`,
   `contains_*`, and `matches_*` should return boolean answers. Failure to answer
-  the question should usually be impossible, asserted, or represented some other
-  way.
+  the question should be impossible or asserted.
 
 - Use signed integer status for fallible actions. Names like `read_*`,
   `write_*`, `parse_*`, `rename_*`, `init_*`, `open_*`, `build_*`,
