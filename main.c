@@ -154,7 +154,7 @@ main_launch_daemon(void) {
         exit(EXIT_FAILURE);
     }
 
-    pthread_mutex_init(&lock, NULL);
+    pthread_mutex_init(&clipsim_lock, NULL);
 
     history_read();
 

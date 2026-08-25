@@ -130,13 +130,13 @@ ipc_make_directory(void) {
 
 int32
 ipc_lock_exclusive_nonblock(int32 fd) {
-    struct flock lock;
+    struct flock fd_lock;
 
-    memset64(&lock, 0, sizeof(lock));
-    lock.l_type = F_WRLCK;
-    lock.l_whence = SEEK_SET;
+    memset64(&fd_lock, 0, sizeof(fd_lock));
+    fd_lock.l_type = F_WRLCK;
+    fd_lock.l_whence = SEEK_SET;
 
-    return fcntl(fd, F_SETLK, &lock);
+    return fcntl(fd, F_SETLK, &fd_lock);
 }
 
 void
@@ -356,7 +356,7 @@ ipc_daemon_listen(void *unused) {
             continue;
         }
 
-        xpthread_mutex_lock(&lock);
+        xpthread_mutex_lock(&clipsim_lock);
 
         switch (request.command) {
         case COMMAND_PRINT:
@@ -379,7 +379,7 @@ ipc_daemon_listen(void *unused) {
             break;
         }
 
-        xpthread_mutex_unlock(&lock);
+        xpthread_mutex_unlock(&clipsim_lock);
         XCLOSE(&client_fd, ipc_socket.name);
     }
 }

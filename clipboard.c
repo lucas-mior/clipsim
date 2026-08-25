@@ -139,7 +139,7 @@ clipboard_daemon_watch(void) {
 
         clipboard_result = clipboard_get_clipboard(&save, &length, &incr);
 
-        xpthread_mutex_lock(&lock);
+        xpthread_mutex_lock(&clipsim_lock);
 
         switch (clipboard_result) {
         case CLIPBOARD_TEXT:
@@ -164,7 +164,7 @@ clipboard_daemon_watch(void) {
             error("Unhandled result from clipboard_get_clipboard.\n");
             exit(EXIT_FAILURE);
         }
-        xpthread_mutex_unlock(&lock);
+        xpthread_mutex_unlock(&clipsim_lock);
     }
 }
 

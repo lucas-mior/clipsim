@@ -85,7 +85,7 @@ static Entry clipsim_entries[HISTORY_BUFFER_SIZE] = {0};
 static bool is_image[HISTORY_BUFFER_SIZE] = {0};
 static char TEXT_TAG = (char)0x01;
 static char IMAGE_TAG = (char)0x02;
-static pthread_mutex_t lock;
+static pthread_mutex_t clipsim_lock;
 static magic_t magic = 0;
 
 void util_close(File *file);
