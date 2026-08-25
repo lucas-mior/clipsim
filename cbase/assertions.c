@@ -33,7 +33,7 @@ assert_file_contains(char *file, int32 line, char *func,
     int32 buffer_len;
     int32 needle_len = strlen32(needle);
 
-    if (!read_entire_file(path, &buffer, &buffer_len)) {
+    if ((buffer_len = read_entire_file(path, &buffer)) < 0) {
         TRAP();
     }
     if (!memmem64(buffer, buffer_len, needle, needle_len)) {

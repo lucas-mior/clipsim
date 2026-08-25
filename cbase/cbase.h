@@ -158,7 +158,7 @@ int32 rand_int(void);
 double rad2deg(double);
 int32 random_ascii_string(char *, int32, int32);
 bool path_missing(char *);
-bool read_entire_file(char *, char **, int32 *);
+int32 read_entire_file(char *, char **);
 char *remove_escape_sequences(char *, int32 *);
 void sb_append(StrBuilder *, char *, int32);
 void sb_append_byte(StrBuilder *, char);

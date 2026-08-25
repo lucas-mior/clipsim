@@ -1015,50 +1015,62 @@ path_missing(char *path) {
     return false;
 }
 
-bool
-read_entire_file(char *path, char **file_bytes, int32 *file_len) {
+int32
+read_entire_file(char *path, char **file_bytes) {
     FILE *file;
     int64 len;
     int64 read_len;
     char *bytes;
+    int32 err;
 
     if (file_bytes) {
         *file_bytes = NULL;
     }
-    if (file_len) {
-        *file_len = 0;
-    }
-    if (path_missing(path)
-        || (file_bytes == NULL)
-        || (file_len == NULL)) {
+    if (path_missing(path) || (file_bytes == NULL)) {
         error("Error reading file: invalid arguments.\n");
-        return false;
+        return -EINVAL;
     }
 
     if ((file = fopen(path, "rb")) == NULL) {
+        err = errno;
+        if (err == 0) {
+            err = EIO;
+        }
         error("Error opening "RED("%s")" for reading: %s",
-              path, strerror(errno));
-        return false;
+              path, strerror(err));
+        return -err;
     }
     if (fseek(file, 0, SEEK_END) != 0) {
-        error("Error seeking end of %s: %s.\n", path, strerror(errno));
+        err = errno;
+        if (err == 0) {
+            err = EIO;
+        }
+        error("Error seeking end of %s: %s.\n", path, strerror(err));
         XFCLOSE(file, path);
-        return false;
+        return -err;
     }
     if ((len = ftell(file)) < 0) {
-        error("Error in ftell(%s): %s.\n", path, strerror(errno));
+        err = errno;
+        if (err == 0) {
+            err = EIO;
+        }
+        error("Error in ftell(%s): %s.\n", path, strerror(err));
         XFCLOSE(file, path);
-        return false;
+        return -err;
     }
-    if (len >= MAXOF(*file_len)) {
+    if (len > MAXOF((int32)0)) {
         error("Only files up to 2GB are supported.\n");
         XFCLOSE(file, path);
-        return false;
+        return -EFBIG;
     }
     if (fseek(file, 0, SEEK_SET) != 0) {
-        error("Error rewinding %s: %s.\n", path, strerror(errno));
+        err = errno;
+        if (err == 0) {
+            err = EIO;
+        }
+        error("Error rewinding %s: %s.\n", path, strerror(err));
         XFCLOSE(file, path);
-        return false;
+        return -err;
     }
 
     bytes = malloc2(len + 1);
@@ -1067,20 +1079,27 @@ read_entire_file(char *path, char **file_bytes, int32 *file_len) {
         read_len = fread64(bytes, 1, len, file);
     }
     if (read_len != len) {
-        error("Error reading "RED("%s")": %s.\n", path, strerror(errno));
+        err = errno;
+        if (err == 0) {
+            err = EIO;
+        }
+        error("Error reading "RED("%s")": %s.\n", path, strerror(err));
         free2(bytes, (len + 1)*SIZEOF(*bytes));
         XFCLOSE(file, path);
-        return false;
+        return -err;
     }
     bytes[read_len] = '\0';
     if (XFCLOSE(file, path) != 0) {
+        err = errno;
+        if (err == 0) {
+            err = EIO;
+        }
         free2(bytes, (len + 1)*SIZEOF(*bytes));
-        return false;
+        return -err;
     }
 
     *file_bytes = bytes;
-    *file_len = (int32)read_len;
-    return true;
+    return (int32)read_len;
 }
 
 bool
@@ -1098,7 +1117,11 @@ write_entire_file(char *path, char *text, int64 text_len) {
         return false;
     }
 
-    if ((text_len > 0) && (fwrite64(text, 1, text_len, file) != text_len)) {
+    if (text_len == 0) {
+        return true;
+    }
+
+    if (fwrite64(text, 1, text_len, file) != text_len) {
         error("Error writing %lld bytes to %s: %s.",
               text_len, path, strerror(errno));
         XFCLOSE(file, path);
@@ -1594,7 +1617,7 @@ main(void) {
 
         ASSERT(write_entire_file(path, "abcdef", 6));
         ASSERT(util_file_exists(path));
-        ASSERT(read_entire_file(path, &contents, &contents_len));
+        ASSERT((contents_len = read_entire_file(path, &contents)) >= 0);
         ASSERT_EQUAL(contents_len, 6);
         ASSERT_EQUAL(contents, "abcdef");
         free2(contents, contents_len + 1);

@@ -229,15 +229,18 @@ command_windows_capture_file_read(
     char **output,
     int32 *output_len
 ) {
+    int32 read_len;
+
     if (!command_windows_capture_file_close(command, capture)) {
         return false;
     }
 
-    if (!read_entire_file(capture->path, output, output_len)) {
-        command_error_set(command, errno);
+    if ((read_len = read_entire_file(capture->path, output)) < 0) {
+        command_error_set(command, -read_len);
         return false;
     }
 
+    *output_len = read_len;
     return true;
 }
 
