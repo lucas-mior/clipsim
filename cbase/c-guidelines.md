@@ -238,14 +238,12 @@ Exceptions to this rule are:
 
 - Macros `ENDS_WITH` and `BEGINS_WITH`: they use a macro trick to allow passing
   only the string, or also passing the string length. See `cbase.h`.
-- Functions that in general only operate on short strings, commonly literals.
-  For instance, a function that wants to know where in the buffer a fragment
-  `"needle"` is can simply pass the `"needle"` argument and let the function
-  call `strlen32()` inside.
+- Functions that in general only operate on short literals. In this case it is
+  ok to let the function call `strlen32` inside.
 - `StrBuilder`: use this struct and its functions to build long, dynamic
   strings. Do not use it where a single
-  `SNPRINTF(stack_array, "format_string", args);` would be enough.
-  * Use `SB_APPEND` for append literals or strings of known length, and
+  `SNPRINTF(stack_array, "format_%s_string", args);` would be enough.
+  * Use `SB_APPEND` for appending literals or strings of known length, and
     `sb_printf` for formatting.
   * `SNPRINTF` and `snprintf2` return the number of bytes written (excluding the
     terminating null byte. No need to call `strlen32` on the buffer:
@@ -273,10 +271,10 @@ Exceptions to this rule are:
   test suites, then it is okay to simply pass the `char *` without the length.
 
 Considering all that, most `string.h` functions from the C standard library are
-to be avoided. `strcpy`, `strcat`, `strstr`, and `strtok` are almost always the
-wrong choice once you have the habit of always knowing the length of your
-strings. Prefer `memcpy64`, `memmem64`, or custom functions that operate on
-string with known length.
+to be avoided. `strcpy`, `strcat`, `strstr`, and `strtok` are always the wrong
+choice once you have the habit of always knowing the length of your strings.
+Prefer `memcpy64`, `memmem64`, or custom functions that operate on string with
+known length.
 
 ## Comparing strings:
 In general, avoid `strcmp()`, use the alternatives below instead:
@@ -295,9 +293,9 @@ In general, avoid `strcmp()`, use the alternatives below instead:
 ## Checking if a string begins or ends with something:
 Don't use `strncmp` to check if a string begins or ends with something.
 Instead use:
-- `BEGINS_WITH(string, string_len, "literal")` or
+- `BEGINS_WITH(string, string_len, "prefix_as_literal")` or
   `BEGINS_WITH(string, string_len, prefix, prefix_len)`
-- `ENDS_WITH(string, string_len, "literal")` or
+- `ENDS_WITH(string, string_len, "suffix_as_literal")` or
   `ENDS_WITH(string, string_len, suffix, suffix_len)`
 
 ## Standard-library wrappers
