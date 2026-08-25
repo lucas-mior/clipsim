@@ -170,7 +170,7 @@ void sb_init(StrBuilder *);
 void sb_move(StrBuilder *, StrBuilder *);
 void sb_printf(StrBuilder *, char *, ...);
 void sb_reserve(StrBuilder *, int32);
-bool sb_set(StrBuilder *, char *, int32);
+int32 sb_set(StrBuilder *, char *, int32);
 char *sb_steal(StrBuilder *, int32 *, int32 *);
 char *sb_steal_exact(StrBuilder *, int32 *);
 char *sb_opt_cstr(StrBuilder *buffer);

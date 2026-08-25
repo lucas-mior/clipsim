@@ -70,6 +70,12 @@
 #define XENUMS_FUNCTIONS_ONLY 0
 #endif
 
+#if XENUMS_DECLARE_ONLY || XENUMS_FUNCTIONS_ONLY
+#define XENUMS_LINKAGE
+#else
+#define XENUMS_LINKAGE static inline
+#endif
+
 #if XENUMS_FUNCTIONS_ONLY == 0
 #if ENUM_BITFLAGS
 enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE_SPEC {
@@ -125,14 +131,14 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
 };
 #endif
 
-void CAT(ENUM_PREFIX_, str_free)(char *);
-char *CAT(ENUM_PREFIX_, str)(enum ENUM_NAME);
-void CAT(ENUM_PREFIX_, alias_free)(char *);
-char *CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME);
-enum ENUM_NAME CAT(ENUM_PREFIX_, parse)(char *);
+XENUMS_LINKAGE void CAT(ENUM_PREFIX_, str_free)(char *);
+XENUMS_LINKAGE char *CAT(ENUM_PREFIX_, str)(enum ENUM_NAME);
+XENUMS_LINKAGE void CAT(ENUM_PREFIX_, alias_free)(char *);
+XENUMS_LINKAGE char *CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME);
+XENUMS_LINKAGE enum ENUM_NAME CAT(ENUM_PREFIX_, parse)(char *);
 
 #if XENUMS_DECLARE_ONLY == 0
-void
+XENUMS_LINKAGE void
 CAT(ENUM_PREFIX_, str_free)(char *str) {
     (void)str;
 #if ENUM_BITFLAGS
@@ -141,13 +147,13 @@ CAT(ENUM_PREFIX_, str_free)(char *str) {
     return;
 }
 
-void
+XENUMS_LINKAGE void
 CAT(ENUM_PREFIX_, alias_free)(char *str) {
     CAT(ENUM_PREFIX_, str_free)(str);
     return;
 }
 
-char *
+XENUMS_LINKAGE char *
 CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
 #if ENUM_BITFLAGS == 0
     switch (val) {
@@ -234,7 +240,7 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
 #endif
 }
 
-char *
+XENUMS_LINKAGE char *
 CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME val) {
 #if ENUM_BITFLAGS == 0
     switch (val) {
@@ -271,7 +277,7 @@ CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME val) {
          && XENUM_TOKEN_EQUALS(token, token_len,                               \
                                &(name)[strlen32(QUOTE(ENUM_PREFIX_))])))
 
-enum ENUM_NAME
+XENUMS_LINKAGE enum ENUM_NAME
 CAT(ENUM_PREFIX_, parse)(char *string) {
     ENUM_UNDERLYING_TYPE result = 0;
     char *p = string;
@@ -385,6 +391,7 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #endif
 #endif
 
+#undef XENUMS_LINKAGE
 #undef XENUMS_DECLARE_ONLY
 #undef XENUMS_FUNCTIONS_ONLY
 

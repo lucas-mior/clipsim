@@ -301,29 +301,29 @@ sb_move(StrBuilder *dest, StrBuilder *source) {
     return;
 }
 
-bool
+int32
 sb_set(StrBuilder *str_builder, char *data, int32 data_len) {
     if (str_builder == NULL) {
-        return false;
+        return -EINVAL;
     }
     if (data_len < 0) {
-        return false;
+        return -EINVAL;
     }
     if ((data == NULL) && (data_len > 0)) {
-        return false;
+        return -EINVAL;
     }
     if ((data == str_builder->data) && str_builder->data) {
         if (data_len > str_builder->len) {
-            return false;
+            return -EINVAL;
         }
         str_builder->len = data_len;
         str_builder->data[data_len] = '\0';
-        return true;
+        return str_builder->len;
     }
 
     sb_clear(str_builder);
     sb_append(str_builder, data, data_len);
-    return true;
+    return str_builder->len;
 }
 
 void
