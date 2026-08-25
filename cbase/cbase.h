@@ -270,7 +270,7 @@ int32 util_copy_file_sync(char *, char *);
 void util_die_notify(char *, char *, ...);
 bool util_equal_files(char *, char *);
 bool util_file_exists(char *);
-bool util_filename_from(char *, int64, int);
+int32 util_filename_from(char *, int64, int);
 int32 util_nthreads(void);
 int32 util_string_int32(int32 *, char *);
 void warn(char *, ...);

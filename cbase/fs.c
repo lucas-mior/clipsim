@@ -303,55 +303,68 @@ write_all(int fd, char *buffer, int64 left) {
 #define RW_FUNCTION read
 #include "rw_function.h"
 
-bool
+int32
 util_filename_from(char *buffer, int64 size, int fd) {
+    if ((buffer == NULL) || (size <= 0)) {
+        return -EINVAL;
+    }
+
 #if OS_LINUX
     char linkpath[64];
     ssize_t len;
 
     SNPRINTF(linkpath, "/proc/self/fd/%d", fd);
     if ((len = readlink(linkpath, buffer, (size_t)(size - 1))) < 0) {
-        return false;
+        return -errno;
+    }
+    if (len > MAXOF((int32)0)) {
+        return -ENAMETOOLONG;
     }
     buffer[len] = '\0';
-    return true;
+    return (int32)len;
 #elif CBASE_HAS_F_GETPATH
     static char buffer2[MAXPATHLEN];
     int64 len;
 
     if (fcntl(fd, F_GETPATH, buffer2) < 0) {
-        return false;
+        return -errno;
     }
     len = MIN(strlen32(buffer2), size - 1);
     memcpy64(buffer, buffer2, len + 1);
     buffer[len] = '\0';
-    return true;
+    return (int32)len;
 #elif OS_WINDOWS
     HANDLE h;
     DWORD len;
     intptr h2 = _get_osfhandle(fd);
 
     if ((h = (HANDLE)h2) == INVALID_HANDLE_VALUE) {
-        return false;
+        return -EINVAL;
+    }
+    if (size > MAXOF((DWORD)0)) {
+        return -EINVAL;
     }
 
     len = GetFinalPathNameByHandleA(h, buffer, (DWORD)size,
                                     FILE_NAME_NORMALIZED);
 
-    if ((len <= 0) || (len >= size)) {
-        return false;
+    if (len <= 0) {
+        windows_set_errno(GetLastError());
+        return -errno;
+    }
+    if (len >= size) {
+        return -ENAMETOOLONG;
     }
 
     if (strncmp32(buffer, "\\\\?\\", 4) == 0) {
         memmove64(buffer, buffer + 4, len - 3);
+        len -= 4;
     }
 
-    return true;
+    return (int32)len;
 #else
-    (void)size;
     (void)fd;
-    (void)buffer;
-    return false;
+    return -ENOSYS;
 #endif
 }
 
@@ -410,7 +423,7 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
     char buffer[4096];
 
     if (filename == NULL) {
-        if (util_filename_from(buffer, sizeof(buffer), *fd)) {
+        if (util_filename_from(buffer, sizeof(buffer), *fd) >= 0) {
             filename = buffer;
         } else {
             filename = fd_var_name;
@@ -1663,7 +1676,7 @@ main(void) {
             fatal(EXIT_FAILURE);
         }
 
-        util_filename_from(buffer2, sizeof(buffer2), fd);
+        ASSERT_POSITIVE(util_filename_from(buffer2, sizeof(buffer2), fd));
         ASSERT_EQUAL(realpath(name, buffer3), buffer2);
         XCLOSE(&fd);
         xunlink(name);
@@ -1687,7 +1700,7 @@ main(void) {
             fatal(EXIT_FAILURE);
         }
 
-        util_filename_from(buffer4, sizeof(buffer4), fd);
+        ASSERT_POSITIVE(util_filename_from(buffer4, sizeof(buffer4), fd));
         ASSERT_EQUAL(realpath(buffer2, buffer3), buffer4);
         XCLOSE(&fd);
         xunlink(buffer2);
