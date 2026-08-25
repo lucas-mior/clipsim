@@ -1009,13 +1009,13 @@ command_start(Command *command, enum CommandFlag flags) {
     return 0;
 }
 
-bool
+int32
 command_wait(Command *command) {
     int status;
 
     if (command->result.pid <= 0) {
         command_error_set(command, EINVAL);
-        return false;
+        return command_error_return(command);
     }
 
     while (waitpid((pid_t)command->result.pid, &status, 0) < 0) {
@@ -1024,20 +1024,20 @@ command_wait(Command *command) {
         }
         command_error_set(command, errno);
         error("Error waiting for child: %s.\n", strerror(errno));
-        return false;
+        return command_error_return(command);
     }
 
     command_status_from_wait(status, &command->result);
-    return true;
+    return 0;
 }
 
-bool
+int32
 command_signal(Command *command, int32 signal_number, bool process_group) {
     pid_t pid;
 
     if (command->result.pid <= 0) {
         command_error_set(command, EINVAL);
-        return false;
+        return command_error_return(command);
     }
 
     pid = (pid_t)command->result.pid;
@@ -1049,10 +1049,10 @@ command_signal(Command *command, int32 signal_number, bool process_group) {
         command_error_set(command, errno);
         error("Error sending signal %d to child: %s.\n",
               signal_number, strerror(errno));
-        return false;
+        return command_error_return(command);
     }
 
-    return true;
+    return 0;
 }
 #endif
 
@@ -1069,8 +1069,8 @@ command_run(Command *command, enum CommandFlag flags) {
         return err;
     }
     if (flags & COMMAND_DETACHED) {
-        if (!command_wait(command)) {
-            return command_error_return(command);
+        if ((err = command_wait(command)) < 0) {
+            return err;
         }
         return 0;
     }
@@ -1083,8 +1083,8 @@ command_run(Command *command, enum CommandFlag flags) {
             return command_error_return(command);
         }
     }
-    if (!command_wait(command)) {
-        return command_error_return(command);
+    if ((err = command_wait(command)) < 0) {
+        return err;
     }
     return 0;
 #elif OS_WINDOWS
@@ -1261,21 +1261,23 @@ command_push_array(Command *command, int32 argc, char **argv) {
     return;
 }
 
-bool
+int32
 command_stdin_buffer_set(Command *command, char *data, int64 data_len) {
     if (command == NULL) {
-        return false;
+        return -EINVAL;
     }
     if (data_len < 0) {
-        return false;
+        command_error_set(command, EINVAL);
+        return command_error_return(command);
     }
     if (data == NULL) {
-        return false;
+        command_error_set(command, EINVAL);
+        return command_error_return(command);
     }
 
     command->stdin_buffer = data;
     command->stdin_buffer_len = data_len;
-    return true;
+    return 0;
 }
 
 void
@@ -1653,7 +1655,7 @@ main(int argc, char **argv) {
         ASSERT_ZERO(cmd.argc);
 
         COMMAND_PUSH(&cmd, "cat");
-        ASSERT(command_stdin_buffer_set(&cmd, STRLIT("stdin-buffer")));
+        ASSERT_ZERO((command_stdin_buffer_set(&cmd, STRLIT("stdin-buffer"))));
         ASSERT(command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT));
         ASSERT_EQUAL(cmd.result.stdout_output, "stdin-buffer");
         ASSERT_ZERO(cmd.result.status);
@@ -1661,7 +1663,7 @@ main(int argc, char **argv) {
         command_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
         ASSERT(cmd.stdin_buffer == NULL);
-        ASSERT(!command_stdin_buffer_set(&cmd, NULL, 0));
+        ASSERT_NEGATIVE((command_stdin_buffer_set(&cmd, NULL, 0)));
 
         {
             enum {
@@ -1675,9 +1677,9 @@ main(int argc, char **argv) {
                          "sh",
                          "-c",
                          "cat >/dev/null; printf done");
-            ASSERT(command_stdin_buffer_set(&cmd,
-                                            stdin_data,
-                                            COMMAND_STDIN_TEST_LEN));
+            ASSERT_ZERO((command_stdin_buffer_set(&cmd,
+                                                  stdin_data,
+                                                  COMMAND_STDIN_TEST_LEN)));
             ASSERT(command_run_capture_all(&cmd));
             ASSERT_EQUAL(cmd.result.stdout_output, "done");
             ASSERT_ZERO(cmd.result.status);
@@ -1696,9 +1698,9 @@ main(int argc, char **argv) {
             stdin_data = malloc2(COMMAND_EPIPE_TEST_LEN);
             memset64(stdin_data, 'x', COMMAND_EPIPE_TEST_LEN);
             COMMAND_PUSH(&cmd, "sh", "-c", "exit 3");
-            ASSERT(command_stdin_buffer_set(&cmd,
-                                            stdin_data,
-                                            COMMAND_EPIPE_TEST_LEN));
+            ASSERT_ZERO((command_stdin_buffer_set(&cmd,
+                                                  stdin_data,
+                                                  COMMAND_EPIPE_TEST_LEN)));
             ASSERT(command_run_capture_all(&cmd));
             ASSERT_EQUAL(cmd.result.status, 3);
             free2(stdin_data, COMMAND_EPIPE_TEST_LEN);
@@ -1711,7 +1713,7 @@ main(int argc, char **argv) {
             char *empty_input = "";
 
             COMMAND_PUSH(&cmd, "cat");
-            ASSERT(command_stdin_buffer_set(&cmd, empty_input, 0));
+            ASSERT_ZERO((command_stdin_buffer_set(&cmd, empty_input, 0)));
             ASSERT(command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT));
             ASSERT_EQUAL(cmd.result.stdout_output, "");
             ASSERT_ZERO(cmd.result.status);
@@ -1815,7 +1817,7 @@ main(int argc, char **argv) {
         COMMAND_PUSH(&cmd, "sh", "-c", "exit 9");
         ASSERT(command_run_async(&cmd, COMMAND_NEW_PROCESS_GROUP));
         ASSERT_POSITIVE(cmd.result.pid);
-        ASSERT(command_wait(&cmd));
+        ASSERT_ZERO(command_wait(&cmd));
         ASSERT_EQUAL(cmd.result.status, 9);
 
         command_reset(&cmd);
@@ -1830,7 +1832,7 @@ main(int argc, char **argv) {
                                  |COMMAND_CAPTURE_STDERR));
         ASSERT_POSITIVE(cmd.result.pid);
         command_result_read_captured(&cmd);
-        ASSERT(command_wait(&cmd));
+        ASSERT_ZERO(command_wait(&cmd));
         ASSERT_EQUAL(cmd.result.stdout_output, "asyncout");
         ASSERT_EQUAL(cmd.result.stderr_output, "asyncerr");
         ASSERT_ZERO(cmd.result.status);

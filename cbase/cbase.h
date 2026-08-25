@@ -590,7 +590,7 @@ void command_push_owned_length(
     int32
 );
 void command_push_split(Command *, char *, char *);
-bool command_stdin_buffer_set(Command *, char *, int64);
+int32 command_stdin_buffer_set(Command *, char *, int64);
 void command_stdin_buffer_clear(Command *);
 void command_reset(Command *);
 void command_result_append(
@@ -612,12 +612,12 @@ bool command_run_capture(Command *, enum CommandFlag);
 bool command_run_capture_all(Command *);
 bool command_run_capture_combined(Command *);
 bool command_run_sync(Command *, int *);
-bool command_signal(Command *, int32, bool);
+int32 command_signal(Command *, int32, bool);
 int32 command_start(Command *, enum CommandFlag);
 int32 command_status_from_wait(int, CommandResult *);
 char *command_str(Command *, int32 *);
 void command_vector_reserve(char ***, int32 **, int32 *, int32, int32);
-bool command_wait(Command *);
+int32 command_wait(Command *);
 
 #define COMMAND_PUSH(CMD, ...) \
     command_push_array(CMD, \
