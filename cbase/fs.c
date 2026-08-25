@@ -421,7 +421,13 @@ int
 xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
 #if DEBUGGING
     char buffer[4096];
+#endif
 
+    if (*fd < 0) {
+        return 0;
+    }
+
+#if DEBUGGING
     if (filename == NULL) {
         if (util_filename_from(buffer, sizeof(buffer), *fd) >= 0) {
             filename = buffer;
@@ -434,10 +440,6 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
         filename = fd_var_name;
     }
 #endif
-
-    if (*fd < 0) {
-        return 0;
-    }
 
     if (close(*fd) < 0) {
         char error_buffer[4096];
