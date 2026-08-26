@@ -946,7 +946,7 @@ test_operator_or_punct_category(void) {
 static void
 test_line_starts_preprocessor(void) {
     ASSERT(
-        line_starts_preprocessor("  #define X\n", strlen32("  #define X\n")));
+        line_starts_preprocessor("  #define XX\n", strlen32("  #define XX\n")));
     ASSERT(!line_starts_preprocessor("  int x;\n", strlen32("  int x;\n")));
     ASSERT(!line_starts_preprocessor("", 0));
     return;
@@ -1073,7 +1073,7 @@ test_tokenization_navigation(void) {
 
 static void
 test_tokenization_preprocessor_define_detection(void) {
-    char *text = "#define X(a) \\\n    ((a) + 1)\nint z;\n";
+    char *text = "#define XX(a) \\\n    ((a) + 1)\nint z;\n";
     Tokenization tokenization;
     int32 plus;
     int32 int_token;

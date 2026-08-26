@@ -40,10 +40,10 @@
 #define ENUM_PREFIX_ TEST_FLAGS_
 #define ENUM_BITFLAGS 1
 #define ENUM_FIELDS                                                            \
-    X(TEST_FLAGS_READ)                                                         \
-    X(TEST_FLAGS_WRITE)                                                        \
-    X(TEST_FLAGS_EXEC)                                                         \
-    X(TEST_FLAGS_READ_WRITE, TEST_FLAGS_READ|TEST_FLAGS_WRITE)
+    XX(TEST_FLAGS_READ)                                                         \
+    XX(TEST_FLAGS_WRITE)                                                        \
+    XX(TEST_FLAGS_EXEC)                                                         \
+    XX(TEST_FLAGS_READ_WRITE, TEST_FLAGS_READ|TEST_FLAGS_WRITE)
 #endif
 
 #if !defined(__INCLUDE_LEVEL__) || (__INCLUDE_LEVEL__ >= 1)                    \
@@ -81,11 +81,11 @@
 enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE_SPEC {
     #define X_IDX_1(e)    CAT(e, _BIT_IDX),
     #define X_IDX_2(e, v)
-    #define X(...)        SELECT_ON_NUM_ARGS(X_IDX_, __VA_ARGS__)
+    #define XX(...)        SELECT_ON_NUM_ARGS(X_IDX_, __VA_ARGS__)
 
     ENUM_FIELDS
 
-    #undef X
+    #undef XX
     #undef X_IDX_1
     #undef X_IDX_2
     CAT(ENUM_PREFIX_, BIT_COUNT)
@@ -117,14 +117,14 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
     #define XENUM_1(e)        e = (ENUM_UNDERLYING_TYPE)1 << CAT(e, _BIT_IDX),
     #define XENUM_2(e, v)     e = v,
 #endif
-    #define X(...)            SELECT_ON_NUM_ARGS(XENUM_, __VA_ARGS__)
+    #define XX(...)            SELECT_ON_NUM_ARGS(XENUM_, __VA_ARGS__)
 
 #if ENUM_BITFLAGS
     CAT(ENUM_PREFIX_, NONE) = 0,
 #endif
     ENUM_FIELDS
 
-    #undef X
+    #undef XX
     #undef XENUM_1
     #undef XENUM_2
     CAT(ENUM_PREFIX_, LAST)
@@ -161,11 +161,11 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
                                      return #e;
         #define XENUM_ST_2(e, v) case e:                                       \
                                      return #e;
-        #define X(...)           SELECT_ON_NUM_ARGS(XENUM_ST_, __VA_ARGS__)
+        #define XX(...)           SELECT_ON_NUM_ARGS(XENUM_ST_, __VA_ARGS__)
 
         ENUM_FIELDS
 
-        #undef X
+        #undef XX
         #undef XENUM_ST_1
         #undef XENUM_ST_2
         case CAT(ENUM_PREFIX_, LAST):
@@ -189,11 +189,11 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
         }
     #define XENUM_EXACT_1(e)    XENUM_EXACT(e)
     #define XENUM_EXACT_2(e, v) XENUM_EXACT(e)
-    #define X(...)              SELECT_ON_NUM_ARGS(XENUM_EXACT_, __VA_ARGS__)
+    #define XX(...)              SELECT_ON_NUM_ARGS(XENUM_EXACT_, __VA_ARGS__)
 
     ENUM_FIELDS
 
-    #undef X
+    #undef XX
     #undef XENUM_EXACT_1
     #undef XENUM_EXACT_2
     #undef XENUM_EXACT
@@ -221,11 +221,11 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
 
     #define XENUM_FL_1(e)    XENUM(e)
     #define XENUM_FL_2(e, v) XENUM(e)
-    #define X(...)           SELECT_ON_NUM_ARGS(XENUM_FL_, __VA_ARGS__)
+    #define XX(...)           SELECT_ON_NUM_ARGS(XENUM_FL_, __VA_ARGS__)
 
     ENUM_FIELDS
 
-    #undef X
+    #undef XX
     #undef XENUM_FL_1
     #undef XENUM_FL_2
     #undef XENUM
@@ -248,11 +248,11 @@ CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME val) {
                                                return #e;
         #define XENUM_ALIAS_ST_2(e, alias) case e:                             \
                                                return #alias;
-        #define X(...) SELECT_ON_NUM_ARGS(XENUM_ALIAS_ST_, __VA_ARGS__)
+        #define XX(...) SELECT_ON_NUM_ARGS(XENUM_ALIAS_ST_, __VA_ARGS__)
 
         ENUM_FIELDS
 
-        #undef X
+        #undef XX
         #undef XENUM_ALIAS_ST_1
         #undef XENUM_ALIAS_ST_2
 
@@ -351,12 +351,12 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
         #define XENUM_PARSE_1(e)        XENUM_PARSE_ONE(e)
         #define XENUM_PARSE_2(e, alias) XENUM_PARSE_ALIAS(e, alias)
 #endif
-        #define X(...)                                                         \
+        #define XX(...)                                                         \
             SELECT_ON_NUM_ARGS(XENUM_PARSE_, __VA_ARGS__)
 
         ENUM_FIELDS
 
-        #undef X
+        #undef XX
         #undef XENUM_PARSE_1
         #undef XENUM_PARSE_2
 #if ENUM_BITFLAGS == 0
@@ -411,9 +411,9 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #define ENUM_PREFIX_ TEST_NORMAL_
 #define ENUM_BITFLAGS 0
 #define ENUM_FIELDS                        \
-    X(TEST_NORMAL_APPLE)                   \
-    X(TEST_NORMAL_BANANA, banana)          \
-    X(TEST_NORMAL_CHERRY, cherry)
+    XX(TEST_NORMAL_APPLE)                   \
+    XX(TEST_NORMAL_BANANA, banana)          \
+    XX(TEST_NORMAL_CHERRY, cherry)
 #include "xenums.c"
 
 int

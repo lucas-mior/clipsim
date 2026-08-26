@@ -618,13 +618,13 @@ wrap the test case or function invocation inside a macro that uses the
 keeps the string explaining the test in sync with the test itself. Example:
 
 ```c
-#define X(FUNCTION) {#FUNCTION, FUNCTION}
+#define XX(FUNCTION) {#FUNCTION, FUNCTION}
 static struct TestCase tests[] = {
-    X(test_fixture_metadata_matches_generated_output),
-    X(test_generated_headers_compile_for_valid_fixtures),
-    X(test_compile_and_run_generated_valid_system),
+    XX(test_fixture_metadata_matches_generated_output),
+    XX(test_generated_headers_compile_for_valid_fixtures),
+    XX(test_compile_and_run_generated_valid_system),
 };
-#undef X
+#undef XX
 ```
 
 ## Switch and fork style

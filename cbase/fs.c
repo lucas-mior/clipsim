@@ -1657,7 +1657,7 @@ main(void) {
         ASSERT(!path_missing(path));
         ASSERT(!util_file_exists(path));
 
-        ASSERT(write_entire_file(path, "abcdef", 6) == 6);
+        ASSERT(write_entire_file(path, STRLIT("abcdef")) == 6);
         ASSERT(util_file_exists(path));
         ASSERT((contents_len = read_entire_file(path, &contents)) >= 0);
         ASSERT_EQUAL(contents_len, 6);

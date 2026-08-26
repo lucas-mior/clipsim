@@ -8,15 +8,15 @@
 #include "base_macros.h"
 
 #define TOKEN_KIND_FIELDS \
-    X(TOKEN_UNKNOWN)      \
-    X(TOKEN_SPACE)        \
-    X(TOKEN_NEWLINE)      \
-    X(TOKEN_IDENT)        \
-    X(TOKEN_LITERAL)      \
-    X(TOKEN_COMMENT)      \
-    X(TOKEN_OPERATOR)     \
-    X(TOKEN_PUNCT)        \
-    X(TOKEN_PREPROC)
+    XX(TOKEN_UNKNOWN)      \
+    XX(TOKEN_SPACE)        \
+    XX(TOKEN_NEWLINE)      \
+    XX(TOKEN_IDENT)        \
+    XX(TOKEN_LITERAL)      \
+    XX(TOKEN_COMMENT)      \
+    XX(TOKEN_OPERATOR)     \
+    XX(TOKEN_PUNCT)        \
+    XX(TOKEN_PREPROC)
 
 #if defined(CBASE_H)
   #define ENUM_NAME TokenKind
@@ -29,9 +29,9 @@
   #undef XENUMS_NO_TESTS
 #else
   enum TokenKind {
-      #define X(E) E,
+      #define XX(E) E,
       TOKEN_KIND_FIELDS
-      #undef X
+      #undef XX
       TOKEN_LAST,
   };
   typedef struct StrBuilder StrBuilder;

@@ -1171,25 +1171,25 @@ test_command_exists(char *command) {
 #define ENUM_BITFLAGS 0
 #define ENUM_PREFIX_ WEEK_DAY_
 #define ENUM_FIELDS \
-    X(WEEK_DAY_SUNDAY, sunday)    \
-    X(WEEK_DAY_MONDAY, monday)    \
-    X(WEEK_DAY_TUESDAY, tuesday)  \
-    X(WEEK_DAY_WEDNESDAY)         \
-    X(WEEK_DAY_THURSDAY)          \
-    X(WEEK_DAY_FRIDAY, friday)    \
-    X(WEEK_DAY_SATURDAY, saturday)
+    XX(WEEK_DAY_SUNDAY, sunday)    \
+    XX(WEEK_DAY_MONDAY, monday)    \
+    XX(WEEK_DAY_TUESDAY, tuesday)  \
+    XX(WEEK_DAY_WEDNESDAY)         \
+    XX(WEEK_DAY_THURSDAY)          \
+    XX(WEEK_DAY_FRIDAY, friday)    \
+    XX(WEEK_DAY_SATURDAY, saturday)
 #include "xenums.c"
 
 #define ENUM_NAME PowerOfTwo
 #define ENUM_BITFLAGS 1
 #define ENUM_PREFIX_ POWER_OF2_
 #define ENUM_FIELDS \
-    X(POWER_OF2_ONE)     \
-    X(POWER_OF2_TWO)     \
-    X(POWER_OF2_FOUR)    \
-    X(POWER_OF2_EIGHT)   \
-    X(POWER_OF2_SIXTEEN) \
-    X(POWER_OF2_THIRTY2)
+    XX(POWER_OF2_ONE)     \
+    XX(POWER_OF2_TWO)     \
+    XX(POWER_OF2_FOUR)    \
+    XX(POWER_OF2_EIGHT)   \
+    XX(POWER_OF2_SIXTEEN) \
+    XX(POWER_OF2_THIRTY2)
 #include "xenums.c"
 
 #if OS_LINUX
