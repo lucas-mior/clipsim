@@ -38,17 +38,17 @@ _Static_assert(sizeof(float)*CHAR_BIT == 32,
 _Static_assert(sizeof(double)*CHAR_BIT == 64,
                "assertions.c ULP comparison requires 64-bit double");
 
-void assert_error(char *, int32, char *, char *, ...)
-    ATTR_PRINTF(4, 5);
+void assert_error(char *, int32, char *,
+                  char *, ...) ATTR_PRINTF(4, 5);
 void assert_file_contains(char *, int32, char *,
                           char *, char *);
 void assert_contains(char *, int32, char *,
                      char *, int32, char *);
 void assert_not_contains(char *, int32, char *,
                          char *, int32, char *);
-void assert_glob_match_failed(char *, int32, char *,
-                              char *, char *, char *, int32,
-                              char *, int32, bool);
+void assert_glob_match_impl(char *, int32, char *,
+                            char *, char *, char *, int32,
+                            char *, int32, bool);
 
 #define ASSERT_DECLARE_STRINGS(MODE)                                           \
 void a_strings_##MODE(char *, int32, char *,                                   \
@@ -75,8 +75,8 @@ ASSERT_DECLARE_POINTERS(more_equal)
 #define ASSERT_DECLARE_INTEGERS(SIGN, MODE)                                    \
 void a_both_##SIGN##_##MODE(char *, int32, char *,                             \
                             char *, char *, char *, char *,                    \
-                            llong, llong, SIGN long long,                      \
-                            SIGN long long);
+                            llong, llong,                                      \
+                            SIGN long long, SIGN long long);
 ASSERT_DECLARE_INTEGERS(signed, less)
 ASSERT_DECLARE_INTEGERS(signed, less_equal)
 ASSERT_DECLARE_INTEGERS(signed, equal)
@@ -164,6 +164,25 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_VOIDP(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_FIRST(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
+void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_SIGN(void *, ...);
+
+#define ASSERT_DECLARE_SIGN(MODE)                                              \
+void a_sign_integer_##MODE(char *, int32, char *, char *, llong);              \
+void a_sign_double_##MODE(char *, int32, char *, char *, double);
+
+ASSERT_DECLARE_SIGN(positive)
+ASSERT_DECLARE_SIGN(negative)
+ASSERT_DECLARE_SIGN(non_positive)
+ASSERT_DECLARE_SIGN(non_negative)
+
+#undef ASSERT_DECLARE_SIGN
+
+#define ASSERT_SIGN_FUNCTION(MODE, VAR1)                                       \
+_Generic((VAR1),                                                               \
+    float:   a_sign_double_##MODE,                                             \
+    double:  a_sign_double_##MODE,                                             \
+    default: a_sign_integer_##MODE                                             \
+)(__FILE__, __LINE__, FUNC__, #VAR1, VAR1)
 
 #define ASSERT(...) do {                                                       \
     if (!(__VA_ARGS__)) {                                                      \
@@ -200,50 +219,10 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
     }                                                                          \
 } while (0)
 
-#define ASSERT_POSITIVE(VAR1) do {                                             \
-    llong ASSERT_POSITIVE = VAR1;                                              \
-    if (ASSERT_POSITIVE <= 0) {                                                \
-        if (!DEBUGGING) {                                                      \
-            UNREACHABLE();                                                     \
-        }                                                                      \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %lld > 0\n", #VAR1, ASSERT_POSITIVE);               \
-        TRAP();                                                                \
-    }                                                                          \
-} while (0)
-
-#define ASSERT_NEGATIVE(VAR1) do {                                             \
-    llong ASSERT_NEGATIVE = VAR1;                                              \
-    if (ASSERT_NEGATIVE >= 0) {                                                \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %lld < 0\n", #VAR1, ASSERT_NEGATIVE);               \
-        TRAP();                                                                \
-    }                                                                          \
-} while (0)
-
-#define ASSERT_NON_POSITIVE(VAR1) do {                                         \
-    llong ASSERT_NON_POSITIVE = VAR1;                                          \
-    if (ASSERT_NON_POSITIVE > 0) {                                             \
-        if (!DEBUGGING) {                                                      \
-            UNREACHABLE();                                                     \
-        }                                                                      \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %lld <= 0\n", #VAR1, ASSERT_NON_POSITIVE);          \
-        TRAP();                                                                \
-    }                                                                          \
-} while (0)
-
-#define ASSERT_NON_NEGATIVE(VAR1) do {                                         \
-    llong ASSERT_NON_NEGATIVE = VAR1;                                          \
-    if (ASSERT_NON_NEGATIVE < 0) {                                             \
-        if (!DEBUGGING) {                                                      \
-            UNREACHABLE();                                                     \
-        }                                                                      \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %lld >= 0\n", #VAR1, ASSERT_NON_NEGATIVE);          \
-        TRAP();                                                                \
-    }                                                                          \
-} while (0)
+#define ASSERT_POSITIVE(VAR1)     ASSERT_SIGN_FUNCTION(positive, VAR1)
+#define ASSERT_NEGATIVE(VAR1)     ASSERT_SIGN_FUNCTION(negative, VAR1)
+#define ASSERT_NON_POSITIVE(VAR1) ASSERT_SIGN_FUNCTION(non_positive, VAR1)
+#define ASSERT_NON_NEGATIVE(VAR1) ASSERT_SIGN_FUNCTION(non_negative, VAR1)
 
 #if OS_UNIX
 extern sigjmp_buf assert_traps_env;
@@ -284,42 +263,22 @@ void assert_traps_restore(char *, int32, char *);
     assert_not_contains(__FILE__, __LINE__, FUNC__,                            \
                         HAYSTACK, HAYSTACK_LEN, NEEDLE)
 
-#define ASSERT_GLOB_MATCH_IMPL(STRING, STRING_LEN, GLOB, GLOB_LEN, EXPECTED)   \
-do {                                                                           \
-    char *ASSERT_GLOB_STRING = (STRING);                                       \
-    int32 ASSERT_GLOB_STRING_LEN = (STRING_LEN);                               \
-    char *ASSERT_GLOB_GLOB = (GLOB);                                           \
-    int32 ASSERT_GLOB_GLOB_LEN = (GLOB_LEN);                                   \
-    bool ASSERT_GLOB_EXPECTED = (EXPECTED);                                    \
-    bool ASSERT_GLOB_MATCHED;                                                  \
-                                                                               \
-    ASSERT_GLOB_MATCHED = util_glob_match(ASSERT_GLOB_STRING,                  \
-                                          ASSERT_GLOB_STRING_LEN,              \
-                                          ASSERT_GLOB_GLOB,                    \
-                                          ASSERT_GLOB_GLOB_LEN);               \
-    if (ASSERT_GLOB_MATCHED != ASSERT_GLOB_EXPECTED) {                         \
-        assert_glob_match_failed(__FILE__, __LINE__, FUNC__,                   \
-                                 #STRING, #GLOB,                               \
-                                 ASSERT_GLOB_STRING,                           \
-                                 ASSERT_GLOB_STRING_LEN,                       \
-                                 ASSERT_GLOB_GLOB,                             \
-                                 ASSERT_GLOB_GLOB_LEN,                         \
-                                 ASSERT_GLOB_EXPECTED);                        \
-        TRAP();                                                                \
-    }                                                                          \
-} while (0)
-
 #define ASSERT_GLOB_MATCH_2(STRING, GLOB)                                      \
-    ASSERT_GLOB_MATCH_IMPL(STRING, strlen32(STRING), GLOB, strlen32(GLOB), true)
+    assert_glob_match_impl(__FILE__, __LINE__, FUNC__, #STRING, #GLOB,         \
+                           STRING, strlen32(STRING), GLOB, strlen32(GLOB), true)
 #define ASSERT_GLOB_MATCH_3(STRING, STRING_LEN, GLOB)                          \
-    ASSERT_GLOB_MATCH_IMPL(STRING, STRING_LEN, GLOB, strlen32(GLOB), true)
+    assert_glob_match_impl(__FILE__, __LINE__, FUNC__, #STRING, #GLOB,         \
+                           STRING, STRING_LEN, GLOB, strlen32(GLOB), true)
 #define ASSERT_GLOB_MATCH(...)                                                 \
     SELECT_ON_NUM_ARGS(ASSERT_GLOB_MATCH_, __VA_ARGS__)
 
 #define ASSERT_GLOB_NO_MATCH_2(STRING, GLOB)                                   \
-    ASSERT_GLOB_MATCH_IMPL(STRING, strlen32(STRING), GLOB, strlen32(GLOB), false)
+    assert_glob_match_impl(__FILE__, __LINE__, FUNC__, #STRING, #GLOB,         \
+                           STRING, strlen32(STRING), GLOB, strlen32(GLOB),     \
+                           false)
 #define ASSERT_GLOB_NO_MATCH_3(STRING, STRING_LEN, GLOB)                       \
-    ASSERT_GLOB_MATCH_IMPL(STRING, STRING_LEN, GLOB, strlen32(GLOB), false)
+    assert_glob_match_impl(__FILE__, __LINE__, FUNC__, #STRING, #GLOB,         \
+                           STRING, STRING_LEN, GLOB, strlen32(GLOB), false)
 #define ASSERT_GLOB_NO_MATCH(...)                                              \
     SELECT_ON_NUM_ARGS(ASSERT_GLOB_NO_MATCH_, __VA_ARGS__)
 
