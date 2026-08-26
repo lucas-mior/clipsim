@@ -40,9 +40,9 @@
 #define ENUM_PREFIX_ TEST_FLAGS_
 #define ENUM_BITFLAGS 1
 #define ENUM_FIELDS                                                            \
-    XX(TEST_FLAGS_READ)                                                         \
-    XX(TEST_FLAGS_WRITE)                                                        \
-    XX(TEST_FLAGS_EXEC)                                                         \
+    XX(TEST_FLAGS_READ)                                                        \
+    XX(TEST_FLAGS_WRITE)                                                       \
+    XX(TEST_FLAGS_EXEC)                                                        \
     XX(TEST_FLAGS_READ_WRITE, TEST_FLAGS_READ|TEST_FLAGS_WRITE)
 #endif
 
@@ -351,7 +351,7 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
         #define XENUM_PARSE_1(e)        XENUM_PARSE_ONE(e)
         #define XENUM_PARSE_2(e, alias) XENUM_PARSE_ALIAS(e, alias)
 #endif
-        #define XX(...)                                                         \
+        #define XX(...)                                                        \
             SELECT_ON_NUM_ARGS(XENUM_PARSE_, __VA_ARGS__)
 
         ENUM_FIELDS
@@ -402,17 +402,17 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #undef ENUM_UNDERLYING_TYPE
 #undef ENUM_UNDERLYING_TYPE_SPEC
 
-#if TESTING_xenums                         \
-    && !defined(TESTING_xenums_started)    \
+#if TESTING_xenums                                                             \
+    && !defined(TESTING_xenums_started)                                        \
     && !defined(XENUMS_NO_TESTS)
 #define TESTING_xenums_started
 
 #define ENUM_NAME TestNormal
 #define ENUM_PREFIX_ TEST_NORMAL_
 #define ENUM_BITFLAGS 0
-#define ENUM_FIELDS                        \
-    XX(TEST_NORMAL_APPLE)                   \
-    XX(TEST_NORMAL_BANANA, banana)          \
+#define ENUM_FIELDS                                                            \
+    XX(TEST_NORMAL_APPLE)                                                      \
+    XX(TEST_NORMAL_BANANA, banana)                                             \
     XX(TEST_NORMAL_CHERRY, cherry)
 #include "xenums.c"
 
@@ -420,10 +420,10 @@ int
 main(void) {
     char *s;
     ASSERT_ZERO(TEST_FLAGS_READ_BIT_IDX);
-    ASSERT_EQUAL(TEST_FLAGS_BIT_COUNT, 3);
-    ASSERT_EQUAL(TEST_FLAGS_READ, 1 << 0);
-    ASSERT_EQUAL(TEST_FLAGS_WRITE, 1 << 1);
-    ASSERT_EQUAL(TEST_FLAGS_EXEC, 1 << 2);
+    ASSERT(TEST_FLAGS_BIT_COUNT == 3);
+    ASSERT(TEST_FLAGS_READ == (1 << 0));
+    ASSERT(TEST_FLAGS_WRITE == (1 << 1));
+    ASSERT(TEST_FLAGS_EXEC == (1 << 2));
 
     s = TEST_FLAGS_str(TEST_FLAGS_READ);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ");

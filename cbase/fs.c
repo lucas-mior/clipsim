@@ -1543,7 +1543,7 @@ main(void) {
 
         SNPRINTF(template_path, "%s/stem_XXXXXX.txt", temp_dir);
         fd = cbase_mkstemps(template_path, STRLIT_LEN(".txt"));
-        ASSERT(fd >= 0);
+        ASSERT_NON_NEGATIVE(fd);
         ASSERT(write64(fd, "x", 1) == 1);
         XCLOSE(&fd, template_path);
         ASSERT(util_file_exists(template_path));
@@ -1553,7 +1553,7 @@ main(void) {
                                   SIZEOF(temp_file_path),
                                   "fs_file",
                                   ".tmp");
-        ASSERT(fd >= 0);
+        ASSERT_NON_NEGATIVE(fd);
         ASSERT(write64(fd, "y", 1) == 1);
         XCLOSE(&fd, temp_file_path);
         ASSERT(util_file_exists(temp_file_path));

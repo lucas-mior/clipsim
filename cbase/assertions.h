@@ -49,6 +49,10 @@ void assert_not_contains(char *, int32, char *,
 void assert_glob_match_impl(char *, int32, char *,
                             char *, char *, char *, int32,
                             char *, int32, bool);
+void assert_equal_3(char *, int32, char *,
+                    char *, char *, char *, int32, char *);
+void assert_equal_4(char *, int32, char *,
+                    char *, char *, char *, int32, char *, int32);
 
 #define ASSERT_DECLARE_STRINGS(MODE)                                           \
 void a_strings_##MODE(char *, int32, char *,                                   \
@@ -186,11 +190,11 @@ _Generic((VAR1),                                                               \
 
 #define ASSERT(...) do {                                                       \
     if (!(__VA_ARGS__)) {                                                      \
-        if (!DEBUGGING) {                                                      \
-            UNREACHABLE();                                                     \
-        } else {                                                               \
+        if (DEBUGGING) {                                                       \
             assert_error(__FILE__, __LINE__, FUNC__, "%s\n", #__VA_ARGS__);    \
             TRAP();                                                            \
+        } else {                                                               \
+            UNREACHABLE();                                                     \
         }                                                                      \
     }                                                                          \
 } while (0)
@@ -198,24 +202,26 @@ _Generic((VAR1),                                                               \
 #define ASSERT_NULL(VAR1) do {                                                 \
     void *ASSERT_NULL = VAR1;                                                  \
     if (ASSERT_NULL != NULL) {                                                 \
-        if (!DEBUGGING) {                                                      \
+        if (DEBUGGING) {                                                       \
+            assert_error(__FILE__, __LINE__, FUNC__,                           \
+                         "%s = %p == NULL\n", #VAR1, ASSERT_NULL);             \
+            TRAP();                                                            \
+        } else {                                                               \
             UNREACHABLE();                                                     \
         }                                                                      \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %p == NULL\n", #VAR1, ASSERT_NULL);                 \
-        TRAP();                                                                \
     }                                                                          \
 } while (0)
 
 #define ASSERT_ZERO(VAR1) do {                                                 \
     llong ASSERT_ZERO = VAR1;                                                  \
     if (ASSERT_ZERO != 0) {                                                    \
-        if (!DEBUGGING) {                                                      \
+        if (DEBUGGING) {                                                       \
+            assert_error(__FILE__, __LINE__, FUNC__,                           \
+                         "%s = %lld == 0\n", #VAR1, ASSERT_ZERO);              \
+            TRAP();                                                            \
+        } else {                                                               \
             UNREACHABLE();                                                     \
         }                                                                      \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %lld == 0\n", #VAR1, ASSERT_ZERO);                  \
-        TRAP();                                                                \
     }                                                                          \
 } while (0)
 
@@ -480,65 +486,28 @@ _Generic((VAR1),                                                               \
 #define ASSERT_MORE_EQUAL(VAR1, VAR2) ASSERT_COMPARE(more_equal, VAR1, VAR2)
 #endif
 
-#define ASSERT_EQUAL_3(VAR1, VAR1_LEN, VAR2) do {                              \
+#define ASSERT_EQUAL_CALL_2(VAR1, VAR2) ASSERT_EQUAL_2(VAR1, VAR2)
+
+#define ASSERT_EQUAL_CALL_3(VAR1, VAR1_LEN, VAR2) do {                         \
     char *ASSERT_EQUAL_VAR1 = VAR1;                                            \
     int32 ASSERT_EQUAL_VAR1_LEN = VAR1_LEN;                                    \
     char *ASSERT_EQUAL_VAR2 = VAR2;                                            \
-    int32 ASSERT_EQUAL_VAR2_LEN;                                               \
-    if (ASSERT_EQUAL_VAR1 == NULL) {                                           \
-        assert_error(__FILE__, __LINE__, FUNC__, "%s is NULL.\n", #VAR1);      \
-        TRAP();                                                                \
-    }                                                                          \
-    if (ASSERT_EQUAL_VAR2 == NULL) {                                           \
-        assert_error(__FILE__, __LINE__, FUNC__, "%s is NULL.\n", #VAR2);      \
-        TRAP();                                                                \
-    }                                                                          \
-    ASSERT_EQUAL_VAR2_LEN = strlen32(ASSERT_EQUAL_VAR2);                       \
-    if (!strequal2(ASSERT_EQUAL_VAR1, ASSERT_EQUAL_VAR1_LEN,                   \
-                   ASSERT_EQUAL_VAR2, ASSERT_EQUAL_VAR2_LEN)) {                \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %.*s == %s = %s\n",                                 \
-                     #VAR1, ASSERT_EQUAL_VAR1_LEN, ASSERT_EQUAL_VAR1,          \
-                     #VAR2, ASSERT_EQUAL_VAR2);                                \
-        TRAP();                                                                \
-    }                                                                          \
+    assert_equal_3(__FILE__, __LINE__, FUNC__, #VAR1, #VAR2,                   \
+                   ASSERT_EQUAL_VAR1, ASSERT_EQUAL_VAR1_LEN,                   \
+                   ASSERT_EQUAL_VAR2);                                         \
 } while (0)
 
-#define ASSERT_EQUAL_4(VAR1, VAR1_LEN, VAR2, VAR2_LEN) do {                    \
+#define ASSERT_EQUAL_CALL_4(VAR1, VAR1_LEN, VAR2, VAR2_LEN) do {               \
     char *ASSERT_EQUAL_VAR1 = VAR1;                                            \
     int32 ASSERT_EQUAL_VAR1_LEN = VAR1_LEN;                                    \
     char *ASSERT_EQUAL_VAR2 = VAR2;                                            \
     int32 ASSERT_EQUAL_VAR2_LEN = VAR2_LEN;                                    \
-                                                                               \
-    if (ASSERT_EQUAL_VAR2 && (ASSERT_EQUAL_VAR1 == NULL)) {                    \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s is NULL while %s is not\n", #VAR1, #VAR2);            \
-        TRAP();                                                                \
-    }                                                                          \
-    if (ASSERT_EQUAL_VAR1 && (ASSERT_EQUAL_VAR2 == NULL)) {                    \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s is NULL while %s is not\n", #VAR2, #VAR1);            \
-        TRAP();                                                                \
-    }                                                                          \
-                                                                               \
-    if (ASSERT_EQUAL_VAR1_LEN != ASSERT_EQUAL_VAR2_LEN) {                      \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "len(%s) = %d == %d = len(%s)\n",                         \
-                     #VAR1, ASSERT_EQUAL_VAR1_LEN,                             \
-                     ASSERT_EQUAL_VAR2_LEN, #VAR2);                            \
-        TRAP();                                                                \
-    }                                                                          \
-    if (memcmp64(ASSERT_EQUAL_VAR1, ASSERT_EQUAL_VAR2,                         \
-                 ASSERT_EQUAL_VAR1_LEN) != 0) {                                \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "%s = %.*s == %.*s = %s\n",                               \
-                     #VAR1, ASSERT_EQUAL_VAR1_LEN, ASSERT_EQUAL_VAR1,          \
-                     ASSERT_EQUAL_VAR2_LEN, ASSERT_EQUAL_VAR2, #VAR2);         \
-        TRAP();                                                                \
-    }                                                                          \
+    assert_equal_4(__FILE__, __LINE__, FUNC__, #VAR1, #VAR2,                   \
+                   ASSERT_EQUAL_VAR1, ASSERT_EQUAL_VAR1_LEN,                   \
+                   ASSERT_EQUAL_VAR2, ASSERT_EQUAL_VAR2_LEN);                  \
 } while (0)
 
-#define ASSERT_EQUAL(...) SELECT_ON_NUM_ARGS(ASSERT_EQUAL_, __VA_ARGS__)
+#define ASSERT_EQUAL(...) SELECT_ON_NUM_ARGS(ASSERT_EQUAL_CALL_, __VA_ARGS__)
 
 #define A_BOTH_DOUBLE_CLOSE(MODE, VAR1, VAR2, TYPE1, TYPE2)                    \
     a_double_##MODE(__FILE__, __LINE__, FUNC__,                                \

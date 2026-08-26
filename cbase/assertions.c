@@ -85,12 +85,23 @@ assert_file_contains(char *file, int32 line, char *func,
     int32 needle_len = strlen32(needle);
 
     if ((buffer_len = read_entire_file(path, &buffer)) < 0) {
-        TRAP();
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "Could not read file '%s'.\n", path);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
     }
     if (!memmem64(buffer, buffer_len, needle, needle_len)) {
-        assert_error(file, line, func,
-                     "Needle '%s' not found in file '%s'.\n", needle, path);
-        TRAP();
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "Needle '%s' not found in file '%s'.\n",
+                         needle, path);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
     }
     free2(buffer, buffer_len + 1);
     return;
@@ -101,11 +112,15 @@ assert_contains(char *file, int32 line, char *func,
                 char *haystack, int32 haystack_len, char *needle) {
     int32 needle_len = strlen32(needle);
     if (memmem64(haystack, haystack_len, needle, needle_len) == NULL) {
-        assert_error(file, line, func,
-                     "expected to find substring'''\n"
-                     GREEN("%.*s")"''' in '''"BLUE("%.*s")"'''\n",
-                     needle_len, needle, haystack_len, haystack);
-        TRAP();
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "expected to find substring'''\n"
+                         GREEN("%.*s")"''' in '''"BLUE("%.*s")"'''\n",
+                         needle_len, needle, haystack_len, haystack);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
     }
 }
 
@@ -114,12 +129,99 @@ assert_not_contains(char *file, int32 line, char *func,
                     char *haystack, int32 haystack_len, char *needle) {
     int32 needle_len = strlen32(needle);
     if (memmem64(haystack, haystack_len, needle, needle_len)) {
-        assert_error(file, line, func,
-                     "expected to not find substring'''\n"
-                     GREEN("%.*s")"''' in '''"BLUE("%.*s")"'''\n",
-                     needle_len, needle, haystack_len, haystack);
-        TRAP();
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "expected to not find substring'''\n"
+                         GREEN("%.*s")"''' in '''"BLUE("%.*s")"'''\n",
+                         needle_len, needle, haystack_len, haystack);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
     }
+}
+
+void
+assert_equal_3(char *file, int32 line, char *func,
+               char *name1, char *name2,
+               char *var1, int32 var1_len, char *var2) {
+    int32 var2_len;
+
+    if (var1 == NULL) {
+        if (DEBUGGING) {
+            assert_error(file, line, func, "%s is NULL.\n", name1);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+    if (var2 == NULL) {
+        if (DEBUGGING) {
+            assert_error(file, line, func, "%s is NULL.\n", name2);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+
+    var2_len = strlen32(var2);
+    if (!strequal2(var1, var1_len, var2, var2_len)) {
+        if (DEBUGGING) {
+            assert_error(file, line, func, "%s = %.*s == %s = %s\n",
+                         name1, var1_len, var1, name2, var2);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+
+    return;
+}
+
+void
+assert_equal_4(char *file, int32 line, char *func,
+               char *name1, char *name2,
+               char *var1, int32 var1_len, char *var2, int32 var2_len) {
+    if (var2 && (var1 == NULL)) {
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "%s is NULL while %s is not\n", name1, name2);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+    if (var1 && (var2 == NULL)) {
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "%s is NULL while %s is not\n", name2, name1);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+
+    if (var1_len != var2_len) {
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "len(%s) = %d == %d = len(%s)\n",
+                         name1, var1_len, var2_len, name2);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+    if (memcmp64(var1, var2, var1_len) != 0) {
+        if (DEBUGGING) {
+            assert_error(file, line, func, "%s = %.*s == %.*s = %s\n",
+                         name1, var1_len, var1, var2_len, var2, name2);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+
+    return;
 }
 
 void
@@ -129,22 +231,26 @@ assert_glob_match_impl(char *file, int32 line, char *func,
                        char *glob, int32 glob_len,
                        bool expected) {
     if (util_glob_match(string, string_len, glob, glob_len) != expected) {
-        char *expected_text;
+        if (DEBUGGING) {
+            char *expected_text;
 
-        if (expected) {
-            expected_text = "expected glob to match";
+            if (expected) {
+                expected_text = "expected glob to match";
+            } else {
+                expected_text = "expected glob to not match";
+            }
+
+            assert_error(file, line, func,
+                         "%s:\n"
+                         "  string: %s[%d] = '''"BLUE("%.*s")"'''\n"
+                         "  glob:   %s[%d] = '''"GREEN("%.*s")"'''\n",
+                         expected_text,
+                         string_name, string_len, string_len, string,
+                         glob_name, glob_len, glob_len, glob);
+            TRAP();
         } else {
-            expected_text = "expected glob to not match";
+            UNREACHABLE();
         }
-
-        assert_error(file, line, func,
-                     "%s:\n"
-                     "  string: %s[%d] = '''"BLUE("%.*s")"'''\n"
-                     "  glob:   %s[%d] = '''"GREEN("%.*s")"'''\n",
-                     expected_text,
-                     string_name, string_len, string_len, string,
-                     glob_name, glob_len, glob_len, glob);
-        TRAP();
     }
     return;
 }
@@ -154,11 +260,13 @@ void                                                                           \
 a_sign_integer_##MODE(char *file, int32 line, char *func,                      \
                      char *name, llong var) {                                  \
     if (!(var SYMBOL 0)) {                                                     \
-        assert_error(file, line, func, "%s = %lld " EXPECTED "\n", name, var); \
-        if (!DEBUGGING) {                                                      \
+        if (DEBUGGING) {                                                       \
+            assert_error(file, line, func,                                     \
+                         "%s = %lld " EXPECTED "\n", name, var);             \
+            TRAP();                                                            \
+        } else {                                                               \
             UNREACHABLE();                                                     \
         }                                                                      \
-        TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
 }
@@ -175,12 +283,13 @@ void                                                                           \
 a_sign_double_##MODE(char *file, int32 line, char *func,                       \
                      char *name, double var) {                                 \
     if (!(var SYMBOL (double)0)) {                                             \
-        assert_error(file, line, func, "%s = %.17g " EXPECTED "\n",            \
-                     name, var);                                               \
-        if (!DEBUGGING) {                                                      \
+        if (DEBUGGING) {                                                       \
+            assert_error(file, line, func, "%s = %.17g " EXPECTED "\n",        \
+                         name, var);                                           \
+            TRAP();                                                            \
+        } else {                                                               \
             UNREACHABLE();                                                     \
         }                                                                      \
-        TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
 }
@@ -198,20 +307,32 @@ a_strings_##MODE(char *file, int32 line, char *func,                           \
                  char *name1, char *name2,                                     \
                  char *var1, char *var2) {                                     \
     if (var2 && (var1 == NULL)) {                                              \
-        assert_error(file, line, func,                                         \
-                     "%s is NULL, %s is \"%s\"\n", name1, name2, var2);        \
-        TRAP();                                                                \
+        if (DEBUGGING) {                                                       \
+            assert_error(file, line, func,                                     \
+                         "%s is NULL, %s is \"%s\"\n", name1, name2, var2);    \
+            TRAP();                                                            \
+        } else {                                                               \
+            UNREACHABLE();                                                     \
+        }                                                                      \
     }                                                                          \
     if (var1 && (var2 == NULL)) {                                              \
-        assert_error(file, line, func,                                         \
-                     "%s is NULL, %s is \"%s\"\n", name2, name1, var1);        \
-        TRAP();                                                                \
+        if (DEBUGGING) {                                                       \
+            assert_error(file, line, func,                                     \
+                         "%s is NULL, %s is \"%s\"\n", name2, name1, var1);    \
+            TRAP();                                                            \
+        } else {                                                               \
+            UNREACHABLE();                                                     \
+        }                                                                      \
     }                                                                          \
     if (!(strcmp(var1, var2) SYMBOL 0)) {                                      \
-        assert_error(file, line, func,                                         \
-                     "%s = %s " #SYMBOL " %s = %s\n",                          \
-                     name1, var1, var2, name2);                                \
-        TRAP();                                                                \
+        if (DEBUGGING) {                                                       \
+            assert_error(file, line, func,                                     \
+                         "%s = %s " #SYMBOL " %s = %s\n",                      \
+                         name1, var1, var2, name2);                            \
+            TRAP();                                                            \
+        } else {                                                               \
+            UNREACHABLE();                                                     \
+        }                                                                      \
     }                                                                          \
     return;                                                                    \
 }
@@ -231,13 +352,14 @@ a_pointers_##MODE(char *file, int32 line, char *func,                          \
                   char *name1, char *name2,                                    \
                   void *var1, void *var2) {                                    \
     if (!((uintptr)var1 SYMBOL (uintptr)var2)) {                               \
-        assert_error(file, line, func,                                         \
-                     "%s = %p " #SYMBOL " %p = %s\n",                          \
-                     name1, var1, var2, name2);                                \
-        if (!DEBUGGING) {                                                      \
+        if (DEBUGGING) {                                                       \
+            assert_error(file, line, func,                                     \
+                         "%s = %p " #SYMBOL " %p = %s\n",                      \
+                         name1, var1, var2, name2);                            \
+            TRAP();                                                            \
+        } else {                                                               \
             UNREACHABLE();                                                     \
         }                                                                      \
-        TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
 }
@@ -259,13 +381,16 @@ a_both_##SIGN##_##MODE(char *file, int32 line, char *func,                     \
                        llong bits1, llong bits2,                               \
                        SIGN long long var1, SIGN long long var2) {             \
     if (!(var1 SYMBOL var2)) {                                                 \
-        assert_error(file, line, func,                                         \
-                     "[%s%lld]%s = "FMT" " #SYMBOL " "FMT" = %s[%s%lld]\n",    \
-                     type1, bits1, name1, var1, var2, name2, type2, bits2);    \
-        if (!DEBUGGING) {                                                      \
+        if (DEBUGGING) {                                                       \
+            assert_error(file, line, func,                                     \
+                         "[%s%lld]%s = "FMT" " #SYMBOL " "FMT" = "            \
+                         "%s[%s%lld]\n",                                      \
+                         type1, bits1, name1, var1, var2, name2, type2,        \
+                         bits2);                                               \
+            TRAP();                                                            \
+        } else {                                                               \
             UNREACHABLE();                                                     \
         }                                                                      \
-        TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
 }
@@ -309,13 +434,16 @@ a_signed_unsigned##MODE(char *file, int32 line, char *func,                    \
                         llong bits1, llong bits2,                              \
                         llong var1, ullong var2) {                             \
     if (!(compare_sign_with_unsign(var1, var2) SYMBOL 0)) {                    \
-        assert_error(file, line, func,                                         \
-                     "[%s%lld]%s = %lld " #SYMBOL " %llu = %s[%s%lld]\n",      \
-                     type1, bits1, name1, var1, var2, name2, type2, bits2);    \
-        if (!DEBUGGING) {                                                      \
+        if (DEBUGGING) {                                                       \
+            assert_error(file, line, func,                                     \
+                         "[%s%lld]%s = %lld " #SYMBOL " %llu = "              \
+                         "%s[%s%lld]\n",                                      \
+                         type1, bits1, name1, var1, var2, name2, type2,        \
+                         bits2);                                               \
+            TRAP();                                                            \
+        } else {                                                               \
             UNREACHABLE();                                                     \
         }                                                                      \
-        TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
 }
@@ -337,13 +465,16 @@ a_unsigned_signed_##MODE(char *file, int32 line, char *func,                   \
                          llong bits1, llong bits2,                             \
                          ullong var1, llong var2) {                            \
     if (!((-compare_sign_with_unsign(var2, var1)) SYMBOL 0)) {                 \
-        assert_error(file, line, func,                                         \
-                     "[%s%lld]%s = %llu " #SYMBOL " %lld = %s[%s%lld]\n",      \
-                     type1, bits1, name1, var1, var2, name2, type2, bits2);    \
-        if (!DEBUGGING) {                                                      \
+        if (DEBUGGING) {                                                       \
+            assert_error(file, line, func,                                     \
+                         "[%s%lld]%s = %llu " #SYMBOL " %lld = "              \
+                         "%s[%s%lld]\n",                                      \
+                         type1, bits1, name1, var1, var2, name2, type2,        \
+                         bits2);                                               \
+            TRAP();                                                            \
+        } else {                                                               \
             UNREACHABLE();                                                     \
         }                                                                      \
-        TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
 }
@@ -365,13 +496,15 @@ a_double_##MODE(char *file, int32 line, char *func,                            \
                 llong bits1, llong bits2,                                      \
                 double var1, double var2) {                                    \
     if (!(var1 SYMBOL var2)) {                                                 \
-        assert_error(file, line, func,                                         \
-                     "[%s%lld]%s = %f " #SYMBOL " %f = %s[%s%lld]\n",          \
-                     type1, bits1, name1, var1, var2, name2, type2, bits2);    \
-        if (!DEBUGGING) {                                                      \
+        if (DEBUGGING) {                                                       \
+            assert_error(file, line, func,                                     \
+                         "[%s%lld]%s = %f " #SYMBOL " %f = %s[%s%lld]\n",      \
+                         type1, bits1, name1, var1, var2, name2, type2,        \
+                         bits2);                                               \
+            TRAP();                                                            \
+        } else {                                                               \
             UNREACHABLE();                                                     \
         }                                                                      \
-        TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
 }
@@ -657,22 +790,24 @@ assert_double_failure(char *file, int32 line, char *func,
                       double diff, double tolerance,
                       ullong ulps, ullong max_ulps,
                       bool use_tol) {
-    assert_error(file, line, func,
-                 "[%s%lld]%s = %.17g %s %.17g = %s[%s%lld]\n",
-                 type1, bits1, name1, var1, symbol, var2, name2, type2, bits2);
-    if (use_tol) {
-        fprintf(stderr,
-                "floating diff = %.17g, tolerance = %.17g\n",
-                diff, tolerance);
+    if (DEBUGGING) {
+        assert_error(file, line, func,
+                     "[%s%lld]%s = %.17g %s %.17g = %s[%s%lld]\n",
+                     type1, bits1, name1, var1, symbol, var2, name2, type2,
+                     bits2);
+        if (use_tol) {
+            fprintf(stderr,
+                    "floating diff = %.17g, tolerance = %.17g\n",
+                    diff, tolerance);
+        } else {
+            fprintf(stderr,
+                    "floating diff = %.17g, ulps = %llu, max_ulps = %llu\n",
+                    diff, ulps, max_ulps);
+        }
+        TRAP();
     } else {
-        fprintf(stderr,
-                "floating diff = %.17g, ulps = %llu, max_ulps = %llu\n",
-                diff, ulps, max_ulps);
-    }
-    if (!DEBUGGING) {
         UNREACHABLE();
     }
-    TRAP();
 }
 
 #define GENERATE_A_DOUBLE_CLOSE(MODE, SYMBOL, EXPECT_CLOSE)                    \
@@ -736,21 +871,22 @@ a_bool_##MODE(char *file, int32 line, char *func,                              \
               llong bits1, llong bits2,                                        \
               bool var1, bool var2) {                                          \
     if (!(var1 SYMBOL var2)) {                                                 \
-        char *s1 = "false";                                                    \
-        char *s2 = "false";                                                    \
-        if (var1) {                                                            \
-            s1 = "true";                                                       \
-        }                                                                      \
-        if (var2) {                                                            \
-            s2 = "true";                                                       \
-        }                                                                      \
-        assert_error(file, line, func,                                         \
-                     "[%s%lld]%s = %s " #SYMBOL " %s = %s[%s%lld]\n",          \
-                     type1, bits1, name1, s1, s2, name2, type2, bits2);        \
-        if (!DEBUGGING) {                                                      \
+        if (DEBUGGING) {                                                       \
+            char *s1 = "false";                                                \
+            char *s2 = "false";                                                \
+            if (var1) {                                                        \
+                s1 = "true";                                                   \
+            }                                                                  \
+            if (var2) {                                                        \
+                s2 = "true";                                                   \
+            }                                                                  \
+            assert_error(file, line, func,                                     \
+                         "[%s%lld]%s = %s " #SYMBOL " %s = %s[%s%lld]\n",      \
+                         type1, bits1, name1, s1, s2, name2, type2, bits2);    \
+            TRAP();                                                            \
+        } else {                                                               \
             UNREACHABLE();                                                     \
         }                                                                      \
-        TRAP();                                                                \
     }                                                                          \
     return;                                                                    \
 }
@@ -761,22 +897,38 @@ GENERATE_ASSERT_BOOLS(not_equal, !=)
 noreturn void
 a_bool_more(void *p, ...) {
     (void)p;
-    TRAP();
+    if (DEBUGGING) {
+        TRAP();
+    } else {
+        UNREACHABLE();
+    }
 }
 noreturn void
 a_bool_less(void *p, ...) {
     (void)p;
-    TRAP();
+    if (DEBUGGING) {
+        TRAP();
+    } else {
+        UNREACHABLE();
+    }
 }
 noreturn void
 a_bool_more_equal(void *p, ...) {
     (void)p;
-    TRAP();
+    if (DEBUGGING) {
+        TRAP();
+    } else {
+        UNREACHABLE();
+    }
 }
 noreturn void
 a_bool_less_equal(void *p, ...) {
     (void)p;
-    TRAP();
+    if (DEBUGGING) {
+        TRAP();
+    } else {
+        UNREACHABLE();
+    }
 }
 
 #undef GENERATE_ASSERT_BOOLS
@@ -850,6 +1002,8 @@ assert_functions_sink(void) {
     (void)assert_file_contains;
     (void)assert_contains;
     (void)assert_not_contains;
+    (void)assert_equal_3;
+    (void)assert_equal_4;
 
     (void)a_bool_equal;
     (void)a_bool_not_equal;

@@ -51,7 +51,7 @@ snprint_0(char *restrict buf, int64 bufSize, ... /* strings, NULL */) {
     char *dst = buf;
     char *s;
 
-    ASSERT(bufSize >= 0);
+    ASSERT_NON_NEGATIVE(bufSize);
     if (bufSize) {
         remainingLen = bufSize - 1;
     } else {
@@ -95,7 +95,7 @@ toString(char *restrict buf, int64 bufSize, char *restrict fmt, ...) {
     va_list ap;
 
     ASSERT(buf);
-    ASSERT(bufSize > 0);
+    ASSERT_POSITIVE(bufSize);
     ASSERT(fmt);
 
     va_start(ap, fmt);
@@ -476,7 +476,7 @@ main(void) {
         PRINTLN(var_uint - (uint)var_int);
     }
 
-    {
+    if (false) {
         char *s;
         char a = 'i';
         char *b = "able";

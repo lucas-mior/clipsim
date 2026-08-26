@@ -107,8 +107,10 @@ toString((char[S_BSZ]){ "" }, S_BSZ, _Generic((X),      \
     default: "%p"                                       \
 ), (X))
 
-#define V(X) "", S_(X), ""
-#define W(X) "", (X), ""
+#define V(X)   "", #X, "=", RED0, S_(X), RESET, " "
+#define VLN(X) "", #X, "=", RED0, S_(X), RESET, "\n"
+#define W(X)   "", (X), ""
+
 #define SF(F, X) toString((char[S_BSZ]){ "" }, S_BSZ, (F), (X))
 #define VF(F, X) "", SF((F), (X)), ""
 
