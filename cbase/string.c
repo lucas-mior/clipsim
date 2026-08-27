@@ -327,7 +327,7 @@ sb_set(StrBuilder *str_builder, char *data, int32 data_len) {
 }
 
 void
-sb_reserve(StrBuilder *str_builder, int32 extra) {
+sb_reserve(StrBuilder *str_builder, int64 extra) {
     int64 needed;
     int64 new_cap;
     int32 old_cap;
@@ -336,7 +336,7 @@ sb_reserve(StrBuilder *str_builder, int32 extra) {
         return;
     }
 
-    needed = (int64)str_builder->len + extra + 1;
+    needed = str_builder->len + extra + 1;
     if (str_builder->data && (needed <= str_builder->cap)) {
         return;
     }
@@ -368,7 +368,7 @@ sb_reserve(StrBuilder *str_builder, int32 extra) {
 }
 
 void
-sb_append(StrBuilder *str_builder, char *data, int32 data_len) {
+sb_append(StrBuilder *str_builder, char *data, int64 data_len) {
     bool aliases = false;
     int32 data_offset = 0;
 

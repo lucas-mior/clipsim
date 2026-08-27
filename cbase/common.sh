@@ -50,6 +50,9 @@ common_get_compiler() {
     cross)
         CC="zig cc"
         ;;
+    meta)
+        CC="tcc"
+        ;;
     *)
         CC="${CC:-cc}"
         ;;

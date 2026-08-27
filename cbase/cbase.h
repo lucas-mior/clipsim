@@ -162,7 +162,7 @@ int32 random_ascii_string(char *, int32, int32);
 bool path_missing(char *);
 int32 read_entire_file(char *, char **);
 char *remove_escape_sequences(char *, int32 *);
-void sb_append(StrBuilder *, char *, int32);
+void sb_append(StrBuilder *, char *, int64);
 void sb_append_byte(StrBuilder *, char);
 void sb_append_byte_if_not(StrBuilder *, char);
 void sb_clear(StrBuilder *);
@@ -172,7 +172,7 @@ void sb_init(StrBuilder *);
 void sb_itoa(StrBuilder *, llong);
 void sb_move(StrBuilder *, StrBuilder *);
 void sb_printf(StrBuilder *, char *, ...);
-void sb_reserve(StrBuilder *, int32);
+void sb_reserve(StrBuilder *, int64);
 int32 sb_set(StrBuilder *, char *, int32);
 char *sb_steal(StrBuilder *, int32 *, int32 *);
 char *sb_steal_exact(StrBuilder *, int32 *);
@@ -488,7 +488,7 @@ _Generic((char (*)[STRLIT_LEN(LITERAL)])0, \
 #define SB_APPEND_2(BUILDER, STRING) \
     sb_append(BUILDER, STRING, strlen32(STRING))
 #define SB_APPEND_3(BUILDER, STRING, LEN) \
-    sb_append(BUILDER, STRING, (int32)(LEN))
+    sb_append(BUILDER, STRING, LEN)
 #define SB_APPEND(...) SELECT_ON_NUM_ARGS(SB_APPEND_, __VA_ARGS__)
 
 #define HERE here_impl(__FILE__, __LINE__, FUNC__)
