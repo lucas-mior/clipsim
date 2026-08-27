@@ -35,8 +35,8 @@ assert_traps_install(char *file, int32 line, char *func) {
     sigemptyset(&signal_action.sa_mask);
     signal_action.sa_flags = SA_RESTART;
 
-    if (sigaction(SIGILL, &signal_action,
-                  &assert_traps_old_signal_action) != 0) {
+    if (sigaction(SIGILL,
+                  &signal_action, &assert_traps_old_signal_action) < 0) {
         assert_error(file, line, func,
                      "Error in sigaction: %s.\n", strerror(errno));
         exit(EXIT_FAILURE);
@@ -52,7 +52,7 @@ assert_traps_restore(char *file, int32 line, char *func) {
         return;
     }
 
-    if (sigaction(SIGILL, &assert_traps_old_signal_action, NULL) != 0) {
+    if (sigaction(SIGILL, &assert_traps_old_signal_action, NULL) < 0) {
         assert_error(file, line, func,
                      "Error in sigaction: %s.\n", strerror(errno));
         exit(EXIT_FAILURE);
@@ -96,8 +96,7 @@ assert_file_contains(char *file, int32 line, char *func,
     if (!memmem64(buffer, buffer_len, needle, needle_len)) {
         if (DEBUGGING) {
             assert_error(file, line, func,
-                         "Needle '%s' not found in file '%s'.\n",
-                         needle, path);
+                         "Needle '%s' not found in file '%s'.\n", needle, path);
             TRAP();
         } else {
             UNREACHABLE();
@@ -167,7 +166,8 @@ assert_equal_3(char *file, int32 line, char *func,
     var2_len = strlen32(var2);
     if (!strequal2(var1, var1_len, var2, var2_len)) {
         if (DEBUGGING) {
-            assert_error(file, line, func, "%s = %.*s == %s = %s\n",
+            assert_error(file, line, func,
+                         "%s = %.*s == %s = %s\n",
                          name1, var1_len, var1, name2, var2);
             TRAP();
         } else {
@@ -213,7 +213,8 @@ assert_equal_4(char *file, int32 line, char *func,
     }
     if (memcmp64(var1, var2, var1_len) != 0) {
         if (DEBUGGING) {
-            assert_error(file, line, func, "%s = %.*s == %.*s = %s\n",
+            assert_error(file, line, func,
+                         "%s = %.*s == %.*s = %s\n",
                          name1, var1_len, var1, var2_len, var2, name2);
             TRAP();
         } else {
@@ -258,11 +259,11 @@ assert_glob_match_impl(char *file, int32 line, char *func,
 #define GENERATE_ASSERT_SIGNED(MODE, SYMBOL, EXPECTED)                         \
 void                                                                           \
 a_sign_integer_##MODE(char *file, int32 line, char *func,                      \
-                     char *name, llong var) {                                  \
+                      char *name, llong var) {                                 \
     if (!(var SYMBOL 0)) {                                                     \
         if (DEBUGGING) {                                                       \
             assert_error(file, line, func,                                     \
-                         "%s = %lld " EXPECTED "\n", name, var);             \
+                         "%s = %lld " EXPECTED "\n", name, var);               \
             TRAP();                                                            \
         } else {                                                               \
             UNREACHABLE();                                                     \
@@ -383,8 +384,8 @@ a_both_##SIGN##_##MODE(char *file, int32 line, char *func,                     \
     if (!(var1 SYMBOL var2)) {                                                 \
         if (DEBUGGING) {                                                       \
             assert_error(file, line, func,                                     \
-                         "[%s%lld]%s = "FMT" " #SYMBOL " "FMT" = "            \
-                         "%s[%s%lld]\n",                                      \
+                         "[%s%lld]%s = "FMT" " #SYMBOL " "FMT" = "             \
+                         "%s[%s%lld]\n",                                       \
                          type1, bits1, name1, var1, var2, name2, type2,        \
                          bits2);                                               \
             TRAP();                                                            \
@@ -436,8 +437,8 @@ a_signed_unsigned##MODE(char *file, int32 line, char *func,                    \
     if (!(compare_sign_with_unsign(var1, var2) SYMBOL 0)) {                    \
         if (DEBUGGING) {                                                       \
             assert_error(file, line, func,                                     \
-                         "[%s%lld]%s = %lld " #SYMBOL " %llu = "              \
-                         "%s[%s%lld]\n",                                      \
+                         "[%s%lld]%s = %lld " #SYMBOL " %llu = "               \
+                         "%s[%s%lld]\n",                                       \
                          type1, bits1, name1, var1, var2, name2, type2,        \
                          bits2);                                               \
             TRAP();                                                            \
@@ -467,8 +468,8 @@ a_unsigned_signed_##MODE(char *file, int32 line, char *func,                   \
     if (!((-compare_sign_with_unsign(var2, var1)) SYMBOL 0)) {                 \
         if (DEBUGGING) {                                                       \
             assert_error(file, line, func,                                     \
-                         "[%s%lld]%s = %llu " #SYMBOL " %lld = "              \
-                         "%s[%s%lld]\n",                                      \
+                         "[%s%lld]%s = %llu " #SYMBOL " %lld = "               \
+                         "%s[%s%lld]\n",                                       \
                          type1, bits1, name1, var1, var2, name2, type2,        \
                          bits2);                                               \
             TRAP();                                                            \
@@ -1259,11 +1260,9 @@ main(void) {
         ASSERT_TRAPS(ASSERT_NOT_CLOSE(close_a, close_b));
         ASSERT_TRAPS(ASSERT_NOT_CLOSE(close_a, close_b, 0.01));
         ASSERT_TRAPS(ASSERT_CONTAINS("alpha beta gamma\n", 17, "delta\n"));
-        ASSERT_TRAPS(ASSERT_NOT_CONTAINS("alpha beta\n gamma\n", 18,
-                                         "beta\n"));
+        ASSERT_TRAPS(ASSERT_NOT_CONTAINS("alpha beta\n gamma\n", 18, "beta\n"));
         ASSERT_TRAPS(ASSERT_GLOB_MATCH("alpha beta gamma", "alpha*delta"));
-        ASSERT_TRAPS(ASSERT_GLOB_NO_MATCH("alpha beta gamma",
-                                          "alpha*gamma"));
+        ASSERT_TRAPS(ASSERT_GLOB_NO_MATCH("alpha beta gamma", "alpha*gamma"));
     }
 #endif
 

@@ -13,7 +13,7 @@ script=$(basename "$0")
 common_build_parse_args "$@"
 
 case "$mode" in
-build|callgrind|check|cross|debug|fast_feedback)
+build|callgrind|check|cross|debug|debug-fast|fast_feedback)
     ;;
 install|test|test_all|uninstall|valgrind)
     ;;
@@ -82,6 +82,10 @@ debug)
     CFLAGS="$CFLAGS -Wno-declaration-after-statement -g"
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
+debug-fast)
+    CFLAGS="$CFLAGS -g2 -O2 -flto -march=native -ftree-vectorize"
+    CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
+    ;;
 valgrind)
     CFLAGS="$CFLAGS -g -Og -ftree-vectorize"
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
@@ -100,7 +104,7 @@ cross)
     common_build_cross_all
     CFLAGS="$CFLAGS -O2"
     ;;
-build|callgrind|check|cross|debug|fast_feedback|install|test|test_all|uninstall|valgrind)
+build|callgrind|check|cross|debug|debug-fast|fast_feedback|install|test|test_all|uninstall|valgrind)
     ;;
 *)
     common_build_unknown_mode
@@ -166,7 +170,7 @@ fast_feedback)
     $CC $CPPFLAGS $CFLAGS main.c -o "$exe" $LDFLAGS && "$exe"
     trace_off
     ;;
-build|callgrind|cross|debug|valgrind)
+build|callgrind|cross|debug|debug-fast|valgrind)
     common_build_tags
 
     trace_on
