@@ -127,7 +127,11 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
     #undef XX
     #undef XENUM_1
     #undef XENUM_2
+#if ENUM_BITFLAGS
     CAT(ENUM_PREFIX_, LAST)
+#else
+    CAT(ENUM_PREFIX_, COUNT)
+#endif
 };
 #endif
 
@@ -168,8 +172,8 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
         #undef XX
         #undef XENUM_ST_1
         #undef XENUM_ST_2
-        case CAT(ENUM_PREFIX_, LAST):
-            return QUOTE(ENUM_PREFIX_) "LAST";
+        case CAT(ENUM_PREFIX_, COUNT):
+            return QUOTE(ENUM_PREFIX_) "COUNT";
         default:
             return "Invalid enum value";
     }
@@ -256,8 +260,8 @@ CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME val) {
         #undef XENUM_ALIAS_ST_1
         #undef XENUM_ALIAS_ST_2
 
-        case CAT(ENUM_PREFIX_, LAST):
-            return QUOTE(ENUM_PREFIX_) "LAST";
+        case CAT(ENUM_PREFIX_, COUNT):
+            return QUOTE(ENUM_PREFIX_) "COUNT";
         default:
             return "Invalid enum value";
     }
@@ -318,9 +322,9 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
 #endif
 
 #if ENUM_BITFLAGS == 0
-        if (XENUM_TOKEN_EQUALS(token, token_len, QUOTE(ENUM_PREFIX_) "LAST")
-            || XENUM_TOKEN_EQUALS(token, token_len, "LAST")) {
-            result = (ENUM_UNDERLYING_TYPE)CAT(ENUM_PREFIX_, LAST);
+        if (XENUM_TOKEN_EQUALS(token, token_len, QUOTE(ENUM_PREFIX_) "COUNT")
+            || XENUM_TOKEN_EQUALS(token, token_len, "COUNT")) {
+            result = (ENUM_UNDERLYING_TYPE)CAT(ENUM_PREFIX_, COUNT);
             matched = 1;
         }
 #endif
@@ -464,7 +468,7 @@ main(void) {
     ASSERT_ZERO(TEST_NORMAL_APPLE);
     ASSERT(TEST_NORMAL_BANANA == 1);
     ASSERT(TEST_NORMAL_CHERRY == 2);
-    ASSERT(TEST_NORMAL_LAST == 3);
+    ASSERT(TEST_NORMAL_COUNT == 3);
 
     s = TEST_NORMAL_str(TEST_NORMAL_APPLE);
     ASSERT_EQUAL(s, "TEST_NORMAL_APPLE");
@@ -495,6 +499,16 @@ main(void) {
     ASSERT(TEST_NORMAL_parse("banana") == TEST_NORMAL_BANANA);
     ASSERT(TEST_NORMAL_parse("TEST_NORMAL_CHERRY") == TEST_NORMAL_CHERRY);
     ASSERT(TEST_NORMAL_parse("cherry") == TEST_NORMAL_CHERRY);
+    ASSERT(TEST_NORMAL_parse("TEST_NORMAL_COUNT") == TEST_NORMAL_COUNT);
+    ASSERT(TEST_NORMAL_parse("COUNT") == TEST_NORMAL_COUNT);
+
+    s = TEST_NORMAL_str(TEST_NORMAL_COUNT);
+    ASSERT_EQUAL(s, "TEST_NORMAL_COUNT");
+    TEST_NORMAL_str_free(s);
+
+    s = TEST_NORMAL_alias(TEST_NORMAL_COUNT);
+    ASSERT_EQUAL(s, "TEST_NORMAL_COUNT");
+    TEST_NORMAL_alias_free(s);
 
     s = TEST_NORMAL_str(999);
     ASSERT_EQUAL(s, "Invalid enum value");

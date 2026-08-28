@@ -16,3 +16,4 @@ strtok
 strtok_r
 strxfrm
 strxfrm_l
+strsep

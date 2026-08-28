@@ -384,6 +384,36 @@ function_with_long_name_and_multiple_arguments(MyStruct *handle,
                                                char *string, int32 string_len);
 function_with_long_name_and_multiple_arguments(handle,
                                                string_name, string_name_len);
+
+// bad (note how the strings are not together with their lengths).
+if (STREQUAL(my_long_string,
+             my_long_string_len, my_other_long_string,
+             my_other_long_string_len)) {
+    // do stuff
+}
+
+// bad (note how my_other_long_string and my_other_long_string_len are apart).
+if (STREQUAL(my_long_string, my_long_string_len, my_other_long_string,
+             my_other_long_string_len)) {
+    // do stuff
+}
+
+// good (note how my_other_long_string and my_other_long_string_len are together).
+if (STREQUAL(my_long_string, my_long_string_len,
+             my_other_long_string, my_other_long_string_len)) {
+    // do stuff
+}
+
+// bad
+if (STREQUAL(string, string_len, other,
+             other_len)) {
+    // do stuff
+}
+
+// good
+if (STREQUAL(string, string_len, other, other_len)) {
+    // do stuff
+}
 ```
 
 In the pattern above, if it is not possible to put string and string_len side by
@@ -398,14 +428,14 @@ first argument fits in the first line:
 // bad
     array->items
         = realloc2(array->items, old_cap, new_cap, SIZEOF(*array->items));
-// good
+// good (1)
     array->items = realloc2(array->items,
                             old_cap, new_cap, SIZEOF(*array->items));
 
 // bad
     array->items = realloc2(extremelly_long_argument_that_does_not_fit_in_this_line,
                             old_cap, new_cap, SIZEOF(*array->items));
-// good
+// good (2) (but ONLY IF good(1) style does not fit!!!)
     array->items
         = realloc2(extremelly_long_argument_that_does_not_fit_in_this_line,
                    old_cap, new_cap, SIZEOF(*array->items));

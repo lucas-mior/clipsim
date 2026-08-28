@@ -1330,7 +1330,7 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(ALIGN16(7), 16);
     }
 
-    for (enum WeekDay day = WEEK_DAY_MONDAY; day <= WEEK_DAY_LAST; day += 1) {
+    for (enum WeekDay day = WEEK_DAY_MONDAY; day < WEEK_DAY_COUNT; day += 1) {
         printf("enum[%u] = %s\n", day, WEEK_DAY_str(day));
     }
 

@@ -8,6 +8,22 @@ be preserved.
 
 For formatting-only style rules, see `c-format.md`.
 
+## Files and code high level organization
+Every project must have a common-denominator file (which acts analogous to
+"cbase.h" in the `cbase/` stuff). It must be a header that defines constants,
+types and declarations that are shared by every file in the project. It is not
+necessarly a user-facing header, but it might be. Together with it we might have
+a .c file with the implementation of functions that don't depend on anything
+besides the "common denominator header" itself. This forms a nice `common.h` and
+`common.c` pair that defines the fundament in which the project maintains a nice
+baseline for its development.
+
+### APIs and error handling
+User facing APIs must do explicit input validation and error handling and return
+error in case of invalid input. Internal functions must do error handling, but
+not input validation: they simply assert (with the assertions of
+`cbase/assertions.h`) that the input is within the conditions that they expect.
+
 ## Naming style
 
 - Use `CamelCase` for types.
@@ -154,12 +170,14 @@ typeof(var)  // good
   enum, or if we need the `_str` or the `_parse` functions.
   * It will give automatic bit flags if needed with `#define ENUM_BITFLAGS 1`.
   * It will give automatic `_str` and `_parse` functions.
-  * It will give automatic `_LAST` value. Use it for iterating on the enum:
+  * It will give automatic `_COUNT` value for non-bit flag enums. Use it for
+    iterating on the enum:
     ```c
-    for (uint32 x = 0; x < MY_ENUM_LAST; x += 1) {
+    for (uint32 x = 0; x < MY_ENUM_COUNT; x += 1) {
         printf("x = %s.\n", MY_ENUM_str(x));
     }
     ```
+  * Bit flag enums still use automatic `_LAST` value.
 - The moment that you find that an existing enum ends up needing `_str`, or
   `_parse`, then it is time to define it using `xenums.c`.
 - Always typedef structs:
@@ -674,7 +692,6 @@ default:
   ```
 - Prefer to declare variable at the top of blocks
   * Exception: for loop counters (`for (int32 i = 0; i < N; i += 1)`)
-  * Another exception: generated code / meta programming.
   * Don't mix declarations and code (`-Wdeclaration-after-statement`)
   * Sometimes it is good practice is to create artificial blocks to reduce the
     scope of variables. Only do it for reasonably long functions, for short
@@ -809,6 +826,8 @@ appropriate cbase/ C file.
 - Try to give code some empty lines here and there.
   * For instance, a good practice is to add a blank line after the variable
     declarations of a block.
+  * Also, try to put a new line after an `if` block, unless the following code
+    is directly related to the computations of the `if` block.
   * Try to group related statements together.
   * Another good practice is group assignments to the same struct together:
   ```c

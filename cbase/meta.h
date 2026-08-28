@@ -32,7 +32,7 @@
       #define XX(E) E,
       TOKEN_KIND_FIELDS
       #undef XX
-      TOKEN_LAST,
+      TOKEN_COUNT,
   };
   typedef struct StrBuilder StrBuilder;
 #endif

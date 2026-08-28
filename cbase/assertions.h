@@ -101,33 +101,33 @@ ASSERT_DECLARE_INTEGERS(unsigned, more_equal)
 
 #undef ASSERT_DECLARE_INTEGERS
 
-#define ASSERT_DECLARE_SIGNED_UNSIGNED(MODE)                                   \
+#define ASSERT_DECLARE_SIGN_UNSIGN(MODE)                                       \
 void a_signed_unsigned##MODE(char *, int32, char *,                            \
                              char *, char *, char *, char *,                   \
                              llong, llong, llong, ullong);
 
-ASSERT_DECLARE_SIGNED_UNSIGNED(less)
-ASSERT_DECLARE_SIGNED_UNSIGNED(less_equal)
-ASSERT_DECLARE_SIGNED_UNSIGNED(equal)
-ASSERT_DECLARE_SIGNED_UNSIGNED(not_equal)
-ASSERT_DECLARE_SIGNED_UNSIGNED(more)
-ASSERT_DECLARE_SIGNED_UNSIGNED(more_equal)
+ASSERT_DECLARE_SIGN_UNSIGN(less)
+ASSERT_DECLARE_SIGN_UNSIGN(less_equal)
+ASSERT_DECLARE_SIGN_UNSIGN(equal)
+ASSERT_DECLARE_SIGN_UNSIGN(not_equal)
+ASSERT_DECLARE_SIGN_UNSIGN(more)
+ASSERT_DECLARE_SIGN_UNSIGN(more_equal)
 
-#undef ASSERT_DECLARE_SIGNED_UNSIGNED
+#undef ASSERT_DECLARE_SIGN_UNSIGN
 
-#define ASSERT_DECLARE_UNSIGNED_SIGNED(MODE)                                   \
+#define ASSERT_DECLARE_UNSIGN_SIGN(MODE)                                       \
 void a_unsigned_signed_##MODE(char *, int32, char *,                           \
                               char *, char *, char *, char *,                  \
                               llong, llong, ullong, llong);
 
-ASSERT_DECLARE_UNSIGNED_SIGNED(less)
-ASSERT_DECLARE_UNSIGNED_SIGNED(less_equal)
-ASSERT_DECLARE_UNSIGNED_SIGNED(equal)
-ASSERT_DECLARE_UNSIGNED_SIGNED(not_equal)
-ASSERT_DECLARE_UNSIGNED_SIGNED(more)
-ASSERT_DECLARE_UNSIGNED_SIGNED(more_equal)
+ASSERT_DECLARE_UNSIGN_SIGN(less)
+ASSERT_DECLARE_UNSIGN_SIGN(less_equal)
+ASSERT_DECLARE_UNSIGN_SIGN(equal)
+ASSERT_DECLARE_UNSIGN_SIGN(not_equal)
+ASSERT_DECLARE_UNSIGN_SIGN(more)
+ASSERT_DECLARE_UNSIGN_SIGN(more_equal)
 
-#undef ASSERT_DECLARE_UNSIGNED_SIGNED
+#undef ASSERT_DECLARE_UNSIGN_SIGN
 
 #define ASSERT_DECLARE_DOUBLE(MODE)                                            \
 void a_double_##MODE(char *, int32, char *,                                    \
@@ -178,8 +178,8 @@ noreturn void a_bool_less(void *, ...);
 noreturn void a_bool_more_equal(void *, ...);
 noreturn void a_bool_less_equal(void *, ...);
 
-void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGNED(void);
-void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_UNSIGNED(void);
+void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGN(void);
+void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_UNSIGN(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_DOUBLE(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_BOOL(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CHARP(void);
@@ -307,14 +307,14 @@ void assert_traps_restore(char *, int32, char *);
 #define ASSERT_GLOB_NO_MATCH(...)                                              \
     SELECT_ON_NUM_ARGS(ASSERT_GLOB_NO_MATCH_, __VA_ARGS__)
 
-#define A_BOTH_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2)                          \
+#define A_BOTH_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                            \
     a_both_signed_##MODE(__FILE__, __LINE__, FUNC__,                           \
                          #VAR1, #VAR2,                                         \
                          typename(TYPE1), typename(TYPE2),                     \
                          typebits(TYPE1), typebits(TYPE2),                     \
                          (llong)(VAR1), (llong)(VAR2))
 
-#define A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2)                      \
+#define A_SIGN_UNSIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                          \
     a_signed_unsigned##MODE(__FILE__, __LINE__, FUNC__,                        \
                             #VAR1, #VAR2,                                      \
                             typename(TYPE1), typename(TYPE2),                  \
@@ -322,72 +322,72 @@ void assert_traps_restore(char *, int32, char *);
                             (llong)(VAR1), (ullong)(VAR2))
 
 #if CHAR_MIN < 0
-#define A_CHAR_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1)                             \
-    A_BOTH_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+#define A_CHAR_FOR_SIGN(MODE, VAR1, VAR2, TYPE1)                               \
+    A_BOTH_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
 
-#define A_CHAR_FOR_UNSIGNED(MODE, VAR1, VAR2, TYPE1)                           \
-    A_UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+#define A_CHAR_FOR_UNSIGN(MODE, VAR1, VAR2, TYPE1)                             \
+    A_UNSIGN_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
 
 #define A_FIRST_CHAR(MODE, VAR1, VAR2)                                         \
-    A_FIRST_SIGNED(MODE, VAR1, VAR2, TYPE_CHAR)
+    A_FIRST_SIGN(MODE, VAR1, VAR2, TYPE_CHAR)
 #else
-#define A_CHAR_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1)                             \
-    A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+#define A_CHAR_FOR_SIGN(MODE, VAR1, VAR2, TYPE1)                               \
+    A_SIGN_UNSIGN(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
 
-#define A_CHAR_FOR_UNSIGNED(MODE, VAR1, VAR2, TYPE1)                           \
-    A_BOTH_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
+#define A_CHAR_FOR_UNSIGN(MODE, VAR1, VAR2, TYPE1)                             \
+    A_BOTH_UNSIGN(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
 
 #define A_FIRST_CHAR(MODE, VAR1, VAR2)                                         \
-    A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_CHAR)
+    A_FIRST_UNSIGN(MODE, VAR1, VAR2, TYPE_CHAR)
 #endif
 
-#define A_FIRST_SIGNED(MODE, VAR1, VAR2, TYPE1)                                \
+#define A_FIRST_SIGN(MODE, VAR1, VAR2, TYPE1)                                  \
 _Generic((VAR2),                                                               \
-    char:    A_CHAR_FOR_SIGNED(MODE, VAR1, VAR2, TYPE1),                       \
-    schar:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_SCHAR  ),         \
-    short:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_SHORT  ),         \
-    int:     A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_INT    ),         \
-    long:    A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_LONG   ),         \
-    llong:   A_BOTH_SIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_LLONG  ),         \
-    uchar:   A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_UCHAR  ),         \
-    ushort:  A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_USHORT ),         \
-    uint:    A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_UINT   ),         \
-    ulong:   A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_ULONG  ),         \
-    ullong:  A_SIGNED_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE_ULLONG ),         \
-    float:   A_BOTH_DOUBLE(MODE,     VAR1, VAR2, TYPE1, TYPE_FLOAT  ),         \
-    double:  A_BOTH_DOUBLE(MODE,     VAR1, VAR2, TYPE1, TYPE_DOUBLE ),         \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGNED()                     \
+    char:    A_CHAR_FOR_SIGN(MODE, VAR1, VAR2, TYPE1),                         \
+    schar:   A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_SCHAR  ),           \
+    short:   A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_SHORT  ),           \
+    int:     A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_INT    ),           \
+    long:    A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_LONG   ),           \
+    llong:   A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_LLONG  ),           \
+    uchar:   A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UCHAR  ),           \
+    ushort:  A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_USHORT ),           \
+    uint:    A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UINT   ),           \
+    ulong:   A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULONG  ),           \
+    ullong:  A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULLONG ),           \
+    float:   A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_FLOAT  ),           \
+    double:  A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_DOUBLE ),           \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGN()                       \
 )
-#define A_BOTH_UNSIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2)                        \
+#define A_BOTH_UNSIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                          \
     a_both_unsigned_##MODE(__FILE__, __LINE__, FUNC__,                         \
                            #VAR1, #VAR2,                                       \
                            typename(TYPE1), typename(TYPE2),                   \
                            typebits(TYPE1), typebits(TYPE2),                   \
                            (ullong)(VAR1), (ullong)(VAR2))
 
-#define A_UNSIGNED_SIGNED(MODE, VAR1, VAR2, TYPE1, TYPE2)                      \
+#define A_UNSIGN_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                          \
     a_unsigned_signed_##MODE(__FILE__, __LINE__, FUNC__,                       \
                              #VAR1, #VAR2,                                     \
                              typename(TYPE1), typename(TYPE2),                 \
                              typebits(TYPE1), typebits(TYPE2),                 \
                              (ullong)(VAR1), (llong)(VAR2))
 
-#define A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE1)                              \
+#define A_FIRST_UNSIGN(MODE, VAR1, VAR2, TYPE1)                                \
 _Generic((VAR2),                                                               \
-    char:    A_CHAR_FOR_UNSIGNED(MODE, VAR1, VAR2, TYPE1),                     \
-    schar:   A_UNSIGNED_SIGNED(MODE,   VAR1, VAR2, TYPE1, TYPE_SCHAR  ),       \
-    short:   A_UNSIGNED_SIGNED(MODE,   VAR1, VAR2, TYPE1, TYPE_SHORT  ),       \
-    int:     A_UNSIGNED_SIGNED(MODE,   VAR1, VAR2, TYPE1, TYPE_INT    ),       \
-    long:    A_UNSIGNED_SIGNED(MODE,   VAR1, VAR2, TYPE1, TYPE_LONG   ),       \
-    llong:   A_UNSIGNED_SIGNED(MODE,   VAR1, VAR2, TYPE1, TYPE_LLONG  ),       \
-    uchar:   A_BOTH_UNSIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_UCHAR  ),       \
-    ushort:  A_BOTH_UNSIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_USHORT ),       \
-    uint:    A_BOTH_UNSIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_UINT   ),       \
-    ulong:   A_BOTH_UNSIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_ULONG  ),       \
-    ullong:  A_BOTH_UNSIGNED(MODE,     VAR1, VAR2, TYPE1, TYPE_ULLONG ),       \
-    float:   A_BOTH_DOUBLE(MODE,       VAR1, VAR2, TYPE1, TYPE_FLOAT  ),       \
-    double:  A_BOTH_DOUBLE(MODE,       VAR1, VAR2, TYPE1, TYPE_DOUBLE ),       \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_UNSIGNED()                   \
+    char:    A_CHAR_FOR_UNSIGN(MODE, VAR1, VAR2, TYPE1),                       \
+    schar:   A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_SCHAR  ),           \
+    short:   A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_SHORT  ),           \
+    int:     A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_INT    ),           \
+    long:    A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_LONG   ),           \
+    llong:   A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_LLONG  ),           \
+    uchar:   A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UCHAR  ),           \
+    ushort:  A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_USHORT ),           \
+    uint:    A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UINT   ),           \
+    ulong:   A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULONG  ),           \
+    ullong:  A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULLONG ),           \
+    float:   A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_FLOAT  ),           \
+    double:  A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_DOUBLE ),           \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_UNSIGN()                     \
 )
 #define A_BOTH_DOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE2)                          \
     a_double_##MODE(__FILE__, __LINE__, FUNC__,                                \
@@ -443,20 +443,20 @@ _Generic((VAR1),                                                               \
         void *: A_POINTERS(MODE, VAR1, VAR2),                                  \
         default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CHARP()           \
     ),                                                                         \
-    char:    A_FIRST_CHAR(MODE,     VAR1, VAR2),                               \
-    schar:   A_FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_SCHAR  ),                 \
-    short:   A_FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_SHORT  ),                 \
-    int:     A_FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_INT    ),                 \
-    long:    A_FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_LONG   ),                 \
-    llong:   A_FIRST_SIGNED(MODE,   VAR1, VAR2, TYPE_LLONG  ),                 \
-    uchar:   A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_UCHAR  ),                 \
-    ushort:  A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_USHORT ),                 \
-    uint:    A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_UINT   ),                 \
-    ulong:   A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_ULONG  ),                 \
-    ullong:  A_FIRST_UNSIGNED(MODE, VAR1, VAR2, TYPE_ULLONG ),                 \
-    float:   A_FIRST_DOUBLE(MODE,   VAR1, VAR2, TYPE_FLOAT  ),                 \
-    double:  A_FIRST_DOUBLE(MODE,   VAR1, VAR2, TYPE_DOUBLE ),                 \
-    bool:    A_FIRST_BOOL(MODE,     VAR1, VAR2, TYPE_BOOL),                    \
+    char:    A_FIRST_CHAR(MODE,   VAR1, VAR2),                                 \
+    schar:   A_FIRST_SIGN(MODE,   VAR1, VAR2, TYPE_SCHAR  ),                   \
+    short:   A_FIRST_SIGN(MODE,   VAR1, VAR2, TYPE_SHORT  ),                   \
+    int:     A_FIRST_SIGN(MODE,   VAR1, VAR2, TYPE_INT    ),                   \
+    long:    A_FIRST_SIGN(MODE,   VAR1, VAR2, TYPE_LONG   ),                   \
+    llong:   A_FIRST_SIGN(MODE,   VAR1, VAR2, TYPE_LLONG  ),                   \
+    uchar:   A_FIRST_UNSIGN(MODE, VAR1, VAR2, TYPE_UCHAR  ),                   \
+    ushort:  A_FIRST_UNSIGN(MODE, VAR1, VAR2, TYPE_USHORT ),                   \
+    uint:    A_FIRST_UNSIGN(MODE, VAR1, VAR2, TYPE_UINT   ),                   \
+    ulong:   A_FIRST_UNSIGN(MODE, VAR1, VAR2, TYPE_ULONG  ),                   \
+    ullong:  A_FIRST_UNSIGN(MODE, VAR1, VAR2, TYPE_ULLONG ),                   \
+    float:   A_FIRST_DOUBLE(MODE, VAR1, VAR2, TYPE_FLOAT  ),                   \
+    double:  A_FIRST_DOUBLE(MODE, VAR1, VAR2, TYPE_DOUBLE ),                   \
+    bool:    A_FIRST_BOOL(MODE,   VAR1, VAR2, TYPE_BOOL),                      \
     default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE()                     \
 )
 

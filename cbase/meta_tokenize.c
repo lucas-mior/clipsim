@@ -583,7 +583,7 @@ token_is_trivia(Token *token) {
     case TOKEN_OPERATOR:
     case TOKEN_PUNCT:
     case TOKEN_PREPROC:
-    case TOKEN_LAST:
+    case TOKEN_COUNT:
     default:
         return false;
     }
@@ -593,7 +593,7 @@ int32
 tokenization_significant_at_or_after(Tokenization *tokenization,
                                      int32 token_index) {
     int32 result = token_index;
-    assert(token_index >= 0);
+    ASSERT_NON_NEGATIVE(token_index);
     while ((result < tokenization->token_count)
            && token_is_trivia(&tokenization->tokens[result])) {
         result += 1;
