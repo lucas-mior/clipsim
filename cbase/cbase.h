@@ -13,6 +13,7 @@
 #endif
 
 #include "platform_detection.h"
+#include "warnings.h"
 #include "libc.h"
 #include "primitives.h"
 #include "base_macros.h"

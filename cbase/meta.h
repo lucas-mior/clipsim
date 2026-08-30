@@ -4,6 +4,8 @@
 #if !defined(META_H)
 #define META_H
 
+#include "platform_detection.h"
+#include "warnings.h"
 #include "primitives.h"
 #include "base_macros.h"
 

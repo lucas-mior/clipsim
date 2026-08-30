@@ -10,6 +10,8 @@
 #if !defined(HASH_H)
 #define HASH_H
 
+#include "platform_detection.h"
+#include "warnings.h"
 #include "libc.h"
 #include "base_macros.h"
 #include "primitives.h"

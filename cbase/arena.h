@@ -5,6 +5,7 @@
 #define ARENA_H
 
 #include "primitives.h"
+#include "warnings.h"
 #include "base_macros.h"
 
 typedef struct Arena {

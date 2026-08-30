@@ -12,6 +12,7 @@
 #define BASE_MACROS_H
 
 #include "platform_detection.h"
+#include "warnings.h"
 #include "libc.h"
 
 #define S(...) #__VA_ARGS__

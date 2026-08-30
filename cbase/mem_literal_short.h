@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
+#include "platform_detection.h"
+#include "warnings.h"
 #include "base_macros.h"
 #include "primitives.h"
 

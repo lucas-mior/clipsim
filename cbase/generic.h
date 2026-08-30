@@ -11,6 +11,7 @@
 #endif
 
 #include "platform_detection.h"
+#include "warnings.h"
 #include "primitives.h"
 #include "base_macros.h"
 #include "libc.h"

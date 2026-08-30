@@ -9,6 +9,7 @@
 #define LIBC_H
 
 #include "platform_detection.h"
+#include "warnings.h"
 
 #if !defined(NOLIBC)
 #define NOLIBC 0
