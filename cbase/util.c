@@ -1193,8 +1193,7 @@ test_command_exists(char *command) {
     XX(POWER_OF2_TWO)     \
     XX(POWER_OF2_FOUR)    \
     XX(POWER_OF2_EIGHT)   \
-    XX(POWER_OF2_SIXTEEN) \
-    XX(POWER_OF2_THIRTY2)
+    XX(POWER_OF2_SIXTEEN)
 #include "xenums.c"
 
 #if OS_LINUX

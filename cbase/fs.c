@@ -570,24 +570,30 @@ util_copy_file_sync(char *destination, char *source) {
 
     errno = 0;
     while ((r = read64(source_fd, buffer, BUFSIZ)) > 0) {
-        int saved_errno;
+        int64 written = 0;
 
-        while (((w = write64(destination_fd, buffer, r)) < 0)
-                && (errno == EINTR)) {
-            continue;
-        }
-        saved_errno = errno;
+        while (written < r) {
+            int saved_errno;
 
-        if (w != r) {
-            fprintf(stderr, "Error writing data to %s", destination);
-            if (r < 0) {
-                fprintf(stderr, ": %s", strerror(saved_errno));
+            while (((w = write64(destination_fd,
+                                 buffer + written, r - written)) < 0)
+                    && (errno == EINTR)) {
+                continue;
             }
-            fprintf(stderr, ".\n");
+            saved_errno = errno;
 
-            XCLOSE(&source_fd, source);
-            XCLOSE(&destination_fd, destination);
-            return -1;
+            if (w <= 0) {
+                fprintf(stderr, "Error writing data to %s", destination);
+                if (w < 0) {
+                    fprintf(stderr, ": %s", strerror(saved_errno));
+                }
+                fprintf(stderr, ".\n");
+
+                XCLOSE(&source_fd, source);
+                XCLOSE(&destination_fd, destination);
+                return -1;
+            }
+            written += w;
         }
     }
 
