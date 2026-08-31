@@ -870,7 +870,7 @@ normalize(char *restrict path, int32 *restrict length) {
         *length = strlen32(path);
     }
 
-    while ((p = memmem64(path + off, *length - off, "//", 2))) {
+    while ((p = MEM_LITERAL_SHORT(path + off, *length - off, "//"))) {
         off = p - path;
 
         memmove64(&p[0], &p[1], *length - off);
@@ -890,7 +890,7 @@ normalize(char *restrict path, int32 *restrict length) {
     }
 
     off = 0;
-    while ((p = memmem64(path + off, *length - off, "/./", 3))) {
+    while ((p = MEM_LITERAL_SHORT(path + off, *length - off, "/./"))) {
         off = p - path;
 
         memmove64(&p[1], &p[3], *length - off - 2);
