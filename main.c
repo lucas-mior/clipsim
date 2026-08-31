@@ -6,6 +6,10 @@
 #define CBASE_IMPLEMENT
 #include "cbase.h"
 
+#if DEBUGGING
+#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
+#endif
+
 #include "clipsim.c"
 #include "history.c"
 #include "ipc.c"
