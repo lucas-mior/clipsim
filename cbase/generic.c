@@ -476,7 +476,7 @@ main(void) {
         PRINTLN(var_uint - (uint)var_int);
     }
 
-    if (false) {
+    {
         char *s;
         char a = 'i';
         char *b = "able";
@@ -515,17 +515,22 @@ main(void) {
         n = snprint(buf, SIZEOF(buf),
                     "Now you can insert var" V(a) V(b) "s in situ:\n"
                     V(c) " divided by " V(d) " equals " V(c/d) "\n");
-        ASSERT(n == strlen32("Now you can insert variables in situ:\n"
-                            "1 divided by 8 equals 0.125\n"));
-
-        ASSERT_EQUAL(buf, "Now you can insert variables in situ:\n"
-                          "1 divided by 8 equals 0.125\n");
+        snprintf(expected, SIZEOF(expected),
+                 "Now you can insert vara=" RED0 "%c" RESET " "
+                 "b=" RED0 "%s" RESET " s in situ:\n"
+                 "c=" RED0 "%d" RESET "  divided by "
+                 "d=" RED0 "%." QUOTE(DBL_DIG) "g" RESET "  equals "
+                 "c/d=" RED0 "%." QUOTE(DBL_DIG) "g" RESET " \n",
+                 a, b, c, d, c/d);
+        ASSERT(n == strlen32(expected));
+        ASSERT_EQUAL(buf, expected);
 
         n = snprint(buf, SIZEOF(buf),
-                    "This is " W(e) " It's " V(strlen32(e)) " characters long\n");
+                    "This is " W(e) " It's " V(strlen32(e))
+                    " characters long\n");
         snprintf(expected, SIZEOF(expected),
-                 "This is %s It's %lu characters long\n",
-                 e, (ulong)strlen32(e));
+                 "This is %s It's strlen32(e)=" RED0 "%d" RESET
+                 "  characters long\n", e, strlen32(e));
         ASSERT(n == strlen32(expected));
         ASSERT_EQUAL(buf, expected);
 
@@ -541,19 +546,21 @@ main(void) {
         fp = tmpfile();
         ASSERT(fp);
         n = fprint(fp, "file ", V(c), " ", VF("%04i", c), "\n");
-        ASSERT(n == strlen32("file 1 0001\n"));
+        snprintf(expected, SIZEOF(expected),
+                 "file c=" RED0 "%d" RESET "  0001\n", c);
+        ASSERT(n == strlen32(expected));
         rewind(fp);
         ASSERT(fgets(buf, SIZEOF(buf), fp));
-        ASSERT_EQUAL(buf, "file 1 0001\n");
+        ASSERT_EQUAL(buf, expected);
         fclose(fp);
 
         n = print0("print ", V(a), " ", W(b), "\n");
-        ASSERT(n == strlen32("print i able\n"));
-        {
-            char buffer[16];
-            ASSERT((print0(V(c), "\n")
-                    == snprintf(buffer, SIZEOF(buffer), "%d\n", c)));
-        }
+        snprintf(expected, SIZEOF(expected),
+                 "print a=" RED0 "%c" RESET "  %s\n", a, b);
+        ASSERT(n == strlen32(expected));
+        snprintf(expected, SIZEOF(expected),
+                 "c=" RED0 "%d" RESET " \n", c);
+        ASSERT(print0(V(c), "\n") == strlen32(expected));
         print0("PRINTING a=", V(a), "; b=", V(b), "\n");
     }
 }
