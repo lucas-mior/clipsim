@@ -1220,26 +1220,26 @@ util_test_qsort_cmp(void *a, void *b) {
     return 0;
 }
 
-#define ASSERT_MEM_LITERAL_OFFSET(HAYSTACK, HAYSTACK_LEN, LITERAL, OFFSET) \
-    do { \
-        char *mem_literal_haystack = (HAYSTACK); \
-        char *mem_literal_actual; \
-        char *mem_literal_expected; \
-        int64 mem_literal_offset = (OFFSET); \
-        int64 mem_literal_haystack_len = (HAYSTACK_LEN); \
-        if (mem_literal_offset < 0) { \
-            mem_literal_expected = NULL; \
-        } else { \
-            mem_literal_expected = mem_literal_haystack + mem_literal_offset; \
-        } \
-        mem_literal_actual = MEM_LITERAL_SHORT(mem_literal_haystack, \
-                                               mem_literal_haystack_len, \
-                                               LITERAL); \
-        ASSERT_EQUAL((void *)mem_literal_actual, \
-                     (void *)mem_literal_expected); \
+#define ASSERT_MEM_LITERAL_OFFSET(HAYSTACK, HAYSTACK_LEN, LITERAL, OFFSET)     \
+    do {                                                                       \
+        char *mem_literal_haystack = (HAYSTACK);                               \
+        char *mem_literal_actual;                                              \
+        char *mem_literal_expected;                                            \
+        int64 mem_literal_offset = (OFFSET);                                   \
+        int64 mem_literal_haystack_len = (HAYSTACK_LEN);                       \
+        if (mem_literal_offset < 0) {                                          \
+            mem_literal_expected = NULL;                                       \
+        } else {                                                               \
+            mem_literal_expected = mem_literal_haystack + mem_literal_offset;  \
+        }                                                                      \
+        mem_literal_actual = MEM_LITERAL_SHORT(mem_literal_haystack,           \
+                                               mem_literal_haystack_len,       \
+                                               LITERAL);                       \
+        ASSERT_EQUAL((void *)mem_literal_actual,                               \
+                     (void *)mem_literal_expected);                            \
     } while (0)
 
-#define ASSERT_MEM_LITERAL(HAYSTACK, LITERAL, OFFSET) \
+#define ASSERT_MEM_LITERAL(HAYSTACK, LITERAL, OFFSET)                          \
     ASSERT_MEM_LITERAL_OFFSET(HAYSTACK, strlen32(HAYSTACK), LITERAL, OFFSET)
 
 static void
