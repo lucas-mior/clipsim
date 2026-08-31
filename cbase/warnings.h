@@ -3,6 +3,14 @@
 
 #include "platform_detection.h"
 
+#if !defined(DEBUGGING)
+#define DEBUGGING 0
+#endif
+
+#if !defined(TESTING)
+#define TESTING 0
+#endif
+
 #if CC_GCC || CC_CLANG
   #pragma GCC diagnostic warning "-Wall"
   #pragma GCC diagnostic warning "-Wextra"
@@ -28,6 +36,7 @@
   #pragma clang diagnostic ignored "-Wunused-macros"
   #pragma clang diagnostic ignored "-Wused-but-marked-unused"
   #pragma clang diagnostic ignored "-Wpadded"
+  #pragma clang diagnostic ignored "-Wtentative-definition-compat"
 #endif
 
 #if DEBUGGING || TESTING
