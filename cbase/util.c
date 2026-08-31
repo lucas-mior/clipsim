@@ -14,13 +14,13 @@
 
 void
 here_impl(char *file, int32 line, char *func) {
+    static llong here_counter = 0;
 #if OS_UNIX
     char buffer[4096];
 #endif
 
-    fprintf(stderr,
-            "\n===== HERE(%lld): %s:%d (%s)\n",
-            here_counter++, file, line, func);
+    error2("\n======== HERE(%lld): %s:%d:%s()\n",
+           here_counter++, file, line, func);
 #if OS_UNIX
     SNPRINTF(buffer, "%s:%d:%s\n", file, line, func);
     switch (fork()) {
@@ -269,14 +269,7 @@ memchr64(void *pointer, int32 value, int64 size) {
     if (size == 0) {
         return 0;
     }
-#if CC_CLANG
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
-#endif
     return memchr(pointer, value, (size_t)size);
-#if CC_CLANG
-#pragma clang diagnostic pop
-#endif
 }
 
 int
@@ -307,14 +300,21 @@ util_glob_match(char *string, int32 string_len, char *glob, int32 glob_len) {
     int32 star_string_i = 0;
 
     if (DEBUGGING) {
-        if ((string_len < 0) || (glob_len < 0)) {
-            error("Error: Invalid string_len=%d or glob_len=%d.\n",
-                  string_len, glob_len);
+        if (string_len < 0) {
+            error("Invalid string len = %d\n", string_len);
             fatal(EXIT_FAILURE);
         }
-        if (((string == NULL) && (string_len > 0))
-            || ((glob == NULL) && (glob_len > 0))) {
-            error("Error: NULL glob match input with non-zero length.\n");
+        if (string_len < 0) {
+            error("Invalid glob len = %d\n", glob_len);
+            fatal(EXIT_FAILURE);
+        }
+
+        if ((string == NULL) && (string_len > 0)) {
+            error("Error: string is NULL but length is positive.\n");
+            fatal(EXIT_FAILURE);
+        }
+        if ((glob == NULL) && (glob_len > 0)) {
+            error("Error: glob is NULL but length is positive.\n");
             fatal(EXIT_FAILURE);
         }
     }
@@ -402,13 +402,20 @@ qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
 #pragma clang diagnostic pop
 #endif
 
+    if (n == 0) {
+        return;
+    }
     if (DEBUGGING) {
-        if ((size <= 0) || (n <= 0)) {
-            error("Error: Invalid size(%lld) or n(%lld)\n", size, n);
+        if (size <= 0) {
+            error("Error: invalid object size = %lld.\n", size);
+            fatal(EXIT_FAILURE);
+        }
+        if (n < 0) {
+            error("Error: invalid object count = %lld.\n", n);
             fatal(EXIT_FAILURE);
         }
         if ((size_t)size >= (SIZE_MAX / (size_t)n)) {
-            error("Error: Overflow (%lld*%lld)\n", size, n);
+            error("Error: Overflow (size=%lld*%lld=n)\n", size, n);
             fatal(EXIT_FAILURE);
         }
         if ((ullong)size >= (ullong)SIZE_MAX) {
@@ -436,7 +443,7 @@ snprintf2(char *buffer, int64 size, char *format, ...) {
     va_end(args);
 
     if ((n < 0) || (n >= size)) {
-        fprintf(stderr, "Error in vsnprintf(\"%s\") (n = %d)\n", format, n);
+        error2("Error in vsnprintf(\"%s\") (n = %d)\n", format, n);
         fatal(EXIT_FAILURE);
     }
     return n;
@@ -667,9 +674,8 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
     va_end(args);
 
     if ((n < 0) || (n >= m)) {
-        fprintf(stderr,
-                "%s:%d %s(): Error in vsnprintf(\"%s\") (n = %d).\n",
-                file, line, func, format, n);
+        error2("%s:%d:%s(): Error in vsnprintf(\"%s\") (n = %d).\n",
+               file, line, func, format, n);
         fatal(EXIT_FAILURE);
     }
 
@@ -698,10 +704,10 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
             execlp(notifiers[i],
                    notifiers[i], "-u", "critical", program, pbuffer, NULL);
         }
-        fprintf(stderr, "Error executing notifier: %s.\n", strerror(errno));
+        error2("Error executing notifier: %s.\n", strerror(errno));
         exit(EXIT_FAILURE);
     case -1:
-        fprintf(stderr, "Error forking: %s.\n", strerror(errno));
+        error2("Error forking: %s.\n", strerror(errno));
         break;
     default:
         break;
@@ -855,7 +861,7 @@ send_signal(char *executable, int32 signal_number) {
             if (errno == EINTR) {
                 continue;
             }
-            fprintf(stderr, "Error waiting for child: %s.\n", strerror(errno));
+            error2("Error waiting for child: %s.\n", strerror(errno));
             fatal(EXIT_FAILURE);
         }
     }
@@ -1018,11 +1024,11 @@ void
 warn(char *fmt, ...) {
     va_list ap;
 
-    fprintf(stderr, "%s: "RED ("warning:"), program);
+    error2("%s: "RED ("warning:"), program);
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
-    fprintf(stderr, "\n");
+    error2( "\n");
 
     return;
 }
@@ -1053,7 +1059,6 @@ util_functions_sink(void) {
     (void)is_ident_start_char;
     (void)warn;
     (void)here_impl;
-    (void)here_counter;
     (void)command_result_free;
     (void)command_argv0_set;
     (void)command_free;
@@ -1288,7 +1293,6 @@ int
 main(int argc, char **argv) {
     (void)argc;
     (void)argv;
-    (void)here_counter;
 
     util_test_mem_literal_short();
 

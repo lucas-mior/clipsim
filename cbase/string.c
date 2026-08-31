@@ -399,7 +399,7 @@ sb_append(StrBuilder *str_builder, char *data, int64 data_len) {
     } else {
         memcpy64(str_builder->data + str_builder->len, data, data_len);
     }
-    str_builder->len += data_len;
+    str_builder->len += (int32)data_len;
     str_builder->data[str_builder->len] = '\0';
 
     return;

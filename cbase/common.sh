@@ -650,23 +650,14 @@ common_gcc_flags_to_msvc() {
                 cl) flag="/O1" ;;
                 esac
                 ;;
-            -Wall)
-                case "$compiler" in
-                clang-cl) flag="/W4 /clang:-Wno-constant-logical-operand" ;;
-                cl) flag="/W4" ;;
-                esac
-                ;;
-            -Wextra|-Wpedantic)
-                continue
-                ;;
-            -Werror)
-                flag="/WX"
-                ;;
-            -Wfatal-errors|-Wno-*|-W*)
+            -Wa,*|-Wl,*|-Wp,*)
                 case "$compiler" in
                 clang-cl) flag="/clang:$flag" ;;
                 cl) continue ;;
                 esac
+                ;;
+            -W*)
+                continue
                 ;;
             -fsanitize=undefined)
                 continue

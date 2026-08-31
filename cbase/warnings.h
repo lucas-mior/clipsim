@@ -11,6 +11,10 @@
 #define TESTING 0
 #endif
 
+#if CBASE_CRT_MSVC
+  #pragma warning(push, 4)
+#endif
+
 #if CC_GCC || CC_CLANG
   #pragma GCC diagnostic warning "-Wall"
   #pragma GCC diagnostic warning "-Wextra"
@@ -18,6 +22,7 @@
 
 #if CC_CLANG
   #pragma clang diagnostic warning "-Weverything"
+  #pragma clang diagnostic ignored "-Wunknown-warning-option"
   #pragma clang diagnostic ignored "-Wconstant-logical-operand"
   #pragma clang diagnostic ignored "-Wassign-enum"
   #pragma clang diagnostic ignored "-Wc++-keyword"
