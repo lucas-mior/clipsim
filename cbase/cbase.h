@@ -172,7 +172,6 @@ void sb_append_byte_if_not(StrBuilder *, char);
 void sb_clear(StrBuilder *);
 int32 sb_copy(StrBuilder *, StrBuilder *);
 void sb_free(StrBuilder *);
-void sb_init(StrBuilder *);
 void sb_itoa(StrBuilder *, llong);
 void sb_move(StrBuilder *, StrBuilder *);
 void sb_printf(StrBuilder *, char *, ...);
