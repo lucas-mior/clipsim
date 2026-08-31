@@ -458,6 +458,19 @@ pattern, but using `fork()` directly should be avoided anyway (use the
   } while (0);
   ```
 
+### Struct initialization
+If the struct initial state is only zero and NULL pointers,
+don't bother creating a `_init()` function for it.
+Initialize it directly:
+```c
+// If it resides on the stack
+StructType s = {0};
+
+// If it needs to be allocated
+StructType s = malloc2(sizeof(*s));
+*s = (StructType){0};
+```
+
 ### Return value for errors
 - Only model failures that callers can reasonably handle. Programmer errors
   should be asserted with `cbase/assertions.h`. Unrecoverable application errors
