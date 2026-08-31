@@ -27,11 +27,16 @@
   #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
   #pragma clang diagnostic ignored "-Wunused-macros"
   #pragma clang diagnostic ignored "-Wused-but-marked-unused"
+  #pragma clang diagnostic ignored "-Wpadded"
 #endif
 
 #if DEBUGGING || TESTING
   #if CC_GCC || CC_CLANG
     #pragma GCC diagnostic ignored "-Wunused-function"
+  #endif
+#else
+  #if CC_GCC || CC_CLANG
+    #pragma GCC diagnostic ignored "-Wno-error"
   #endif
 #endif
 

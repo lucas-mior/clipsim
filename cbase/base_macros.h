@@ -126,6 +126,10 @@ _Generic((SIZE), \
 #define DEBUGGING 0
 #endif
 
+#if !defined(TESTING)
+#define TESTING 0
+#endif
+
 #if DEBUGGING
   #define INLINE static
 #else
