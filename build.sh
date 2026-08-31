@@ -83,11 +83,6 @@ cross)
     common_build_cross_all
     CFLAGS="$CFLAGS -O2"
     ;;
-build|callgrind|check|cross|debug|debug-fast|fast_feedback|install|test|test_all|uninstall|valgrind)
-    ;;
-*)
-    common_build_unknown_mode
-    ;;
 esac
 
 if [ "$mode" = "cross" ]; then
