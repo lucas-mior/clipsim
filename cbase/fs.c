@@ -547,7 +547,7 @@ xclosedir(DIR *dir, char *dirname) {
 
 #if OS_UNIX
 int32
-util_copy_file_sync(char *destination, char *source) {
+fs_copy_file_sync(char *destination, char *source) {
     int32 source_fd;
     int32 destination_fd;
     char buffer[BUFSIZ];
@@ -610,7 +610,7 @@ util_copy_file_sync(char *destination, char *source) {
 }
 #elif OS_WINDOWS
 int32
-util_copy_file_sync(char *destination, char *source) {
+fs_copy_file_sync(char *destination, char *source) {
     DWORD error_code;
 
     if (CopyFileA(source, destination, false)) {
@@ -1213,7 +1213,7 @@ fs_functions_sink(void) {
     (void)util_copy_file_async_parsed;
 #endif
 #if OS_UNIX || OS_WINDOWS
-    (void)util_copy_file_sync;
+    (void)fs_copy_file_sync;
 #endif
     return;
 }
@@ -1724,7 +1724,7 @@ main(void) {
 #if OS_UNIX
     (void)test_hardlink_supported;
     (void)test_symlink_supported;
-    (void)util_copy_file_sync;
+    (void)fs_copy_file_sync;
     (void)util_copy_file_async;
 #endif
 

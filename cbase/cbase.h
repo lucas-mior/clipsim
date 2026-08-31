@@ -297,7 +297,7 @@ int32 cbase_remove_file(char *);
 int32 cbase_remove_empty_dir(char *);
 int32 cbase_mkstemps(char *, int32);
 int32 cbase_make_temp_file(char *, int32, char *, char *);
-int32 util_copy_file_sync(char *, char *);
+int32 fs_copy_file_sync(char *, char *);
 void util_die_notify(char *, char *, ...);
 bool util_equal_files(char *, char *);
 bool util_file_exists(char *);
