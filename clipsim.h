@@ -14,7 +14,7 @@
 #if DEBUGGING || TESTING
 
 #if CC_CLANG
-#pragma clang diagnostic ignored "-Wdeclararion-after-statement"
+#pragma clang diagnostic ignored "-Wdeclaration-after-statement"
 #endif
 
 #define DEBUG_PRINT(...)                                                       \
