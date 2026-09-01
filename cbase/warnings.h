@@ -216,7 +216,7 @@
   #pragma clang diagnostic ignored "-Wpadded"
   #pragma clang diagnostic ignored "-Wpre-c11-compat"
   #pragma clang diagnostic ignored "-Wtentative-definition-compat"
-  #pragma clang diagnostic ignored "-Wunknown-warning-option"
+  #pragma clang diagnostic warning "-Wunknown-warning-option"
   #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
   #pragma clang diagnostic ignored "-Wunused-macros"
   #pragma clang diagnostic ignored "-Wused-but-marked-unused"
