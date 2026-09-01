@@ -776,6 +776,8 @@ send_signal(char *executable, int32 signal_number) {
     DIR *processes;
     struct dirent *process;
     int64 len = strlen32(executable);
+    StrBuilder buffer = {0};
+    sb_reserve(&buffer, 256);
 
     if ((processes = opendir("/proc")) == NULL) {
         error("Error opening /proc: %s\n", strerror(errno));
@@ -783,12 +785,12 @@ send_signal(char *executable, int32 signal_number) {
     }
 
     while ((process = readdir(processes))) {
-        char buffer[256];
         char command[256];
         int32 pid;
         int32 cmdline;
         int64 r;
         char *last;
+        int32 d_name_len;
 
 #if CBASE_DIRENT_HAS_D_TYPE
         if ((process->d_type != DT_DIR) && (process->d_type != DT_UNKNOWN)) {
@@ -799,18 +801,24 @@ send_signal(char *executable, int32 signal_number) {
             continue;
         }
 
-        SNPRINTF(buffer, "/proc/%s/cmdline", process->d_name);
+        d_name_len = strlen32(process->d_name);
 
-        if ((cmdline = open(buffer, O_RDONLY)) < 0) {
+        SB_APPEND(&buffer, "/proc");
+        SB_APPEND(&buffer, process->d_name, d_name_len);
+        SB_APPEND(&buffer, "/cmdline");
+
+        if ((cmdline = open(buffer.data, O_RDONLY)) < 0) {
+            sb_clear(&buffer);
             continue;
         }
 
         errno = 0;
         if ((r = read64(cmdline, command, sizeof(command))) <= 0) {
-            XCLOSE(&cmdline, buffer);
+            XCLOSE(&cmdline, buffer.data);
+            sb_clear(&buffer);
             continue;
         }
-        XCLOSE(&cmdline, buffer);
+        XCLOSE(&cmdline, buffer.data);
 
         if (memmem64(command, r, executable, len)) {
             if ((last = memchr64(command, '\0', r))) {
@@ -829,9 +837,10 @@ send_signal(char *executable, int32 signal_number) {
                 }
             }
         }
+        sb_clear(&buffer);
     }
 
-    closedir(processes);
+    xclosedir(processes);
     return;
 }
 #elif OS_UNIX
