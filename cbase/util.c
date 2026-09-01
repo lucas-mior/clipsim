@@ -432,6 +432,38 @@ qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
     return;
 }
 
+int64
+ceil64(double x) {
+    double c = ceil(x);
+    if (DEBUGGING) {
+        if (c <= (double)MINOF(ceil64(0))) {
+            error("%f does not fit in int64.\n", c);
+            fatal(EXIT_FAILURE);
+        }
+        if (c >= (double)MAXOF(ceil64(0))) {
+            error("%f does not fit in int64.\n", c);
+            fatal(EXIT_FAILURE);
+        }
+    }
+    return (int64)c;
+}
+
+int64
+floor64(double x) {
+    double f = floor(x);
+    if (DEBUGGING) {
+        if (f <= (double)MINOF(floor64(0))) {
+            error("%f does not fit in int64.\n", f);
+            fatal(EXIT_FAILURE);
+        }
+        if (f >= (double)MAXOF(floor64(0))) {
+            error("%f does not fit in int64.\n", f);
+            fatal(EXIT_FAILURE);
+        }
+    }
+    return (int64)f;
+}
+
 int32 ATTR_PRINTF(3, 4)
 snprintf2(char *buffer, int64 size, char *format, ...) {
     int n;
@@ -1431,6 +1463,9 @@ main(int argc, char **argv) {
 
     ASSERT_EQUAL(deg2rad(180.0), 3.141592653589793);
     ASSERT_EQUAL(rad2deg(3.141592653589793), 180.0);
+    ASSERT_EQUAL(floor64(3.0), 3);
+    ASSERT_EQUAL(floor64(3.2), 3);
+    ASSERT_EQUAL(floor64(-3.2), -4);
     ASSERT_POSITIVE(util_nthreads());
 
     ASSERT_EQUAL(CLAMP(2.0, -2.1, 2.1),   2.0);

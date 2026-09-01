@@ -37,7 +37,7 @@ CPPFLAGS="$CPPFLAGS -Icbase"
 
 CFLAGS="$CFLAGS -std=c11"
 CFLAGS="$CFLAGS -Wfatal-errors"
-# CFLAGS="$CFLAGS -Werror"  # Only uncomment occasionally, keep this line
+CFLAGS="$CFLAGS -Werror"  # Only uncomment occasionally, keep this line
 
 CPPFLAGS="$CPPFLAGS $(pkg-config x11 --cflags)"
 CPPFLAGS="$CPPFLAGS $(pkg-config xfixes --cflags)"
@@ -54,11 +54,10 @@ case "$mode" in
 fast_feedback)
     ;;
 test)
-    CFLAGS="$CFLAGS -Wno-declaration-after-statement"
     CFLAGS="$CFLAGS -g3 -DDEBUGGING=1"
     ;;
 debug)
-    CFLAGS="$CFLAGS -Wno-declaration-after-statement -g"
+    CFLAGS="$CFLAGS -g3"
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
 debug-fast)
@@ -66,7 +65,7 @@ debug-fast)
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
 valgrind)
-    CFLAGS="$CFLAGS -g -Og -ftree-vectorize"
+    CFLAGS="$CFLAGS -g3 -Og -ftree-vectorize"
     CPPFLAGS="$CPPFLAGS -DDEBUGGING=1"
     ;;
 callgrind)

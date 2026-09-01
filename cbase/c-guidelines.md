@@ -264,9 +264,6 @@ In general, we must always know the lengths of our strings:
       with null terminated strings in it, and we know the size of the file, so
       strlen32 may be used safely if we know that there is at least one byte 0
       in the file.
-  - strlen32 is also used for macros like `BEGINS_WITH` that have a 3 argument
-    version (for literals and variables that we don't know their length) and 4
-    argument version (for variables that we already know their length).
 - Use `strnlen32`:
   - For receiving strings from external programs that are dumb and rely on nul
     terminated strings. This is very very very rare.
