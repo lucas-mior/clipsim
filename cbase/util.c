@@ -801,6 +801,7 @@ send_signal(char *executable, int32 signal_number) {
             continue;
         }
 
+        sb_clear(&buffer);
         d_name_len = strlen32(process->d_name);
 
         SB_APPEND(&buffer, "/proc");
@@ -808,14 +809,12 @@ send_signal(char *executable, int32 signal_number) {
         SB_APPEND(&buffer, "/cmdline");
 
         if ((cmdline = open(buffer.data, O_RDONLY)) < 0) {
-            sb_clear(&buffer);
             continue;
         }
 
         errno = 0;
         if ((r = read64(cmdline, command, sizeof(command))) <= 0) {
             XCLOSE(&cmdline, buffer.data);
-            sb_clear(&buffer);
             continue;
         }
         XCLOSE(&cmdline, buffer.data);
@@ -824,7 +823,6 @@ send_signal(char *executable, int32 signal_number) {
             if ((last = memchr64(command, '\0', r))) {
                 r = last - command;
                 if (!memmem64(command, r, executable, len)) {
-                    sb_clear(&buffer);
                     continue;
                 }
             }
@@ -838,7 +836,6 @@ send_signal(char *executable, int32 signal_number) {
                 }
             }
         }
-        sb_clear(&buffer);
     }
 
     sb_free(&buffer);
