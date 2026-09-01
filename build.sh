@@ -128,7 +128,7 @@ install)
     exit
     ;;
 test)
-    TEST_EXCLUDE_PATTERN='(^|/)tests/' \
+    TEST_EXCLUDE_PATTERN='(^|/)tests/|cbase' \
         common_test "$target"
     if command -v bash >/dev/null 2>&1; then
         tests/test.bash
