@@ -11,7 +11,12 @@
 #define DEBUGGING 0
 #endif
 
-#if DEBUGGING
+#if DEBUGGING || TESTING
+
+#if CC_CLANG
+#pragma clang diagnostic ignored "-Wdeclararion-after-statement"
+#endif
+
 #define DEBUG_PRINT(...)                                                       \
 do {                                                                           \
     char debug_buffer[4096];                                                   \
