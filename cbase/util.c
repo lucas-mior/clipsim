@@ -824,6 +824,7 @@ send_signal(char *executable, int32 signal_number) {
             if ((last = memchr64(command, '\0', r))) {
                 r = last - command;
                 if (!memmem64(command, r, executable, len)) {
+                    sb_clear(&buffer);
                     continue;
                 }
             }
