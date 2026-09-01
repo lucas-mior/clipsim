@@ -280,7 +280,6 @@ bool32 striqual(char *, char *);
 bool32 striqual2(char *, int32, char *, int32);
 int64 strftime2(char *, int64, char *, struct tm *);
 int strncmp32(char *, char *, int64);
-char *strncpy32(char *, char *, int64);
 void sleep_ms(int64);
 void sleep_ns(int64);
 void sleep_us(int64);
