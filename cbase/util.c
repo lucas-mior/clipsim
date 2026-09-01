@@ -781,6 +781,7 @@ send_signal(char *executable, int32 signal_number) {
 
     if ((processes = opendir("/proc")) == NULL) {
         error("Error opening /proc: %s\n", strerror(errno));
+        sb_free(&buffer);
         return;
     }
 
@@ -804,7 +805,7 @@ send_signal(char *executable, int32 signal_number) {
         sb_clear(&buffer);
         d_name_len = strlen32(process->d_name);
 
-        SB_APPEND(&buffer, "/proc");
+        SB_APPEND(&buffer, "/proc/");
         SB_APPEND(&buffer, process->d_name, d_name_len);
         SB_APPEND(&buffer, "/cmdline");
 
