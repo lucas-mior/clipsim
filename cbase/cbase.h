@@ -39,7 +39,7 @@ void *memrchr64(void *, int32, int64);
 bool util_glob_match(char *, int32, char *, int32);
 
 #if !defined(CBASE_SOME_MATH)
-#define CBASE_SOME_MATH 1
+#define CBASE_SOME_MATH 0
 #endif
 
 #if CBASE_SOME_MATH
@@ -497,20 +497,20 @@ _Generic((char (*)[STRLIT_LEN(LITERAL)])0, \
     xfclose(__FILE__, __LINE__, FUNC__, F, FILENAME)
 
 #define SB_APPEND_2(BUILDER, STRING) \
-    sb_append(BUILDER, STRING, strlen32(STRING))
+    sb_append(BUILDER, STRING, STRLIT_LEN(STRING))
 #define SB_APPEND_3(BUILDER, STRING, LEN) \
     sb_append(BUILDER, STRING, LEN)
 #define SB_APPEND(...) SELECT_ON_NUM_ARGS(SB_APPEND_, __VA_ARGS__)
 
 #define HERE here_impl(__FILE__, __LINE__, FUNC__)
 
-#define NCALLS(INTERVAL) do { \
-    static int64 ncalls_ncalls = 1; \
-    if ((ncalls_ncalls % (INTERVAL)) == 0) { \
-        fprintf(stderr, "%s:%d:%s: called %lld times\n", \
-                __FILE__, __LINE__, FUNC__, ncalls_ncalls); \
-    } \
-    ncalls_ncalls += 1; \
+#define NCALLS(INTERVAL) do {                                            \
+    static int64 ncalls_ncalls = 1;                                      \
+    if ((ncalls_ncalls % (INTERVAL)) == 0) {                             \
+        fprintf(stderr, "%s:%d:%s: called %lld times\n",                 \
+                        __FILE__, __LINE__, FUNC__, ncalls_ncalls);      \
+    }                                                                    \
+    ncalls_ncalls += 1;                                                  \
 } while (0)
 
 #define PRINT_TIMINGS_3(N, T0, T1) \
@@ -764,6 +764,10 @@ void throw_away_function();
 #endif
 #include "directory.c"
 #include "threads.c"
+
+#if CBASE_SOME_MATH
+#include "some_math.c"
+#endif
 
 #define ENUM_NAME CommandFlag
 #define ENUM_BITFLAGS 1

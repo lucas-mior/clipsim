@@ -458,7 +458,7 @@ void function(void) {
 }
 ```
 
-But do initialize if the initialization is clear:
+But do initialize if the initialization is clear and never fails:
 ```c
 // bad
 for (int32 i = 0; i < LENGTH(some_array); i += 1) {
@@ -470,6 +470,19 @@ for (int32 i = 0; i < LENGTH(some_array); i += 1) {
 // good
 for (int32 i = 0; i < LENGTH(some_array); i += 1) {
     char *string = some_array[i];
+}
+```
+
+When getting a pointer that may return NULL:
+```c
+// bad
+char *alias = function();
+
+// good
+char *alias;
+
+if ((alias = function()) == NULL) {
+    ·// handle that case
 }
 ```
 
@@ -632,7 +645,7 @@ if (pointer == NULL) {
 }
 ```
 
-Don't use `!= NULL` to check if a pointer is not null:
+Don't use `!= NULL` to check if a pointer is not null (except in assertions):
 ```c
 // bad
 if (pointer != NULL) {
@@ -643,6 +656,9 @@ if (pointer != NULL) {
 if (pointer) {
     // pointer is not NULL
 }
+
+// good
+ASSERT(pointer != NULL);
 ```
 
 ## Assertions
@@ -904,6 +920,7 @@ appropriate cbase/ C file.
   * Also, try to put a new line after an `if` block, unless the following code
     is directly related to the computations of the `if` block.
   * Try to group related statements together.
+  * Add empty lines before and after a group of 2 or more assertions.
   * Another good practice is group assignments to the same struct together:
   ```c
   char *some_string = "abc";

@@ -443,7 +443,7 @@ snprintf2(char *buffer, int64 size, char *format, ...) {
 }
 
 int32
-itoa2(char *str, int32 size, llong num) {
+itoa2(char *buffer, int32 size, llong num) {
     ullong magnitude;
     int i = 0;
     bool negative = false;
@@ -458,22 +458,22 @@ itoa2(char *str, int32 size, llong num) {
     }
 
     do {
-        str[i] = (char)(magnitude % 10 + '0');
+        buffer[i] = (char)(magnitude % 10 + '0');
         i += 1;
         magnitude /= 10;
     } while (magnitude > 0);
 
     if (negative) {
-        str[i] = '-';
+        buffer[i] = '-';
         i += 1;
     }
 
-    str[i] = '\0';
+    buffer[i] = '\0';
 
     for (long j = 0; j < i / 2; j += 1) {
-        char temp = str[j];
-        str[j] = str[i - j - 1];
-        str[i - j - 1] = temp;
+        char temp = buffer[j];
+        buffer[j] = buffer[i - j - 1];
+        buffer[i - j - 1] = temp;
     }
 
     // this is here because of gcc -fanalyzer
