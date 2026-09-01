@@ -1,6 +1,10 @@
 #define CBASE_IMPLEMENT
 #include "cbase.h"
 
+#if CC_CLANG || CC_GCC
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
+
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include "../clipsim.h"
