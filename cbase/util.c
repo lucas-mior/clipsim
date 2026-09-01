@@ -841,7 +841,7 @@ send_signal(char *executable, int32 signal_number) {
     }
 
     sb_free(&buffer);
-    xclosedir(processes);
+    xclosedir(processes, "/proc");
     return;
 }
 #elif OS_UNIX
