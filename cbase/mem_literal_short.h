@@ -26,6 +26,7 @@ MEM_LITERAL_SHORT_FUNCTION(char *haystack, int64 haystack_len,
                            char *literal, int64 literal_len) {
     char *candidate;
     char *end;
+    int64 preceding_len;
 
     (void)literal_len;
 
@@ -36,16 +37,18 @@ MEM_LITERAL_SHORT_FUNCTION(char *haystack, int64 haystack_len,
         return NULL;
     }
 
-    candidate = haystack;
-    end = haystack + haystack_len - MEM_LITERAL_SHORT_N + 1;
+    preceding_len = MEM_LITERAL_SHORT_N - 1;
+    candidate = haystack + preceding_len;
+    end = haystack + haystack_len;
     while (candidate < end) {
-        char *p = memchr(candidate, literal[0], (size_t)(end - candidate));
+        char *p = memchr(candidate, literal[preceding_len],
+                         (size_t)(end - candidate));
 
         if (p == NULL) {
             return NULL;
         }
-        if (memcmp(p + 1, literal + 1, MEM_LITERAL_SHORT_N - 1) == 0) {
-            return p;
+        if (memcmp(p - preceding_len, literal, (size_t)preceding_len) == 0) {
+            return p - preceding_len;
         }
         candidate = p + 1;
     }

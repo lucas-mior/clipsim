@@ -467,8 +467,11 @@ Initialize it directly:
 StructType s = {0};
 
 // If it needs to be allocated
-StructType s = malloc2(sizeof(*s));
+StructType *s = malloc2(sizeof(*s));
 *s = (StructType){0};
+
+// If it is on the stack, but after the declaration:
+s = (StructType){0};
 ```
 
 ### Return value for errors
@@ -815,6 +818,29 @@ default:
   void
   my_function(ProgramOptions *options) {
       char *name = options->name;
+  }
+  ```
+- Note: it is always ok to initialize with the declaration if the variable is
+  the only one declared in that scope:
+  ```c
+  // bad (no reason to separate initialization from declaration when only one
+  //      variable is being declared)
+  static void
+  function(void *data) {
+      int x;
+
+      x = 0
+
+      // do something with x
+  }
+
+  // good: (it is pretty clear what we are doing here:
+  //        x is a valid initial state for the variable;
+  //        if it wasn't we would not initalize it at all)
+  static void
+  function(void *data) {
+      int x = 0
+      // do something with x 
   }
   ```
 
