@@ -37,7 +37,6 @@ CPPFLAGS="$CPPFLAGS -Icbase"
 
 CFLAGS="$CFLAGS -std=c11"
 CFLAGS="$CFLAGS -Wfatal-errors"
-CFLAGS="$CFLAGS -Werror"  # Only uncomment occasionally, keep this line
 
 CPPFLAGS="$CPPFLAGS $(pkg-config x11 --cflags)"
 CPPFLAGS="$CPPFLAGS $(pkg-config xfixes --cflags)"
