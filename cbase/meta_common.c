@@ -23,12 +23,12 @@
 
 int32
 token_is_val(Token token, char *what) {
-    return STREQUAL(token.text, token.len, what);
+    return STREQUAL(token.text, token.len, what, strlen32(what));
 }
 
 int32
 token_is_ptr(Token *token, char *what) {
-    return STREQUAL(token->text, token->len, what);
+    return STREQUAL(token->text, token->len, what, strlen32(what));
 }
 
 int32

@@ -233,7 +233,43 @@ typedef struct MyStruct {
 
 ## Strings and their lengths
 
-In general, we must always know the lengths of our strings.
+In general, we must always know the lengths of our strings:
+- Pass string length around when we already know it (see below).
+- Use STRLIT("literal") when needed to pass a string and its length to a
+  function without repeating the literal itself.
+- Use `memchr64`, `memmem64`, or other function to parse whatever we are
+  parsing. Example:
+  ```c
+  char *content;
+  int32 content_len;
+  char *end;
+  content_len = some_function(&content);
+
+  if ((end = memchr64(content, '\n', content_len))) {
+      int32 len = (int32)(end - content);
+  }
+  ```
+- Lots of functions already return the length, no need to call strlen32 on the
+  result:
+  - `snprintf2`
+  - `SNPRINTF`
+  - `read_entire_file`
+  - lots of other functions in cbase/.
+- Use `strlen32`:
+  - for getting the length of a `char *`, when a function is used both with
+    literals and with variables and for some reason it does not receive the
+    length of the `char *`.
+  - for strings coming from code that we don't control but have a upper limit
+    * This is very very very rare. The only case I can even conceive is a file
+      with null terminated strings in it, and we know the size of the file, so
+      strlen32 may be used safely if we know that there is at least one byte 0
+      in the file.
+  - strlen32 is also used for macros like `BEGINS_WITH` that have a 3 argument
+    version (for literals and variables that we don't know their length) and 4
+    argument version (for variables that we already know their length).
+- Use `strnlen32`:
+  - For receiving strings from external programs that are dumb and rely on nul
+    terminated strings. This is very very very rare.
 
 In general, pass `char *string` and `int32 string_len` around. Also use this
 convention in struct definitions.
@@ -242,29 +278,32 @@ That means to also avoid calling `strlen32`:
 
 - `strlen32` shall be viewed as an interface for code that we do not control or
   for C string literals.
-- `STRLIT_LEN("literal")` is also to be avoided. Only use it if you need to pass
-  the length of a string literal, but not the string literal itself (which would
-  be very weird). It is also in the `STRLIT` definition.
+- `STRLIT_LEN("literal")` is for getting the length of a literal at compile time
+  (it uses `SIZEOF`). Only use it if you need to pass the length of a string
+  literal, but not the string literal itself (which is very rare). It is also in
+  the `STRLIT` definition.
   * Never to stupid shit like: `my_function("literal", STRLIT_LEN("literal")`
     + Instead, to `my_function(STRLIT("literal"))`
 - `STRLIT("literal")` can be used to pass the string literal and its length
   in an "don't repeat yourself" way, that also does not depend on the compiler
-  to optimize the `strlen32`, since it uses `sizeof` to get the length of the
+  to optimize the `strlen32`, since it uses `SIZEOF` to get the length of the
   literal.
 
-Exceptions to this rule are:
-
+## Important pattern:
 - Macros `ENDS_WITH` and `BEGINS_WITH`: they use a macro trick to allow passing
   only the string, or also passing the string length. See `cbase.h`.
-- Functions that in general only operate on short literals. In this case it is
-  ok to let the function call `strlen32` inside.
+- Functions that in general only operate on short literals are allowed to
+  receive only the `char *pointer` without the length. In this case it is
+  ok to let the function call `strlen32` inside. But try to avoid it, prefer to
+  pass the `char *string` and `int32 string_len` via `STRLIT("literal")`.
 - `StrBuilder`: use this struct and its functions to build long, dynamic
   strings. Do not use it where a single
   `SNPRINTF(stack_array, "format_%s_string", args);` would be enough.
   * Use `SB_APPEND` for appending literals or strings of known length, and
-    `sb_printf` for formatting.
+    `sb_printf` for formatting. `sb_append` is internal code, not external API.
+    Use `SB_APPEND` instead.
   * `SNPRINTF` and `snprintf2` return the number of bytes written (excluding the
-    terminating null byte. No need to call `strlen32` on the buffer:
+    terminating null byte). No need to call `strlen32` on the buffer:
     ```c
     // bad
     static void

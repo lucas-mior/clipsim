@@ -107,24 +107,24 @@ strncmp32(char *left, char *right, int64 size) {
 }
 
 char *
-begins_with(char *string, int32 string_len, char *literal, int32 length) {
-    if (string_len < length) {
+begins_with(char *string, int32 string_len, char *prefix, int32 prefix_len) {
+    if (string_len < prefix_len) {
         return NULL;
     }
-    if (!memcmp64(string, literal, length)) {
-        return string + length;
+    if (!memcmp64(string, prefix, prefix_len)) {
+        return string + prefix_len;
     } else {
         return NULL;
     }
 }
 
 char *
-ends_with(char *string, int32 string_len, char *literal, int32 length) {
-    if (string_len < length) {
+ends_with(char *string, int32 string_len, char *suffix, int32 suffix_len) {
+    if (string_len < suffix_len) {
         return NULL;
     }
-    string += (string_len - length);
-    if (!memcmp64(string, literal, length)) {
+    string += (string_len - suffix_len);
+    if (!memcmp64(string, suffix, suffix_len)) {
         return string;
     } else {
         return NULL;
