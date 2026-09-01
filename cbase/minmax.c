@@ -397,7 +397,7 @@ main(void) {
         ASSERT_EQUAL(max, b);
     }
 
-    // Testing if conversion warnings are correctly given
+    // Testing if conversion diagnostics are correctly given
     // when using MIN with integers of different signedness.
     // This block only is compiled from the self-compiling block below,
     // so that normal compilation (TESTING=1) does not give warnings
@@ -423,7 +423,7 @@ main(void) {
         } else {
             ASSERT_GLOB_MATCH(command.result.stderr_output,
                               command.result.stderr_len,
-                              "*minmax.c*warning:*conversion*");
+                              "*minmax.c:*: *conversion*");
         }
 
         command_argv0_set(&command, "clang");
@@ -435,7 +435,7 @@ main(void) {
         } else {
             ASSERT_GLOB_MATCH(command.result.stderr_output,
                               command.result.stderr_len,
-                              "*minmax.c*warning:*conversion*");
+                              "*minmax.c:*: *conversion*");
         }
     }
     exit(EXIT_SUCCESS);
