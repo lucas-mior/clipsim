@@ -840,6 +840,7 @@ send_signal(char *executable, int32 signal_number) {
         sb_clear(&buffer);
     }
 
+    sb_free(&buffer);
     xclosedir(processes);
     return;
 }
