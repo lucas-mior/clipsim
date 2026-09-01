@@ -16,17 +16,17 @@
 #endif
 
 #if CC_GCC || CC_CLANG
-  #pragma GCC diagnostic warning "-Wall"
-  #pragma GCC diagnostic warning "-Wextra"
+  #pragma GCC diagnostic error "-Wall"
+  #pragma GCC diagnostic error "-Wextra"
 #endif
 
 #if CC_CLANG
-  #pragma clang diagnostic warning "-Weverything"
-  #pragma clang diagnostic ignored "-Wunknown-warning-option"
-  #pragma clang diagnostic ignored "-Wconstant-logical-operand"
+  #pragma clang diagnostic error "-Weverything"
+
   #pragma clang diagnostic ignored "-Wassign-enum"
   #pragma clang diagnostic ignored "-Wc++-keyword"
   #pragma clang diagnostic ignored "-Wc++98-compat"
+  #pragma clang diagnostic ignored "-Wcast-function-type-strict"
   #pragma clang diagnostic ignored "-Wcast-qual"
   #pragma clang diagnostic ignored "-Wchar-subscripts"
   #pragma clang diagnostic ignored "-Wconstant-logical-operand"
@@ -36,13 +36,15 @@
   #pragma clang diagnostic ignored "-Wformat-nonliteral"
   #pragma clang diagnostic ignored "-Wimplicit-int-enum-cast"
   #pragma clang diagnostic ignored "-Wimplicit-void-ptr-cast"
+  #pragma clang diagnostic ignored "-Wnrvo"
+  #pragma clang diagnostic ignored "-Wpadded"
   #pragma clang diagnostic ignored "-Wpre-c11-compat"
+  #pragma clang diagnostic ignored "-Wtentative-definition-compat"
+  #pragma clang diagnostic ignored "-Wunknown-warning-option"
   #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
   #pragma clang diagnostic ignored "-Wunused-macros"
   #pragma clang diagnostic ignored "-Wused-but-marked-unused"
-  #pragma clang diagnostic ignored "-Wpadded"
-  #pragma clang diagnostic ignored "-Wtentative-definition-compat"
-  #pragma clang diagnostic ignored "-Wnrvo"
+  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 #if DEBUGGING || TESTING
