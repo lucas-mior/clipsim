@@ -136,8 +136,10 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
 #endif
 
 XENUMS_LINKAGE void CAT(ENUM_PREFIX_, str_free)(char *);
+XENUMS_LINKAGE int32 CAT(ENUM_PREFIX_, str_len)(enum ENUM_NAME, char **);
 XENUMS_LINKAGE char *CAT(ENUM_PREFIX_, str)(enum ENUM_NAME);
 XENUMS_LINKAGE void CAT(ENUM_PREFIX_, alias_free)(char *);
+XENUMS_LINKAGE int32 CAT(ENUM_PREFIX_, alias_len)(enum ENUM_NAME, char **);
 XENUMS_LINKAGE char *CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME);
 XENUMS_LINKAGE enum ENUM_NAME CAT(ENUM_PREFIX_, parse)(char *);
 
@@ -157,14 +159,16 @@ CAT(ENUM_PREFIX_, alias_free)(char *str) {
     return;
 }
 
-XENUMS_LINKAGE char *
-CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
+XENUMS_LINKAGE int32
+CAT(ENUM_PREFIX_, str_len)(enum ENUM_NAME val, char **out) {
 #if ENUM_BITFLAGS == 0
     switch (val) {
         #define XENUM_ST_1(e)    case e:                                       \
-                                     return #e;
+                                     *out = #e;                                \
+                                     return STRLIT_LEN(#e);
         #define XENUM_ST_2(e, v) case e:                                       \
-                                     return #e;
+                                     *out = #e;                                \
+                                     return STRLIT_LEN(#e);
         #define XX(...)           SELECT_ON_NUM_ARGS(XENUM_ST_, __VA_ARGS__)
 
         ENUM_FIELDS
@@ -173,9 +177,11 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
         #undef XENUM_ST_1
         #undef XENUM_ST_2
         case CAT(ENUM_PREFIX_, COUNT):
-            return QUOTE(ENUM_PREFIX_) "COUNT";
+            *out = QUOTE(ENUM_PREFIX_) "COUNT";
+            return STRLIT_LEN(QUOTE(ENUM_PREFIX_) "COUNT");
         default:
-            return "Invalid enum value";
+            *out = "Invalid enum value";
+            return STRLIT_LEN("Invalid enum value");
     }
 #else
     char *buffer = NULL;
@@ -184,12 +190,14 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
     int32 is_first = 1;
 
     if (val == 0) {
-        return xstrdup("NONE");
+        *out = xstrndup(STRLIT("NONE"));
+        return STRLIT_LEN("NONE");
     }
 
     #define XENUM_EXACT(e)                                                     \
         if (val == e) {                                                        \
-            return xstrdup(#e);                                                \
+            *out = xstrndup(#e, STRLIT_LEN(#e));                               \
+            return STRLIT_LEN(#e);                                             \
         }
     #define XENUM_EXACT_1(e)    XENUM_EXACT(e)
     #define XENUM_EXACT_2(e, v) XENUM_EXACT(e)
@@ -205,7 +213,7 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
     #define XENUM(e)                                                           \
         if (val && ((val & e) == e)) {                                         \
             char *name = #e;                                                   \
-            int32 len = strlen32(name);                                        \
+            int32 len = STRLIT_LEN(#e);                                        \
             int32 new_cap;                                                     \
             new_cap = buffer_len + len + 1;                                    \
             if (is_first == 0) {                                               \
@@ -240,18 +248,29 @@ CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
     }
 
     buffer[buffer_len] = '\0';
-    return buffer;
+    *out = buffer;
+    return buffer_len;
 #endif
 }
 
 XENUMS_LINKAGE char *
-CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME val) {
+CAT(ENUM_PREFIX_, str)(enum ENUM_NAME val) {
+    char *str;
+
+    CAT(ENUM_PREFIX_, str_len)(val, &str);
+    return str;
+}
+
+XENUMS_LINKAGE int32
+CAT(ENUM_PREFIX_, alias_len)(enum ENUM_NAME val, char **out) {
 #if ENUM_BITFLAGS == 0
     switch (val) {
         #define XENUM_ALIAS_ST_1(e)        case e:                             \
-                                               return #e;
+                                               *out = #e;                      \
+                                               return STRLIT_LEN(#e);
         #define XENUM_ALIAS_ST_2(e, alias) case e:                             \
-                                               return #alias;
+                                               *out = #alias;                  \
+                                               return STRLIT_LEN(#alias);
         #define XX(...) SELECT_ON_NUM_ARGS(XENUM_ALIAS_ST_, __VA_ARGS__)
 
         ENUM_FIELDS
@@ -261,13 +280,23 @@ CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME val) {
         #undef XENUM_ALIAS_ST_2
 
         case CAT(ENUM_PREFIX_, COUNT):
-            return QUOTE(ENUM_PREFIX_) "COUNT";
+            *out = QUOTE(ENUM_PREFIX_) "COUNT";
+            return STRLIT_LEN(QUOTE(ENUM_PREFIX_) "COUNT");
         default:
-            return "Invalid enum value";
+            *out = "Invalid enum value";
+            return STRLIT_LEN("Invalid enum value");
     }
 #else
-    return CAT(ENUM_PREFIX_, str)(val);
+    return CAT(ENUM_PREFIX_, str_len)(val, out);
 #endif
+}
+
+XENUMS_LINKAGE char *
+CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME val) {
+    char *str;
+
+    CAT(ENUM_PREFIX_, alias_len)(val, &str);
+    return str;
 }
 
 #define XENUM_TOKEN_EQUALS(token, token_len, name)                             \

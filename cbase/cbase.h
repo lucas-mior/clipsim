@@ -38,14 +38,8 @@ void *memchr64(void *, int32, int64);
 void *memrchr64(void *, int32, int64);
 bool util_glob_match(char *, int32, char *, int32);
 
-#if !defined(CBASE_SOME_MATH)
-#define CBASE_SOME_MATH 0
-#endif
-
-#if CBASE_SOME_MATH
 int64 ceil64(double x);
 int64 floor64(double x);
-#endif
 
 int fdtruncate64(int32 fd, int64 len);
 
@@ -765,9 +759,7 @@ void throw_away_function();
 #include "directory.c"
 #include "threads.c"
 
-#if CBASE_SOME_MATH
 #include "some_math.c"
-#endif
 
 #define ENUM_NAME CommandFlag
 #define ENUM_BITFLAGS 1
