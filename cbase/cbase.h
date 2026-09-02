@@ -428,19 +428,19 @@ _Generic((VAR), \
     (char[SIZE]){ LITERAL })
 
 #define MEM_LITERAL_SHORT_LENGTHS(XX) \
-    XX(2), \
-    XX(3), \
-    XX(4), \
-    XX(5), \
-    XX(6), \
-    XX(7), \
-    XX(8), \
-    XX(9), \
-    XX(10), \
-    XX(11), \
-    XX(12), \
-    XX(13), \
-    XX(14), \
+    XX(2),                            \
+    XX(3),                            \
+    XX(4),                            \
+    XX(5),                            \
+    XX(6),                            \
+    XX(7),                            \
+    XX(8),                            \
+    XX(9),                            \
+    XX(10),                           \
+    XX(11),                           \
+    XX(12),                           \
+    XX(13),                           \
+    XX(14),                           \
     XX(15)
 
 #define MEM_LITERAL_SHORT_GENERIC_SLOT(N) \

@@ -51,7 +51,7 @@ common_get_compiler() {
         CC="zig cc"
         ;;
     meta)
-        CC="tcc"
+        CC="${CC_META:-tcc}"
         ;;
     *)
         CC="${CC:-cc}"

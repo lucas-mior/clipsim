@@ -45,6 +45,113 @@ enum TokenizeFlags {
     TOKENIZE_SKIP_WHITESPACE = 1 << 1,
 };
 
+
+
+enum CAssignOp {
+    C_ASSIGN_OP_INVALID = 0,
+    C_ASSIGN_OP_ASSIGN,
+    C_ASSIGN_OP_ADD,
+    C_ASSIGN_OP_SUB,
+    C_ASSIGN_OP_MUL,
+    C_ASSIGN_OP_DIV,
+    C_ASSIGN_OP_MOD,
+    C_ASSIGN_OP_SHL,
+    C_ASSIGN_OP_SHR,
+    C_ASSIGN_OP_BIT_AND,
+    C_ASSIGN_OP_BIT_XOR,
+    C_ASSIGN_OP_BIT_OR,
+};
+
+enum CBinaryOp {
+    C_BINARY_OP_INVALID = 0,
+    C_BINARY_OP_MUL,
+    C_BINARY_OP_DIV,
+    C_BINARY_OP_MOD,
+    C_BINARY_OP_ADD,
+    C_BINARY_OP_SUB,
+    C_BINARY_OP_SHL,
+    C_BINARY_OP_SHR,
+    C_BINARY_OP_LT,
+    C_BINARY_OP_LE,
+    C_BINARY_OP_GT,
+    C_BINARY_OP_GE,
+    C_BINARY_OP_EQ,
+    C_BINARY_OP_NE,
+    C_BINARY_OP_BIT_AND,
+    C_BINARY_OP_BIT_XOR,
+    C_BINARY_OP_BIT_OR,
+    C_BINARY_OP_LOGICAL_AND,
+    C_BINARY_OP_LOGICAL_OR,
+};
+
+enum CUnaryOp {
+    C_UNARY_OP_INVALID = 0,
+    C_UNARY_OP_PLUS,
+    C_UNARY_OP_MINUS,
+    C_UNARY_OP_LOGICAL_NOT,
+    C_UNARY_OP_BIT_NOT,
+    C_UNARY_OP_DEREFERENCE,
+    C_UNARY_OP_ADDRESS,
+    C_UNARY_OP_PRE_INCREMENT,
+    C_UNARY_OP_PRE_DECREMENT,
+    C_UNARY_OP_POST_INCREMENT,
+    C_UNARY_OP_POST_DECREMENT,
+};
+
+enum CMemberOp {
+    C_MEMBER_OP_INVALID = 0,
+    C_MEMBER_OP_DOT,
+    C_MEMBER_OP_ARROW,
+};
+
+enum CKeyword {
+    C_KEYWORD_INVALID = 0,
+    C_KEYWORD_ALIGNAS,
+    C_KEYWORD_ALIGNOF,
+    C_KEYWORD_ATOMIC,
+    C_KEYWORD_BOOL,
+    C_KEYWORD_COMPLEX,
+    C_KEYWORD_GENERIC,
+    C_KEYWORD_IMAGINARY,
+    C_KEYWORD_NORETURN,
+    C_KEYWORD_STATIC_ASSERT,
+    C_KEYWORD_THREAD_LOCAL,
+    C_KEYWORD_AUTO,
+    C_KEYWORD_BREAK,
+    C_KEYWORD_CASE,
+    C_KEYWORD_CHAR,
+    C_KEYWORD_CONST,
+    C_KEYWORD_CONTINUE,
+    C_KEYWORD_DEFAULT,
+    C_KEYWORD_DO,
+    C_KEYWORD_DOUBLE,
+    C_KEYWORD_ELSE,
+    C_KEYWORD_ENUM,
+    C_KEYWORD_EXTERN,
+    C_KEYWORD_FLOAT,
+    C_KEYWORD_FOR,
+    C_KEYWORD_GOTO,
+    C_KEYWORD_IF,
+    C_KEYWORD_INLINE,
+    C_KEYWORD_INT,
+    C_KEYWORD_LONG,
+    C_KEYWORD_REGISTER,
+    C_KEYWORD_RESTRICT,
+    C_KEYWORD_RETURN,
+    C_KEYWORD_SHORT,
+    C_KEYWORD_SIGNED,
+    C_KEYWORD_SIZEOF,
+    C_KEYWORD_STATIC,
+    C_KEYWORD_STRUCT,
+    C_KEYWORD_SWITCH,
+    C_KEYWORD_TYPEDEF,
+    C_KEYWORD_UNION,
+    C_KEYWORD_UNSIGNED,
+    C_KEYWORD_VOID,
+    C_KEYWORD_VOLATILE,
+    C_KEYWORD_WHILE,
+};
+
 typedef struct Token {
     char *text;
     enum TokenKind kind;
@@ -87,6 +194,22 @@ int32 token_is_val(Token, char *);
 int32 token_is_ptr(Token *, char *);
 int32 token_is_val_len(Token, char *, int32);
 int32 token_is_ptr_len(Token *, char *, int32);
+enum CAssignOp c_assign_op_from_text(char *, int32);
+enum CAssignOp c_token_assign_op(Token *);
+enum CBinaryOp c_binary_op_from_text(char *, int32);
+enum CBinaryOp c_token_binary_op(Token *);
+enum CUnaryOp c_unary_op_from_text(char *, int32);
+enum CUnaryOp c_token_unary_op(Token *);
+enum CUnaryOp c_token_postfix_unary_op(Token *);
+enum CMemberOp c_member_op_from_text(char *, int32);
+enum CMemberOp c_token_member_op(Token *);
+enum CKeyword c_keyword_from_text(char *, int32);
+enum CKeyword c_token_keyword(Token *);
+bool c_text_is_type_word(char *, int32);
+bool c_text_is_declaration_prefix(char *, int32);
+bool c_token_is_type_word(Token *);
+bool c_token_is_declaration_prefix(Token *);
+int32 c_binary_op_precedence(enum CBinaryOp);
 int32 precedence_of(char *, int32);
 
 bool char_is_alpha(char);
