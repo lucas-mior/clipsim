@@ -212,6 +212,9 @@ assert_equal_4(char *file, int32 line, char *func,
             UNREACHABLE();
         }
     }
+    if ((var1 == NULL) && (var2 == NULL)) {
+        return;
+    }
     if (memcmp64(var1, var2, var1_len) != 0) {
         if (DEBUGGING) {
             assert_error(file, line, func,
