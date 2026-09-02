@@ -1070,6 +1070,7 @@ read_entire_file(char *path, char **file_bytes) {
         }
         error("Error opening "RED("%s")" for reading: %s",
               path, strerror(err));
+        ASSERT_POSITIVE(err);
         return -err;
     }
     if (fseek(file, 0, SEEK_END) != 0) {
@@ -1095,13 +1096,14 @@ read_entire_file(char *path, char **file_bytes) {
         XFCLOSE(file, path);
         return -EFBIG;
     }
-    if (fseek(file, 0, SEEK_SET) != 0) {
+    if (fseek(file, 0, SEEK_SET) < 0) {
         err = errno;
         if (err == 0) {
             err = EIO;
         }
         error("Error rewinding %s: %s.\n", path, strerror(err));
         XFCLOSE(file, path);
+        ASSERT_POSITIVE(err);
         return -err;
     }
 
@@ -1118,6 +1120,7 @@ read_entire_file(char *path, char **file_bytes) {
         error("Error reading "RED("%s")": %s.\n", path, strerror(err));
         free2(bytes, (len + 1)*SIZEOF(*bytes));
         XFCLOSE(file, path);
+        ASSERT_POSITIVE(err);
         return -err;
     }
     bytes[read_len] = '\0';
@@ -1127,6 +1130,7 @@ read_entire_file(char *path, char **file_bytes) {
     }
 
     *file_bytes = bytes;
+    ASSERT(*file_bytes != NULL);
     return (int32)read_len;
 }
 

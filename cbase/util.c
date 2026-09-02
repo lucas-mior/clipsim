@@ -142,6 +142,9 @@ memmem64(void *haystack, int64 haystack_len, void *needle, int64 needle_len) {
     }
 
 
+    ASSERT(haystack != NULL);
+    ASSERT(needle != NULL);
+
 #if CBASE_HAS_SYSTEM_MEMMEM
     result = memmem(haystack, (size_t)haystack_len, needle, (size_t)needle_len);
 #else
