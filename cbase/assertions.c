@@ -326,6 +326,12 @@ a_strings_##MODE(char *file, int32 line, char *func,                           \
             UNREACHABLE();                                                     \
         }                                                                      \
     }                                                                          \
+    if ((var1 == NULL) && (var2 == NULL)) {                                    \
+        if (strcmp(#SYMBOL, "==")) {                                           \
+            TRAP();                                                            \
+        }                                                                      \
+        return;                                                                \
+    }                                                                          \
     if (!(strcmp(var1, var2) SYMBOL 0)) {                                      \
         if (DEBUGGING) {                                                       \
             assert_error(file, line, func,                                     \
