@@ -369,7 +369,7 @@ c_token_keyword(Token *token) {
     return c_keyword_from_text(token->text, token->len);
 }
 
-static bool
+bool
 c_text_is_type_qualifier(char *text, int32 text_len) {
     if (STREQUAL(text, text_len, "const")) {
         return true;
@@ -509,6 +509,14 @@ c_text_is_type_identifier(char *text, int32 text_len) {
         return true;
     }
     return false;
+}
+
+bool
+c_token_is_type_qualifier(Token *token) {
+    if (token->kind != TOKEN_IDENT) {
+        return false;
+    }
+    return c_text_is_type_qualifier(token->text, token->len);
 }
 
 bool
@@ -708,13 +716,19 @@ test_c_keywords_and_type_words(void) {
 
     token = test_token(TOKEN_IDENT, "int32");
     ASSERT(c_text_is_type_word("double", STRLIT_LEN("double")));
+    ASSERT(c_text_is_type_qualifier("__restrict__",
+                                    STRLIT_LEN("__restrict__")));
     ASSERT(c_text_is_type_word("__restrict__", STRLIT_LEN("__restrict__")));
     ASSERT(c_token_is_type_word(&token));
 
     token = test_token(TOKEN_IDENT, "static");
     ASSERT(c_text_is_declaration_prefix("extern", STRLIT_LEN("extern")));
     ASSERT(c_text_is_declaration_prefix("restrict", STRLIT_LEN("restrict")));
+    ASSERT(!c_token_is_type_qualifier(&token));
     ASSERT(c_token_is_declaration_prefix(&token));
+
+    token = test_token(TOKEN_IDENT, "restrict");
+    ASSERT(c_token_is_type_qualifier(&token));
 
     token = test_token(TOKEN_IDENT, "x");
     ASSERT(c_keyword_from_text("x", STRLIT_LEN("x")) == C_KEYWORD_INVALID);
