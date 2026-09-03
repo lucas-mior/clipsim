@@ -935,42 +935,7 @@ bytes_pretty(char *buffer, int64 raw) {
 }
 
 #if !OS_WINDOWS
-
 #if OS_UNIX
-#define XSIGNAL(NAME) [NAME] = #NAME
-static char *signal_names[] = {
-    XSIGNAL(SIGABRT),
-    XSIGNAL(SIGALRM),
-    XSIGNAL(SIGVTALRM),
-    XSIGNAL(SIGPROF),
-    XSIGNAL(SIGBUS),
-    XSIGNAL(SIGCHLD),
-    XSIGNAL(SIGCONT),
-    XSIGNAL(SIGFPE),
-    XSIGNAL(SIGHUP),
-    XSIGNAL(SIGILL),
-    XSIGNAL(SIGINT),
-    XSIGNAL(SIGKILL),
-    XSIGNAL(SIGPIPE),
-#if defined(SIGPOLL)
-    XSIGNAL(SIGPOLL),
-#endif
-    XSIGNAL(SIGQUIT),
-    XSIGNAL(SIGSEGV),
-    XSIGNAL(SIGSTOP),
-    XSIGNAL(SIGSYS),
-    XSIGNAL(SIGTERM),
-    XSIGNAL(SIGTSTP),
-    XSIGNAL(SIGTTIN),
-    XSIGNAL(SIGTTOU),
-    XSIGNAL(SIGTRAP),
-    XSIGNAL(SIGURG),
-    XSIGNAL(SIGUSR1),
-    XSIGNAL(SIGUSR2),
-    XSIGNAL(SIGXCPU),
-    XSIGNAL(SIGXFSZ),
-};
-#undef XSIGNAL
 
 void
 xpipe(int array[2]) {
@@ -1000,7 +965,6 @@ xkill(pid_t pid, int signum) {
 }
 
 #endif /* OS_UNIX */
-
 #endif /* !OS_WINDOWS */
 
 int32

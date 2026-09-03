@@ -5,6 +5,7 @@
 #define HISTORY_C
 
 #include "cbase.h"
+
 #include "clipsim.h"
 #include "content.c"
 #include "clipsim.c"
