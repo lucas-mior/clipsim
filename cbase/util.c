@@ -566,8 +566,6 @@ atoi2(char *str, int32 str_len) {
     llong limit = -MAXOF(value);
     bool negative = false;
 
-    (void)limit;
-
     if ((str == NULL) || (str_len <= 0)) {
         return 0;
     }
@@ -579,6 +577,8 @@ atoi2(char *str, int32 str_len) {
         }
         i += 1;
     }
+
+    (void)limit;
 
     while ((i < str_len) && (str[i] >= '0') && (str[i] <= '9')) {
         llong digit = str[i] - '0';
