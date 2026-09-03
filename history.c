@@ -9,8 +9,6 @@
 #include "content.c"
 #include "clipsim.c"
 
-#include "clipsim_X11.h"
-
 #define MAX_OPEN_FD 64
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)

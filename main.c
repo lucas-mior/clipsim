@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
-#include "clipsim.h"
-
 #define CBASE_IMPLEMENT
 #include "cbase.h"
+
+#include "clipsim.h"
 
 #if DEBUGGING
 #pragma GCC diagnostic ignored "-Wdeclaration-after-statement"

@@ -4,8 +4,8 @@
 #if !defined(CONTENT_C)
 #define CONTENT_C
 
+#include "cbase.h"
 #include "clipsim.h"
-#include "cbase/util.c"
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_content 1
