@@ -26,9 +26,7 @@
 
 #include "cbase.h"
 
-#include <X11/Xlib.h>
-#include <X11/Xatom.h>
-#include <X11/extensions/XInput2.h>
+#include "clipsim_X11.h"
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_xi 1
