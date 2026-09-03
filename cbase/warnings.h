@@ -37,6 +37,7 @@
 #endif
 
 #if CC_GCC
+  #define IGNORE(W) DIAGNOSTIC_PRAGMA(GCC diagnostic ignored W)
   #pragma GCC diagnostic warning "-Wpragmas"
   #pragma GCC diagnostic warning "-Wunknown-pragmas"
 
@@ -173,8 +174,8 @@
   DIAGNOSTIC("-Wcpp")
   DIAGNOSTIC("-Wdeclaration-missing-parameter-type")
 
-  #pragma GCC diagnostic ignored "-Wdeprecated"
-  #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+  IGNORE("-Wdeprecated")
+  IGNORE("-Wdeprecated-declarations")
 
   DIAGNOSTIC("-Wdeprecated-openmp")
   DIAGNOSTIC("-Wdesignated-init")
@@ -223,30 +224,31 @@
 
 #if CC_CLANG
   DIAGNOSTIC("-Weverything")
+  #define IGNORE(W) DIAGNOSTIC_PRAGMA(GCC diagnostic ignored W)
 
   #pragma clang diagnostic warning "-Wunknown-warning-option"
 
-  #pragma clang diagnostic ignored "-Wassign-enum"
-  #pragma clang diagnostic ignored "-Wc++-keyword"
-  #pragma clang diagnostic ignored "-Wc++98-compat"
-  #pragma clang diagnostic ignored "-Wcast-function-type-strict"
-  #pragma clang diagnostic ignored "-Wcast-qual"
-  #pragma clang diagnostic ignored "-Wchar-subscripts"
-  #pragma clang diagnostic ignored "-Wconstant-logical-operand"
-  #pragma clang diagnostic ignored "-Wcovered-switch-default"
-  #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
-  #pragma clang diagnostic ignored "-Wfloat-equal"
-  #pragma clang diagnostic ignored "-Wformat-nonliteral"
-  #pragma clang diagnostic ignored "-Wimplicit-int-enum-cast"
-  #pragma clang diagnostic ignored "-Wimplicit-void-ptr-cast"
-  #pragma clang diagnostic ignored "-Wnrvo"
-  #pragma clang diagnostic ignored "-Wpadded"
-  #pragma clang diagnostic ignored "-Wpre-c11-compat"
-  #pragma clang diagnostic ignored "-Wtentative-definition-compat"
-  #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-  #pragma clang diagnostic ignored "-Wunused-macros"
-  #pragma clang diagnostic ignored "-Wused-but-marked-unused"
-  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  IGNORE("-Wassign-enum")
+  IGNORE("-Wc++-keyword")
+  IGNORE("-Wc++98-compat")
+  IGNORE("-Wcast-function-type-strict")
+  IGNORE("-Wcast-qual")
+  IGNORE("-Wchar-subscripts")
+  IGNORE("-Wconstant-logical-operand")
+  IGNORE("-Wcovered-switch-default")
+  IGNORE("-Wdisabled-macro-expansion")
+  IGNORE("-Wfloat-equal")
+  IGNORE("-Wformat-nonliteral")
+  IGNORE("-Wimplicit-int-enum-cast")
+  IGNORE("-Wimplicit-void-ptr-cast")
+  IGNORE("-Wnrvo")
+  IGNORE("-Wpadded")
+  IGNORE("-Wpre-c11-compat")
+  IGNORE("-Wtentative-definition-compat")
+  IGNORE("-Wunsafe-buffer-usage")
+  IGNORE("-Wunused-macros")
+  IGNORE("-Wused-but-marked-unused")
+  IGNORE("-Wdeprecated-declarations")
 
   #if OS_MAC
     #pragma clang diagnostic warning "-Wallocator-wrappers"
@@ -258,5 +260,8 @@
     #pragma GCC diagnostic ignored "-Wunused-function"
   #endif
 #endif
+
+#undef IGNORE
+#undef DIAGNOSTIC
 
 #endif /* WARNINGS_H */
