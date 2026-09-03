@@ -69,7 +69,6 @@
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wtautological-compare")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wtrigraphs")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wuninitialized")
-  CBASE_GCC_DIAGNOSTIC_WARNING("-Wunknown-pragmas")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wunused-function")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wunused-label")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wunused-value")
@@ -191,7 +190,10 @@
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wpointer-compare")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wpointer-to-int-cast")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wpragma-once-outside-header")
+
   #pragma GCC diagnostic warning "-Wpragmas"
+  #pragma GCC diagnostic warning "-Wunknown-pragmas"
+
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wprio-ctor-dtor")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wpsabi")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wreturn-local-addr")
