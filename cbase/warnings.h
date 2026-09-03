@@ -32,6 +32,7 @@
 
 #if CC_GCC
   // -Wall
+  #pragma GCC diagnostic ignored "-Wunknown-warning"
   CBASE_GCC_DIAGNOSTIC_WARNING("-Waddress")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Warray-bounds")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wbool-compare")
