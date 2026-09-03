@@ -239,6 +239,7 @@
   #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
   #pragma clang diagnostic warning "-Wunknown-warning-option"
+  #pragma clang diagnostic warning "-Wallocator-wrappers"
 #endif
 
 #if DEBUGGING || TESTING
