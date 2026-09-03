@@ -26,6 +26,7 @@
 
 #include "cbase.h"
 
+#include "clipsim.h"
 #include "clipsim_X11.h"
 
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
