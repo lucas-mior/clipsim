@@ -524,7 +524,7 @@ xfclose(char *file, int32 line, char *func, FILE *f, char *filename) {
     int err;
     if (fclose(f)) {
         err = errno;
-        if (err == 0) {
+        if (err <= 0) {
             err = EIO;
         }
         error_impl(file, line, func,
@@ -1065,7 +1065,7 @@ read_entire_file(char *path, char **file_bytes) {
 
     if ((file = fopen(path, "rb")) == NULL) {
         err = errno;
-        if (err == 0) {
+        if (err <= 0) {
             err = EIO;
         }
         error("Error opening "RED("%s")" for reading: %s",
@@ -1075,7 +1075,7 @@ read_entire_file(char *path, char **file_bytes) {
     }
     if (fseek(file, 0, SEEK_END) != 0) {
         err = errno;
-        if (err == 0) {
+        if (err <= 0) {
             err = EIO;
         }
         error("Error seeking end of %s: %s.\n", path, strerror(err));
@@ -1084,7 +1084,7 @@ read_entire_file(char *path, char **file_bytes) {
     }
     if ((len = ftell(file)) < 0) {
         err = errno;
-        if (err == 0) {
+        if (err <= 0) {
             err = EIO;
         }
         error("Error in ftell(%s): %s.\n", path, strerror(err));
@@ -1098,7 +1098,7 @@ read_entire_file(char *path, char **file_bytes) {
     }
     if (fseek(file, 0, SEEK_SET) < 0) {
         err = errno;
-        if (err == 0) {
+        if (err <= 0) {
             err = EIO;
         }
         error("Error rewinding %s: %s.\n", path, strerror(err));
@@ -1114,7 +1114,7 @@ read_entire_file(char *path, char **file_bytes) {
     }
     if (read_len != len) {
         err = errno;
-        if (err == 0) {
+        if (err <= 0) {
             err = EIO;
         }
         error("Error reading "RED("%s")": %s.\n", path, strerror(err));
