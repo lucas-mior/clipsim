@@ -172,8 +172,10 @@
   DIAGNOSTIC("-Wcoverage-too-many-paths")
   DIAGNOSTIC("-Wcpp")
   DIAGNOSTIC("-Wdeclaration-missing-parameter-type")
+
   #pragma GCC diagnostic ignored "-Wdeprecated"
   #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
   DIAGNOSTIC("-Wdeprecated-openmp")
   DIAGNOSTIC("-Wdesignated-init")
   DIAGNOSTIC("-Wdiscarded-array-qualifiers")
