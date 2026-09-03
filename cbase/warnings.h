@@ -191,7 +191,7 @@
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wpointer-compare")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wpointer-to-int-cast")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wpragma-once-outside-header")
-  CBASE_GCC_DIAGNOSTIC_WARNING("-Wpragmas")
+  #pragma GCC diagnostic warning "-Wpragmas"
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wprio-ctor-dtor")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wpsabi")
   CBASE_GCC_DIAGNOSTIC_WARNING("-Wreturn-local-addr")

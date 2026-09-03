@@ -74,6 +74,7 @@ callgrind)
     ;;
 check)
     common_build_run_analyzers build
+    echo "static analysis finished."
     ;;
 build)
     CFLAGS="$CFLAGS -O2 -flto -march=native -ftree-vectorize"
