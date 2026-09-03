@@ -10,7 +10,6 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wreserved-macro-identifier"
 #pragma clang diagnostic ignored "-Wreserved-identifier"
-
 #endif
 
 #include <X11/X.h>
