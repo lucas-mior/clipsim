@@ -37,6 +37,9 @@
 #endif
 
 #if CC_GCC
+  #pragma GCC diagnostic warning "-Wpragmas"
+  #pragma GCC diagnostic warning "-Wunknown-pragmas"
+
   // -Wall
   DIAGNOSTIC("-Waddress")
   DIAGNOSTIC("-Warray-bounds")
@@ -196,9 +199,6 @@
   DIAGNOSTIC("-Wpointer-compare")
   DIAGNOSTIC("-Wpointer-to-int-cast")
   DIAGNOSTIC("-Wpragma-once-outside-header")
-
-  #pragma GCC diagnostic warning "-Wpragmas"
-  #pragma GCC diagnostic warning "-Wunknown-pragmas"
 
   DIAGNOSTIC("-Wprio-ctor-dtor")
   DIAGNOSTIC("-Wpsabi")
