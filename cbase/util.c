@@ -566,6 +566,8 @@ atoi2(char *str, int32 str_len) {
     llong limit = -MAXOF(value);
     bool negative = false;
 
+    (void)limit;
+
     if ((str == NULL) || (str_len <= 0)) {
         return 0;
     }
