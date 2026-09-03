@@ -216,6 +216,8 @@
 #if CC_CLANG
   CBASE_CLANG_DIAGNOSTIC_WARNING("-Weverything")
 
+  #pragma clang diagnostic warning "-Wunknown-warning-option"
+
   #pragma clang diagnostic ignored "-Wassign-enum"
   #pragma clang diagnostic ignored "-Wc++-keyword"
   #pragma clang diagnostic ignored "-Wc++98-compat"
@@ -238,7 +240,6 @@
   #pragma clang diagnostic ignored "-Wused-but-marked-unused"
   #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-  #pragma clang diagnostic warning "-Wunknown-warning-option"
   #if OS_MAC
     #pragma clang diagnostic warning "-Wallocator-wrappers"
   #endif
