@@ -239,9 +239,9 @@
   #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
   #pragma clang diagnostic warning "-Wunknown-warning-option"
-#if OS_MAC
-  #pragma clang diagnostic warning "-Wallocator-wrappers"
-#endif
+  #if OS_MAC
+    #pragma clang diagnostic warning "-Wallocator-wrappers"
+  #endif
 #endif
 
 #if DEBUGGING || TESTING
