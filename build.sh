@@ -73,8 +73,11 @@ callgrind)
     CPPFLAGS="$CPPFLAGS"
     ;;
 check)
-    common_build_run_analyzers build
+    (
+        common_build_run_analyzers build
+    )
     echo "static analysis finished."
+    exit
     ;;
 build)
     CFLAGS="$CFLAGS -O2 -flto -march=native -ftree-vectorize"
