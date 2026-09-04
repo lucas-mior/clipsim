@@ -77,17 +77,18 @@
 #endif
 
 #if XENUMS_FUNCTIONS_ONLY == 0
+
 #if ENUM_BITFLAGS
 enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE_SPEC {
-    #define X_IDX_1(e)    CAT(e, _BIT_IDX),
-    #define X_IDX_2(e, v)
-    #define XX(...)        SELECT_ON_NUM_ARGS(X_IDX_, __VA_ARGS__)
+    #define XX_1(e)    CAT(e, _BIT_INDEX),
+    #define XX_2(e, v)
+    #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
 
     ENUM_FIELDS
 
     #undef XX
-    #undef X_IDX_1
-    #undef X_IDX_2
+    #undef XX_1
+    #undef XX_2
     CAT(ENUM_PREFIX_, BIT_COUNT)
 };
 _Static_assert(CAT(ENUM_PREFIX_, BIT_COUNT)
@@ -110,29 +111,32 @@ _Static_assert((ENUM_UNDERLYING_TYPE)-1 > 0,
 //
 // Passing multiple ENUM names for the same value will break compilation.
 enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
-#if ENUM_BITFLAGS == 0
-    #define XENUM_1(e)        e,
-    #define XENUM_2(e, alias) e,
-#else
-    #define XENUM_1(e)        e = (ENUM_UNDERLYING_TYPE)1 << CAT(e, _BIT_IDX),
-    #define XENUM_2(e, v)     e = v,
-#endif
-    #define XX(...)            SELECT_ON_NUM_ARGS(XENUM_, __VA_ARGS__)
-
 #if ENUM_BITFLAGS
     CAT(ENUM_PREFIX_, NONE) = 0,
 #endif
+
+#if ENUM_BITFLAGS == 0
+    #define XX_1(e)        e,
+    #define XX_2(e, alias) e,
+#else
+    #define XX_1(e)        e = (ENUM_UNDERLYING_TYPE)1 << CAT(e, _BIT_INDEX),
+    #define XX_2(e, v)     e = v,
+#endif
+    #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+
     ENUM_FIELDS
 
     #undef XX
-    #undef XENUM_1
-    #undef XENUM_2
+    #undef XX_1
+    #undef XX_2
+
 #if ENUM_BITFLAGS
     CAT(ENUM_PREFIX_, LAST)
 #else
     CAT(ENUM_PREFIX_, COUNT)
 #endif
 };
+
 #endif
 
 XENUMS_LINKAGE void CAT(ENUM_PREFIX_, str_free)(char *);
@@ -163,19 +167,20 @@ XENUMS_LINKAGE int32
 CAT(ENUM_PREFIX_, str_len)(enum ENUM_NAME val, char **out) {
 #if ENUM_BITFLAGS == 0
     switch (val) {
-        #define XENUM_ST_1(e)    case e:                                       \
-                                     *out = #e;                                \
-                                     return STRLIT_LEN(#e);
-        #define XENUM_ST_2(e, v) case e:                                       \
-                                     *out = #e;                                \
-                                     return STRLIT_LEN(#e);
-        #define XX(...)           SELECT_ON_NUM_ARGS(XENUM_ST_, __VA_ARGS__)
+        #define XX_1(e)    case e:                                             \
+                               *out = #e;                                      \
+                               return STRLIT_LEN(#e);
+        #define XX_2(e, v) case e:                                             \
+                               *out = #e;                                      \
+                               return STRLIT_LEN(#e);
+        #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
 
         ENUM_FIELDS
 
         #undef XX
-        #undef XENUM_ST_1
-        #undef XENUM_ST_2
+        #undef XX_1
+        #undef XX_2
+
         case CAT(ENUM_PREFIX_, COUNT):
             *out = QUOTE(ENUM_PREFIX_) "COUNT";
             return STRLIT_LEN(QUOTE(ENUM_PREFIX_) "COUNT");
@@ -187,60 +192,62 @@ CAT(ENUM_PREFIX_, str_len)(enum ENUM_NAME val, char **out) {
     char *buffer = NULL;
     int32 buffer_len = 0;
     int32 buffer_cap = 0;
-    int32 is_first = 1;
+    bool32 is_first = true;
 
     if (val == 0) {
         *out = xstrndup(STRLIT("NONE"));
         return STRLIT_LEN("NONE");
     }
 
-    #define XENUM_EXACT(e)                                                     \
+    #define XX_EXACT(e)                                                        \
         if (val == e) {                                                        \
             *out = xstrndup(#e, STRLIT_LEN(#e));                               \
             return STRLIT_LEN(#e);                                             \
         }
-    #define XENUM_EXACT_1(e)    XENUM_EXACT(e)
-    #define XENUM_EXACT_2(e, v) XENUM_EXACT(e)
-    #define XX(...)              SELECT_ON_NUM_ARGS(XENUM_EXACT_, __VA_ARGS__)
+    #define XX_1(e)    XX_EXACT(e)
+    #define XX_2(e, v) XX_EXACT(e)
+    #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
 
     ENUM_FIELDS
 
     #undef XX
-    #undef XENUM_EXACT_1
-    #undef XENUM_EXACT_2
-    #undef XENUM_EXACT
+    #undef XX_1
+    #undef XX_2
+    #undef XX_EXACT
 
-    #define XENUM(e)                                                           \
+    #define XX_BITCHECK(e)                                                     \
         if (val && ((val & e) == e)) {                                         \
             char *name = #e;                                                   \
             int32 len = STRLIT_LEN(#e);                                        \
-            int32 new_cap;                                                     \
-            new_cap = buffer_len + len + 1;                                    \
-            if (is_first == 0) {                                               \
+            int32 new_cap = buffer_len + len + 1;                              \
+                                                                               \
+            if (!is_first) {                                                   \
                 new_cap += 1;                                                  \
             }                                                                  \
+                                                                               \
             buffer = realloc2(buffer, buffer_cap, new_cap, SIZEOF(*buffer));   \
             buffer_cap = new_cap;                                              \
-            if (is_first == 0) {                                               \
+            if (!is_first) {                                                   \
                 buffer[buffer_len] = '|';                                      \
                 buffer_len += 1;                                               \
             }                                                                  \
             memcpy64(buffer + buffer_len, name, len);                          \
             buffer_len += len;                                                 \
-            is_first = 0;                                                      \
+                                                                               \
+            is_first = false;                                                  \
             val &= (ENUM_UNDERLYING_TYPE)~e;                                   \
         }
 
-    #define XENUM_FL_1(e)    XENUM(e)
-    #define XENUM_FL_2(e, v) XENUM(e)
-    #define XX(...)           SELECT_ON_NUM_ARGS(XENUM_FL_, __VA_ARGS__)
+    #define XX_1(e)    XX_BITCHECK(e)
+    #define XX_2(e, v) XX_BITCHECK(e)
+    #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
 
     ENUM_FIELDS
 
     #undef XX
-    #undef XENUM_FL_1
-    #undef XENUM_FL_2
-    #undef XENUM
+    #undef XX_1
+    #undef XX_2
+    #undef XX_BITCHECK
 
     if (val) {
         error2("Error: bit flags enum contains invalid bit set.\n");
@@ -265,19 +272,19 @@ XENUMS_LINKAGE int32
 CAT(ENUM_PREFIX_, alias_len)(enum ENUM_NAME val, char **out) {
 #if ENUM_BITFLAGS == 0
     switch (val) {
-        #define XENUM_ALIAS_ST_1(e)        case e:                             \
-                                               *out = #e;                      \
-                                               return STRLIT_LEN(#e);
-        #define XENUM_ALIAS_ST_2(e, alias) case e:                             \
-                                               *out = #alias;                  \
-                                               return STRLIT_LEN(#alias);
-        #define XX(...) SELECT_ON_NUM_ARGS(XENUM_ALIAS_ST_, __VA_ARGS__)
+        #define XX_1(e)        case e:                                         \
+                                   *out = #e;                                  \
+                                   return STRLIT_LEN(#e);
+        #define XX_2(e, alias) case e:                                         \
+                                   *out = #alias;                              \
+                                   return STRLIT_LEN(#alias);
+        #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
 
         ENUM_FIELDS
 
         #undef XX
-        #undef XENUM_ALIAS_ST_1
-        #undef XENUM_ALIAS_ST_2
+        #undef XX_1
+        #undef XX_2
 
         case CAT(ENUM_PREFIX_, COUNT):
             *out = QUOTE(ENUM_PREFIX_) "COUNT";
@@ -338,8 +345,8 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
         }
         token_len = (int32)(p - token);
         if (token_len <= 0) {
-            error2("Error: invalid enum parse character '%c' in %s.\n", *p,
-                   string);
+            error2("Error: invalid enum parse character '%c' in %s.\n",
+                   *p, string);
             TRAP();
         }
 
@@ -365,8 +372,8 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
                 result |= (ENUM_UNDERLYING_TYPE)e;                             \
                 matched = 1;                                                   \
             }
-        #define XENUM_PARSE_1(e)    XENUM_PARSE_ONE(e)
-        #define XENUM_PARSE_2(e, v) XENUM_PARSE_ONE(e)
+        #define XX_1(e)    XENUM_PARSE_ONE(e)
+        #define XX_2(e, v) XENUM_PARSE_ONE(e)
 #else
         #define XENUM_PARSE_ONE(e)                                             \
             if (!matched                                                       \
@@ -381,17 +388,16 @@ CAT(ENUM_PREFIX_, parse)(char *string) {
                 result = (ENUM_UNDERLYING_TYPE)e;                              \
                 matched = 1;                                                   \
             }
-        #define XENUM_PARSE_1(e)        XENUM_PARSE_ONE(e)
-        #define XENUM_PARSE_2(e, alias) XENUM_PARSE_ALIAS(e, alias)
+        #define XX_1(e)        XENUM_PARSE_ONE(e)
+        #define XX_2(e, alias) XENUM_PARSE_ALIAS(e, alias)
 #endif
-        #define XX(...)                                                        \
-            SELECT_ON_NUM_ARGS(XENUM_PARSE_, __VA_ARGS__)
+        #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
 
         ENUM_FIELDS
 
         #undef XX
-        #undef XENUM_PARSE_1
-        #undef XENUM_PARSE_2
+        #undef XX_1
+        #undef XX_2
 #if ENUM_BITFLAGS == 0
         #undef XENUM_PARSE_ALIAS
 #endif
@@ -452,7 +458,7 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 int
 main(void) {
     char *s;
-    ASSERT_ZERO(TEST_FLAGS_READ_BIT_IDX);
+    ASSERT_ZERO(TEST_FLAGS_READ_BIT_INDEX);
     ASSERT(TEST_FLAGS_BIT_COUNT == 3);
     ASSERT(TEST_FLAGS_READ == (1 << 0));
     ASSERT(TEST_FLAGS_WRITE == (1 << 1));

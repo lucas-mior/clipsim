@@ -845,15 +845,8 @@ xmemdup(void *source, int64 size) {
 
 char *
 xstrdup(char *string) {
-    char *p;
     int64 length = strlen32(string) + 1;
-
-    if ((p = malloc2(length)) == NULL) {
-        error("Error allocating %lld bytes to duplicate '%s': %s\n",
-              length, string, strerror(errno));
-        fatal(EXIT_FAILURE);
-    }
-
+    char *p = malloc2(length);
     memcpy64(p, string, length);
     return p;
 }
