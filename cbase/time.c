@@ -192,11 +192,30 @@ time_monotonic_precise(struct timespec *time) {
 #endif
 
     if (status < 0) {
-        error("Error reading precise monotonic clock: %s.\n",
-              strerror(errno));
-        fatal(EXIT_FAILURE);
+        *time = (struct timespec){0};
     }
     return;
+}
+
+int64
+time_monotonic_now(void) {
+    struct timespec time = {0};
+    int64 nanoseconds;
+
+    time_monotonic_precise(&time);
+    nanoseconds = (int64)time.tv_sec*1000000000ll;
+    nanoseconds += (int64)time.tv_nsec;
+    return nanoseconds;
+}
+
+int64
+time_elapsed_ns(int64 start, int64 end) {
+    return end - start;
+}
+
+int64
+time_elapsed_ms(int64 start, int64 end) {
+    return time_elapsed_ns(start, end) / 1000000ll;
 }
 
 void
@@ -224,9 +243,7 @@ time_monotonic_coarse(struct timespec *time) {
 #endif
 
     if (status < 0) {
-        error("Error reading coarse monotonic clock: %s.\n",
-              strerror(errno));
-        fatal(EXIT_FAILURE);
+        *time = (struct timespec){0};
     }
     return;
 }
@@ -270,7 +287,10 @@ time_functions_sink(void) {
     (void)sleep_ns;
     (void)sleep_us;
     (void)timediff;
+    (void)time_elapsed_ms;
+    (void)time_elapsed_ns;
     (void)time_monotonic_coarse;
+    (void)time_monotonic_now;
     (void)time_monotonic_precise;
 #if OS_UNIX
     (void)timezone_init;
@@ -313,6 +333,9 @@ main(void) {
 
     time_monotonic_precise(&t0);
     time_monotonic_coarse(&t1);
+    ASSERT_MORE_EQUAL(time_monotonic_now(), 0);
+    ASSERT_EQUAL(time_elapsed_ns(100, 250), 150);
+    ASSERT_EQUAL(time_elapsed_ms(1000000, 4000000), 3);
 #if OS_UNIX
     timezone_init();
     ASSERT(timezone_initialized);

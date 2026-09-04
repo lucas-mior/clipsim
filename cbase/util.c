@@ -382,6 +382,53 @@ rand_int(void) {
     return (int32)(result >> 1);
 }
 
+int32
+rand_int_range(int32 upper_bound) {
+    int64 limit;
+    int32 value;
+
+    if (upper_bound <= 1) {
+        return 0;
+    }
+
+    limit = (int64)INT32_MAX + 1;
+    limit -= limit % upper_bound;
+    do {
+        value = rand_int();
+    } while ((int64)value >= limit);
+
+    return value % upper_bound;
+}
+
+void
+rand_shuffle(void *items, int32 item_count, int32 item_size) {
+    char *bytes = items;
+
+    if (item_count <= 1) {
+        return;
+    }
+
+    ASSERT(items != NULL);
+    ASSERT_POSITIVE(item_size);
+
+    for (int32 i = item_count - 1; i > 0; i -= 1) {
+        int32 j = rand_int_range(i + 1);
+
+        if (j != i) {
+            char *left = bytes + i*item_size;
+            char *right = bytes + j*item_size;
+
+            for (int32 k = 0; k < item_size; k += 1) {
+                char tmp = left[k];
+
+                left[k] = right[k];
+                right[k] = tmp;
+            }
+        }
+    }
+    return;
+}
+
 void
 random_filename_inplace(char *buffer, int32 buffer_len) {
     char allowed[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -1028,6 +1075,8 @@ util_functions_sink(void) {
     (void)util_functions_sink;
     (void)rand_int_seed;
     (void)rand_int;
+    (void)rand_int_range;
+    (void)rand_shuffle;
     (void)random_filename_inplace;
     (void)util_is_integer;
     (void)util_glob_match;
@@ -1341,6 +1390,27 @@ main(int argc, char **argv) {
         char itoa_buffer[32];
         int32 itoa_len = ITOA(itoa_buffer, n);
         ASSERT_EQUAL(atoi2(itoa_buffer, itoa_len), n);
+    }
+
+    {
+        int32 values[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+        bool seen[10] = {0};
+
+        rand_int_seed(1234);
+        for (int32 i = 0; i < 100; i += 1) {
+            int32 value = rand_int_range(7);
+
+            ASSERT_NON_NEGATIVE(value);
+            ASSERT_LESS(value, 7);
+        }
+
+        rand_shuffle(values, LENGTH(values), SIZEOF(*values));
+        for (int32 i = 0; i < LENGTH(values); i += 1) {
+            ASSERT_NON_NEGATIVE(values[i]);
+            ASSERT_LESS(values[i], LENGTH(values));
+            ASSERT(!seen[values[i]]);
+            seen[values[i]] = true;
+        }
     }
 
     ASSERT_EQUAL(atoi2("-123x", 4), -123);

@@ -164,6 +164,8 @@ void qsort64(void *, int64, int64, int (*)(void *, void *));
 void random_filename_inplace(char *, int32);
 void rand_int_seed(uint64);
 int32 rand_int(void);
+int32 rand_int_range(int32);
+void rand_shuffle(void *, int32, int32);
 double rad2deg(double);
 int32 random_ascii_string(char *, int32, int32);
 bool path_missing(char *);
@@ -287,7 +289,10 @@ void sleep_ms(int64);
 void sleep_ns(int64);
 void sleep_us(int64);
 double timediff(struct timespec, struct timespec);
+int64 time_elapsed_ms(int64, int64);
+int64 time_elapsed_ns(int64, int64);
 void time_monotonic_coarse(struct timespec *);
+int64 time_monotonic_now(void);
 void time_monotonic_precise(struct timespec *);
 void timezone_init(void);
 char *cbase_getcwd(char *, int64);
@@ -313,7 +318,7 @@ int64 fwrite64(void *, int64, int64, FILE *);
 
 #if OS_UNIX
 #define XSIGNAL(NAME) [NAME] = #NAME
-static char *signal_names[] = {
+static char UNUSED *signal_names[] = {
     XSIGNAL(SIGABRT),
     XSIGNAL(SIGALRM),
     XSIGNAL(SIGVTALRM),
