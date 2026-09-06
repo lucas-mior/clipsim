@@ -29,14 +29,16 @@ static time_t UNUSED timezone_offset = 0;
 
 #define error(...)  error_impl(__FILE__, __LINE__, FUNC__, __VA_ARGS__)
 #define error2(...) fprintf(stderr, __VA_ARGS__)
-noreturn void fatal(int32);
-void error_impl(char *, int32, char *, char *, ...)
+noreturn void fatal(int32 status);
+void error_impl(char *file, int32 line, char *func, char *format, ...)
     ATTR_PRINTF(4, 5);
-int memcmp64(void *, void *, int64);
-void *memmem64(void *, int64, void *, int64);
-void *memchr64(void *, int32, int64);
-void *memrchr64(void *, int32, int64);
-bool util_glob_match(char *, int32, char *, int32);
+int memcmp64(void *left, void *right, int64 size);
+void *memmem64(void *haystack, int64 haystack_len, void *needle,
+               int64 needle_len);
+void *memchr64(void *pointer, int32 value, int64 size);
+void *memrchr64(void *pointer, int32 value, int64 size);
+bool util_glob_match(char *string, int32 string_len, char *glob,
+                     int32 glob_len);
 
 int64 ceil64(double x);
 int64 floor64(double x);
@@ -87,7 +89,7 @@ typedef struct DirEntry {
     char name[256];
 } DirEntry;
 
-int32 get_directory_entries(char *, DirEntry **);
+int32 get_directory_entries(char *directory, DirEntry **directory_list);
 int32 utf8_random_string(char *buffer, int32 capacity, int32 min_len);
 int32 utf8_byte_position(char *string, int32 string_len, int32 character);
 int32 utf8_capitalize_first_letters(char *string, int32 string_len,
@@ -133,77 +135,98 @@ typedef struct UtilCopyFilesAsync {
     int32 unused;
 } UtilCopyFilesAsync;
 
-int32 util_copy_file_async(char *, char *, int *);
+int32 util_copy_file_async(char *destination, char *source, int *dest_fd);
 void util_copy_file_async_parsed(UtilCopyFilesAsync *);
-void *util_copy_file_async_thread(void *);
+void *util_copy_file_async_thread(void *arg);
 #endif
 
 bool util_is_integer(char *string);
-noreturn void util_segv_handler(int32);
-int32 itoa2(char *, int32, llong);
-int32 parse_integer(char *, int32, llong *);
-llong atoi2(char *, int32);
-llong atoi2sat(char *, int32);
-char *basename2(char *, int32 *, int32 *);
-char *begins_with(char *, int32, char *, int32);
-bool byte_matches_any(char, void *, int64);
-int32 bytes_pretty(char *, int64);
-void catfile(int, char *);
-double deg2rad(double);
-int32 dirname2(char *, char *, int32 *);
-char *ends_with(char *, int32, char *, int32);
-void error_async_safe(char *);
-bool is_ident_char(char);
-bool is_ident_start_char(char);
-void normalize(char *restrict, int32 *restrict);
-int32 parse_option(char **, char *, char *);
-char *path_basename(char *, int32);
-void print_timings(char *, int32, char *, int64,
-                   struct timespec, struct timespec);
-void qsort64(void *, int64, int64, int (*)(void *, void *));
-void random_filename_inplace(char *, int32);
-void rand_int_seed(uint64);
+noreturn void util_segv_handler(int32 signal_number);
+int32 itoa2(char *buffer, int32 size, llong num);
+int32 parse_integer(char *str, int32 str_len, llong *result);
+llong atoi2(char *str, int32 str_len);
+llong atoi2sat(char *str, int32 str_len);
+char *basename2(char *path, int32 *full_length, int32 *base_len);
+char *begins_with(char *string, int32 string_len, char *prefix,
+                  int32 prefix_len);
+bool byte_matches_any(char byte, void *memory, int64 memory_len);
+int32 bytes_pretty(char *buffer, int64 raw);
+void catfile(int where, char *file);
+double deg2rad(double degrees);
+int32 dirname2(char *buffer, char *path, int32 *path_len);
+char *ends_with(char *string, int32 string_len, char *suffix,
+                int32 suffix_len);
+void error_async_safe(char *message);
+bool is_ident_char(char c);
+bool is_ident_start_char(char c);
+void normalize(char *restrict path, int32 *restrict length);
+int32 parse_option(char **parsed, char *arg, char *option_name);
+char *path_basename(char *path, int32 path_len);
+void print_timings(char *file, int32 line, char *func, int64 nitems,
+                   struct timespec t0, struct timespec t1);
+void qsort64(void *base, int64 n, int64 size,
+             int (*compar)(void *a, void *b));
+void random_filename_inplace(char *buffer, int32 buffer_len);
+void rand_int_seed(uint64 seed);
 int32 rand_int(void);
-int32 rand_int_range(int32);
-void rand_shuffle(void *, int32, int32);
-double rad2deg(double);
-int32 random_ascii_string(char *, int32, int32);
-bool path_missing(char *);
-int32 read_entire_file(char *, char **);
-char *remove_escape_sequences(char *, int32 *);
-void sb_append(StrBuilder *, char *, int64);
-void sb_append_byte(StrBuilder *, char);
-void sb_append_byte_if_not(StrBuilder *, char);
+int32 rand_int_range(int32 upper_bound);
+void rand_shuffle(void *items, int32 item_count, int32 item_size);
+double rad2deg(double radians);
+int32 random_ascii_string(char *buffer, int32 capacity, int32 min_len);
+bool path_missing(char *path);
+int32 read_entire_file(char *path, char **file_bytes);
+char *remove_escape_sequences(char *data, int32 *data_len);
+void sb_append(StrBuilder *str_builder, char *data, int64 data_len);
+void sb_append_byte(StrBuilder *str_builder, char byte);
+void sb_append_byte_if_not(StrBuilder *str_builder, char byte);
 void sb_clear(StrBuilder *);
-int32 sb_copy(StrBuilder *, StrBuilder *);
+int32 sb_copy(StrBuilder *dest, StrBuilder *source);
 void sb_free(StrBuilder *);
-void sb_itoa(StrBuilder *, llong);
-void sb_move(StrBuilder *, StrBuilder *);
-void sb_printf(StrBuilder *, char *, ...);
-void sb_reserve(StrBuilder *, int64);
-int32 sb_set(StrBuilder *, char *, int32);
-char *sb_steal(StrBuilder *, int32 *, int32 *);
-char *sb_steal_exact(StrBuilder *, int32 *);
-char *sb_opt_cstr(StrBuilder *buffer);
-void send_signal(char *, int32);
-int32 snprintf2(char *, int64, char *, ...);
+void sb_itoa(StrBuilder *str_builder, llong num);
+void sb_bytes_pretty(StrBuilder *str_builder, llong size);
+void sb_move(StrBuilder *dest, StrBuilder *source);
+void sb_printf(StrBuilder *str_builder, char *fmt, ...);
+void sb_reserve(StrBuilder *str_builder, int64 extra);
+int32 sb_set(StrBuilder *str_builder, char *data, int32 data_len);
+char *sb_steal(StrBuilder *str_builder, int32 *len, int32 *cap);
+char *sb_steal_exact(StrBuilder *str_builder, int32 *len);
+char *sb_opt_cstr(StrBuilder *);
+void send_signal(char *executable, int32 signal_number);
+int32 snprintf2(char *buffer, int64 size, char *format, ...);
 StrBuilder *str_builder_array_append(StrBuilderArray *);
-int32 str_builder_array_append_copy(StrBuilderArray *, StrBuilder *);
+int32 str_builder_array_append_copy(StrBuilderArray *array, StrBuilder *item);
 void str_builder_array_clear(StrBuilderArray *);
-int32 str_builder_array_copy(StrBuilderArray *, StrBuilderArray *);
+int32 str_builder_array_copy(StrBuilderArray *dest, StrBuilderArray *source);
 void str_builder_array_destroy(StrBuilderArray *);
-void str_builder_array_init(StrBuilderArray *);
-void str_builder_array_move(StrBuilderArray *, StrBuilderArray *);
-int32 str_builder_array_reserve(StrBuilderArray *, int32);
-void str_builder_array_swap(StrBuilderArray *, StrBuilderArray *);
-int32 string_from_strings(char *, int32, char *, char **, int32);
-int32 string_from_doubles(char *, int32, char *, double *, int32);
-double clamp_double(double, double, double);
-double square_double(double);
-int64 clamp_int64(int64, int64, int64);
-int32 clamp_int32(int32, int32, int32);
-int64 square_int64(int64);
-int32 square_int32(int32);
+void str_builder_array_move(StrBuilderArray *dest, StrBuilderArray *source);
+int32 str_builder_array_reserve(StrBuilderArray *array, int32 extra);
+void str_builder_array_swap(StrBuilderArray *left, StrBuilderArray *right);
+// Float formatting functions return the formatted byte count, excluding the
+// terminating '\0'. Negative return values are errno-style failures:
+// -EINVAL for invalid input, -ENOSPC when capacity is insufficient, and
+// -ERANGE when the requested precision is unsupported.
+//
+// This layer exposes shortest round-trip, fixed precision, and scientific
+// precision formatting. It intentionally does not expose a %g/general format
+// helper: exact %g behavior needs a separate policy layer to choose between
+// fixed and scientific output and to handle trailing-zero rules.
+int32 format_float32_shortest(char *buffer, int64 capacity, float value);
+int32 format_float64_shortest(char *buffer, int64 capacity, double value);
+int32 format_float64_fixed(char *buffer, int64 capacity, double value,
+                           int32 precision);
+int32 format_float64_scientific(char *buffer, int64 capacity, double value,
+                                int32 precision);
+
+int32 string_from_strings(char *buffer, int32 size, char *separator,
+                          char **array, int32 length);
+int32 string_from_doubles(char *buffer, int32 size, char *separator,
+                          double *array, int32 length);
+double clamp_double(double x, double min, double max);
+double square_double(double x);
+int64 clamp_int64(int64 x, int64 min, int64 max);
+int32 clamp_int32(int32 x, int32 min, int32 max);
+int64 square_int64(int64 x);
+int32 square_int32(int32 x);
 
 #define MEM_LITERAL_SHORT_N 2
 #include "mem_literal_short.h"
@@ -281,40 +304,42 @@ optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
     return strequal2(a, a_len, b, b_len);
 }
 
-bool32 striqual(char *, char *);
-bool32 striqual2(char *, int32, char *, int32);
-int64 strftime2(char *, int64, char *, struct tm *);
-int strncmp32(char *, char *, int64);
-void sleep_ms(int64);
-void sleep_ns(int64);
-void sleep_us(int64);
-double timediff(struct timespec, struct timespec);
-int64 time_elapsed_ms(int64, int64);
-int64 time_elapsed_ns(int64, int64);
+bool32 striqual(char *s1, char *s2);
+bool32 striqual2(char *a, int32 a_len, char *b, int32 b_len);
+int64 strftime2(char *buffer, int64 size, char *format,
+                struct tm *time_info);
+int strncmp32(char *left, char *right, int64 size);
+void sleep_ms(int64 milliseconds);
+void sleep_ns(int64 nanoseconds);
+void sleep_us(int64 microseconds);
+double timediff(struct timespec t0, struct timespec t1);
+int64 time_elapsed_ms(int64 start, int64 end);
+int64 time_elapsed_ns(int64 start, int64 end);
 void time_monotonic_coarse(struct timespec *);
 int64 time_monotonic_now(void);
 void time_monotonic_precise(struct timespec *);
 void timezone_init(void);
-char *cbase_getcwd(char *, int64);
-int32 cbase_mkdir(char *);
-int32 cbase_rmdir(char *);
-int32 cbase_unlink(char *);
-int32 cbase_remove_file(char *);
-int32 cbase_remove_empty_dir(char *);
-int32 cbase_mkstemps(char *, int32);
-int32 cbase_make_temp_file(char *, int32, char *, char *);
-int32 fs_copy_file_sync(char *, char *);
-void util_die_notify(char *, char *, ...);
-bool util_equal_files(char *, char *);
-bool util_file_exists(char *);
-int32 util_filename_from(char *, int64, int);
+char *cbase_getcwd(char *buffer, int64 size);
+int32 cbase_mkdir(char *path);
+int32 cbase_rmdir(char *path);
+int32 cbase_unlink(char *path);
+int32 cbase_remove_file(char *path);
+int32 cbase_remove_empty_dir(char *path);
+int32 cbase_mkstemps(char *template_path, int32 suffix_len);
+int32 cbase_make_temp_file(char *buffer, int32 capacity, char *prefix,
+                           char *suffix);
+int32 fs_copy_file_sync(char *destination, char *source);
+void util_die_notify(char *title, char *body, ...);
+bool util_equal_files(char *filename_a, char *filename_b);
+bool util_file_exists(char *filename);
+int32 util_filename_from(char *buffer, int64 size, int fd);
 int32 util_nthreads(void);
-int32 util_string_int32(int32 *, char *);
-void warn(char *, ...);
-int64 read64(int32, void *, int64);
-int64 write64(int32, void *, int64);
-int64 fread64(void *, int64, int64, FILE *);
-int64 fwrite64(void *, int64, int64, FILE *);
+int32 util_string_int32(int32 *number, char *string);
+void warn(char *fmt, ...);
+int64 read64(int32 fd, void *buffer, int64 len);
+int64 write64(int32 fd, void *buffer, int64 len);
+int64 fread64(void *data, int64 item_size, int64 nitems, FILE *file);
+int64 fwrite64(void *data, int64 item_size, int64 nitems, FILE *file);
 
 #if OS_UNIX
 #define XSIGNAL(NAME) [NAME] = #NAME
@@ -361,69 +386,72 @@ static char UNUSED *signal_names[] = {
 #define MIN_PARALLEL_ITEMS 64
 #endif
 
-typedef void ParallelForFunction(int64, int64, int32, void *);
+typedef void ParallelForFunction(int64 start, int64 end, int32 worker_id,
+                                 void *user_data);
 
 int32 parallel_for(
-    int64,
-    ParallelForFunction *,
-    void *
+    int64 length,
+    ParallelForFunction *function,
+    void *user_data
 );
 int32 parallel_for_min_items(
-    int64,
-    int64,
-    ParallelForFunction *,
-    void *
+    int64 length,
+    int64 min_parallel_items,
+    ParallelForFunction *function,
+    void *user_data
 );
 int32 parallel_for_max_threads_min_items(
-    int64,
-    int32,
-    int64,
-    ParallelForFunction *,
-    void *
+    int64 length,
+    int32 max_threads,
+    int64 min_parallel_items,
+    ParallelForFunction *function,
+    void *user_data
 );
-void write_all(int, char *, int64);
-int64 write_entire_file(char *, char *, int64);
-int xclose(char *, int, int *, char *, char *);
+void write_all(int fd, char *buffer, int64 left);
+int64 write_entire_file(char *path, char *text, int64 text_len);
+int xclose(char *file, int line, int *fd, char *fd_var_name,
+           char *filename);
 #if HAS_POSIX_WIN_SUBSET
-int xclosedir(DIR *, char *);
+int xclosedir(DIR *dir, char *dirname);
 #endif
-char *cbase_mkdtemp(char *);
-int xfclose(char *, int32, char *, FILE *, char *);
-FILE *xfopen(char *, int32, char *, char *, char *);
+char *cbase_mkdtemp(char *template_path);
+int xfclose(char *file, int32 line, char *func, FILE *f, char *filename);
+FILE *xfopen(char *file, int32 line, char *func, char *filename,
+             char *mode);
 #if OS_WINDOWS
-void windows_set_errno(DWORD);
+void windows_set_errno(DWORD error_code);
 #endif
 
 #if OS_UNIX
-void xdup2(int, int);
-void xkill(pid_t, int);
-void xpipe(int [2]);
+void xdup2(int fd1, int fd2);
+void xkill(pid_t pid, int signum);
+void xpipe(int array[2]);
 void xpthread_cond_destroy(pthread_cond_t *);
 void xpthread_create(
-    pthread_t *,
-    pthread_attr_t *,
-    void *(*)(void *),
-    void *
+    pthread_t *thread,
+    pthread_attr_t *attr,
+    void *(*function)(void *arg),
+    void *arg
 );
-void xpthread_join(pthread_t *, void **);
+void xpthread_join(pthread_t *thread, void **thread_return);
 void xpthread_mutex_destroy(pthread_mutex_t *);
-void xpthread_mutex_init(pthread_mutex_t *, pthread_mutexattr_t *);
+void xpthread_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *attr);
 void xpthread_mutex_lock(pthread_mutex_t *mutex) ATTR_EXCLUSIVE_LOCK(*mutex);
 void xpthread_mutex_unlock(pthread_mutex_t *mutex) ATTR_UNLOCK(*mutex);
 #endif
 
-int xunlink(char *);
-bool xregular_file_exists(char *);
-void test_make_temp_dir(char *, int32, char *);
-void test_remove_tree(char *);
-void test_join_path(char *, int64, char *, char *);
+int xunlink(char *filename);
+bool xregular_file_exists(char *path);
+void test_make_temp_dir(char *buffer, int32 capacity, char *name);
+void test_remove_tree(char *path);
+void test_join_path(char *buffer, int64 buffer_len, char *dir, char *name);
 
 #if OS_UNIX
-bool test_command_exists(char *);
-bool test_hardlink_supported(char *);
-bool test_symlink_supported(char *);
+bool test_command_exists(char *command);
+bool test_hardlink_supported(char *dir);
+bool test_symlink_supported(char *dir);
 #endif
-void here_impl(char *, int32, char *);
+void here_impl(char *file, int32 line, char *func);
 
 #define STRING_FROM_ARRAY(BUFFER, SEP, ARRAY, LENGTH) \
 _Generic((ARRAY), \
@@ -631,66 +659,76 @@ typedef struct Command {
     CommandResult result;
 } Command;
 
-void command_argv0_set(Command *, char *);
+void command_argv0_set(Command *command, char *argument);
 void command_child_env_apply(Command *);
 noreturn void command_child_exec(
-    Command *, enum CommandFlag, int [2], int [2], int [2]
+    Command *command,
+    enum CommandFlag flags,
+    int stdin_pipe[2],
+    int stdout_pipe[2],
+    int stderr_pipe[2]
 );
 #if OS_WINDOWS
-void command_windows_command_line(Command *, char *, int64);
-char *command_windows_argv0(Command *, char *, int32 *);
-int32 command_windows_run_process(Command *, enum CommandFlag);
+void command_windows_command_line(Command *command, char *cmdline,
+                                  int64 cmdline_len);
+char *command_windows_argv0(Command *command, char *argv0_windows,
+                            int32 *argv0_len);
+int32 command_windows_run_process(Command *command, enum CommandFlag flags);
 #endif
 void command_cwd_clear(Command *);
-void command_cwd_set(Command *, char *);
+void command_cwd_set(Command *command, char *cwd);
 void command_env_clear(Command *);
-void command_env_printf(Command *, char *, ...);
-void command_env_push(Command *, char *);
-void command_env_push_length(Command *, char *, int32);
-void command_error_set(Command *, int32);
+void command_env_printf(Command *command, char *fmt, ...);
+void command_env_push(Command *command, char *assignment);
+void command_env_push_length(Command *command, char *assignment,
+                             int32 assignment_len);
+void command_error_set(Command *command, int32 error_status);
 bool command_flags_capture(enum CommandFlag);
 enum CommandFlag command_flags_normalized(enum CommandFlag);
 void command_free(Command *);
 void command_print(Command *);
-void command_printf(Command *, char *, ...);
-void command_push_length(Command *, char *, int32);
-void command_push_array(Command *, int32, char **);
+void command_printf(Command *command, char *fmt, ...);
+void command_push_length(Command *command, char *argument,
+                         int32 argument_len);
+void command_push_array(Command *command, int32 argc, char **argv);
 void command_push_owned_length(
-    char ***,
-    int32 **,
-    int32 *,
-    int32 *,
-    char *,
-    int32
+    char ***items,
+    int32 **item_lens,
+    int32 *len,
+    int32 *cap,
+    char *argument,
+    int32 argument_len
 );
-void command_push_split(Command *, char *, char *);
-int32 command_stdin_buffer_set(Command *, char *, int64);
+void command_push_split(Command *command, char *arguments, char *delimiters);
+int32 command_stdin_buffer_set(Command *command, char *data, int64 data_len);
 void command_stdin_buffer_clear(Command *);
 void command_reset(Command *);
 void command_result_append(
-    StrBuilder *,
-    StrBuilder *,
-    StrBuilder *,
-    bool,
-    char *,
-    int32
+    StrBuilder *output,
+    StrBuilder *stdout_output,
+    StrBuilder *stderr_output,
+    bool is_stderr,
+    char *data,
+    int32 data_len
 );
 void command_result_file_descriptors_close(CommandResult *);
 void command_result_free(CommandResult *);
 void command_result_init(CommandResult *);
 void command_result_read_captured(Command *);
-void command_result_process_io(Command *, enum CommandFlag);
-int32 command_run(Command *, enum CommandFlag);
-int32 command_run_async(Command *, enum CommandFlag);
-int32 command_run_capture(Command *, enum CommandFlag);
+void command_result_process_io(Command *command, enum CommandFlag flags);
+int32 command_run(Command *command, enum CommandFlag flags);
+int32 command_run_async(Command *command, enum CommandFlag flags);
+int32 command_run_capture(Command *command, enum CommandFlag flags);
 int32 command_run_capture_all(Command *);
 int32 command_run_capture_combined(Command *);
-int32 command_run_sync(Command *, int *);
-int32 command_signal(Command *, int32, bool);
-int32 command_start(Command *, enum CommandFlag);
-int32 command_status_from_wait(int, CommandResult *);
-char *command_str(Command *, int32 *);
-void command_vector_reserve(char ***, int32 **, int32 *, int32, int32);
+int32 command_run_sync(Command *command, int *exit_status);
+int32 command_signal(Command *command, int32 signal_number,
+                     bool process_group);
+int32 command_start(Command *command, enum CommandFlag flags);
+int32 command_status_from_wait(int status, CommandResult *result);
+char *command_str(Command *command, int32 *len);
+void command_vector_reserve(char ***items, int32 **item_lens, int32 *cap,
+                            int32 len, int32 extra);
 int32 command_wait(Command *);
 
 #define COMMAND_PUSH(CMD, ...) \
@@ -725,11 +763,12 @@ typedef union GenericArrayHeader {
 #pragma warning(pop)
 #endif
 
-void *generic_array_init(int32, int64);
-void *generic_array_grow(void *, int64);
-bool generic_array_reserve(void **, int32, int64);
-int32 generic_array_capacity(void *);
-void generic_array_set_count(void *, int32);
+void *generic_array_init(int32 cap, int64 item_size);
+void *generic_array_grow(void *array, int64 item_size);
+bool generic_array_reserve(void **array, int32 needed_count,
+                           int64 item_size);
+int32 generic_array_capacity(void *array);
+void generic_array_set_count(void *array, int32 count);
 
 #define ARRAY_HEADER(ARRAY) \
     ((GenericArrayHeader *)((void *)(ARRAY)) - 1)
@@ -802,6 +841,7 @@ void throw_away_function();
 #include "threads.c"
 
 #include "some_math.c"
+#include "format.c"
 
 #define ENUM_NAME CommandFlag
 #define ENUM_BITFLAGS 1

@@ -136,6 +136,7 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
     CAT(ENUM_PREFIX_, COUNT)
 #endif
 };
+typedef enum ENUM_NAME ENUM_PREFIX_;
 
 #endif
 
@@ -458,11 +459,16 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 int
 main(void) {
     char *s;
+    TEST_FLAGS_ flags = TEST_FLAGS_READ;
+    TEST_NORMAL_ normal = TEST_NORMAL_APPLE;
+
     ASSERT_ZERO(TEST_FLAGS_READ_BIT_INDEX);
     ASSERT(TEST_FLAGS_BIT_COUNT == 3);
     ASSERT(TEST_FLAGS_READ == (1 << 0));
     ASSERT(TEST_FLAGS_WRITE == (1 << 1));
     ASSERT(TEST_FLAGS_EXEC == (1 << 2));
+    ASSERT(flags == TEST_FLAGS_READ);
+    ASSERT(normal == TEST_NORMAL_APPLE);
 
     s = TEST_FLAGS_str(TEST_FLAGS_READ);
     ASSERT_EQUAL(s, "TEST_FLAGS_READ");

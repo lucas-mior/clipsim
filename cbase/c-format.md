@@ -133,11 +133,11 @@ function(void) {
                   x, y);
 
     // bad (one format argument is left on the format-string line)
-    printf("%s = %.17g\n", states[i],
+    printf("%s = %g\n", states[i],
            X[final_step*nstates + i]);
 
     // good (format string is separate; format arguments stay together)
-    printf("%s = %.17g\n",
+    printf("%s = %g\n",
            states[i], X[final_step*nstates + i]);
 
     return;
@@ -421,6 +421,8 @@ side withtout going over 80 columns, put them in separate lines.
 
 In standalone declarations, if one is needed at all, put all in one line. Break
 long lines so the 80-character limit rule is followed.
+Functions declarations must contain the parameter names, except when there is
+only a single struct/enum/union or pointer to struct/enum/union parameter.
 
 Prefer to break after an argument than before the equal sign, specially if the
 first argument fits in the first line:

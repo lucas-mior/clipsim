@@ -625,8 +625,8 @@ main(void) {
             int32 gen_len = utf8_random_string(test_buf, SIZEOF(test_buf), 10);
             int32 consumed = 0;
 
-            ASSERT(gen_len >= 10);
-            ASSERT(gen_len < 256);
+            ASSERT_MORE(gen_len, 10);
+            ASSERT_LESS(gen_len, 256);
             ASSERT_ZERO(test_buf[gen_len]);
 
             while (consumed < gen_len) {
