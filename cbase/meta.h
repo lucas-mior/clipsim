@@ -188,7 +188,7 @@ typedef struct Document {
 
 char *TOKEN_str(enum TokenKind);
 void TOKEN_str_free(char *);
-enum TokenKind TOKEN_parse(char *);
+enum TokenKind TOKEN_parse(char *, int32);
 
 int32 token_is_val(Token, char *);
 int32 token_is_ptr(Token *, char *);
