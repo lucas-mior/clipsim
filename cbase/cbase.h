@@ -156,7 +156,7 @@ double deg2rad(double degrees);
 int32 dirname2(char *buffer, char *path, int32 *path_len);
 char *ends_with(char *string, int32 string_len, char *suffix,
                 int32 suffix_len);
-void error_async_safe(char *message);
+void error_async_safe(char *message, int32 message_len);
 bool is_ident_char(char c);
 bool is_ident_start_char(char c);
 void normalize(char *restrict path, int32 *restrict length);

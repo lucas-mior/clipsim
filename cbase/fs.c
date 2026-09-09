@@ -450,7 +450,8 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
     if (close(*fd) < 0) {
         char error_buffer[4096];
         char itoa_buffer[32];
-        ITOA(itoa_buffer, line);
+        int32 itoa_len;
+        itoa_len = ITOA(itoa_buffer, line);
 
 #if CC_GCC || CC_CLANG
 #pragma GCC diagnostic push
@@ -461,14 +462,14 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
 #pragma GCC diagnostic pop
 #endif
 
-        error_async_safe(file);
-        error_async_safe(":");
-        error_async_safe(itoa_buffer);
-        error_async_safe(" Error closing ");
-        error_async_safe(filename);
-        error_async_safe(": ");
-        error_async_safe(error_buffer);
-        error_async_safe(".\n");
+        error_async_safe(file, strlen32(file));
+        error_async_safe(STRLIT(":"));
+        error_async_safe(itoa_buffer, itoa_len);
+        error_async_safe(STRLIT(" Error closing "));
+        error_async_safe(filename, strlen32(file));
+        error_async_safe(STRLIT(": "));
+        error_async_safe(error_buffer, strlen32(error_buffer));
+        error_async_safe(STRLIT(".\n"));
 
         *fd = -1;
         return -1;

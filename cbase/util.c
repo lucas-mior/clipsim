@@ -768,9 +768,8 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
 }
 
 void
-error_async_safe(char *message) {
-    int32 len = strlen32(message);
-    write_all(STDERR_FILENO, message, len);
+error_async_safe(char *message, int32 message_len) {
+    write_all(STDERR_FILENO, message, message_len);
     return;
 }
 
