@@ -413,6 +413,7 @@ main(void) {
         Command command = {0};
 
         COMMAND_PUSH(&command, "gcc", "-std=c11");
+        COMMAND_PUSH(&command, "-I./cbase");
         COMMAND_PUSH(&command, "-Wconversion");
         COMMAND_PUSH(&command, "-o", "/tmp/a.out");
         command_printf(&command, "%s", __FILE__);

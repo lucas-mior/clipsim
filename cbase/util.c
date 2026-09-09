@@ -953,7 +953,7 @@ bytes_pretty(char *buffer, int64 raw) {
     }
 
     if (raw <= 1023) {
-        n = itoa2(buffer, 16, raw);
+        n = itoa2(buffer, 22, raw);
         buffer[n++] = 'B';
         buffer[n] = '\0';
         return n;
