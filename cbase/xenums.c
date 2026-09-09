@@ -318,14 +318,21 @@ CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME val) {
          && XENUM_TOKEN_EQUALS(token, token_len,                               \
                                &(name)[strlen32(QUOTE(ENUM_PREFIX_))])))
 
+#if ENUM_BITFLAGS
+  #define XENUM_INVALID_PARSE_RESULT ((enum ENUM_NAME)0)
+#else
+  #define XENUM_INVALID_PARSE_RESULT ((enum ENUM_NAME)CAT(ENUM_PREFIX_, COUNT))
+#endif
+
 XENUMS_LINKAGE enum ENUM_NAME
 CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
     ENUM_UNDERLYING_TYPE result = 0;
     char *p = string;
     char *end;
+    bool matched_any = false;
 
     if (p == NULL || string_len <= 0) {
-        return (enum ENUM_NAME)0;
+        return XENUM_INVALID_PARSE_RESULT;
     }
 
     end = string + string_len;
@@ -349,9 +356,7 @@ CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
         }
         token_len = (int32)(p - token);
         if (token_len <= 0) {
-            error2("Error: invalid enum parse character '%c' in %.*s.\n",
-                   *p, string_len, string);
-            TRAP();
+            return XENUM_INVALID_PARSE_RESULT;
         }
 
 #if ENUM_BITFLAGS
@@ -408,10 +413,13 @@ CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
         #undef XENUM_PARSE_ONE
 
         if (!matched) {
-            error2("Error: unknown enum token '%.*s' while parsing %.*s.\n",
-                   token_len, token, string_len, string);
-            TRAP();
+            return XENUM_INVALID_PARSE_RESULT;
         }
+        matched_any = true;
+    }
+
+    if (!matched_any) {
+        return XENUM_INVALID_PARSE_RESULT;
     }
 
     return (enum ENUM_NAME)result;
@@ -419,6 +427,7 @@ CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
 
 #undef XENUM_TOKEN_EQUALS
 #undef XENUM_TOKEN_EQUALS_ENUM_NAME
+#undef XENUM_INVALID_PARSE_RESULT
 
 #if 0 == TESTING_xenums
 static inline void
@@ -508,6 +517,11 @@ main(void) {
             == (TEST_FLAGS_READ | TEST_FLAGS_WRITE));
     ASSERT(TEST_FLAGS_parse(STRLIT("READ_WRITE")) == TEST_FLAGS_READ_WRITE);
     ASSERT(TEST_FLAGS_parse(STRLIT("NONE")) == TEST_FLAGS_NONE);
+    ASSERT(TEST_FLAGS_parse(STRLIT("")) == TEST_FLAGS_NONE);
+    ASSERT(TEST_FLAGS_parse(STRLIT("   ")) == TEST_FLAGS_NONE);
+    ASSERT(TEST_FLAGS_parse(STRLIT("unknown")) == TEST_FLAGS_NONE);
+    ASSERT(TEST_FLAGS_parse(STRLIT("READ|unknown")) == TEST_FLAGS_NONE);
+    ASSERT(TEST_FLAGS_parse(STRLIT("@")) == TEST_FLAGS_NONE);
 
     {
         char counted[] = {'R', 'E', 'A', 'D'};
@@ -553,6 +567,11 @@ main(void) {
     ASSERT(TEST_NORMAL_parse(STRLIT("cherry")) == TEST_NORMAL_CHERRY);
     ASSERT(TEST_NORMAL_parse(STRLIT("TEST_NORMAL_COUNT")) == TEST_NORMAL_COUNT);
     ASSERT(TEST_NORMAL_parse(STRLIT("COUNT")) == TEST_NORMAL_COUNT);
+    ASSERT(TEST_NORMAL_parse(STRLIT("")) == TEST_NORMAL_COUNT);
+    ASSERT(TEST_NORMAL_parse(STRLIT("   ")) == TEST_NORMAL_COUNT);
+    ASSERT(TEST_NORMAL_parse(STRLIT("unknown")) == TEST_NORMAL_COUNT);
+    ASSERT(TEST_NORMAL_parse(STRLIT("banana unknown")) == TEST_NORMAL_COUNT);
+    ASSERT(TEST_NORMAL_parse(STRLIT("@")) == TEST_NORMAL_COUNT);
 
     {
         char counted[] = {'c', 'h', 'e', 'r', 'r', 'y'};
