@@ -1066,9 +1066,6 @@ read_entire_file(char *path, char **file_bytes) {
 
     if ((file = fopen(path, "rb")) == NULL) {
         err = errno;
-        if (err <= 0) {
-            err = EIO;
-        }
         error("Error opening "RED("%s")" for reading: %s",
               path, strerror(err));
         ASSERT_POSITIVE(err);
@@ -1076,19 +1073,15 @@ read_entire_file(char *path, char **file_bytes) {
     }
     if (fseek(file, 0, SEEK_END) != 0) {
         err = errno;
-        if (err <= 0) {
-            err = EIO;
-        }
         error("Error seeking end of %s: %s.\n", path, strerror(err));
+        ASSERT_POSITIVE(err);
         XFCLOSE(file, path);
         return -err;
     }
     if ((len = ftell(file)) < 0) {
         err = errno;
-        if (err <= 0) {
-            err = EIO;
-        }
         error("Error in ftell(%s): %s.\n", path, strerror(err));
+        ASSERT_POSITIVE(err);
         XFCLOSE(file, path);
         return -err;
     }
@@ -1099,9 +1092,6 @@ read_entire_file(char *path, char **file_bytes) {
     }
     if (fseek(file, 0, SEEK_SET) < 0) {
         err = errno;
-        if (err <= 0) {
-            err = EIO;
-        }
         error("Error rewinding %s: %s.\n", path, strerror(err));
         XFCLOSE(file, path);
         ASSERT_POSITIVE(err);
@@ -1115,7 +1105,7 @@ read_entire_file(char *path, char **file_bytes) {
     }
     if (read_len != len) {
         err = errno;
-        if (err <= 0) {
+        if (!ferror(file)) {
             err = EIO;
         }
         error("Error reading "RED("%s")": %s.\n", path, strerror(err));
@@ -1659,14 +1649,22 @@ main(void) {
 
     {
         char path[PATH_MAX];
+        char missing_path[PATH_MAX];
         char *contents;
+        char *missing_contents;
         int32 contents_len;
 
         SNPRINTF(path, "%s/whole_file", temp_dir);
+        SNPRINTF(missing_path, "%s/missing", temp_dir);
         ASSERT(path_missing(NULL));
         ASSERT(path_missing(""));
         ASSERT(!path_missing(path));
         ASSERT(!util_file_exists(path));
+
+        missing_contents = (char *)1;
+        ASSERT_EQUAL(read_entire_file(missing_path, &missing_contents),
+                     -ENOENT);
+        ASSERT_EQUAL(missing_contents, NULL);
 
         ASSERT(write_entire_file(path, STRLIT("abcdef")) == 6);
         ASSERT(util_file_exists(path));

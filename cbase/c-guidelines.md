@@ -738,6 +738,17 @@ ASSERT(pointer != NULL);
 - Do not use `ASSERT_EQUAL` for enums.
   * Use `ASSERT(enumvalue1 == enumvalue2)` instead, so that the compiler does
     not complain.
+- Prefer `ASSERT_ZERO(value);` instead of `ASSERT(value == 0)`.
+- Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT(value > 0)`.
+- Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT(value < 0)`.
+- Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT(value <= 0)`.
+- Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT(value >= 0)`.
+- Prefer `ASSERT_EQUAL(a, b);` instead of `ASSERT(a == b)`
+- Prefer `ASSERT_ZERO(value);` instead of `ASSERT_EQUAL(a, 0)`
+- Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT_MORE(a, 0)`
+- Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT_LESS(a, 0)`
+- Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT_LESS_EQUAL(a, 0)`
+- Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT_MORE_EQUAL(a, 0)`
 
 ## Modules
 
