@@ -274,7 +274,7 @@ memchr64(void *pointer, int32 value, int64 size) {
         }
     }
     if (size == 0) {
-        return 0;
+        return NULL;
     }
     return memchr(pointer, value, (size_t)size);
 }

@@ -184,7 +184,6 @@ sort_functions_sink(void) {
 #define CBASE_IMPLEMENT
 #include "cbase.h"
 
-#define MAXI 10000
 static int32 possibleN[] = {31, 32, 33, 50};
 static int32 possibleP[] = {1, 2, 3, 8};
 
@@ -217,7 +216,7 @@ test_sorting(int32 n, int32 p) {
 
     rand_int_seed(42);
     for (int32 i = 0; i < n; i += 1) {
-        array[i] = rand_int() % MAXI;
+        array[i] = rand_int() % 10000;
     }
 
     sort_shuffle(array, n, SIZEOF(*array));
