@@ -110,6 +110,12 @@ int32 utf8_suffix_width_position(char *string, int32 string_len,
                                  int32 max_width);
 int32 utf8_validate(uint32 *u, int32 i);
 int32 utf8_width(char *string, int32 string_len);
+int32 ascii_normalize_lower_snake(char *out, char *string, int32 string_len);
+int32 ascii_normalize_upper_snake(char *out, char *string, int32 string_len);
+int32 ascii_normalize_upper_compact(char *out, char *string,
+                                    int32 string_len);
+int32 ascii_normalize_camel_compact(char *out, char *string,
+                                    int32 string_len);
 
 #if !defined(MAX_FILES_COPY)
 #define MAX_FILES_COPY 256
@@ -830,6 +836,7 @@ void throw_away_function();
 #include "assertions.c"
 #include "array.c"
 #include "utf8.c"
+#include "ascii_normalization.c"
 #include "util.c"
 #include "string.c"
 #include "time.c"
