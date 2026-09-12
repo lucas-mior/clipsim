@@ -29,7 +29,7 @@ ascii_normalize_lower_snake(char *out, char *string, int32 string_len) {
     int32 written = 0;
 
     ASSERT(out != NULL);
-    ASSERT(string_len >= 0);
+    ASSERT_NON_NEGATIVE(string_len);
     ASSERT((string != NULL) || (string_len == 0));
 
     for (int32 i = 0; i < string_len; i += 1) {
@@ -49,7 +49,7 @@ ascii_normalize_upper_snake(char *out, char *string, int32 string_len) {
     int32 written = 0;
 
     ASSERT(out != NULL);
-    ASSERT(string_len >= 0);
+    ASSERT_NON_NEGATIVE(string_len);
     ASSERT((string != NULL) || (string_len == 0));
 
     for (int32 i = 0; i < string_len; i += 1) {
@@ -69,7 +69,7 @@ ascii_normalize_upper_compact(char *out, char *string, int32 string_len) {
     int32 written = 0;
 
     ASSERT(out != NULL);
-    ASSERT(string_len >= 0);
+    ASSERT_NON_NEGATIVE(string_len);
     ASSERT((string != NULL) || (string_len == 0));
 
     for (int32 i = 0; i < string_len; i += 1) {
@@ -89,7 +89,7 @@ ascii_normalize_camel_compact(char *out, char *string, int32 string_len) {
     int32 written = 0;
 
     ASSERT(out != NULL);
-    ASSERT(string_len >= 0);
+    ASSERT_NON_NEGATIVE(string_len);
     ASSERT((string != NULL) || (string_len == 0));
 
     for (int32 i = 0; i < string_len; i += 1) {

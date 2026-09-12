@@ -183,7 +183,7 @@ emit_lens_initializer(StrBuilder *out, char *field, char **values,
             value_len = fb_len;
         }
 
-        sb_printf(out, "%d", value_len);
+        sb_itoa(out, value_len);
     }
     SB_APPEND(out, " },\n");
 
@@ -202,7 +202,7 @@ emit_int_array_initializer(StrBuilder *out, char *field, int32 *values,
         if (i) {
             SB_APPEND(out, ", ");
         }
-        sb_printf(out, "%d", values[i]);
+        sb_itoa(out, values[i]);
     }
     SB_APPEND(out, " },\n");
 

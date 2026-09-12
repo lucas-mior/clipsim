@@ -385,8 +385,24 @@ common_build_incremental_binary () {
     incremental_objdir=${COMMON_BUILD_INCREMENTAL_OBJDIR:-bin/obj/$incremental_mode}
     incremental_main_obj="$incremental_objdir/${incremental_main_source%.c}.o"
     incremental_flags_file=$incremental_objdir/flags
-    incremental_subdir_sources=
-    incremental_subdir_objects=
+    incremental_source_files=
+    incremental_source_objects=
+
+    for incremental_source_file in "$incremental_source_root"/*.c; do
+        if [ ! -f "$incremental_source_file" ]; then
+            continue
+        fi
+        if [ "$incremental_source_file" = "$incremental_main_source" ]; then
+            continue
+        fi
+
+        incremental_source_obj=${incremental_source_file%.c}.o
+        incremental_source_obj=$incremental_objdir/$incremental_source_obj
+        incremental_source_files="$incremental_source_files "
+        incremental_source_files="$incremental_source_files$incremental_source_file"
+        incremental_source_objects="$incremental_source_objects "
+        incremental_source_objects="$incremental_source_objects$incremental_source_obj"
+    done
 
     for incremental_source_dir in "$incremental_source_root"/*; do
         if [ ! -d "$incremental_source_dir" ]; then
@@ -394,7 +410,6 @@ common_build_incremental_binary () {
         fi
 
         incremental_source_subdir=${incremental_source_dir#$incremental_source_root/}
-        incremental_wrapper_src=
 
         for incremental_source_file in "$incremental_source_dir"/*.c; do
             if [ ! -f "$incremental_source_file" ]; then
@@ -414,27 +429,19 @@ common_build_incremental_binary () {
                 }
                 END { exit !found }
             ' "$incremental_source_file"; then
-                if [ -n "$incremental_wrapper_src" ]; then
-                    error "multiple incremental source files in %s\n" \
-                        "$incremental_source_dir"
-                    exit 1
-                fi
-
-                incremental_wrapper_src=$incremental_source_file
+                continue
             fi
-        done
 
-        if [ -n "$incremental_wrapper_src" ]; then
-            incremental_wrapper_obj=${incremental_wrapper_src%.c}.o
-            incremental_wrapper_obj=$incremental_objdir/$incremental_wrapper_obj
-            incremental_subdir_sources="$incremental_subdir_sources "
-            incremental_subdir_sources="$incremental_subdir_sources$incremental_wrapper_src"
-            incremental_subdir_objects="$incremental_subdir_objects "
-            incremental_subdir_objects="$incremental_subdir_objects$incremental_wrapper_obj"
-        fi
+            incremental_source_obj=${incremental_source_file%.c}.o
+            incremental_source_obj=$incremental_objdir/$incremental_source_obj
+            incremental_source_files="$incremental_source_files "
+            incremental_source_files="$incremental_source_files$incremental_source_file"
+            incremental_source_objects="$incremental_source_objects "
+            incremental_source_objects="$incremental_source_objects$incremental_source_obj"
+        done
     done
 
-    if [ -z "$incremental_subdir_sources" ]; then
+    if [ -z "$incremental_source_files" ]; then
         error "no incremental source files found under %s subfolders\n" \
             "$incremental_source_root"
         exit 1
@@ -442,8 +449,8 @@ common_build_incremental_binary () {
 
     mkdir -p "$(dirname "$incremental_main_obj")"
 
-    for incremental_subdir_object in $incremental_subdir_objects; do
-        mkdir -p "$(dirname "$incremental_subdir_object")"
+    for incremental_source_object in $incremental_source_objects; do
+        mkdir -p "$(dirname "$incremental_source_object")"
     done
 
     incremental_debug_flags="CC=$CC
@@ -451,13 +458,13 @@ SOURCE_ROOT=$incremental_source_root
 MAIN_SOURCE=$incremental_main_source
 COMPILE_FLAGS=$incremental_compile_flags
 COMMON_ROOTS=${COMMON_BUILD_INCREMENTAL_ROOTS:-cbase}
-SUBDIR_SOURCES=$incremental_subdir_sources"
+SOURCE_FILES=$incremental_source_files"
     if [ ! -f "$incremental_flags_file" ] \
             || ! printf '%s\n' "$incremental_debug_flags" \
                 | cmp -s - "$incremental_flags_file"; then
         rm -f "$incremental_main_obj"
-        for incremental_subdir_object in $incremental_subdir_objects; do
-            rm -f "$incremental_subdir_object"
+        for incremental_source_object in $incremental_source_objects; do
+            rm -f "$incremental_source_object"
         done
 
         printf '%s\n' "$incremental_debug_flags" > "$incremental_flags_file"
@@ -465,30 +472,31 @@ SUBDIR_SOURCES=$incremental_subdir_sources"
 
     incremental_compile_pids=
 
-    for incremental_subdir_source in $incremental_subdir_sources; do
-        incremental_subdir_object=${incremental_subdir_source%.c}.o
-        incremental_subdir_object=$incremental_objdir/$incremental_subdir_object
-        incremental_source_dir=$(dirname "$incremental_subdir_source")
+    for incremental_source_file in $incremental_source_files; do
+        incremental_source_object=${incremental_source_file%.c}.o
+        incremental_source_object=$incremental_objdir/$incremental_source_object
+        incremental_source_dir=$(dirname "$incremental_source_file")
 
-        if [ ! -f "$incremental_subdir_object" ] \
+        if [ ! -f "$incremental_source_object" ] \
+                || [ "$incremental_source_file" -nt "$incremental_source_object" ] \
                 || find "$incremental_source_dir" -maxdepth 1 -type f \
-                    \( -name '*.c' -o -name '*.h' \) \
-                    -newer "$incremental_subdir_object" -print | grep -q . \
+                    -name '*.h' \
+                    -newer "$incremental_source_object" -print | grep -q . \
                 || find "$incremental_source_root" -mindepth 2 \
                     -maxdepth 2 -type f \
                     -name '*.h' \
-                    -newer "$incremental_subdir_object" -print | grep -q . \
+                    -newer "$incremental_source_object" -print | grep -q . \
                 || find "$incremental_source_root" -maxdepth 1 \
                     -type f -name '*.h' \
-                    -newer "$incremental_subdir_object" -print | grep -q . \
+                    -newer "$incremental_source_object" -print | grep -q . \
                 || common_build_incremental_roots_are_newer \
-                    "$incremental_subdir_object"; then
+                    "$incremental_source_object"; then
             (
                 trace_on
                 $CC \
                     $incremental_compile_flags \
-                    -c "$incremental_subdir_source" \
-                    -o "$incremental_subdir_object"
+                    -c "$incremental_source_file" \
+                    -o "$incremental_source_object"
                 trace_off
             ) &
             incremental_compile_pids="$incremental_compile_pids $!"
@@ -496,8 +504,9 @@ SUBDIR_SOURCES=$incremental_subdir_sources"
     done
 
     if [ ! -f "$incremental_main_obj" ] \
-            || find "$incremental_source_root" -maxdepth 1 -type f \
-                \( -name '*.c' -o -name '*.h' \) \
+            || [ "$incremental_main_source" -nt "$incremental_main_obj" ] \
+            || find "$incremental_source_root" -maxdepth 1 \
+                -type f -name '*.h' \
                 -newer "$incremental_main_obj" -print | grep -q . \
             || find "$incremental_source_root" -mindepth 2 -maxdepth 2 \
                 -type f -name '*.h' \
@@ -530,7 +539,7 @@ SUBDIR_SOURCES=$incremental_subdir_sources"
     $CC \
         -o "$incremental_exe" \
         "$incremental_main_obj" \
-        $incremental_subdir_objects \
+        $incremental_source_objects \
         $incremental_link_flags
     trace_off
 
@@ -997,6 +1006,19 @@ common_build_tags () {
         trace_on
         vtags.sed tags | sort | uniq > .tags.vim || true
         trace_off
+    fi
+
+    if [ -d "src/" ]; then
+        for dir in src/*; do
+            if [ ! -d "$dir" ]; then
+                continue
+            fi
+
+            trace_on
+            ln -f tags      "$dir"
+            ln -f .tags.vim "$dir"
+            trace_off
+        done
     fi
 }
 
