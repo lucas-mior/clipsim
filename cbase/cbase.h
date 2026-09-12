@@ -75,6 +75,7 @@ optional_strlen32(char *string) {
 }
 
 #include "i18n.h"
+#include "allocator.h"
 #include "memory.h"
 #include "arena.h"
 
@@ -831,6 +832,7 @@ void throw_away_function();
 #define CBASE_IMPLEMENTED 1
 
 #include "arena.c"
+#include "allocator.c"
 #include "memory.c"
 #include "generic.c"
 #include "assertions.c"

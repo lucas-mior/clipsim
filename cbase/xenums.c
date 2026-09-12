@@ -307,16 +307,53 @@ CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME val) {
     return str;
 }
 
+#if XENUMS_DECLARE_ONLY == 0
+static inline bool32
+CAT(ENUM_PREFIX_, parse_name_equals)(char *string, int32 string_len,
+                                     char *name, int32 name_len) {
+    if (string_len != name_len) {
+        return 0;
+    }
+
+    for (int32 i = 0; i < string_len; i += 1) {
+        char left = string[i];
+        char right = name[i];
+
+        if ((left == ' ') || (left == '-')) {
+            left = '_';
+        }
+        if ((right == ' ') || (right == '-')) {
+            right = '_';
+        }
+        if ((left >= 'A') && (left <= 'Z')) {
+            left = (char)(left - 'A' + 'a');
+        }
+        if ((right >= 'A') && (right <= 'Z')) {
+            right = (char)(right - 'A' + 'a');
+        }
+        if (left != right) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+#endif
+
+#define XENUM_TOKEN_EQUALS_N(token, token_len, name, name_len)                 \
+    CAT(ENUM_PREFIX_, parse_name_equals)(token, token_len, name, name_len)
+
 #define XENUM_TOKEN_EQUALS(token, token_len, name)                             \
-    ((token_len) == strlen32(name)                                             \
-     && BEGINS_WITH_4(token, token_len, name, token_len))
+    XENUM_TOKEN_EQUALS_N(token, token_len, name, STRLIT_LEN(name))
 
 #define XENUM_TOKEN_EQUALS_ENUM_NAME(token, token_len, name)                   \
     (XENUM_TOKEN_EQUALS(token, token_len, name)                                \
-     || (BEGINS_WITH_4(name, strlen32(name), QUOTE(ENUM_PREFIX_),              \
-                       strlen32(QUOTE(ENUM_PREFIX_)))                          \
-         && XENUM_TOKEN_EQUALS(token, token_len,                               \
-                               &(name)[strlen32(QUOTE(ENUM_PREFIX_))])))
+     || (BEGINS_WITH_4(name, STRLIT_LEN(name), QUOTE(ENUM_PREFIX_),            \
+                       STRLIT_LEN(QUOTE(ENUM_PREFIX_)))                        \
+         && XENUM_TOKEN_EQUALS_N(token, token_len,                             \
+                                 &(name)[STRLIT_LEN(QUOTE(ENUM_PREFIX_))],     \
+                                 STRLIT_LEN(name)                              \
+                                 - STRLIT_LEN(QUOTE(ENUM_PREFIX_)))))
 
 #if ENUM_BITFLAGS
   #define XENUM_INVALID_PARSE_RESULT ((enum ENUM_NAME)0)
@@ -351,8 +388,13 @@ CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
         }
 
         token = p;
-        while (p < end && is_ident_char(*p)) {
+        while (p < end && *p != '|' && *p != '(' && *p != ')') {
             p += 1;
+        }
+        while ((p > token)
+               && (p[-1] == ' ' || p[-1] == '\t' || p[-1] == '\n'
+                   || p[-1] == '\r')) {
+            p -= 1;
         }
         token_len = (int32)(p - token);
         if (token_len <= 0) {
@@ -426,6 +468,7 @@ CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
 }
 
 #undef XENUM_TOKEN_EQUALS
+#undef XENUM_TOKEN_EQUALS_N
 #undef XENUM_TOKEN_EQUALS_ENUM_NAME
 #undef XENUM_INVALID_PARSE_RESULT
 
@@ -465,7 +508,8 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #define ENUM_FIELDS                                                            \
     XX(TEST_NORMAL_APPLE)                                                      \
     XX(TEST_NORMAL_BANANA, banana)                                             \
-    XX(TEST_NORMAL_CHERRY, cherry)
+    XX(TEST_NORMAL_CHERRY, cherry)                                             \
+    XX(TEST_NORMAL_PEANUT_BUTTER, peanut butter)
 #include "xenums.c"
 
 int
@@ -533,7 +577,7 @@ main(void) {
     ASSERT_ZERO(TEST_NORMAL_APPLE);
     ASSERT(TEST_NORMAL_BANANA == 1);
     ASSERT(TEST_NORMAL_CHERRY == 2);
-    ASSERT(TEST_NORMAL_COUNT == 3);
+    ASSERT(TEST_NORMAL_COUNT == 4);
 
     s = TEST_NORMAL_str(TEST_NORMAL_APPLE);
     ASSERT_EQUAL(s, "TEST_NORMAL_APPLE");
@@ -565,6 +609,12 @@ main(void) {
     ASSERT(TEST_NORMAL_parse(STRLIT("TEST_NORMAL_CHERRY"))
            == TEST_NORMAL_CHERRY);
     ASSERT(TEST_NORMAL_parse(STRLIT("cherry")) == TEST_NORMAL_CHERRY);
+    ASSERT(TEST_NORMAL_parse(STRLIT("peanut_butter"))
+           == TEST_NORMAL_PEANUT_BUTTER);
+    ASSERT(TEST_NORMAL_parse(STRLIT("PeAnUt BuTtEr"))
+           == TEST_NORMAL_PEANUT_BUTTER);
+    ASSERT(TEST_NORMAL_parse(STRLIT("PEANUT-BUTTER"))
+           == TEST_NORMAL_PEANUT_BUTTER);
     ASSERT(TEST_NORMAL_parse(STRLIT("TEST_NORMAL_COUNT")) == TEST_NORMAL_COUNT);
     ASSERT(TEST_NORMAL_parse(STRLIT("COUNT")) == TEST_NORMAL_COUNT);
     ASSERT(TEST_NORMAL_parse(STRLIT("")) == TEST_NORMAL_COUNT);
