@@ -602,6 +602,7 @@ parse_integer(char *str, int32 str_len, llong *result) {
 // - when the string was pre-parsed,
 //   so we know that it will not get invalid input
 // - or when the caller only needs positive values;
+// - or when the caller only needs non-zero values;
 //   in this case, zero is used as one of:
 //   - "don't use this number"
 //   - "do 0 actions of this thing"

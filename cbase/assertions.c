@@ -260,6 +260,39 @@ assert_glob_match_impl(char *file, int32 line, char *func,
     return;
 }
 
+void
+assert_outside(char *file, int32 line, char *func,
+               char *pointer_name, char *begin_name, char *end_name,
+               void *pointer, void *begin, void *end) {
+    uintptr pointer_address = (uintptr)pointer;
+    uintptr begin_address = (uintptr)begin;
+    uintptr end_address = (uintptr)end;
+
+    if (begin_address > end_address) {
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "invalid range: %s = %p must be before %s = %p\n",
+                         begin_name, begin, end_name, end);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+    if ((pointer_address < begin_address) || (pointer_address >= end_address)) {
+        return;
+    }
+
+    if (DEBUGGING) {
+        assert_error(file, line, func,
+                     "%s = %p outside [%s = %p, %s = %p)\n",
+                     pointer_name, pointer, begin_name, begin, end_name, end);
+        TRAP();
+    } else {
+        UNREACHABLE();
+    }
+    return;
+}
+
 #define GENERATE_ASSERT_SIGNED(MODE, SYMBOL, EXPECTED)                         \
 void                                                                           \
 a_sign_integer_##MODE(char *file, int32 line, char *func,                      \
@@ -1015,6 +1048,7 @@ assert_functions_sink(void) {
     (void)assert_not_contains;
     (void)assert_equal_3;
     (void)assert_equal_4;
+    (void)assert_outside;
 
     (void)a_bool_equal;
     (void)a_bool_not_equal;
@@ -1235,6 +1269,12 @@ main(void) {
         ASSERT_GLOB_NO_MATCH(haystack, "alpha*delta");
         ASSERT_GLOB_NO_MATCH(binary_haystack, SIZEOF(binary_haystack), "a*c");
     } {
+        int32 array[4] = {0};
+        int32 separate = 0;
+
+        ASSERT_OUTSIDE(&separate, array, array + LENGTH(array));
+        ASSERT_OUTSIDE(&array[4], array, array + LENGTH(array));
+    } {
         // uncomment to trigger linking error
         /* double x = 0.1; */
         /* void *a = NULL; */
@@ -1273,6 +1313,8 @@ main(void) {
         ASSERT_TRAPS(ASSERT_NOT_CONTAINS("alpha beta\n gamma\n", 18, "beta\n"));
         ASSERT_TRAPS(ASSERT_GLOB_MATCH("alpha beta gamma", "alpha*delta"));
         ASSERT_TRAPS(ASSERT_GLOB_NO_MATCH("alpha beta gamma", "alpha*gamma"));
+        ASSERT_TRAPS(ASSERT_OUTSIDE(array, array + LENGTH(array), array));
+        ASSERT_TRAPS(ASSERT_OUTSIDE(&array[0], array, array + LENGTH(array)));
     }
 #endif
 

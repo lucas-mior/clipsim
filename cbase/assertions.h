@@ -50,6 +50,9 @@ void assert_not_contains(char *, int32, char *,
 void assert_glob_match_impl(char *, int32, char *,
                             char *, char *, char *, int32,
                             char *, int32, bool);
+void assert_outside(char *, int32, char *,
+                    char *, char *, char *,
+                    void *, void *, void *);
 void assert_equal_3(char *, int32, char *,
                     char *, char *, char *, int32, char *);
 void assert_equal_4(char *, int32, char *,
@@ -307,6 +310,15 @@ void assert_traps_restore(char *, int32, char *);
                            STRING, STRING_LEN, GLOB, strlen32(GLOB), false)
 #define ASSERT_GLOB_NO_MATCH(...)                                              \
     SELECT_ON_NUM_ARGS(ASSERT_GLOB_NO_MATCH_, __VA_ARGS__)
+
+#define ASSERT_OUTSIDE(POINTER, BEGIN, END) do {                               \
+    void *ASSERT_OUTSIDE_POINTER = (void *)(uintptr)(POINTER);                 \
+    void *ASSERT_OUTSIDE_BEGIN = (void *)(uintptr)(BEGIN);                     \
+    void *ASSERT_OUTSIDE_END = (void *)(uintptr)(END);                         \
+    assert_outside(__FILE__, __LINE__, FUNC__, #POINTER, #BEGIN, #END,         \
+                   ASSERT_OUTSIDE_POINTER, ASSERT_OUTSIDE_BEGIN,               \
+                   ASSERT_OUTSIDE_END);                                        \
+} while (0)
 
 #define A_BOTH_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                            \
     a_both_signed_##MODE(__FILE__, __LINE__, FUNC__,                           \
