@@ -47,7 +47,7 @@ static noreturn int clipboard_daemon_watch(void);
 
 int32
 clipboard_daemon_watch(void) {
-    DEBUG_PRINT("void")
+    DEBUG_PRINT("%s", "void")
     ulong color;
     char *CLIPSIM_SIGNAL_NUMBER;
     char *CLIPSIM_SIGNAL_PROGRAM;

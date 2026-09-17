@@ -320,7 +320,7 @@ ipc_daemon_dprintf(int32 fd, char *name, char *format, ...) {
 
 void *
 ipc_daemon_listen(void *unused) {
-    DEBUG_PRINT("void")
+    DEBUG_PRINT("%s", "void")
     int32 client_fd;
 
     (void)unused;

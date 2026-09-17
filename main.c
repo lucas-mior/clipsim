@@ -150,7 +150,7 @@ main_usage(FILE *stream) {
 
 void
 main_launch_daemon(void) {
-    DEBUG_PRINT("void")
+    DEBUG_PRINT("%s", "void")
     pthread_t ipc_thread;
     bool block_middle_mouse_paste;
 

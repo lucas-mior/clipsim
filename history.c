@@ -151,7 +151,7 @@ history_recover_write(int32 fd, Entry *e) {
 
 int
 history_save(void) {
-    DEBUG_PRINT("void")
+    DEBUG_PRINT("%s", "void")
     int32 nfds = 0;
     struct pollfd pipes[HISTORY_BUFFER_SIZE];
     int dests[HISTORY_BUFFER_SIZE];
@@ -290,7 +290,7 @@ history_exit(int32 signum) {
 
 static void
 history_read(void) {
-    DEBUG_PRINT("void")
+    DEBUG_PRINT("%s", "void")
     int64 history_size;
     char *history_map;
     char *begin;

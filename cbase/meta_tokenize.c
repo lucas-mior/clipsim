@@ -501,8 +501,26 @@ tokenize_line_with_flags(Line *line, bool *in_block_comment, int32 flags) {
                                            in_block_comment);
             line_add_token(line, TOKEN_COMMENT, line->text + i, token_len, i);
             i += token_len;
-        } else if ((token_len = scan_literal_token(line->text, line->len, i))
-                   > 0) {
+        } else if ((line->text[i] == '\'') || (line->text[i] == '"')) {
+            token_len = scan_literal_token(line->text, line->len, i);
+            line_add_token(line, TOKEN_LITERAL, line->text + i, token_len, i);
+            i += token_len;
+        } else if (((line->text[i] == 'L') || (line->text[i] == 'U'))
+                   && ((i + 1) < line->len)
+                   && ((line->text[i + 1] == '\'')
+                       || (line->text[i + 1] == '"'))) {
+            token_len = scan_literal_token(line->text, line->len, i);
+            line_add_token(line, TOKEN_LITERAL, line->text + i, token_len, i);
+            i += token_len;
+        } else if ((line->text[i] == 'u')
+                   && ((((i + 1) < line->len)
+                        && ((line->text[i + 1] == '\'')
+                            || (line->text[i + 1] == '"')))
+                       || (((i + 2) < line->len)
+                           && (line->text[i + 1] == '8')
+                           && ((line->text[i + 2] == '\'')
+                               || (line->text[i + 2] == '"'))))) {
+            token_len = scan_literal_token(line->text, line->len, i);
             line_add_token(line, TOKEN_LITERAL, line->text + i, token_len, i);
             i += token_len;
         } else if (char_is_identifier_start(line->text[i])) {
@@ -519,14 +537,43 @@ tokenize_line_with_flags(Line *line, bool *in_block_comment, int32 flags) {
             token_len = scan_number_literal(line->text, line->len, i);
             line_add_token(line, TOKEN_LITERAL, line->text + i, token_len, i);
             i += token_len;
-        } else if (char_is_operator_or_punct(line->text[i])) {
-            category = operator_or_punct_category(line->text, line->len, i,
-                                                  &token_len);
-            line_add_token(line, category, line->text + i, token_len, i);
-            i += token_len;
         } else {
-            line_add_token(line, TOKEN_UNKNOWN, line->text + i, 1, i);
-            i += 1;
+            switch (line->text[i]) {
+            case '+':
+            case '-':
+            case '*':
+            case '/':
+            case '%':
+            case '=':
+            case '!':
+            case '<':
+            case '>':
+            case '&':
+            case '|':
+            case '^':
+            case '~':
+            case '?':
+            case ':':
+            case '.':
+            case ',':
+            case ';':
+            case '(':
+            case ')':
+            case '[':
+            case ']':
+            case '{':
+            case '}':
+            case '#':
+                category = operator_or_punct_category(line->text, line->len, i,
+                                                      &token_len);
+                line_add_token(line, category, line->text + i, token_len, i);
+                i += token_len;
+                break;
+            default:
+                line_add_token(line, TOKEN_UNKNOWN, line->text + i, 1, i);
+                i += 1;
+                break;
+            }
         }
     }
     return;
@@ -968,6 +1015,34 @@ test_tokenize_line_default(void) {
 }
 
 static void
+test_tokenize_first_byte_dispatch(void) {
+    char *text = "u user UPPER Lvalue u8name u\"x\" U'x' L\"z\" .5 . + @";
+    bool in_block_comment = false;
+    Line line = {0};
+
+    line.text = text;
+    line.len = strlen32(text);
+    tokenize_line(&line, &in_block_comment);
+
+    test_assert_token(&line.tokens[0], TOKEN_IDENT, "u", 0);
+    test_assert_token(&line.tokens[2], TOKEN_IDENT, "user", 2);
+    test_assert_token(&line.tokens[4], TOKEN_IDENT, "UPPER", 7);
+    test_assert_token(&line.tokens[6], TOKEN_IDENT, "Lvalue", 13);
+    test_assert_token(&line.tokens[8], TOKEN_IDENT, "u8name", 20);
+    test_assert_token(&line.tokens[10], TOKEN_LITERAL, "u\"x\"", 27);
+    test_assert_token(&line.tokens[12], TOKEN_LITERAL, "U'x'", 32);
+    test_assert_token(&line.tokens[14], TOKEN_LITERAL, "L\"z\"", 37);
+    test_assert_token(&line.tokens[16], TOKEN_LITERAL, ".5", 42);
+    test_assert_token(&line.tokens[18], TOKEN_PUNCT, ".", 45);
+    test_assert_token(&line.tokens[20], TOKEN_OPERATOR, "+", 47);
+    test_assert_token(&line.tokens[22], TOKEN_UNKNOWN, "@", 49);
+
+    ASSERT(!in_block_comment);
+    free_line_tokens(&line);
+    return;
+}
+
+static void
 test_tokenize_preprocessor_and_skip_whitespace(void) {
     char *preproc_text = "  #include \"x\"\n";
     char *skip_text = "a b\n";
@@ -1132,6 +1207,7 @@ main(void) {
     test_operator_or_punct_category();
     test_line_starts_preprocessor();
     test_tokenize_line_default();
+    test_tokenize_first_byte_dispatch();
     test_tokenize_preprocessor_and_skip_whitespace();
     test_tokenize_block_comment_across_lines();
     test_tokenization_navigation();
