@@ -950,7 +950,7 @@ basename2(char *path, int32 *full_length, int32 *base_len) {
             p = bslash + 1;
         }
 
-        ASSERT(length < MAXOF(left));
+        ASSERT_LESS(length, MAXOF(left));
         left -= (int32)length;
     }
 
@@ -1221,7 +1221,7 @@ test_join_path(char *buffer, int64 buffer_len, char *dir, char *name) {
 
     len = snprintf2(buffer, buffer_len, "%s/%s", dir, name);
     ASSERT_POSITIVE(len);
-    ASSERT(len < buffer_len);
+    ASSERT_LESS(len, buffer_len);
 
     return;
 }
@@ -1668,7 +1668,7 @@ main(void) {
 
         ASSERT(write_entire_file(path, STRLIT("abcdef")) == 6);
         ASSERT(util_file_exists(path));
-        ASSERT((contents_len = read_entire_file(path, &contents)) >= 0);
+        ASSERT_NON_NEGATIVE((contents_len = read_entire_file(path, &contents)));
         ASSERT_EQUAL(contents_len, 6);
         ASSERT_EQUAL(contents, "abcdef");
         free2(contents, contents_len + 1);

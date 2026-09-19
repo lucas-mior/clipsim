@@ -607,6 +607,17 @@ s = (StructType){0};
   may print a diagnostic and exit. Out of memory is currently unrecoverable and
   should always exit; see `cbase/memory.h` and `cbase/memory.c`.
 
+- Prefer to return and handle errors at higher levels of the code base,
+  like user-facing code, and boundaries between the APIs.
+  On the low level wiring within a single module, the following guidelines are
+  useful:
+  - using the context, assume that the function can't fail (and maybe add an
+    assertion)
+  - some functions are useful to have a high level with error checking version,
+    and a "raw" version without error checking for low level callers.
+  - and yeah, sometimes error propagation from low level functions is
+    unavoidable, but generally try to avoid it.
+
 - Functions that cannot fail should not return an error value.
 
 - Functions that return an index, count, length, file descriptor, or another
@@ -661,6 +672,11 @@ if (!number_of_stuff) {
 // good
 if (number_of_stuff <= 0) {
     // there isn't any stuff
+}
+
+// also good (let the for auto handle empty case):
+for (int32 i = 0; i < number_of_stuff; i += 1) {
+    // do stuff
 }
 
 // bad
@@ -756,7 +772,7 @@ ASSERT(pointer != NULL);
   - `ASSERT_MORE_EQUAL(number expr 1, number expr 2)`
   - `ASSERT_CONTAINS(haystack, haystack_len, needle)`
   - `ASSERT_NOT_CONTAINS(haystack, haystack_len, needle)`
-  - `ASSERT_FILE_CONTAINS(haystack, haystack_len, needle)`
+  - `ASSERT_FILE_CONTAINS(path, needle)`
   * They all use `__builtin_unreachable` if the condition fails if not
     debugging. Don't use them for non-debugging assertions.
     + Assertions that must happen in non-debugging builds, must be explicit code

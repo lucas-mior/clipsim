@@ -105,14 +105,14 @@ sort_merge_subsorted(
     char *array2 = array;
 
     ASSERT_NON_NEGATIVE(n);
-    ASSERT(p >= 1);
-    ASSERT(p <= MAX_NTHREADS);
+    ASSERT_POSITIVE(p);
+    ASSERT_LESS_EQUAL(p, MAX_NTHREADS);
 
     if ((n <= 1) || (p == 1)) {
         return;
     }
 
-    ASSERT(p <= n);
+    ASSERT_LESS_EQUAL(p, n);
     ASSERT_POSITIVE(obj_size);
     ASSERT(array);
     ASSERT(compare);

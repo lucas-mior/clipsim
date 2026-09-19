@@ -197,7 +197,7 @@ test_document_add_line_grows_storage(void) {
     document_add_line(&doc, line, strlen32(line), &in_block_comment,
                       TOKENIZE_DEFAULT);
     ASSERT_EQUAL(doc.line_count, 2);
-    ASSERT(doc.capacity >= 2);
+    ASSERT_MORE_EQUAL(doc.capacity, 2);
     ASSERT_EQUAL(doc.lines[0].text, "value\n");
     ASSERT_EQUAL(doc.lines[1].text, "value\n");
     free_line(&doc.lines[0]);

@@ -502,7 +502,7 @@ itoa2(char *buffer, int32 size, llong num) {
     int i = 0;
     bool negative = false;
 
-    ASSERT(size >= 22);
+    ASSERT_MORE_EQUAL(size, 22);
 
     if (num < 0) {
         negative = true;
@@ -529,9 +529,6 @@ itoa2(char *buffer, int32 size, llong num) {
         buffer[j] = buffer[i - j - 1];
         buffer[i - j - 1] = temp;
     }
-
-    // this is here because of gcc -fanalyzer
-    ASSERT(i < 22);
 
     return i;
 }

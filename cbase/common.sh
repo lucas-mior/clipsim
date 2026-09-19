@@ -1014,10 +1014,16 @@ common_build_tags () {
                 continue
             fi
 
-            trace_on
-            ln -f tags      "$dir"
-            ln -f .tags.vim "$dir"
-            trace_off
+            if [ -f tags ]; then
+                trace_on
+                ln -f tags      "$dir"
+                trace_off
+            fi
+            if [ -f .tags.vim ]; then
+                trace_on
+                ln -f .tags.vim "$dir"
+                trace_off
+            fi
         done
     fi
 }
