@@ -1281,24 +1281,18 @@ test_remove_tree_children(char *path) {
     DIR *dir;
     struct dirent *entry;
 
-    dir = opendir(path);
-    if (dir == NULL) {
+    if ((dir = opendir(path)) == NULL) {
         return;
     }
 
     while ((entry = readdir(dir)) != NULL) {
         char child[PATH_MAX];
-        int32 len;
 
         if (strequal(entry->d_name, ".") || strequal(entry->d_name, "..")) {
             continue;
         }
 
-        len = snprintf2(child, SIZEOF(child), "%s/%s", path, entry->d_name);
-        if ((len <= 0) || (len >= SIZEOF(child))) {
-            error("Test path too long below %s.\n", path);
-            fatal(EXIT_FAILURE);
-        }
+        SNPRINTF(child, "%s/%s", path, entry->d_name);
         test_remove_tree(child);
     }
 
@@ -1353,13 +1347,8 @@ test_remove_tree(char *path) {
     if (attributes & FILE_ATTRIBUTE_DIRECTORY) {
         if (!(attributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
             char pattern[PATH_MAX];
-            int32 len;
 
-            len = snprintf2(pattern, SIZEOF(pattern), "%s/*", path);
-            if ((len <= 0) || (len >= SIZEOF(pattern))) {
-                error("Test path too long below %s.\n", path);
-                fatal(EXIT_FAILURE);
-            }
+            SNPRINTF(pattern, "%s/*", path);
 
             find_handle = FindFirstFileA(pattern, &find_data);
             if (find_handle == INVALID_HANDLE_VALUE) {
@@ -1378,12 +1367,7 @@ test_remove_tree(char *path) {
                         continue;
                     }
 
-                    len = snprintf2(child, SIZEOF(child), "%s/%s",
-                                    path, find_data.cFileName);
-                    if ((len <= 0) || (len >= SIZEOF(child))) {
-                        error("Test path too long below %s.\n", path);
-                        fatal(EXIT_FAILURE);
-                    }
+                    SNPRINTF(child, "%s/%s", path, find_data.cFileName);
                     test_remove_tree(child);
                 } while (FindNextFileA(find_handle, &find_data));
 
@@ -1438,13 +1422,9 @@ test_remove_tree(char *path) {
 bool
 test_symlink_supported(char *dir) {
     char link_path[PATH_MAX];
-    int32 len;
     bool supported;
 
-    len = snprintf2(link_path, SIZEOF(link_path), "%s/symlink_probe", dir);
-    if ((len <= 0) || (len >= SIZEOF(link_path))) {
-        return false;
-    }
+    SNPRINTF(link_path, "%s/symlink_probe", dir);
 
     cbase_remove_file(link_path);
     supported = symlink("target", link_path) == 0;
@@ -1459,19 +1439,11 @@ bool
 test_hardlink_supported(char *dir) {
     char link_path[PATH_MAX];
     char src_path[PATH_MAX];
-    int32 len;
     bool supported;
     int32 fd;
 
-    len = snprintf2(src_path, SIZEOF(src_path), "%s/hardlink_probe_src", dir);
-    if ((len <= 0) || (len >= SIZEOF(src_path))) {
-        return false;
-    }
-    len = snprintf2(link_path, SIZEOF(link_path),
-                    "%s/hardlink_probe_dst", dir);
-    if ((len <= 0) || (len >= SIZEOF(link_path))) {
-        return false;
-    }
+    SNPRINTF(src_path, "%s/hardlink_probe_src", dir);
+    SNPRINTF(link_path, "%s/hardlink_probe_dst", dir);
 
     cbase_remove_file(src_path);
     cbase_remove_file(link_path);
@@ -1545,7 +1517,7 @@ main(void) {
         SNPRINTF(template_path, "%s/stem_XXXXXX.txt", temp_dir);
         fd = cbase_mkstemps(template_path, STRLIT_LEN(".txt"));
         ASSERT_NON_NEGATIVE(fd);
-        ASSERT(write64(fd, "x", 1) == 1);
+        ASSERT_EQUAL(write64(fd, "x", 1), 1);
         XCLOSE(&fd, template_path);
         ASSERT(util_file_exists(template_path));
         ASSERT_ZERO(cbase_remove_file(template_path));
@@ -1555,7 +1527,7 @@ main(void) {
                                   "fs_file",
                                   ".tmp");
         ASSERT_NON_NEGATIVE(fd);
-        ASSERT(write64(fd, "y", 1) == 1);
+        ASSERT_EQUAL(write64(fd, "y", 1), 1);
         XCLOSE(&fd, temp_file_path);
         ASSERT(util_file_exists(temp_file_path));
         ASSERT_ZERO(cbase_remove_file(temp_file_path));
@@ -1666,7 +1638,7 @@ main(void) {
                      -ENOENT);
         ASSERT_EQUAL(missing_contents, NULL);
 
-        ASSERT(write_entire_file(path, STRLIT("abcdef")) == 6);
+        ASSERT_EQUAL(write_entire_file(path, STRLIT("abcdef")), 6);
         ASSERT(util_file_exists(path));
         ASSERT_NON_NEGATIVE((contents_len = read_entire_file(path, &contents)));
         ASSERT_EQUAL(contents_len, 6);

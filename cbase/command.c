@@ -1844,7 +1844,7 @@ main(int argc, char **argv) {
         ASSERT_ZERO(cmd.argc);
 
         COMMAND_PUSH(&cmd, "sh", "-c", "exit 0");
-        ASSERT(command_run(&cmd, COMMAND_DETACHED) == 0);
+        ASSERT_ZERO(command_run(&cmd, COMMAND_DETACHED));
         ASSERT_ZERO(cmd.result.status);
 #endif
 

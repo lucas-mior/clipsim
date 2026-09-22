@@ -1009,7 +1009,24 @@ common_build_tags () {
     fi
 
     if [ -d "src/" ]; then
-        for dir in src/*; do
+        if [ -f tags ]; then
+            trace_on
+            ln -f tags      src
+            trace_off
+        fi
+        if [ -f .tags.vim ]; then
+            trace_on
+            ln -f .tags.vim src
+            trace_off
+        fi
+
+        for dir in *; do
+            if [ "$dir" = "cbase" ]; then
+                continue
+            fi
+            if [ $(find "$dir" -iname "*.c" | wc -l) -le 0 ]; then
+                continue
+            fi
             if [ ! -d "$dir" ]; then
                 continue
             fi

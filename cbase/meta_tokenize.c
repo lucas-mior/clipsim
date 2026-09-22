@@ -945,9 +945,8 @@ test_operator_or_punct_category(void) {
 
 static void
 test_line_starts_preprocessor(void) {
-    ASSERT(
-        line_starts_preprocessor("  #define XX\n", strlen32("  #define XX\n")));
-    ASSERT(!line_starts_preprocessor("  int x;\n", strlen32("  int x;\n")));
+    ASSERT(line_starts_preprocessor(STRLIT("  #define XX\n")));
+    ASSERT(!line_starts_preprocessor(STRLIT("  int x;\n")));
     ASSERT(!line_starts_preprocessor("", 0));
     return;
 }

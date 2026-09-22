@@ -134,6 +134,21 @@ typedef struct StrBuilderArray {
     int32 cap;
 } StrBuilderArray;
 
+typedef struct StrFlex {
+    int32 len;
+    char data[];
+} StrFlex;
+
+typedef struct StrFlexList {
+    StrFlex **items;
+    Arena *arena;
+} StrFlexList;
+
+#define SFLIT(literal) ((StrFlex *)&(struct {            \
+    int32 len;                                           \
+    char data[sizeof(literal)];                          \
+}){ sizeof(literal) - 1, literal })
+
 #if OS_UNIX
 typedef struct UtilCopyFilesAsync {
     struct pollfd pipes[MAX_FILES_COPY];
@@ -208,6 +223,11 @@ void str_builder_array_destroy(StrBuilderArray *);
 void str_builder_array_move(StrBuilderArray *dest, StrBuilderArray *source);
 int32 str_builder_array_reserve(StrBuilderArray *array, int32 extra);
 void str_builder_array_swap(StrBuilderArray *left, StrBuilderArray *right);
+void strflex_list_push(StrFlexList *, char *, int32);
+void strflex_list_destroy(StrFlexList *);
+void strflex_list_clear(StrFlexList *);
+int32 strflex_list_len(StrFlexList *);
+StrFlex *strflex_list_at(StrFlexList *, int32);
 // Float formatting functions return the formatted byte count, excluding the
 // terminating '\0'. Negative return values are errno-style failures:
 // -EINVAL for invalid input, -ENOSPC when capacity is insufficient, and

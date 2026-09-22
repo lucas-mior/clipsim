@@ -60,6 +60,23 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
 ## Function calls
 
 - Never use space before parenthesis of function calls.
+- Try to never break function calls before the first argument:
+  ```c
+  // bad
+  this_function_call(
+      argument, other, many, arguments, x, y, width, height);
+  // good
+  this_function_call(argument, other, many, arguments, x, y, width, height);
+
+  // bad
+  this_function_call_is_very_long_but(
+      argument, other, many, arguments, x, y, width, height);
+  // good
+  this_function_call_is_very_long_but(argument, other, many, arguments,
+                                      x, y, width, height);
+  ```
+  * If the first argument would not fit in 80 columns, it is okay to break
+    before it. But always try to fit it first.
 
 ## Identation
 When breaking long lines that are long expressions, try to make them readable

@@ -374,7 +374,7 @@ main(void) {
     ASSERT(MAXOF(primitive.auint)   == UINT_MAX);
     ASSERT(MAXOF(primitive.aulong)  == ULONG_MAX);
     ASSERT(MAXOF(primitive.aullong) == ULLONG_MAX);
-    ASSERT(MAXOF(primitive.abool)   == 1);
+    ASSERT_EQUAL(MAXOF(primitive.abool), 1);
 
     ASSERT_EQUAL(TYPENAME(primitive.avoidp),
                  typename(TYPEID(primitive.avoidp)));

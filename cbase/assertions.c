@@ -230,6 +230,80 @@ assert_equal_4(char *file, int32 line, char *func,
 }
 
 void
+assert_not_equal_3(char *file, int32 line, char *func,
+                   char *name1, char *name2,
+                   char *var1, int32 var1_len, char *var2) {
+    int32 var2_len;
+
+    if ((var1 == NULL) || (var2 == NULL)) {
+        if (var1 != var2) {
+            return;
+        }
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "%s = NULL != NULL = %s\n", name1, name2);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+
+    var2_len = strlen32(var2);
+    if (var1_len != var2_len) {
+        return;
+    }
+    if (memcmp64(var1, var2, var1_len) == 0) {
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "%s = %.*s != %s = %s\n",
+                         name1, var1_len, var1, name2, var2);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+
+    return;
+}
+
+void
+assert_not_equal_4(char *file, int32 line, char *func,
+                   char *name1, char *name2,
+                   char *var1, int32 var1_len, char *var2, int32 var2_len) {
+    if ((var1 == NULL) || (var2 == NULL)) {
+        if (var1 != var2) {
+            return;
+        }
+        if (var1_len != var2_len) {
+            return;
+        }
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "%s = NULL != NULL = %s\n", name1, name2);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+
+    if (var1_len != var2_len) {
+        return;
+    }
+    if (memcmp64(var1, var2, var1_len) == 0) {
+        if (DEBUGGING) {
+            assert_error(file, line, func,
+                         "%s = %.*s != %.*s = %s\n",
+                         name1, var1_len, var1, var2_len, var2, name2);
+            TRAP();
+        } else {
+            UNREACHABLE();
+        }
+    }
+
+    return;
+}
+
+void
 assert_glob_match_impl(char *file, int32 line, char *func,
                        char *string_name, char *glob_name,
                        char *string, int32 string_len,
@@ -1147,10 +1221,12 @@ main(void) {
     } {
         char *a = "aaabbb";
         ASSERT_EQUAL(a, 3, "aaa");
+        ASSERT_NOT_EQUAL(a, 3, "bbb");
     } {
         char *a = "aaabbb";
         char *b = "aaaccc";
         ASSERT_EQUAL(a, 3, b, 3);
+        ASSERT_NOT_EQUAL(a, 6, b, 6);
     } {
         char *a = "aaa";
         char *b = "bbb";
@@ -1275,6 +1351,12 @@ main(void) {
         ASSERT_OUTSIDE(&separate, array, array + LENGTH(array));
         ASSERT_OUTSIDE(&array[4], array, array + LENGTH(array));
     } {
+        int32 x = 5;
+
+        ASSERT_BETWEEN(x, 5, 10);
+        ASSERT_BETWEEN(x, 0, 5);
+        ASSERT_BETWEEN(x, 0, 10);
+    } {
         // uncomment to trigger linking error
         /* double x = 0.1; */
         /* void *a = NULL; */
@@ -1299,6 +1381,8 @@ main(void) {
         ASSERT_TRAPS(ASSERT_EQUAL(a, b));
         ASSERT_TRAPS(ASSERT_EQUAL(string_null, string_some));
         ASSERT_TRAPS(ASSERT_EQUAL(string_some, 3, "none"));
+        ASSERT_TRAPS(ASSERT_NOT_EQUAL(string_some, 4, "some"));
+        ASSERT_TRAPS(ASSERT_NOT_EQUAL(string_some, 4, "some", 4));
         ASSERT_TRAPS(ASSERT_MORE(a, b));
         ASSERT_TRAPS(ASSERT_LESS(b, a));
         ASSERT_TRAPS(ASSERT_MORE_EQUAL(a, b));
@@ -1315,6 +1399,8 @@ main(void) {
         ASSERT_TRAPS(ASSERT_GLOB_NO_MATCH("alpha beta gamma", "alpha*gamma"));
         ASSERT_TRAPS(ASSERT_OUTSIDE(array, array + LENGTH(array), array));
         ASSERT_TRAPS(ASSERT_OUTSIDE(&array[0], array, array + LENGTH(array)));
+        ASSERT_TRAPS(ASSERT_BETWEEN(-1, 0, 1));
+        ASSERT_TRAPS(ASSERT_BETWEEN(2, 0, 1));
     }
 #endif
 

@@ -661,10 +661,10 @@ test_c_binary_ops(void) {
     ASSERT(c_binary_op_from_text("|", STRLIT_LEN("|"))
            == C_BINARY_OP_BIT_OR);
     ASSERT(c_token_binary_op(&token) == C_BINARY_OP_LOGICAL_AND);
-    ASSERT(c_binary_op_precedence(C_BINARY_OP_LOGICAL_OR) == 1);
-    ASSERT(c_binary_op_precedence(C_BINARY_OP_MUL) == 10);
-    ASSERT(precedence_of("||", STRLIT_LEN("||")) == 1);
-    ASSERT(precedence_of("?", STRLIT_LEN("?")) == 0);
+    ASSERT_EQUAL(c_binary_op_precedence(C_BINARY_OP_LOGICAL_OR), 1);
+    ASSERT_EQUAL(c_binary_op_precedence(C_BINARY_OP_MUL), 10);
+    ASSERT_EQUAL(precedence_of(STRLIT("||")), 1);
+    ASSERT_EQUAL(precedence_of(STRLIT("?")), 0);
 
     token = test_token(TOKEN_PUNCT, "+");
     ASSERT(c_token_binary_op(&token) == C_BINARY_OP_INVALID);

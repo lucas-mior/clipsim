@@ -148,7 +148,7 @@ typeof(var)  // good
   * Use the arena allocator from `cbase/arena.c` as much as possible. 
     Only use `malloc2`, `realloc2`, and `free2` if you
     really need the flexibility, for instance:
-    + if you need to grow the allocation
+    + if you need to grow each individual allocation
     + if you are inside a callback that would be infeasible to pass an arena
       pointer
     + possible other reasons
@@ -164,7 +164,7 @@ typeof(var)  // good
 - Clean exit: use `exit(EXIT_SUCCESS)`
 
 ## Enums, structs, and unions
-- Enums that don't need the `_str` and `_parse` functions, and arent bit flags,
+- Enums that don't need the `_str` or `_parse` functions, and arent bit flags,
   don't need xenums.c. Define the enum manually.
 - But do use include-based `xenums.c` for creating enums if it is a bit flag
   enum, or if we need the `_str` or the `_parse` functions.
@@ -186,6 +186,7 @@ typeof(var)  // good
   ```c
   typedef struct MyStruct {
       int32 number;
+      char *string;
   } MyStruct;
   ```
 - Never typedef enums and unions, except for the automatic
@@ -215,7 +216,7 @@ typeof(var)  // good
           NcmSong song;
           NcmDirectory directory;
           NcmPlaylist playlist;
-      } value;
+      };
   } NcmMpdItem;
   ```
 
@@ -780,7 +781,33 @@ ASSERT(pointer != NULL);
 - Do not use `ASSERT_EQUAL` for enums.
   * Use `ASSERT(enumvalue1 == enumvalue2)` instead, so that the compiler does
     not complain.
+- For asserting that a function did or didn't fail/return NULL:
+  ```c
+  // bad
+  void *res = function();
+  ASSERT(!res);
+
+  // good
+  ASSERT(function() == NULL);
+
+  // bad
+  MyStruct *res = function();
+  ASSERT(!res);
+  res->stuff = "stuff";
+
+  // good
+  MyStruct *res;
+  ASSERT(res = function());
+  res->stuff = "stuff";
+
+  // bad
+  ASSERT(access(path, F_OK) == 0);
+  // good
+  ASSERT(!access(path, F_OK));
+  ```
 - Prefer `ASSERT_ZERO(value);` instead of `ASSERT(value == 0)`.
+  * Note: if zero means "function succeded", use
+    `ASSERT(!function_call());` instead of `ASSERT_ZERO(function_call());`
 - Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT(value > 0)`.
 - Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT(value < 0)`.
 - Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT(value <= 0)`.
@@ -791,6 +818,10 @@ ASSERT(pointer != NULL);
 - Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT_LESS(a, 0)`
 - Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT_LESS_EQUAL(a, 0)`
 - Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT_MORE_EQUAL(a, 0)`
+- Prefer `ASSERT_BETWEEN(value, 0, max);`
+  instead of `ASSERT_MORE_EQUAL(value, 0); ASSERT_LESS_EQUAL(value, max);`
+- Prefer `ASSERT_BETWEEM(value, 0, SIZE - 1);`
+  instead of `ASSERT_NON_NEGATIVE(value); ASSERT_LESS(value, min, SIZE):`
 
 ## Modules
 

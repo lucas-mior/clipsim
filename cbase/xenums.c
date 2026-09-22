@@ -340,19 +340,19 @@ CAT(ENUM_PREFIX_, parse_name_equals)(char *string, int32 string_len,
 }
 #endif
 
-#define XENUM_TOKEN_EQUALS_N(token, token_len, name, name_len)                 \
+#define XENUM_TOKEN_EQUALS_N(token, token_len, name, name_len)             \
     CAT(ENUM_PREFIX_, parse_name_equals)(token, token_len, name, name_len)
 
-#define XENUM_TOKEN_EQUALS(token, token_len, name)                             \
+#define XENUM_TOKEN_EQUALS(token, token_len, name)                         \
     XENUM_TOKEN_EQUALS_N(token, token_len, name, STRLIT_LEN(name))
 
-#define XENUM_TOKEN_EQUALS_ENUM_NAME(token, token_len, name)                   \
-    (XENUM_TOKEN_EQUALS(token, token_len, name)                                \
-     || (BEGINS_WITH_4(name, STRLIT_LEN(name), QUOTE(ENUM_PREFIX_),            \
-                       STRLIT_LEN(QUOTE(ENUM_PREFIX_)))                        \
-         && XENUM_TOKEN_EQUALS_N(token, token_len,                             \
-                                 &(name)[STRLIT_LEN(QUOTE(ENUM_PREFIX_))],     \
-                                 STRLIT_LEN(name)                              \
+#define XENUM_TOKEN_EQUALS_ENUM_NAME(token, token_len, name)               \
+    (XENUM_TOKEN_EQUALS(token, token_len, name)                            \
+     || (BEGINS_WITH_4(name, STRLIT_LEN(name), QUOTE(ENUM_PREFIX_),        \
+                       STRLIT_LEN(QUOTE(ENUM_PREFIX_)))                    \
+         && XENUM_TOKEN_EQUALS_N(token, token_len,                         \
+                                 &(name)[STRLIT_LEN(QUOTE(ENUM_PREFIX_))], \
+                                 STRLIT_LEN(name)                          \
                                  - STRLIT_LEN(QUOTE(ENUM_PREFIX_)))))
 
 #if ENUM_BITFLAGS
@@ -417,27 +417,27 @@ CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
 #endif
 
 #if ENUM_BITFLAGS
-        #define XENUM_PARSE_ONE(e)                                             \
-            if (!matched                                                       \
-                && XENUM_TOKEN_EQUALS_ENUM_NAME(token, token_len, #e)) {       \
-                result |= (ENUM_UNDERLYING_TYPE)e;                             \
-                matched = 1;                                                   \
+        #define XENUM_PARSE_ONE(e)                                        \
+            if (!matched                                                  \
+                && XENUM_TOKEN_EQUALS_ENUM_NAME(token, token_len, #e)) {  \
+                result |= (ENUM_UNDERLYING_TYPE)e;                        \
+                matched = 1;                                              \
             }
         #define XX_1(e)    XENUM_PARSE_ONE(e)
         #define XX_2(e, v) XENUM_PARSE_ONE(e)
 #else
-        #define XENUM_PARSE_ONE(e)                                             \
-            if (!matched                                                       \
-                && XENUM_TOKEN_EQUALS_ENUM_NAME(token, token_len, #e)) {       \
-                result = (ENUM_UNDERLYING_TYPE)e;                              \
-                matched = 1;                                                   \
+        #define XENUM_PARSE_ONE(e)                                        \
+            if (!matched                                                  \
+                && XENUM_TOKEN_EQUALS_ENUM_NAME(token, token_len, #e)) {  \
+                result = (ENUM_UNDERLYING_TYPE)e;                         \
+                matched = 1;                                              \
             }
-        #define XENUM_PARSE_ALIAS(e, alias)                                    \
-            XENUM_PARSE_ONE(e)                                                 \
-            if (!matched                                                       \
-                && XENUM_TOKEN_EQUALS(token, token_len, #alias)) {             \
-                result = (ENUM_UNDERLYING_TYPE)e;                              \
-                matched = 1;                                                   \
+        #define XENUM_PARSE_ALIAS(e, alias)                               \
+            XENUM_PARSE_ONE(e)                                            \
+            if (!matched                                                  \
+                && XENUM_TOKEN_EQUALS(token, token_len, #alias)) {        \
+                result = (ENUM_UNDERLYING_TYPE)e;                         \
+                matched = 1;                                              \
             }
         #define XX_1(e)        XENUM_PARSE_ONE(e)
         #define XX_2(e, alias) XENUM_PARSE_ALIAS(e, alias)
@@ -497,18 +497,18 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #undef ENUM_UNDERLYING_TYPE
 #undef ENUM_UNDERLYING_TYPE_SPEC
 
-#if TESTING_xenums                                                             \
-    && !defined(TESTING_xenums_started)                                        \
+#if TESTING_xenums                                \
+    && !defined(TESTING_xenums_started)           \
     && !defined(XENUMS_NO_TESTS)
 #define TESTING_xenums_started
 
 #define ENUM_NAME TestNormal
 #define ENUM_PREFIX_ TEST_NORMAL_
 #define ENUM_BITFLAGS 0
-#define ENUM_FIELDS                                                            \
-    XX(TEST_NORMAL_APPLE)                                                      \
-    XX(TEST_NORMAL_BANANA, banana)                                             \
-    XX(TEST_NORMAL_CHERRY, cherry)                                             \
+#define ENUM_FIELDS                               \
+    XX(TEST_NORMAL_APPLE)                         \
+    XX(TEST_NORMAL_BANANA, banana)                \
+    XX(TEST_NORMAL_CHERRY, cherry)                \
     XX(TEST_NORMAL_PEANUT_BUTTER, peanut butter)
 #include "xenums.c"
 
@@ -519,7 +519,7 @@ main(void) {
     TEST_NORMAL_ normal = TEST_NORMAL_APPLE;
 
     ASSERT_ZERO(TEST_FLAGS_READ_BIT_INDEX);
-    ASSERT(TEST_FLAGS_BIT_COUNT == 3);
+    ASSERT(3 == TEST_FLAGS_BIT_COUNT);
     ASSERT(TEST_FLAGS_READ == (1 << 0));
     ASSERT(TEST_FLAGS_WRITE == (1 << 1));
     ASSERT(TEST_FLAGS_EXEC == (1 << 2));
@@ -575,9 +575,9 @@ main(void) {
     }
 
     ASSERT_ZERO(TEST_NORMAL_APPLE);
-    ASSERT(TEST_NORMAL_BANANA == 1);
-    ASSERT(TEST_NORMAL_CHERRY == 2);
-    ASSERT(TEST_NORMAL_COUNT == 4);
+    ASSERT_EQUAL(TEST_NORMAL_BANANA, 1);
+    ASSERT_EQUAL(TEST_NORMAL_CHERRY, 2);
+    ASSERT_EQUAL(TEST_NORMAL_COUNT, 4);
 
     s = TEST_NORMAL_str(TEST_NORMAL_APPLE);
     ASSERT_EQUAL(s, "TEST_NORMAL_APPLE");

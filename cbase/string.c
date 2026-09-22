@@ -199,6 +199,69 @@ random_ascii_string(char *buffer, int32 capacity, int32 min_len) {
     return len;
 }
 
+void
+strflex_list_push(StrFlexList *list, char *value, int32 value_len) {
+    StrFlex *string;
+
+    if (list->arena == NULL) {
+        list->arena = arena_create(SIZEMB(2), "strflex_list");
+    }
+
+    string = xarena_push(list->arena, SIZEOF(*string) + value_len + 1);
+    string->len = value_len;
+    memcpy64(string->data, value, value_len);
+    string->data[value_len] = '\0';
+    ARRAY_PUSH(list->items, string);
+    return;
+}
+
+void
+strflex_list_destroy(StrFlexList *list) {
+    if (list == NULL) {
+        return;
+    }
+
+    ARRAY_FREE(list->items);
+    if (list->arena) {
+        arena_destroy(list->arena);
+    }
+    *list = (StrFlexList){0};
+
+    return;
+}
+
+void
+strflex_list_clear(StrFlexList *list) {
+    if (list == NULL) {
+        return;
+    }
+
+    ARRAY_CLEAR(list->items);
+    arena_reset(list->arena);
+    return;
+}
+
+int32
+strflex_list_len(StrFlexList *list) {
+    if (list == NULL) {
+        return 0;
+    }
+
+    return ARRAY_LEN(list->items);
+}
+
+StrFlex *
+strflex_list_at(StrFlexList *list, int32 idx) {
+    if (list == NULL) {
+        return NULL;
+    }
+    if ((idx < 0) || (idx >= ARRAY_LEN(list->items))) {
+        return NULL;
+    }
+
+    return list->items[idx];
+}
+
 #define STR_BUILDER_INITIAL_CAPACITY 16
 
 char *
@@ -676,6 +739,11 @@ string_functions_sink(void) {
     (void)str_builder_array_copy;
     (void)str_builder_array_move;
     (void)str_builder_array_swap;
+    (void)strflex_list_at;
+    (void)strflex_list_clear;
+    (void)strflex_list_destroy;
+    (void)strflex_list_len;
+    (void)strflex_list_push;
     return;
 }
 #endif
