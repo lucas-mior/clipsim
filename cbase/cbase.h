@@ -40,7 +40,7 @@ void *memrchr64(void *pointer, int32 value, int64 size);
 bool util_glob_match(char *string, int32 string_len, char *glob,
                      int32 glob_len);
 
-uint64 rapidhash(void *, int64);
+static uint64 rapidhash(void *, int64);
 
 int64 ceil64(double x);
 int64 floor64(double x);
