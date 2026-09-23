@@ -757,7 +757,7 @@ common_test_source_is_excluded () {
     test_src=$1
     test_name=$(basename "$test_src")
     test_module=${test_name%.c}
-    test_exclude_pattern="(^|/)stc/"
+    test_exclude_pattern="(^|/)(stc|bin/obj)/"
 
     if [ "${TEST_SKIP_MAIN:-1}" != 0 ] \
             && echo "$test_name" | grep -Eq '^main[^/]*\.c$'; then
@@ -860,9 +860,10 @@ common_test_compile_and_run_source () {
         fi
 
         test_cc="zig cc"
-        test_cmdline="$test_cc $test_cmd_flags"
-        test_cmdline=$(common_option_remove "$test_cmdline" "-D_GNU_SOURCE")
-        test_cmdline="$test_cmdline -target x86_64-windows-gnu"
+        test_windows_target=x86_64-windows-gnu
+        test_windows_flags=$(common_option_remove \
+            "$test_cmd_flags" "-D_GNU_SOURCE")
+        test_cmdline="$test_cc $test_windows_flags -target $test_windows_target"
         test_tail_ldflags=${TEST_WINDOWS_LDFLAGS:-}
         test_run_after_compile=${TEST_WINDOWS_RUN:-1}
     else
@@ -879,12 +880,14 @@ common_test_compile_and_run_source () {
             if [ -n "$CLANG_CL_TARGET" ]; then
                 test_cmd_flags="$test_cmd_flags --target=$CLANG_CL_TARGET"
             fi
-            test_cmd_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_cmd_flags)
+            test_cmd_flags=$(common_gcc_flags_to_msvc \
+                "$test_msvc_compiler" $test_cmd_flags)
             test_cmd_flags=$(common_msvc_add_utf8_cflags $test_cmd_flags)
             ;;
         cl|*/cl|cl.exe|*/cl.exe)
             test_msvc_compiler=cl
-            test_cmd_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_cmd_flags)
+            test_cmd_flags=$(common_gcc_flags_to_msvc \
+                "$test_msvc_compiler" $test_cmd_flags)
             test_cmd_flags=$(common_msvc_add_utf8_cflags $test_cmd_flags)
             ;;
         esac
@@ -908,8 +911,10 @@ common_test_compile_and_run_source () {
 
     test_added_flags="$test_added_flags $TEST_EXTRA_DEFS"
     if [ -n "$test_msvc_compiler" ]; then
-        test_added_flags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_added_flags)
-        test_tail_ldflags=$(common_gcc_flags_to_msvc "$test_msvc_compiler" $test_tail_ldflags)
+        test_added_flags=$(common_gcc_flags_to_msvc \
+            "$test_msvc_compiler" $test_added_flags)
+        test_tail_ldflags=$(common_gcc_flags_to_msvc \
+            "$test_msvc_compiler" $test_tail_ldflags)
     fi
     test_cmdline="$test_cmdline $test_added_flags"
     if [ "$test_msvc_compiler" = cl ]; then
@@ -920,7 +925,10 @@ common_test_compile_and_run_source () {
     test_cmdline="$test_cmdline $test_tail_ldflags"
 
     trace_on
-    if $test_cmdline < /dev/null; then
+    $test_cmdline < /dev/null
+    compiled=$?
+    trace_off
+    if [ $compiled ]; then
         if [ "$test_run_after_compile" != 0 ] \
                 && ! common_test_run_binary "$test_exe"; then
             common_test_debugger "$test_exe"
@@ -929,7 +937,6 @@ common_test_compile_and_run_source () {
     else
         exit 1
     fi
-    trace_off
 
     return 0
 }
@@ -1076,15 +1083,3 @@ common_uninstall_opt () {
         rm -rf "$dest"
     fi
 }
-
-common_compile_cbase () {
-    CC="${CC:-cc}"
-
-    trace_on
-    $CC -g3 -O2 -c "cbase.c" -o "cbase.o"
-    trace_off
-}
-
-if [ "$(basename "$0")" = "common.sh" ]; then
-    common_compile_cbase
-fi

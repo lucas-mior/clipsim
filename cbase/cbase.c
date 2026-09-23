@@ -7,15 +7,6 @@
 #define TESTING_cbase 0
 #endif
 
-// We could simply cc -DCBASE_IMPLEMENT cbase.h -o cbase.o,
-// but then we would have to pass -x c flag to clang and gcc
-// to inform we don't want a pre compiled header.
-// -x c breaks tcc (not to mention other compilers).
-// So we use this cbase.c file to avoid complications
-
-#define CBASE_IMPLEMENT
-#include "cbase.h"
-
 #if TESTING_cbase
 #define CBASE_IMPLEMENT
 #include "cbase.h"

@@ -94,12 +94,6 @@ checks the printf grammar it knows. Warnings for newer conversions such as
 `snprintf2`, `SNPRINTF`, and `sb_printf` are not implemented in terms of this
 formatter yet.
 
-## Alternative usage: compile cbase as a separate object
-```sh
-cc -std=c11 -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -c cbase.c -o cbase.o
-cc -std=c11 your_main.c cbase.o
-```
-
 ## Infrastructure
 Every .c file in cbase/ must have block for avoid unused function warnings when
 not testing that specific file. This allows to still see which functions are not

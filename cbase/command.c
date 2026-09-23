@@ -12,6 +12,25 @@
 
 #include "cbase.h"
 
+#define ENUM_NAME CommandFlag
+#define ENUM_BITFLAGS 1
+#define ENUM_PREFIX_ COMMAND_
+#define ENUM_UNDERLYING_TYPE uint32
+#define ENUM_FIELDS                   \
+    XX(COMMAND_CAPTURE_STDOUT)        \
+    XX(COMMAND_CAPTURE_STDERR)        \
+    XX(COMMAND_MERGE_STDERR)          \
+    XX(COMMAND_ASYNC)                 \
+    XX(COMMAND_DETACHED)              \
+    XX(COMMAND_NEW_SESSION)           \
+    XX(COMMAND_NEW_PROCESS_GROUP)     \
+    XX(COMMAND_STDIN_TTY)             \
+    XX(COMMAND_CLOSE_STDIN)
+#define XENUMS_FUNCTIONS_ONLY 1
+#define XENUMS_NO_TESTS 1
+#include "xenums.c"
+#undef XENUMS_NO_TESTS
+
 void
 command_result_init(CommandResult *result) {
     *result = (CommandResult){0};

@@ -80,6 +80,7 @@ optional_strlen32(char *string) {
 #include "allocator.h"
 #include "memory.h"
 #include "arena.h"
+#include "ryu.h"
 
 #include "assertions.h"
 #include "generic.h"
@@ -863,9 +864,11 @@ void throw_away_function();
 
 #include "meta.h"
 
+#define CBASE_DECLARATIONS_COMPLETE 1
 #endif /* CBASE_H */
 
-#if defined(CBASE_IMPLEMENT) && !defined(CBASE_IMPLEMENTED)
+#if defined(CBASE_IMPLEMENT) && defined(CBASE_DECLARATIONS_COMPLETE) \
+        && !defined(CBASE_IMPLEMENTED)
 #define CBASE_IMPLEMENTED 1
 
 #include "arena.c"
@@ -880,6 +883,7 @@ void throw_away_function();
 #include "string.c"
 #include "time.c"
 #include "fs.c"
+#include "ryu.c"
 #if OS_WINDOWS
 #include "windows.c"
 #endif
@@ -888,25 +892,6 @@ void throw_away_function();
 
 #include "some_math.c"
 #include "format.c"
-
-#define ENUM_NAME CommandFlag
-#define ENUM_BITFLAGS 1
-#define ENUM_PREFIX_ COMMAND_
-#define ENUM_UNDERLYING_TYPE uint32
-#define ENUM_FIELDS                   \
-    XX(COMMAND_CAPTURE_STDOUT)        \
-    XX(COMMAND_CAPTURE_STDERR)        \
-    XX(COMMAND_MERGE_STDERR)          \
-    XX(COMMAND_ASYNC)                 \
-    XX(COMMAND_DETACHED)              \
-    XX(COMMAND_NEW_SESSION)           \
-    XX(COMMAND_NEW_PROCESS_GROUP)     \
-    XX(COMMAND_STDIN_TTY)             \
-    XX(COMMAND_CLOSE_STDIN)
-#define XENUMS_FUNCTIONS_ONLY 1
-#define XENUMS_NO_TESTS 1
-#include "xenums.c"
-#undef XENUMS_NO_TESTS
 
 #include "command.c"
 #include "cbase.h"
