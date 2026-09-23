@@ -365,11 +365,16 @@ sb_reserve(StrBuilder *str_builder, int64 extra) {
         return;
     }
 
+    if (UNLIKELY(extra >= MAXOF(str_builder->cap))) {
+        error("StrBuilder only supports strings shorter than 2GB.\n");
+        fatal(EXIT_FAILURE);
+    }
+
     needed = str_builder->len + extra + 1;
     if (str_builder->data && (needed <= str_builder->cap)) {
         return;
     }
-    if (needed >= MAXOF(str_builder->cap)) {
+    if (UNLIKELY(needed >= MAXOF(str_builder->cap))) {
         error("StrBuilder only supports strings shorter than 2GB.\n");
         fatal(EXIT_FAILURE);
     }
@@ -405,16 +410,16 @@ sb_append(StrBuilder *str_builder, char *data, int64 data_len) {
         return;
     }
 
-    if (data == str_builder->data) {
+    if (UNLIKELY(data == str_builder->data)) {
         aliases = true;
-    } else if (str_builder->data) {
+    } else if (LIKELY(str_builder->data != NULL)) {
         uintptr data_address = (uintptr)data;
         uintptr start = (uintptr)str_builder->data;
 
         if (data_address >= start) {
             uintptr offset = data_address - start;
 
-            if (offset < (uint32)str_builder->cap) {
+            if (UNLIKELY(offset < (uint32)str_builder->cap)) {
                 aliases = true;
                 data_offset = (int32)offset;
             }
@@ -422,7 +427,7 @@ sb_append(StrBuilder *str_builder, char *data, int64 data_len) {
     }
 
     sb_reserve(str_builder, data_len);
-    if (aliases) {
+    if (UNLIKELY(aliases)) {
         data = str_builder->data + data_offset;
         memmove64(str_builder->data + str_builder->len, data, data_len);
     } else {

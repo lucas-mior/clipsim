@@ -207,6 +207,8 @@ void sb_clear(StrBuilder *);
 int32 sb_copy(StrBuilder *dest, StrBuilder *source);
 void sb_free(StrBuilder *);
 void sb_itoa(StrBuilder *str_builder, llong num);
+void sb_float64(StrBuilder *str_builder, double value);
+void sb_float64_fixed(StrBuilder *str_builder, double value, int32 precision);
 void sb_bytes_pretty(StrBuilder *str_builder, llong size);
 void sb_move(StrBuilder *dest, StrBuilder *source);
 void sb_printf(StrBuilder *str_builder, char *fmt, ...);
@@ -216,6 +218,17 @@ char *sb_steal(StrBuilder *str_builder, int32 *len, int32 *cap);
 char *sb_steal_exact(StrBuilder *str_builder, int32 *len);
 char *sb_opt_cstr(StrBuilder *);
 void send_signal(char *executable, int32 signal_number);
+
+// cbase printf-compatible formatter. It returns the byte count that would
+// have been written, excluding the terminating '\0'. It writes a terminating
+// '\0' when capacity is positive. buffer may be NULL only when capacity is
+// zero. Negative returns are errno-style failures. See cbase/README.md for
+// the exact supported grammar and deliberate differences from libc printf.
+int32 format_vsnprintf(char *buffer, int64 capacity, char *format,
+                       va_list args) ATTR_PRINTF(3, 0);
+int32 format_snprintf(char *buffer, int64 capacity, char *format, ...)
+    ATTR_PRINTF(3, 4);
+
 int32 snprintf2(char *buffer, int64 size, char *format, ...);
 StrBuilder *str_builder_array_append(StrBuilderArray *);
 int32 str_builder_array_append_copy(StrBuilderArray *array, StrBuilder *item);

@@ -242,4 +242,12 @@ _Generic((SIZE), \
   #endif
 #endif
 
+#if CC_CLANG || CC_GCC
+  #define LIKELY(x)   __builtin_expect(x, 1)
+  #define UNLIKELY(x) __builtin_expect(x, 0)
+#else
+  #define LIKELY(x) (x)
+  #define UNLIKELY(x) (x)
+#endif
+
 #endif /* BASE_MACROS_H */

@@ -20,11 +20,66 @@
     XX(TOKEN_PUNCT)        \
     XX(TOKEN_PREPROC)
 
+#define C_KEYWORD_FIELDS                          \
+    XX(C_KEYWORD_ALIGNAS,       _Alignas)         \
+    XX(C_KEYWORD_ALIGNOF,       _Alignof)         \
+    XX(C_KEYWORD_ATOMIC,        _Atomic)          \
+    XX(C_KEYWORD_BOOL,          _Bool)            \
+    XX(C_KEYWORD_COMPLEX,       _Complex)         \
+    XX(C_KEYWORD_GENERIC,       _Generic)         \
+    XX(C_KEYWORD_IMAGINARY,     _Imaginary)       \
+    XX(C_KEYWORD_NORETURN,      _Noreturn)        \
+    XX(C_KEYWORD_STATIC_ASSERT, _Static_assert)   \
+    XX(C_KEYWORD_THREAD_LOCAL,  _Thread_local)    \
+    XX(C_KEYWORD_AUTO,          auto)             \
+    XX(C_KEYWORD_BREAK,         break)            \
+    XX(C_KEYWORD_CASE,          case)             \
+    XX(C_KEYWORD_CHAR,          char)             \
+    XX(C_KEYWORD_CONST,         const)            \
+    XX(C_KEYWORD_CONTINUE,      continue)         \
+    XX(C_KEYWORD_DEFAULT,       default)          \
+    XX(C_KEYWORD_DO,            do)               \
+    XX(C_KEYWORD_DOUBLE,        double)           \
+    XX(C_KEYWORD_ELSE,          else)             \
+    XX(C_KEYWORD_ENUM,          enum)             \
+    XX(C_KEYWORD_EXTERN,        extern)           \
+    XX(C_KEYWORD_FLOAT,         float)            \
+    XX(C_KEYWORD_FOR,           for)              \
+    XX(C_KEYWORD_GOTO,          goto)             \
+    XX(C_KEYWORD_IF,            if)               \
+    XX(C_KEYWORD_INLINE,        inline)           \
+    XX(C_KEYWORD_INT,           int)              \
+    XX(C_KEYWORD_LONG,          long)             \
+    XX(C_KEYWORD_REGISTER,      register)         \
+    XX(C_KEYWORD_RESTRICT,      restrict)         \
+    XX(C_KEYWORD_RETURN,        return)           \
+    XX(C_KEYWORD_SHORT,         short)            \
+    XX(C_KEYWORD_SIGNED,        signed)           \
+    XX(C_KEYWORD_SIZEOF,        sizeof)           \
+    XX(C_KEYWORD_STATIC,        static)           \
+    XX(C_KEYWORD_STRUCT,        struct)           \
+    XX(C_KEYWORD_SWITCH,        switch)           \
+    XX(C_KEYWORD_TYPEDEF,       typedef)          \
+    XX(C_KEYWORD_UNION,         union)            \
+    XX(C_KEYWORD_UNSIGNED,      unsigned)         \
+    XX(C_KEYWORD_VOID,          void)             \
+    XX(C_KEYWORD_VOLATILE,      volatile)         \
+    XX(C_KEYWORD_WHILE,         while)
+
 #if defined(CBASE_H)
   #define ENUM_NAME TokenKind
   #define ENUM_BITFLAGS 0
   #define ENUM_PREFIX_ TOKEN_
   #define ENUM_FIELDS TOKEN_KIND_FIELDS
+  #define XENUMS_DECLARE_ONLY 1
+  #define XENUMS_NO_TESTS 1
+  #include "xenums.c"
+  #undef XENUMS_NO_TESTS
+
+  #define ENUM_NAME CKeyword
+  #define ENUM_BITFLAGS 0
+  #define ENUM_PREFIX_ C_KEYWORD_
+  #define ENUM_FIELDS C_KEYWORD_FIELDS
   #define XENUMS_DECLARE_ONLY 1
   #define XENUMS_NO_TESTS 1
   #include "xenums.c"
@@ -35,6 +90,16 @@
       TOKEN_KIND_FIELDS
       #undef XX
       TOKEN_COUNT,
+  };
+  enum CKeyword {
+      #define XX_1(E) E,
+      #define XX_2(E, alias) E,
+      #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+      C_KEYWORD_FIELDS
+      #undef XX
+      #undef XX_1
+      #undef XX_2
+      C_KEYWORD_COUNT,
   };
   typedef struct StrBuilder StrBuilder;
 #endif
@@ -102,54 +167,6 @@ enum CMemberOp {
     C_MEMBER_OP_INVALID = 0,
     C_MEMBER_OP_DOT,
     C_MEMBER_OP_ARROW,
-};
-
-enum CKeyword {
-    C_KEYWORD_INVALID = 0,
-    C_KEYWORD_ALIGNAS,
-    C_KEYWORD_ALIGNOF,
-    C_KEYWORD_ATOMIC,
-    C_KEYWORD_BOOL,
-    C_KEYWORD_COMPLEX,
-    C_KEYWORD_GENERIC,
-    C_KEYWORD_IMAGINARY,
-    C_KEYWORD_NORETURN,
-    C_KEYWORD_STATIC_ASSERT,
-    C_KEYWORD_THREAD_LOCAL,
-    C_KEYWORD_AUTO,
-    C_KEYWORD_BREAK,
-    C_KEYWORD_CASE,
-    C_KEYWORD_CHAR,
-    C_KEYWORD_CONST,
-    C_KEYWORD_CONTINUE,
-    C_KEYWORD_DEFAULT,
-    C_KEYWORD_DO,
-    C_KEYWORD_DOUBLE,
-    C_KEYWORD_ELSE,
-    C_KEYWORD_ENUM,
-    C_KEYWORD_EXTERN,
-    C_KEYWORD_FLOAT,
-    C_KEYWORD_FOR,
-    C_KEYWORD_GOTO,
-    C_KEYWORD_IF,
-    C_KEYWORD_INLINE,
-    C_KEYWORD_INT,
-    C_KEYWORD_LONG,
-    C_KEYWORD_REGISTER,
-    C_KEYWORD_RESTRICT,
-    C_KEYWORD_RETURN,
-    C_KEYWORD_SHORT,
-    C_KEYWORD_SIGNED,
-    C_KEYWORD_SIZEOF,
-    C_KEYWORD_STATIC,
-    C_KEYWORD_STRUCT,
-    C_KEYWORD_SWITCH,
-    C_KEYWORD_TYPEDEF,
-    C_KEYWORD_UNION,
-    C_KEYWORD_UNSIGNED,
-    C_KEYWORD_VOID,
-    C_KEYWORD_VOLATILE,
-    C_KEYWORD_WHILE,
 };
 
 typedef struct Token {
@@ -258,8 +275,8 @@ void c_emit_wrapped_expr(StrBuilder *, char *, char *, char *, char *);
 StrBuilder c_identifier(char *, int32);
 bool c_identifier_is_keyword(char *);
 StrBuilder c_string_literal(char *, int32);
-void emit_int_array_initializer(StrBuilder *, char *, int32 *, int32);
-void emit_lens_initializer(
+void emit_int_array_init(StrBuilder *, char *, int32 *, int32);
+void emit_lens_init(
     StrBuilder *,
     char *,
     char **,
@@ -267,7 +284,7 @@ void emit_lens_initializer(
     int32,
     char *
 );
-void emit_string_array_initializer(
+void emit_string_array_init(
     StrBuilder *,
     char *,
     char **,
@@ -275,7 +292,7 @@ void emit_string_array_initializer(
     int32,
     char *
 );
-void emit_u64_array_initializer(StrBuilder *, char *, uint64 *, int32);
+void emit_u64_array_init(StrBuilder *, char *, uint64 *, int32);
 
 #define token_is_2(TOKEN, WHAT)                \
 _Generic((TOKEN),                              \

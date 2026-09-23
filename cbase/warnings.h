@@ -14,7 +14,7 @@
 #define DIAGNOSTIC_PRAGMA2(X) _Pragma(#X)
 #define DIAGNOSTIC_PRAGMA(X) DIAGNOSTIC_PRAGMA2(X)
 
-#if DEBUGGING && !TESTING
+#if 0 || (DEBUGGING && !TESTING)
   #if CC_GCC
     #define DIAGNOSTIC(W) DIAGNOSTIC_PRAGMA(GCC diagnostic error W)
   #elif CC_CLANG

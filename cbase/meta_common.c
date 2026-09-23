@@ -21,6 +21,15 @@
 #include "xenums.c"
 #undef XENUMS_NO_TESTS
 
+#define ENUM_NAME CKeyword
+#define ENUM_BITFLAGS 0
+#define ENUM_PREFIX_ C_KEYWORD_
+#define ENUM_FIELDS C_KEYWORD_FIELDS
+#define XENUMS_FUNCTIONS_ONLY 1
+#define XENUMS_NO_TESTS 1
+#include "xenums.c"
+#undef XENUMS_NO_TESTS
+
 int32
 token_is_val(Token token, char *what) {
     return STREQUAL(token.text, token.len, what, strlen32(what));
@@ -226,145 +235,26 @@ c_token_member_op(Token *token) {
 
 enum CKeyword
 c_keyword_from_text(char *text, int32 text_len) {
-    if (STREQUAL(text, text_len, "_Alignas")) {
-        return C_KEYWORD_ALIGNAS;
+    enum CKeyword keyword;
+    char *alias;
+    int32 alias_len;
+
+    keyword = C_KEYWORD_parse(text, text_len);
+    if (keyword == C_KEYWORD_COUNT) {
+        return C_KEYWORD_COUNT;
     }
-    if (STREQUAL(text, text_len, "_Alignof")) {
-        return C_KEYWORD_ALIGNOF;
+
+    alias_len = C_KEYWORD_alias_len(keyword, &alias);
+    if (!STREQUAL(text, text_len, alias, alias_len)) {
+        return C_KEYWORD_COUNT;
     }
-    if (STREQUAL(text, text_len, "_Atomic")) {
-        return C_KEYWORD_ATOMIC;
-    }
-    if (STREQUAL(text, text_len, "_Bool")) {
-        return C_KEYWORD_BOOL;
-    }
-    if (STREQUAL(text, text_len, "_Complex")) {
-        return C_KEYWORD_COMPLEX;
-    }
-    if (STREQUAL(text, text_len, "_Generic")) {
-        return C_KEYWORD_GENERIC;
-    }
-    if (STREQUAL(text, text_len, "_Imaginary")) {
-        return C_KEYWORD_IMAGINARY;
-    }
-    if (STREQUAL(text, text_len, "_Noreturn")) {
-        return C_KEYWORD_NORETURN;
-    }
-    if (STREQUAL(text, text_len, "_Static_assert")) {
-        return C_KEYWORD_STATIC_ASSERT;
-    }
-    if (STREQUAL(text, text_len, "_Thread_local")) {
-        return C_KEYWORD_THREAD_LOCAL;
-    }
-    if (STREQUAL(text, text_len, "auto")) {
-        return C_KEYWORD_AUTO;
-    }
-    if (STREQUAL(text, text_len, "break")) {
-        return C_KEYWORD_BREAK;
-    }
-    if (STREQUAL(text, text_len, "case")) {
-        return C_KEYWORD_CASE;
-    }
-    if (STREQUAL(text, text_len, "char")) {
-        return C_KEYWORD_CHAR;
-    }
-    if (STREQUAL(text, text_len, "const")) {
-        return C_KEYWORD_CONST;
-    }
-    if (STREQUAL(text, text_len, "continue")) {
-        return C_KEYWORD_CONTINUE;
-    }
-    if (STREQUAL(text, text_len, "default")) {
-        return C_KEYWORD_DEFAULT;
-    }
-    if (STREQUAL(text, text_len, "do")) {
-        return C_KEYWORD_DO;
-    }
-    if (STREQUAL(text, text_len, "double")) {
-        return C_KEYWORD_DOUBLE;
-    }
-    if (STREQUAL(text, text_len, "else")) {
-        return C_KEYWORD_ELSE;
-    }
-    if (STREQUAL(text, text_len, "enum")) {
-        return C_KEYWORD_ENUM;
-    }
-    if (STREQUAL(text, text_len, "extern")) {
-        return C_KEYWORD_EXTERN;
-    }
-    if (STREQUAL(text, text_len, "float")) {
-        return C_KEYWORD_FLOAT;
-    }
-    if (STREQUAL(text, text_len, "for")) {
-        return C_KEYWORD_FOR;
-    }
-    if (STREQUAL(text, text_len, "goto")) {
-        return C_KEYWORD_GOTO;
-    }
-    if (STREQUAL(text, text_len, "if")) {
-        return C_KEYWORD_IF;
-    }
-    if (STREQUAL(text, text_len, "inline")) {
-        return C_KEYWORD_INLINE;
-    }
-    if (STREQUAL(text, text_len, "int")) {
-        return C_KEYWORD_INT;
-    }
-    if (STREQUAL(text, text_len, "long")) {
-        return C_KEYWORD_LONG;
-    }
-    if (STREQUAL(text, text_len, "register")) {
-        return C_KEYWORD_REGISTER;
-    }
-    if (STREQUAL(text, text_len, "restrict")) {
-        return C_KEYWORD_RESTRICT;
-    }
-    if (STREQUAL(text, text_len, "return")) {
-        return C_KEYWORD_RETURN;
-    }
-    if (STREQUAL(text, text_len, "short")) {
-        return C_KEYWORD_SHORT;
-    }
-    if (STREQUAL(text, text_len, "signed")) {
-        return C_KEYWORD_SIGNED;
-    }
-    if (STREQUAL(text, text_len, "sizeof")) {
-        return C_KEYWORD_SIZEOF;
-    }
-    if (STREQUAL(text, text_len, "static")) {
-        return C_KEYWORD_STATIC;
-    }
-    if (STREQUAL(text, text_len, "struct")) {
-        return C_KEYWORD_STRUCT;
-    }
-    if (STREQUAL(text, text_len, "switch")) {
-        return C_KEYWORD_SWITCH;
-    }
-    if (STREQUAL(text, text_len, "typedef")) {
-        return C_KEYWORD_TYPEDEF;
-    }
-    if (STREQUAL(text, text_len, "union")) {
-        return C_KEYWORD_UNION;
-    }
-    if (STREQUAL(text, text_len, "unsigned")) {
-        return C_KEYWORD_UNSIGNED;
-    }
-    if (STREQUAL(text, text_len, "void")) {
-        return C_KEYWORD_VOID;
-    }
-    if (STREQUAL(text, text_len, "volatile")) {
-        return C_KEYWORD_VOLATILE;
-    }
-    if (STREQUAL(text, text_len, "while")) {
-        return C_KEYWORD_WHILE;
-    }
-    return C_KEYWORD_INVALID;
+    return keyword;
 }
 
 enum CKeyword
 c_token_keyword(Token *token) {
     if (token->kind != TOKEN_IDENT) {
-        return C_KEYWORD_INVALID;
+        return C_KEYWORD_COUNT;
     }
     return c_keyword_from_text(token->text, token->len);
 }
@@ -634,14 +524,10 @@ test_c_assignment_ops(void) {
     Token token;
 
     token = test_token(TOKEN_OPERATOR, "+=");
-    ASSERT(c_assign_op_from_text("=", STRLIT_LEN("="))
-           == C_ASSIGN_OP_ASSIGN);
-    ASSERT(c_assign_op_from_text("%=", STRLIT_LEN("%="))
-           == C_ASSIGN_OP_MOD);
-    ASSERT(c_assign_op_from_text("<<=", STRLIT_LEN("<<="))
-           == C_ASSIGN_OP_SHL);
-    ASSERT(c_assign_op_from_text(">>=", STRLIT_LEN(">>="))
-           == C_ASSIGN_OP_SHR);
+    ASSERT(c_assign_op_from_text(STRLIT("=")) == C_ASSIGN_OP_ASSIGN);
+    ASSERT(c_assign_op_from_text(STRLIT("%=")) == C_ASSIGN_OP_MOD);
+    ASSERT(c_assign_op_from_text(STRLIT("<<=")) == C_ASSIGN_OP_SHL);
+    ASSERT(c_assign_op_from_text(STRLIT(">>=")) == C_ASSIGN_OP_SHR);
     ASSERT(c_token_assign_op(&token) == C_ASSIGN_OP_ADD);
 
     token = test_token(TOKEN_IDENT, "+=");
@@ -654,12 +540,9 @@ test_c_binary_ops(void) {
     Token token;
 
     token = test_token(TOKEN_OPERATOR, "&&");
-    ASSERT(c_binary_op_from_text("*", STRLIT_LEN("*"))
-           == C_BINARY_OP_MUL);
-    ASSERT(c_binary_op_from_text("<=", STRLIT_LEN("<="))
-           == C_BINARY_OP_LE);
-    ASSERT(c_binary_op_from_text("|", STRLIT_LEN("|"))
-           == C_BINARY_OP_BIT_OR);
+    ASSERT(c_binary_op_from_text(STRLIT("*")) == C_BINARY_OP_MUL);
+    ASSERT(c_binary_op_from_text(STRLIT("<=")) == C_BINARY_OP_LE);
+    ASSERT(c_binary_op_from_text(STRLIT("|")) == C_BINARY_OP_BIT_OR);
     ASSERT(c_token_binary_op(&token) == C_BINARY_OP_LOGICAL_AND);
     ASSERT_EQUAL(c_binary_op_precedence(C_BINARY_OP_LOGICAL_OR), 1);
     ASSERT_EQUAL(c_binary_op_precedence(C_BINARY_OP_MUL), 10);
@@ -676,10 +559,8 @@ test_c_unary_ops(void) {
     Token token;
 
     token = test_token(TOKEN_OPERATOR, "++");
-    ASSERT(c_unary_op_from_text("+", STRLIT_LEN("+"))
-           == C_UNARY_OP_PLUS);
-    ASSERT(c_unary_op_from_text("*", STRLIT_LEN("*"))
-           == C_UNARY_OP_DEREFERENCE);
+    ASSERT(c_unary_op_from_text(STRLIT("+")) == C_UNARY_OP_PLUS);
+    ASSERT(c_unary_op_from_text(STRLIT("*")) == C_UNARY_OP_DEREFERENCE);
     ASSERT(c_token_unary_op(&token) == C_UNARY_OP_PRE_INCREMENT);
     ASSERT(c_token_postfix_unary_op(&token) == C_UNARY_OP_POST_INCREMENT);
 
@@ -694,7 +575,7 @@ test_c_member_ops(void) {
     Token token;
 
     token = test_token(TOKEN_OPERATOR, "->");
-    ASSERT(c_member_op_from_text(".", STRLIT_LEN(".")) == C_MEMBER_OP_DOT);
+    ASSERT(c_member_op_from_text(STRLIT(".")) == C_MEMBER_OP_DOT);
     ASSERT(c_token_member_op(&token) == C_MEMBER_OP_ARROW);
 
     token = test_token(TOKEN_PUNCT, ".");
@@ -707,23 +588,25 @@ test_c_keywords_and_type_words(void) {
     Token token;
 
     token = test_token(TOKEN_IDENT, "if");
-    ASSERT(c_keyword_from_text("return", STRLIT_LEN("return"))
-           == C_KEYWORD_RETURN);
+    ASSERT(c_keyword_from_text(STRLIT("return")) == C_KEYWORD_RETURN);
+    ASSERT(c_keyword_from_text(STRLIT("_Static_assert"))
+           == C_KEYWORD_STATIC_ASSERT);
     ASSERT(c_token_keyword(&token) == C_KEYWORD_IF);
 
     token = test_token(TOKEN_OPERATOR, "if");
-    ASSERT(c_token_keyword(&token) == C_KEYWORD_INVALID);
+    ASSERT(c_token_keyword(&token) == C_KEYWORD_COUNT);
+    ASSERT(c_keyword_from_text(STRLIT("IF")) == C_KEYWORD_COUNT);
+    ASSERT(c_keyword_from_text(STRLIT("_static_assert")) == C_KEYWORD_COUNT);
 
     token = test_token(TOKEN_IDENT, "int32");
-    ASSERT(c_text_is_type_word("double", STRLIT_LEN("double")));
-    ASSERT(c_text_is_type_qualifier("__restrict__",
-                                    STRLIT_LEN("__restrict__")));
-    ASSERT(c_text_is_type_word("__restrict__", STRLIT_LEN("__restrict__")));
+    ASSERT(c_text_is_type_word(STRLIT("double")));
+    ASSERT(c_text_is_type_qualifier(STRLIT("__restrict__")));
+    ASSERT(c_text_is_type_word(STRLIT("__restrict__")));
     ASSERT(c_token_is_type_word(&token));
 
     token = test_token(TOKEN_IDENT, "static");
-    ASSERT(c_text_is_declaration_prefix("extern", STRLIT_LEN("extern")));
-    ASSERT(c_text_is_declaration_prefix("restrict", STRLIT_LEN("restrict")));
+    ASSERT(c_text_is_declaration_prefix(STRLIT("extern")));
+    ASSERT(c_text_is_declaration_prefix(STRLIT("restrict")));
     ASSERT(!c_token_is_type_qualifier(&token));
     ASSERT(c_token_is_declaration_prefix(&token));
 
@@ -731,7 +614,7 @@ test_c_keywords_and_type_words(void) {
     ASSERT(c_token_is_type_qualifier(&token));
 
     token = test_token(TOKEN_IDENT, "x");
-    ASSERT(c_keyword_from_text("x", STRLIT_LEN("x")) == C_KEYWORD_INVALID);
+    ASSERT(c_keyword_from_text(STRLIT("x")) == C_KEYWORD_COUNT);
     ASSERT(!c_token_is_type_word(&token));
     ASSERT(!c_token_is_declaration_prefix(&token));
     return;

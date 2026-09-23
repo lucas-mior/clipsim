@@ -72,7 +72,7 @@ c_identifier_is_keyword(char *identifier) {
     enum CKeyword keyword;
 
     keyword = c_keyword_from_text(identifier, strlen32(identifier));
-    if (keyword != C_KEYWORD_INVALID) {
+    if (keyword != C_KEYWORD_COUNT) {
         return true;
     }
     return false;
@@ -127,7 +127,7 @@ c_identifier(char *value, int32 value_len) {
 }
 
 void
-emit_string_array_initializer(StrBuilder *out, char *field, char **values,
+emit_string_array_init(StrBuilder *out, char *field, char **values,
                               int32 *value_lens, int32 count,
                               char *fallback_prefix) {
     if (count <= 0) {
@@ -161,7 +161,7 @@ emit_string_array_initializer(StrBuilder *out, char *field, char **values,
 }
 
 void
-emit_lens_initializer(StrBuilder *out, char *field, char **values,
+emit_lens_init(StrBuilder *out, char *field, char **values,
                       int32 *value_lens, int32 count, char *fallback_prefix) {
     if (count <= 0) {
         return;
@@ -191,7 +191,7 @@ emit_lens_initializer(StrBuilder *out, char *field, char **values,
 }
 
 void
-emit_int_array_initializer(StrBuilder *out, char *field, int32 *values,
+emit_int_array_init(StrBuilder *out, char *field, int32 *values,
                            int32 count) {
     if (count <= 0) {
         return;
@@ -210,7 +210,7 @@ emit_int_array_initializer(StrBuilder *out, char *field, int32 *values,
 }
 
 void
-emit_u64_array_initializer(StrBuilder *out, char *field, uint64 *values,
+emit_u64_array_init(StrBuilder *out, char *field, uint64 *values,
                            int32 count) {
     if (count <= 0) {
         return;
@@ -253,10 +253,10 @@ static inline void
 meta_generate_sink(void) {
     (void)c_emit_wrapped_expr;
     (void)c_identifier;
-    (void)emit_int_array_initializer;
-    (void)emit_lens_initializer;
-    (void)emit_string_array_initializer;
-    (void)emit_u64_array_initializer;
+    (void)emit_int_array_init;
+    (void)emit_lens_init;
+    (void)emit_string_array_init;
+    (void)emit_u64_array_init;
 }
 #endif
 
@@ -322,12 +322,12 @@ test_c_identifier(void) {
 }
 
 static void
-test_emit_string_and_lens_initializers(void) {
+test_emit_string_and_lens_inits(void) {
     StrBuilder out = {0};
     char *values[3] = {"alpha", NULL, "quo\"te"};
     int32 lens[3] = {5, 0, 6};
 
-    emit_string_array_initializer(&out, "names", values, lens, 3, "v");
+    emit_string_array_init(&out, "names", values, lens, 3, "v");
     ASSERT_EQUAL(out.data, "    .names = {\n"
                            "        \"alpha\",\n"
                            "        \"v1\",\n"
@@ -335,23 +335,23 @@ test_emit_string_and_lens_initializers(void) {
                            "    },\n");
 
     sb_free(&out);
-    emit_lens_initializer(&out, "name_lens", values, lens, 3, "v");
+    emit_lens_init(&out, "name_lens", values, lens, 3, "v");
     ASSERT_EQUAL(out.data, "    .name_lens = { 5, 2, 6 },\n");
     free2(out.data, out.cap);
     return;
 }
 
 static void
-test_emit_number_initializers(void) {
+test_emit_number_inits(void) {
     StrBuilder out = {0};
     int32 ints[3] = {-1, 0, 42};
     uint64 u64s[2] = {UINT64_C(0x1234), UINT64_C(0)};
 
-    emit_int_array_initializer(&out, "ints", ints, 3);
+    emit_int_array_init(&out, "ints", ints, 3);
     ASSERT_EQUAL(out.data, "    .ints = { -1, 0, 42 },\n");
 
     sb_free(&out);
-    emit_u64_array_initializer(&out, "bits", u64s, 2);
+    emit_u64_array_init(&out, "bits", u64s, 2);
     ASSERT_EQUAL(out.data,
                  "    .bits = { UINT64_C(0x1234), UINT64_C(0x0) },\n");
     free2(out.data, out.cap);
@@ -374,8 +374,8 @@ int
 main(void) {
     test_c_string_literal();
     test_c_identifier();
-    test_emit_string_and_lens_initializers();
-    test_emit_number_initializers();
+    test_emit_string_and_lens_inits();
+    test_emit_number_inits();
     test_emit_wrapped_expr();
     return 0;
 }

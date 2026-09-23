@@ -66,14 +66,6 @@
   #error "cannot define both RAPIDHASH_COMPACT and RAPIDHASH_UNROLLED."
 #endif
 
-#if defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
-  #define LIKELY(x) __builtin_expect(x, 1)
-  #define UNLIKELY(x) __builtin_expect(x, 0)
-#else
-  #define LIKELY(x) (x)
-  #define UNLIKELY(x) (x)
-#endif
-
 #if !defined(RAPIDHASH_LITTLE_ENDIAN)
   #if defined(_WIN32) || defined(__LITTLE_ENDIAN__) \
       || (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)

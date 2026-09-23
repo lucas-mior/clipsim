@@ -15,17 +15,12 @@
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.
 
-#include "ryu/ryu_parse.h"
+#include "cbase.h"
 
-#include <assert.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
+#include "ryu/ryu_parse.h"
 
 #ifdef RYU_DEBUG
 #include <inttypes.h>
-#include <stdio.h>
 #endif
 
 #include "ryu/common.h"
@@ -38,25 +33,25 @@
 #if defined(_MSC_VER)
 #include <intrin.h>
 
-static inline uint32_t floor_log2(const uint32_t value) {
+static inline uint32 floor_log2(const uint32 value) {
   unsigned long index;
   return _BitScanReverse(&index, value) ? index : 32;
 }
 
 #else
 
-static inline uint32_t floor_log2(const uint32_t value) {
+static inline uint32 floor_log2(const uint32 value) {
   return 31 - __builtin_clz(value);
 }
 
 #endif
 
 // The max function is already defined on Windows.
-static inline int32_t max32(int32_t a, int32_t b) {
+static inline int32 max32(int32 a, int32 b) {
   return a < b ? b : a;
 }
 
-static inline float int32Bits2Float(uint32_t bits) {
+static inline float int32Bits2Float(uint32 bits) {
   float f;
   memcpy(&f, &bits, sizeof(float));
   return f;
@@ -70,8 +65,8 @@ enum Status s2f_n(const char * buffer, const int len, float * result) {
   int e10digits = 0;
   int dotIndex = len;
   int eIndex = len;
-  uint32_t m10 = 0;
-  int32_t e10 = 0;
+  uint32 m10 = 0;
+  int32 e10 = 0;
   bool signedM = false;
   bool signedE = false;
   int i = 0;
@@ -142,21 +137,21 @@ enum Status s2f_n(const char * buffer, const int len, float * result) {
 
   if ((m10digits + e10 <= -46) || (m10 == 0)) {
     // Number is less than 1e-46, which should be rounded down to 0; return +/-0.0.
-    uint32_t ieee = ((uint32_t) signedM) << (FLOAT_EXPONENT_BITS + FLOAT_MANTISSA_BITS);
+    uint32 ieee = ((uint32) signedM) << (FLOAT_EXPONENT_BITS + FLOAT_MANTISSA_BITS);
     *result = int32Bits2Float(ieee);
     return SUCCESS;
   }
   if (m10digits + e10 >= 40) {
     // Number is larger than 1e+39, which should be rounded to +/-Infinity.
-    uint32_t ieee = (((uint32_t) signedM) << (FLOAT_EXPONENT_BITS + FLOAT_MANTISSA_BITS)) | (0xffu << FLOAT_MANTISSA_BITS);
+    uint32 ieee = (((uint32) signedM) << (FLOAT_EXPONENT_BITS + FLOAT_MANTISSA_BITS)) | (0xffu << FLOAT_MANTISSA_BITS);
     *result = int32Bits2Float(ieee);
     return SUCCESS;
   }
 
   // Convert to binary float m2 * 2^e2, while retaining information about whether the conversion
   // was exact (trailingZeros).
-  int32_t e2;
-  uint32_t m2;
+  int32 e2;
+  uint32 m2;
   bool trailingZeros;
   if (e10 >= 0) {
     // The length of m * 10^e in bits is:
@@ -207,11 +202,11 @@ enum Status s2f_n(const char * buffer, const int len, float * result) {
 #endif
 
   // Compute the final IEEE exponent.
-  uint32_t ieee_e2 = (uint32_t) max32(0, e2 + FLOAT_EXPONENT_BIAS + floor_log2(m2));
+  uint32 ieee_e2 = (uint32) max32(0, e2 + FLOAT_EXPONENT_BIAS + floor_log2(m2));
 
   if (ieee_e2 > 0xfe) {
     // Final IEEE exponent is larger than the maximum representable; return +/-Infinity.
-    uint32_t ieee = (((uint32_t) signedM) << (FLOAT_EXPONENT_BITS + FLOAT_MANTISSA_BITS)) | (0xffu << FLOAT_MANTISSA_BITS);
+    uint32 ieee = (((uint32) signedM) << (FLOAT_EXPONENT_BITS + FLOAT_MANTISSA_BITS)) | (0xffu << FLOAT_MANTISSA_BITS);
     *result = int32Bits2Float(ieee);
     return SUCCESS;
   }
@@ -219,7 +214,7 @@ enum Status s2f_n(const char * buffer, const int len, float * result) {
   // We need to figure out how much we need to shift m2. The tricky part is that we need to take
   // the final IEEE exponent into account, so we need to reverse the bias and also special-case
   // the value 0.
-  int32_t shift = (ieee_e2 == 0 ? 1 : ieee_e2) - e2 - FLOAT_EXPONENT_BIAS - FLOAT_MANTISSA_BITS;
+  int32 shift = (ieee_e2 == 0 ? 1 : ieee_e2) - e2 - FLOAT_EXPONENT_BIAS - FLOAT_MANTISSA_BITS;
   assert(shift >= 0);
 #ifdef RYU_DEBUG
   printf("ieee_e2 = %d\n", ieee_e2);
@@ -232,14 +227,14 @@ enum Status s2f_n(const char * buffer, const int len, float * result) {
   //
   // We need to update trailingZeros given that we have the exact output exponent ieee_e2 now.
   trailingZeros &= (m2 & ((1u << (shift - 1)) - 1)) == 0;
-  uint32_t lastRemovedBit = (m2 >> (shift - 1)) & 1;
+  uint32 lastRemovedBit = (m2 >> (shift - 1)) & 1;
   bool roundUp = (lastRemovedBit != 0) && (!trailingZeros || (((m2 >> shift) & 1) != 0));
 
 #ifdef RYU_DEBUG
   printf("roundUp = %d\n", roundUp);
   printf("ieee_m2 = %u\n", (m2 >> shift) + roundUp);
 #endif
-  uint32_t ieee_m2 = (m2 >> shift) + roundUp;
+  uint32 ieee_m2 = (m2 >> shift) + roundUp;
   assert(ieee_m2 <= (1u << (FLOAT_MANTISSA_BITS + 1)));
   ieee_m2 &= (1u << FLOAT_MANTISSA_BITS) - 1;
   if (ieee_m2 == 0 && roundUp) {
@@ -248,7 +243,7 @@ enum Status s2f_n(const char * buffer, const int len, float * result) {
     // Due to how the IEEE represents +/-Infinity, we don't need to check for overflow here.
     ieee_e2++;
   }
-  uint32_t ieee = (((((uint32_t) signedM) << FLOAT_EXPONENT_BITS) | (uint32_t)ieee_e2) << FLOAT_MANTISSA_BITS) | ieee_m2;
+  uint32 ieee = (((((uint32) signedM) << FLOAT_EXPONENT_BITS) | (uint32)ieee_e2) << FLOAT_MANTISSA_BITS) | ieee_m2;
   *result = int32Bits2Float(ieee);
   return SUCCESS;
 }
