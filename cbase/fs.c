@@ -4,10 +4,12 @@
 #if !defined(FS_C)
 #define FS_C
 
+#if !defined(TESTING_fs)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_fs 1
-#elif !defined(TESTING_fs)
+#else
 #define TESTING_fs 0
+#endif
 #endif
 
 #include "cbase.h"

@@ -4,10 +4,12 @@
 #if !defined(FORMAT_C)
 #define FORMAT_C
 
+#if !defined(TESTING_format)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_format 1
-#elif !defined(TESTING_format)
+#else
 #define TESTING_format 0
+#endif
 #endif
 
 #include "cbase.h"

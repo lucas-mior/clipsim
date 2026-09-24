@@ -6,10 +6,12 @@
 
 #include "cbase.h"
 
+#if !defined(TESTING_threads)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_threads 1
-#elif !defined(TESTING_threads)
+#else
 #define TESTING_threads 0
+#endif
 #endif
 
 #if !defined(PARALLEL_FOR_MAX_THREADS)

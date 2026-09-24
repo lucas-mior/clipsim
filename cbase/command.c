@@ -4,10 +4,12 @@
 #if !defined(COMMAND_C)
 #define COMMAND_C
 
+#if !defined(TESTING_command)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_command 1
-#elif !defined(TESTING_command)
+#else
 #define TESTING_command 0
+#endif
 #endif
 
 #include "cbase.h"

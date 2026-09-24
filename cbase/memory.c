@@ -4,10 +4,12 @@
 #if !defined(MEMORY_C)
 #define MEMORY_C
 
+#if !defined(TESTING_memory)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_memory 1
-#elif !defined(TESTING_memory)
+#else
 #define TESTING_memory 0
+#endif
 #endif
 
 #include "cbase.h"

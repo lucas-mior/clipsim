@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
+#if !defined(TESTING_hash)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_hash 1
-#elif !defined(TESTING_hash)
+#else
 #define TESTING_hash 0
+#endif
 #endif
 
 #if !defined(HASH_H)
@@ -15,7 +17,6 @@
 #include "libc.h"
 #include "base_macros.h"
 #include "primitives.h"
-#include "rapidhash.h"
 
 #define HASH_SLOT_USED     1
 #define HASH_SLOT_FREE     0

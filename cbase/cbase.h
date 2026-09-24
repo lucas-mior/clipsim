@@ -40,7 +40,7 @@ void *memrchr64(void *pointer, int32 value, int64 size);
 bool util_glob_match(char *string, int32 string_len, char *glob,
                      int32 glob_len);
 
-static uint64 rapidhash(void *, int64);
+uint64 rapidhash(void *key, int64 len);
 
 int64 ceil64(double x);
 int64 floor64(double x);
@@ -874,6 +874,7 @@ void throw_away_function();
 #include "arena.c"
 #include "allocator.c"
 #include "memory.c"
+#include "rapidhash.c"
 #include "generic.c"
 #include "assertions.c"
 #include "array.c"

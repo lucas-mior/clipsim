@@ -4,10 +4,12 @@
 #if !defined(TIME_C)
 #define TIME_C
 
+#if !defined(TESTING_time)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_time 1
-#elif !defined(TESTING_time)
+#else
 #define TESTING_time 0
+#endif
 #endif
 
 #include "cbase.h"

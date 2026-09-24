@@ -4,10 +4,12 @@
 #if !defined(ASSERTIONS_H)
 #define ASSERTIONS_H
 
+#if !defined(TESTING_assert)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_assert 1
-#elif !defined(TESTING_assert)
+#else
 #define TESTING_assert 0
+#endif
 #endif
 
 #include "platform_detection.h"

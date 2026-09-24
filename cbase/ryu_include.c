@@ -4,10 +4,12 @@
 #if !defined(RYU_INCLUDE_C)
 #define RYU_INCLUDE_C
 
+#if !defined(TESTING_ryu_include)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_ryu_include 1
-#elif !defined(TESTING_ryu_include)
+#else
 #define TESTING_ryu_include 0
+#endif
 #endif
 
 #if TESTING_ryu_include

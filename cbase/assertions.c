@@ -4,10 +4,12 @@
 #if !defined(ASSERTIONS_C)
 #define ASSERTIONS_C
 
+#if !defined(TESTING_assertions)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_assertions 1
-#elif !defined(TESTING_assertions)
+#else
 #define TESTING_assertions 0
+#endif
 #endif
 
 #include "cbase.h"

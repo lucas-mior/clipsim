@@ -4,10 +4,12 @@
 #include "base_macros.h"
 #include "primitives.h"
 
+#if !defined(TESTING_sfa)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_sfa 1
-#elif !defined(TESTING_sfa)
+#else
 #define TESTING_sfa 0
+#endif
 #endif
 
 #if 1 == TESTING_sfa

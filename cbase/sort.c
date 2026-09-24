@@ -4,10 +4,12 @@
 #if !defined(SORT_C)
 #define SORT_C
 
+#if !defined(TESTING_sort)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_sort 1
-#elif !defined(TESTING_sort)
+#else
 #define TESTING_sort 0
+#endif
 #endif
 
 #include "cbase.h"

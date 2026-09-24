@@ -4,10 +4,12 @@
 #if !defined(FS_WINDOWS_C)
 #define FS_WINDOWS_C
 
+#if !defined(TESTING_fs_windows)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_fs_windows 1
-#elif !defined(TESTING_fs_windows)
+#else
 #define TESTING_fs_windows 0
+#endif
 #endif
 
 #include "cbase.h"

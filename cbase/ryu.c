@@ -4,10 +4,12 @@
 #if !defined(RYU_C)
 #define RYU_C
 
+#if !defined(TESTING_ryu)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_ryu 1
-#elif !defined(TESTING_ryu)
+#else
 #define TESTING_ryu 0
+#endif
 #endif
 
 #include "cbase.h"

@@ -10,10 +10,12 @@
 #pragma clang diagnostic ignored "-Wfixed-enum-extension"
 #endif
 
+#if !defined(TESTING_xenums)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_xenums 1
-#elif !defined(TESTING_xenums)
+#else
 #define TESTING_xenums 0
+#endif
 #endif
 
 #if !defined(CBASE_H)

@@ -4,10 +4,12 @@
 #if !defined(ARRAY_C)
 #define ARRAY_C
 
+#if !defined(TESTING_array)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_array 1
-#elif !defined(TESTING_array)
+#else
 #define TESTING_array 0
+#endif
 #endif
 
 #include "cbase.h"

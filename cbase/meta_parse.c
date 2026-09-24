@@ -6,10 +6,12 @@
 
 #define PARSE_INITIAL_LINE_CAPACITY 128
 
+#if !defined(TESTING_meta_parse)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_meta_parse 1
-#elif !defined(TESTING_meta_parse)
+#else
 #define TESTING_meta_parse 0
+#endif
 #endif
 
 #include "cbase.h"

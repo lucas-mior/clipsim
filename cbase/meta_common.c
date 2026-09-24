@@ -4,10 +4,12 @@
 #if !defined(META_COMMON_C)
 #define META_COMMON_C
 
+#if !defined(TESTING_meta_common)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_meta_common 1
-#elif !defined(TESTING_meta_common)
+#else
 #define TESTING_meta_common 0
+#endif
 #endif
 
 #include "cbase.h"

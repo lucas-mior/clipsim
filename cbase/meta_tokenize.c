@@ -6,10 +6,12 @@
 
 #define TOKENIZE_INITIAL_TOKEN_CAPACITY 32
 
+#if !defined(TESTING_meta_tokenize)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_meta_tokenize 1
-#elif !defined(TESTING_meta_tokenize)
+#else
 #define TESTING_meta_tokenize 0
+#endif
 #endif
 
 #include "cbase.h"

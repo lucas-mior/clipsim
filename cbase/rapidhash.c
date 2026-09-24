@@ -44,16 +44,6 @@
 #endif
 #endif
 
-#define NOEXCEPT
-#define RAPIDHASH_CONSTEXPR static const
-#if !defined(RAPIDHASH_INLINE)
-#if CC_GCC || CC_CLANG
-#define RAPIDHASH_INLINE inline __attribute__((always_inline))
-#else
-#define RAPIDHASH_INLINE inline
-#endif
-#endif
-
 #if !defined(RAPIDHASH_PROTECTED)
   #define RAPIDHASH_FAST
 #elif defined(RAPIDHASH_FAST)
@@ -81,8 +71,8 @@
   #endif
 #endif
 
-RAPIDHASH_CONSTEXPR uint64 rapid_seed = 0xbdd89aa982704029ull;
-RAPIDHASH_CONSTEXPR uint64 rapid_secret[3] = {
+static const uint64 rapid_seed = 0xbdd89aa982704029ull;
+static const uint64 rapid_secret[3] = {
     0x2d358dccaa6c78a5ull,
     0x8bb84b93962eacc9ull,
     0x4b33a62ed433d4a3ull
@@ -104,7 +94,7 @@ RAPIDHASH_CONSTEXPR uint64 rapid_secret[3] = {
  *  Xors and overwrites A contents with C's low 64 bits.
  *  Xors and overwrites B contents with C's high 64 bits.
  */
-RAPIDHASH_INLINE void
+INLINE void
 rapid_mum(uint64 *A, uint64 *B) {
 #if defined(__SIZEOF_INT128__)
     __uint128_t r = *A;
@@ -181,53 +171,53 @@ rapid_mum(uint64 *A, uint64 *B) {
  *  Calculates 128-bit C = A * B.
  *  Returns 64-bit xor between high and low 64 bits of C.
  */
-RAPIDHASH_INLINE uint64
+INLINE uint64
 rapid_mix(uint64 A, uint64 B) {
     rapid_mum(&A, &B);
     return A ^ B;
 }
 
 #if defined(RAPIDHASH_LITTLE_ENDIAN)
-RAPIDHASH_INLINE uint64
+INLINE uint64
 rapid_read_64(uint8 *p) {
     uint64 v;
     memcpy64(&v, p, sizeof(*(&v)));
     return v;
 }
-RAPIDHASH_INLINE uint64
+INLINE uint64
 read32(uint8 *p) {
     uint32 v;
     memcpy64(&v, p, sizeof(*(&v)));
     return v;
 }
 #elif defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
-RAPIDHASH_INLINE uint64
+INLINE uint64
 rapid_read_64(uint8 *p) {
     uint64 v;
     memcpy64(&v, p, sizeof(*(&v)));
     return __builtin_bswap64(v);
 }
-RAPIDHASH_INLINE uint64
+INLINE uint64
 read32(uint8 *p) {
     uint32 v;
     memcpy64(&v, p, sizeof(*(&v)));
     return __builtin_bswap32(v);
 }
 #elif defined(_MSC_VER)
-RAPIDHASH_INLINE uint64
+INLINE uint64
 rapid_read_64(uint8 *p) {
     uint64 v;
     memcpy64(&v, p, sizeof(*(&v)));
     return _byteswap_uint64(v);
 }
-RAPIDHASH_INLINE uint64
+INLINE uint64
 read32(uint8 *p) {
     uint32 v;
     memcpy64(&v, p, sizeof(*(&v)));
     return _byteswap_ulong(v);
 }
 #else
-RAPIDHASH_INLINE uint64
+INLINE uint64
 rapid_read_64(uint8 *p) {
     uint64 v;
     memcpy(&v, p, sizeof(*(&v)));
@@ -240,7 +230,7 @@ rapid_read_64(uint8 *p) {
          | ((v << 40) & 0xff000000000000)
          | ((v << 56) & 0xff00000000000000);
 }
-RAPIDHASH_INLINE uint64
+INLINE uint64
 read32(uint8 *p) {
     uint32 v;
     memcpy(&v, p, sizeof(*(&v)));
@@ -262,7 +252,7 @@ read32(uint8 *p) {
  *
  *  Returns a 64-bit value containing all three bytes read.
  */
-RAPIDHASH_INLINE uint64
+INLINE uint64
 readSmall(uint8 *p, uint64 k) {
     return (((uint64)p[0]) << 56) | (((uint64)p[k >> 1]) << 32) | p[k - 1];
 }
@@ -277,7 +267,7 @@ readSmall(uint8 *p, uint64 k) {
  *
  *  Returns a 64-bit hash.
  */
-RAPIDHASH_INLINE uint64
+INLINE uint64
 rapidhash_internal(void *key, int64 len, uint64 seed, const uint64 *secret) {
     uint8 *p = key;
     uint64 *s = (uint64 *)secret;
@@ -347,7 +337,7 @@ rapidhash_internal(void *key, int64 len, uint64 seed, const uint64 *secret) {
     return rapid_mix(a ^ secret[0] ^ ulen, b ^ secret[1]);
 }
 
-RAPIDHASH_INLINE uint64
+INLINE uint64
 rapidhash_withSeed(void *key, int64 len, uint64 seed) {
     return rapidhash_internal(key, len, seed, rapid_secret);
 }
@@ -362,7 +352,7 @@ typedef struct {
     uint64 hi;
 } rapidhash128_t;
 
-RAPIDHASH_INLINE rapidhash128_t
+INLINE rapidhash128_t
 rapidhash128_internal(void *key, uint64 len, uint64 seed, const uint64 *secret) {
     uint8 *p = key;
     uint64 a;
@@ -420,7 +410,7 @@ rapidhash128_internal(void *key, uint64 len, uint64 seed, const uint64 *secret) 
     }
 }
 
-RAPIDHASH_INLINE rapidhash128_t
+INLINE rapidhash128_t
 rapidhash128(void *key, uint64 len) {
     return rapidhash128_internal(key, len, rapid_seed, rapid_secret);
 }

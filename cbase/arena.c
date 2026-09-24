@@ -7,10 +7,12 @@
 #define BYTE_POPED 0xDC
 #define BYTE_PUSHED_UNINITIALIZED 0xCD
 
+#if !defined(TESTING_arena)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_arena 1
-#elif !defined(TESTING_arena)
+#else
 #define TESTING_arena 0
+#endif
 #endif
 
 #include "cbase.h"

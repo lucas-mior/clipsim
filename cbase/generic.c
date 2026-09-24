@@ -4,10 +4,12 @@
 #if !defined(GENERIC_C)
 #define GENERIC_C
 
+#if !defined(TESTING_generic)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_generic 1
-#elif !defined(TESTING_generic)
+#else
 #define TESTING_generic 0
+#endif
 #endif
 
 #if TESTING_generic

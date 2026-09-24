@@ -4,10 +4,12 @@
 #if !defined(UTIL_C)
 #define UTIL_C
 
+#if !defined(TESTING_util)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_util 1
-#elif !defined(TESTING_util)
+#else
 #define TESTING_util 0
+#endif
 #endif
 
 #include "cbase.h"

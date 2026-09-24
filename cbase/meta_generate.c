@@ -4,10 +4,12 @@
 #if !defined(META_GENERATE_C)
 #define META_GENERATE_C
 
+#if !defined(TESTING_meta_generate)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_meta_generate 1
-#elif !defined(TESTING_meta_generate)
+#else
 #define TESTING_meta_generate 0
+#endif
 #endif
 
 #include "cbase.h"

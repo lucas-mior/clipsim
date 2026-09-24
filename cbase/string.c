@@ -4,10 +4,12 @@
 #if !defined(STRING_C)
 #define STRING_C
 
+#if !defined(TESTING_string)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_string 1
-#elif !defined(TESTING_string)
+#else
 #define TESTING_string 0
+#endif
 #endif
 
 #include "cbase.h"

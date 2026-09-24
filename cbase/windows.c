@@ -4,10 +4,12 @@
 #if !defined(WINDOWS_C)
 #define WINDOWS_C
 
+#if !defined(TESTING_windows)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_windows 1
-#elif !defined(TESTING_windows)
+#else
 #define TESTING_windows 0
+#endif
 #endif
 
 #include "cbase.h"
