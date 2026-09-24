@@ -43,6 +43,7 @@ typedef struct rapidhash128_t {
     uint64 hi;
 } rapidhash128_t;
 
+rapidhash128_t rapidhash128(void *key, uint64 len);
 uint64 rapidhash(void *key, int64 len);
 
 int64 ceil64(double x);

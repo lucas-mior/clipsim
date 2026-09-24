@@ -405,7 +405,7 @@ rapidhash128_internal(void *key, uint64 len, uint64 seed, const uint64 *secret) 
     }
 }
 
-INLINE rapidhash128_t
+rapidhash128_t
 rapidhash128(void *key, uint64 len) {
     return rapidhash128_internal(key, len, rapid_seed, rapid_secret);
 }
