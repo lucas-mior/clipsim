@@ -989,13 +989,18 @@ bytes_pretty(char *buffer, int64 raw) {
     }
 
     if (aux_pretty >= 1000) {
-        n = fmt_sprintf(buffer, 16, "%.1f%s", aux_pretty, suffixes[i]);
+        n = fmt_snprintf(buffer, 16, "%.1f%s", aux_pretty, suffixes[i]);
     } else if (aux_pretty >= 100) {
-        n = fmt_sprintf(buffer, 16, "%.2f%s", aux_pretty, suffixes[i]);
+        n = fmt_snprintf(buffer, 16, "%.2f%s", aux_pretty, suffixes[i]);
     } else if (aux_pretty >= 10) {
-        n = fmt_sprintf(buffer, 16, "%.3f%s", aux_pretty, suffixes[i]);
+        n = fmt_snprintf(buffer, 16, "%.3f%s", aux_pretty, suffixes[i]);
     } else {
-        n = fmt_sprintf(buffer, 16, "%.4f%s", aux_pretty, suffixes[i]);
+        n = fmt_snprintf(buffer, 16, "%.4f%s", aux_pretty, suffixes[i]);
+    }
+
+    if ((n < 0) || (n >= 16)) {
+        error("Error formatting bytes: %d\n", n);
+        fatal(EXIT_FAILURE);
     }
 
     if ((comma = memchr64(buffer, ',', n))) {

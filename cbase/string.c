@@ -477,7 +477,7 @@ sb_bytes_pretty(StrBuilder *str_builder, llong size) {
     int32 len;
 
     sb_reserve(str_builder, 16);
-    len = bytes_pretty(str_builder->data, size);
+    len = bytes_pretty(str_builder->data + str_builder->len, size);
     str_builder->len += len;
     return;
 }
@@ -813,8 +813,9 @@ main(void) {
     }
     {
         StrBuilder builder = {0};
+        SB_APPEND(&builder, "x");
         sb_bytes_pretty(&builder, UINT32_MAX);
-        ASSERT_EQUAL(builder.data, "4.0000GB");
+        ASSERT_EQUAL(builder.data, "x4.0000GB");
         sb_free(&builder);
     }
 
