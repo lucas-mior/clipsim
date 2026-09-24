@@ -38,6 +38,11 @@ void *memrchr64(void *pointer, int32 value, int64 size);
 bool util_glob_match(char *string, int32 string_len, char *glob,
                      int32 glob_len);
 
+typedef struct rapidhash128_t {
+    uint64 lo;
+    uint64 hi;
+} rapidhash128_t;
+
 uint64 rapidhash(void *key, int64 len);
 
 int64 ceil64(double x);
