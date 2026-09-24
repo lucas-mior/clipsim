@@ -46,14 +46,14 @@ c_string_literal(char *value, int32 value_len) {
             break;
         case '\\':
         case '"':
-            sb_append_byte(&out, '\\');
-            sb_append_byte(&out, (char)c);
+            str_append_byte(&out, '\\');
+            str_append_byte(&out, (char)c);
             break;
         default:
             if ((c < 0x20) || (c >= 0x7f)) {
-                sb_printf(&out, "\\%03o", (uint32)c);
+                str_printf(&out, "\\%03o", (uint32)c);
             } else {
-                sb_append_byte(&out, (char)c);
+                str_append_byte(&out, (char)c);
             }
             break;
         }
@@ -136,7 +136,7 @@ emit_string_array_init(String *out, char *field, char **values,
         return;
     }
 
-    sb_printf(out, "    .%s = {\n", field);
+    str_printf(out, "    .%s = {\n", field);
 
     for (int32 i = 0; i < count; i += 1) {
         char fb[32];
@@ -154,7 +154,7 @@ emit_string_array_init(String *out, char *field, char **values,
         }
 
         cs = c_string_literal(value, value_len);
-        sb_printf(out, "        %s,\n", cs.data);
+        str_printf(out, "        %s,\n", cs.data);
         free2(cs.data, cs.cap);
     }
 
@@ -169,7 +169,7 @@ emit_lens_init(String *out, char *field, char **values,
         return;
     }
 
-    sb_printf(out, "    .%s = { ", field);
+    str_printf(out, "    .%s = { ", field);
     for (int32 i = 0; i < count; i += 1) {
         char fb[32];
         int32 value_len;
@@ -185,7 +185,7 @@ emit_lens_init(String *out, char *field, char **values,
             value_len = fb_len;
         }
 
-        sb_itoa(out, value_len);
+        str_itoa(out, value_len);
     }
     STR_APPEND(out, " },\n");
 
@@ -199,12 +199,12 @@ emit_int_array_init(String *out, char *field, int32 *values,
         return;
     }
 
-    sb_printf(out, "    .%s = { ", field);
+    str_printf(out, "    .%s = { ", field);
     for (int32 i = 0; i < count; i += 1) {
         if (i) {
             STR_APPEND(out, ", ");
         }
-        sb_itoa(out, values[i]);
+        str_itoa(out, values[i]);
     }
     STR_APPEND(out, " },\n");
 
@@ -217,12 +217,12 @@ emit_u64_array_init(String *out, char *field, uint64 *values, int32 count) {
         return;
     }
 
-    sb_printf(out, "    .%s = { ", field);
+    str_printf(out, "    .%s = { ", field);
     for (int32 i = 0; i < count; i += 1) {
         if (i) {
             STR_APPEND(out, ", ");
         }
-        sb_printf(out, "UINT64_C(0x%w64x)", values[i]);
+        str_printf(out, "UINT64_C(0x%w64x)", values[i]);
     }
 
     STR_APPEND(out, " },\n");
@@ -335,7 +335,7 @@ test_emit_string_and_lens_inits(void) {
                            "        \"quo\\\"te\",\n"
                            "    },\n");
 
-    sb_free(&out);
+    str_free(&out);
     emit_lens_init(&out, "name_lens", values, lens, 3, "v");
     ASSERT_EQUAL(out.data, "    .name_lens = { 5, 2, 6 },\n");
     free2(out.data, out.cap);
@@ -351,7 +351,7 @@ test_emit_number_inits(void) {
     emit_int_array_init(&out, "ints", ints, 3);
     ASSERT_EQUAL(out.data, "    .ints = { -1, 0, 42 },\n");
 
-    sb_free(&out);
+    str_free(&out);
     emit_u64_array_init(&out, "bits", u64s, 2);
     ASSERT_EQUAL(out.data,
                  "    .bits = { UINT64_C(0x1234), UINT64_C(0x0) },\n");

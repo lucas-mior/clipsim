@@ -689,11 +689,11 @@ send_signal(char *executable, int32 signal_number) {
     struct dirent *process;
     int64 len = strlen32(executable);
     String buffer = {0};
-    sb_reserve(&buffer, 256);
+    str_reserve(&buffer, 256);
 
     if ((processes = opendir("/proc")) == NULL) {
         error("Error opening /proc: %s\n", strerror(errno));
-        sb_free(&buffer);
+        str_free(&buffer);
         return;
     }
 
@@ -714,7 +714,7 @@ send_signal(char *executable, int32 signal_number) {
             continue;
         }
 
-        sb_clear(&buffer);
+        str_clear(&buffer);
         d_name_len = strlen32(process->d_name);
 
         STR_APPEND(&buffer, "/proc/");
@@ -751,7 +751,7 @@ send_signal(char *executable, int32 signal_number) {
         }
     }
 
-    sb_free(&buffer);
+    str_free(&buffer);
     xclosedir(processes, "/proc");
     return;
 }

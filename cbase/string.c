@@ -265,7 +265,7 @@ strflex_list_at(StrFlexList *list, int32 idx) {
 #define STRING_INITIAL_CAPACITY 16
 
 char *
-sb_opt_cstr(String *buffer) {
+str_opt_cstr(String *buffer) {
     if (buffer == NULL) {
         return "";
     }
@@ -277,14 +277,14 @@ sb_opt_cstr(String *buffer) {
 }
 
 void
-sb_free(String *str) {
+str_free(String *str) {
     free2(str->data, str->cap);
     *str = (String){0};
     return;
 }
 
 void
-sb_clear(String *str) {
+str_clear(String *str) {
     str->len = 0;
     if (str->data) {
         str->data[0] = '\0';
@@ -293,7 +293,7 @@ sb_clear(String *str) {
 }
 
 int32
-sb_copy(String *dest, String *source) {
+str_copy(String *dest, String *source) {
     if (dest == NULL) {
         return -EINVAL;
     }
@@ -301,17 +301,17 @@ sb_copy(String *dest, String *source) {
         return dest->len;
     }
     if (source == NULL) {
-        sb_free(dest);
+        str_free(dest);
         return dest->len;
     }
 
-    sb_clear(dest);
-    sb_append(dest, source->data, source->len);
+    str_clear(dest);
+    str_append(dest, source->data, source->len);
     return dest->len;
 }
 
 void
-sb_move(String *dest, String *source) {
+str_move(String *dest, String *source) {
     if (dest == NULL) {
         return;
     }
@@ -319,7 +319,7 @@ sb_move(String *dest, String *source) {
         return;
     }
 
-    sb_free(dest);
+    str_free(dest);
     if (source == NULL) {
         *dest = (String){0};
         return;
@@ -331,7 +331,7 @@ sb_move(String *dest, String *source) {
 }
 
 int32
-sb_set(String *str, char *data, int32 data_len) {
+str_set(String *str, char *data, int32 data_len) {
     if (str == NULL) {
         return -EINVAL;
     }
@@ -350,13 +350,13 @@ sb_set(String *str, char *data, int32 data_len) {
         return str->len;
     }
 
-    sb_clear(str);
-    sb_append(str, data, data_len);
+    str_clear(str);
+    str_append(str, data, data_len);
     return str->len;
 }
 
 void
-sb_reserve(String *str, int64 extra) {
+str_reserve(String *str, int64 extra) {
     int64 needed;
     int64 new_cap;
     int32 old_cap;
@@ -401,7 +401,7 @@ sb_reserve(String *str, int64 extra) {
 }
 
 void
-sb_append(String *str, char *data, int64 data_len) {
+str_append(String *str, char *data, int64 data_len) {
     bool aliases = false;
     int32 data_offset = 0;
 
@@ -425,7 +425,7 @@ sb_append(String *str, char *data, int64 data_len) {
         }
     }
 
-    sb_reserve(str, data_len);
+    str_reserve(str, data_len);
     if (UNLIKELY(aliases)) {
         data = str->data + data_offset;
         memmove64(str->data + str->len, data, data_len);
@@ -439,11 +439,11 @@ sb_append(String *str, char *data, int64 data_len) {
 }
 
 void
-sb_append_byte(String *str, char byte) {
+str_append_byte(String *str, char byte) {
     if (byte == '\0') {
         return;
     }
-    sb_reserve(str, 1);
+    str_reserve(str, 1);
     str->data[str->len] = byte;
     str->len += 1;
     str->data[str->len] = '\0';
@@ -451,20 +451,20 @@ sb_append_byte(String *str, char byte) {
 }
 
 void
-sb_append_byte_if_not(String *str, char byte) {
+str_append_byte_if_not(String *str, char byte) {
     if ((str->len > 0)
         && (str->data[str->len - 1] == byte)) {
         return;
     }
-    sb_append_byte(str, byte);
+    str_append_byte(str, byte);
     return;
 }
 
 void
-sb_itoa(String *str, llong num) {
+str_itoa(String *str, llong num) {
     int32 len;
 
-    sb_reserve(str, 21);
+    str_reserve(str, 21);
     len = itoa2(str->data + str->len, str->cap - str->len, num);
     str->len += len;
 
@@ -472,10 +472,10 @@ sb_itoa(String *str, llong num) {
 }
 
 void
-sb_bytes_pretty(String *str, llong size) {
+str_bytes_pretty(String *str, llong size) {
     int32 len;
 
-    sb_reserve(str, 16);
+    str_reserve(str, 16);
     len = bytes_pretty(str->data + str->len, size);
     str->len += len;
 
@@ -483,7 +483,7 @@ sb_bytes_pretty(String *str, llong size) {
 }
 
 void
-sb_printf(String *str, char *fmt, ...) {
+str_printf(String *str, char *fmt, ...) {
     va_list ap;
     va_list ap2;
     int32 estimate;
@@ -500,7 +500,7 @@ sb_printf(String *str, char *fmt, ...) {
         fatal(EXIT_FAILURE);
     }
 
-    sb_reserve(str, estimate);
+    str_reserve(str, estimate);
 
     len = fmt_vsnprintf(str->data + str->len, estimate + 1, fmt, ap2);
     va_end(ap2);
@@ -519,7 +519,7 @@ sb_printf(String *str, char *fmt, ...) {
 }
 
 char *
-sb_steal(String *str, int32 *len, int32 *cap) {
+str_steal(String *str, int32 *len, int32 *cap) {
     char *data = str->data;
 
     if (len) {
@@ -534,12 +534,12 @@ sb_steal(String *str, int32 *len, int32 *cap) {
 }
 
 char *
-sb_steal_exact(String *str, int32 *len) {
+str_steal_exact(String *str, int32 *len) {
     char *data;
     int32 data_len;
     int32 cap;
 
-    data = sb_steal(str, &data_len, &cap);
+    data = str_steal(str, &data_len, &cap);
     if (cap != data_len + 1) {
         data = realloc2(data, cap, data_len + 1, SIZEOF(*data));
     }
@@ -558,7 +558,7 @@ string_array_clear(StringArray *array) {
     }
 
     for (int32 i = 0; i < array->len; i += 1) {
-        sb_free(&array->items[i]);
+        str_free(&array->items[i]);
     }
     array->len = 0;
     return;
@@ -720,9 +720,9 @@ string_array_append_copy(StringArray *array, String *item) {
     dest = &array->items[index];
     array->len += 1;
     *dest = (String){0};
-    if ((err = sb_copy(dest, item)) < 0) {
+    if ((err = str_copy(dest, item)) < 0) {
         array->len -= 1;
-        sb_free(dest);
+        str_free(dest);
         return err;
     }
     return index;
@@ -744,11 +744,11 @@ string_functions_sink(void) {
     (void)random_ascii_string;
     (void)string_from_doubles;
     (void)string_from_strings;
-    (void)sb_append_byte_if_not;
-    (void)sb_itoa;
-    (void)sb_move;
-    (void)sb_opt_cstr;
-    (void)sb_printf;
+    (void)str_append_byte_if_not;
+    (void)str_itoa;
+    (void)str_move;
+    (void)str_opt_cstr;
+    (void)str_printf;
     (void)string_array_copy;
     (void)string_array_move;
     (void)string_array_swap;
@@ -799,43 +799,43 @@ main(void) {
 
         STR_APPEND(&builder, "0123456789abcde");
         old_cap = builder.cap;
-        sb_append(&builder, builder.data + 1, builder.len - 1);
+        str_append(&builder, builder.data + 1, builder.len - 1);
         ASSERT_MORE(builder.cap, old_cap);
         ASSERT_EQUAL(builder.data,
                      "0123456789abcde123456789abcde");
-        sb_free(&builder);
+        str_free(&builder);
     }
 
     {
         String builder = {0};
 
         STR_APPEND(&builder, "x");
-        sb_itoa(&builder, 0);
+        str_itoa(&builder, 0);
         STR_APPEND(&builder, " ");
-        sb_itoa(&builder, -9223372036854775807LL - 1);
+        str_itoa(&builder, -9223372036854775807LL - 1);
         STR_APPEND(&builder, " ");
-        sb_itoa(&builder, 9223372036854775807LL);
+        str_itoa(&builder, 9223372036854775807LL);
         ASSERT_EQUAL(builder.data,
                      "x0 -9223372036854775808 9223372036854775807");
-        sb_free(&builder);
+        str_free(&builder);
     }
     {
         String builder = {0};
         int32 count = 0;
 
-        sb_printf(&builder, "%s %.10s %d%n", "x", "abc", 7, &count);
+        str_printf(&builder, "%s %.10s %d%n", "x", "abc", 7, &count);
         ASSERT_EQUAL(builder.data, "x abc 7");
         ASSERT_EQUAL(builder.len, 7);
         ASSERT_EQUAL(count, builder.len);
-        sb_free(&builder);
+        str_free(&builder);
     }
 
     {
         String builder = {0};
         STR_APPEND(&builder, "x");
-        sb_bytes_pretty(&builder, UINT32_MAX);
+        str_bytes_pretty(&builder, UINT32_MAX);
         ASSERT_EQUAL(builder.data, "x4.0000GB");
-        sb_free(&builder);
+        str_free(&builder);
     }
 
     {

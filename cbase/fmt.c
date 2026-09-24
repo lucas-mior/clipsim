@@ -4534,7 +4534,7 @@ void
 sb_float64(String *string, double value) {
     int32 len;
 
-    sb_reserve(string, FMT_FLOAT_RYU_BUFFER_SIZE);
+    str_reserve(string, FMT_FLOAT_RYU_BUFFER_SIZE);
     len = d2s_buffered_n(value, string->data + string->len);
     string->len += len;
     string->data[string->len] = '\0';
@@ -4550,7 +4550,7 @@ sb_float64_fixed(String *sb, double value, int32 precision) {
         fatal(EXIT_FAILURE);
     }
 
-    sb_reserve(sb, FMT_FLOAT_RYU_BUFFER_SIZE);
+    str_reserve(sb, FMT_FLOAT_RYU_BUFFER_SIZE);
     len = d2fixed_buffered_n(value, (uint32)precision, sb->data + sb->len);
     sb->len += len;
     sb->data[sb->len] = '\0';
@@ -5661,7 +5661,7 @@ main(void) {
         STR_APPEND(&builder, " y=");
         sb_float64_fixed(&builder, 1.25, 2);
         ASSERT_EQUAL(builder.data, "x=1E-1 y=1.25");
-        sb_free(&builder);
+        str_free(&builder);
     }
 
     ASSERT_EQUAL(fmt_float64_shortest(NULL, 64, 1.0), -EINVAL);

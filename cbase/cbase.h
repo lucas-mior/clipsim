@@ -229,23 +229,23 @@ int32 random_ascii_string(char *buffer, int32 capacity, int32 min_len);
 bool path_missing(char *path);
 int32 read_entire_file(char *path, char **file_bytes);
 char *remove_escape_sequences(char *data, int32 *data_len);
-void sb_append(String *string, char *data, int64 data_len);
-void sb_append_byte(String *string, char byte);
-void sb_append_byte_if_not(String *string, char byte);
-void sb_clear(String *);
-int32 sb_copy(String *dest, String *source);
-void sb_free(String *);
-void sb_itoa(String *string, llong num);
+void str_append(String *string, char *data, int64 data_len);
+void str_append_byte(String *string, char byte);
+void str_append_byte_if_not(String *string, char byte);
+void str_clear(String *);
+int32 str_copy(String *dest, String *source);
+void str_free(String *);
+void str_itoa(String *string, llong num);
 void sb_float64(String *string, double value);
 void sb_float64_fixed(String *string, double value, int32 precision);
-void sb_bytes_pretty(String *string, llong size);
-void sb_move(String *dest, String *source);
-void sb_printf(String *string, char *fmt, ...);
-void sb_reserve(String *string, int64 extra);
-int32 sb_set(String *string, char *data, int32 data_len);
-char *sb_steal(String *string, int32 *len, int32 *cap);
-char *sb_steal_exact(String *string, int32 *len);
-char *sb_opt_cstr(String *);
+void str_bytes_pretty(String *string, llong size);
+void str_move(String *dest, String *source);
+void str_printf(String *string, char *fmt, ...);
+void str_reserve(String *string, int64 extra);
+int32 str_set(String *string, char *data, int32 data_len);
+char *str_steal(String *string, int32 *len, int32 *cap);
+char *str_steal_exact(String *string, int32 *len);
+char *str_opt_cstr(String *);
 void send_signal(char *executable, int32 signal_number);
 
 // cbase printf-compatible formatter. It returns the byte count that would
@@ -599,9 +599,9 @@ _Generic((char (*)[STRLIT_LEN(LITERAL)])0,                             \
     xfclose(__FILE__, __LINE__, FUNC__, F, FILENAME)
 
 #define STR_APPEND_2(BUILDER, STRING)                                   \
-    sb_append(BUILDER, STRING, STRLIT_LEN(STRING))
+    str_append(BUILDER, STRING, STRLIT_LEN(STRING))
 #define STR_APPEND_3(BUILDER, STRING, LEN)                              \
-    sb_append(BUILDER, STRING, LEN)
+    str_append(BUILDER, STRING, LEN)
 #define STR_APPEND(...) SELECT_ON_NUM_ARGS(STR_APPEND_, __VA_ARGS__)
 
 #define HERE here_impl(__FILE__, __LINE__, FUNC__)

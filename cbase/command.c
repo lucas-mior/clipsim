@@ -145,11 +145,11 @@ command_result_append(
         return;
     }
 
-    sb_append(output, data, data_len);
+    str_append(output, data, data_len);
     if (is_stderr) {
-        sb_append(stderr_output, data, data_len);
+        str_append(stderr_output, data, data_len);
     } else {
-        sb_append(stdout_output, data, data_len);
+        str_append(stdout_output, data, data_len);
     }
 
     return;
@@ -303,13 +303,13 @@ command_windows_result_read_captured(
 
     if (command_flags_capture(flags)) {
         if (flags & COMMAND_CAPTURE_STDOUT) {
-            sb_append(&output, stdout_output, stdout_len);
+            str_append(&output, stdout_output, stdout_len);
         }
         if ((flags & COMMAND_CAPTURE_STDERR)
             && !(flags & COMMAND_MERGE_STDERR)) {
-            sb_append(&output, stderr_output, stderr_len);
+            str_append(&output, stderr_output, stderr_len);
         }
-        command->result.output = sb_steal_exact(&output,
+        command->result.output = str_steal_exact(&output,
                                                 &command->result.output_len);
     }
 
@@ -800,24 +800,24 @@ command_result_process_io(Command *command, enum CommandFlag flags) {
     }
 
     if (command_flags_capture(flags)) {
-        command->result.output = sb_steal_exact(&output,
+        command->result.output = str_steal_exact(&output,
                                                 &command->result.output_len);
     } else {
-        sb_free(&output);
+        str_free(&output);
     }
     if (flags & COMMAND_CAPTURE_STDOUT) {
-        command->result.stdout_output = sb_steal_exact(
+        command->result.stdout_output = str_steal_exact(
             &stdout_output,
             &command->result.stdout_len);
     } else {
-        sb_free(&stdout_output);
+        str_free(&stdout_output);
     }
     if (flags & COMMAND_CAPTURE_STDERR) {
-        command->result.stderr_output = sb_steal_exact(
+        command->result.stderr_output = str_steal_exact(
             &stderr_output,
             &command->result.stderr_len);
     } else {
-        sb_free(&stderr_output);
+        str_free(&stderr_output);
     }
     return;
 }
@@ -1191,11 +1191,11 @@ command_str(Command *command, int32 *len) {
 
     for (int32 i = 0; i < command->argc; i += 1) {
         if (i > 0) {
-            sb_append_byte(&string, ' ');
+            str_append_byte(&string, ' ');
         }
         STR_APPEND(&string, command->argv[i], command->argvs_lens[i]);
     }
-    return sb_steal_exact(&string, len);
+    return str_steal_exact(&string, len);
 }
 
 void
