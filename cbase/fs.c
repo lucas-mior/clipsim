@@ -111,7 +111,7 @@ cbase_mkstemps(char *template_path, int32 suffix_len) {
     }
 
     x_start = len - suffix_len - 6;
-    if (memcmp64(template_path + x_start, "XXXXXX", 6) != 0) {
+    if (memcmp64(template_path + x_start, "XXXXXX", 6)) {
         errno = EINVAL;
         return -1;
     }
@@ -1073,7 +1073,7 @@ read_entire_file(char *path, char **file_bytes) {
         ASSERT_POSITIVE(err);
         return -err;
     }
-    if (fseek(file, 0, SEEK_END) != 0) {
+    if (fseek(file, 0, SEEK_END) < 0) {
         err = errno;
         error("Error seeking end of %s: %s.\n", path, strerror(err));
         ASSERT_POSITIVE(err);

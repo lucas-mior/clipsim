@@ -193,12 +193,12 @@ void util_copy_file_async_parsed(UtilCopyFilesAsync *);
 void *util_copy_file_async_thread(void *arg);
 #endif
 
-bool util_is_integer(char *string);
 noreturn void util_segv_handler(int32 signal_number);
 int32 itoa2(char *buffer, int32 size, llong num);
 int32 parse_integer(char *str, int32 str_len, llong *result);
 llong atoi2(char *str, int32 str_len);
 llong atoi2sat(char *str, int32 str_len);
+bool util_is_integer(char *string);
 char *basename2(char *path, int32 *full_length, int32 *base_len);
 char *begins_with(char *string, int32 string_len, char *prefix,
                   int32 prefix_len);
@@ -410,7 +410,6 @@ bool util_equal_files(char *filename_a, char *filename_b);
 bool util_file_exists(char *filename);
 int32 util_filename_from(char *buffer, int64 size, int fd);
 int32 util_nthreads(void);
-int32 util_string_int32(int32 *number, char *string);
 void warn(char *fmt, ...);
 int64 read64(int32 fd, void *buffer, int64 len);
 int64 write64(int32 fd, void *buffer, int64 len);
@@ -868,6 +867,7 @@ void throw_away_function();
 #include "utf8.c"
 #include "ascii_normalization.c"
 #include "util.c"
+#include "strtonum.c"
 #include "string.c"
 #include "time.c"
 #include "fs.c"

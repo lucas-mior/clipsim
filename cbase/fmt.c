@@ -1598,7 +1598,7 @@ fmt_big_uint_test_bit(FormatBigUInt *value, int32 bit_index) {
     if (word_index >= value->len) {
         return false;
     }
-    return (value->words[word_index] & (UINT32_C(1) << bit_offset)) != 0;
+    return (value->words[word_index] & (UINT32_C(1) << bit_offset));
 }
 
 static int32
@@ -1991,7 +1991,7 @@ fmt_decode_x87_ldouble(ldouble value, FormatBinaryFloat *parts) {
     memcpy64(bytes, &value, SIZEOF(bytes));
     significand = fmt_read_le_uint64(bytes);
     sign_exp = (uint32)bytes[8] | ((uint32)bytes[9] << 8);
-    negative = (sign_exp & UINT32_C(0x8000)) != 0;
+    negative = (sign_exp & UINT32_C(0x8000));
     exponent_bits = sign_exp & FMT_LDOUBLE_X87_EXPONENT_MASK;
 
     if (exponent_bits == 0 && significand == 0) {
@@ -3323,7 +3323,7 @@ fmt_ldouble_hex_should_round(char first_digit,
     } else {
         even_digit = fmt_hex_digit_value(first_digit);
     }
-    return (even_digit & 1) != 0;
+    return (even_digit & 1);
 }
 
 static void
@@ -3400,7 +3400,7 @@ fmt_ldouble_write_hex_body(FormatSpec *spec, char *buffer,
     }
     len = status;
 
-    if (digit_len > 0 || (spec->flags & FMT_FLAG_ALTERNATE) != 0) {
+    if ((digit_len > 0) || (spec->flags & FMT_FLAG_ALTERNATE)) {
         if ((status = fmt_buffer_put(buffer, capacity, len, '.')) < 0) {
             return status;
         }
@@ -3549,10 +3549,10 @@ fmt_ldouble_sign(ldouble value, FormatSpec *spec) {
     ASSERT(spec != NULL);
 
     (void)value;
-    if ((spec->flags & FMT_FLAG_SIGN) != 0) {
+    if (spec->flags & FMT_FLAG_SIGN) {
         return '+';
     }
-    if ((spec->flags & FMT_FLAG_SPACE) != 0) {
+    if (spec->flags & FMT_FLAG_SPACE) {
         return ' ';
     }
     return '\0';
@@ -3590,8 +3590,8 @@ fmt_write_float_sign(FormatSink *sink, FormatSpec *spec,
     }
 
     zero_pad = 0;
-    if ((spec->flags & FMT_FLAG_ZERO) != 0
-        && (spec->flags & FMT_FLAG_LEFT) == 0) {
+    if ((spec->flags & FMT_FLAG_ZERO)
+        && !(spec->flags & FMT_FLAG_LEFT)) {
         zero_pad = fmt_pad_len(spec->width, inner_len);
     }
 
@@ -3613,7 +3613,7 @@ fmt_write_float_sign(FormatSink *sink, FormatSpec *spec,
     }
     fmt_sink_write_repeat(sink, '0', zero_pad);
     fmt_sink_write(sink, body + prefix_len, body_len - prefix_len);
-    if ((spec->flags & FMT_FLAG_LEFT) != 0) {
+    if (spec->flags & FMT_FLAG_LEFT) {
         fmt_sink_write_repeat(sink, ' ', spaces);
     }
     return;
@@ -3685,7 +3685,7 @@ fmt_float_generate_hex_body(FormatSpec *spec, double value,
     }
     len = status;
 
-    if (digit_len > 0 || (spec->flags & FMT_FLAG_ALTERNATE) != 0) {
+    if ((digit_len > 0) || (spec->flags & FMT_FLAG_ALTERNATE)) {
         if ((status = fmt_buffer_put(buffer, capacity, len, '.')) < 0) {
             return status;
         }
@@ -3901,7 +3901,7 @@ fmt_float_generate_body(FormatSpec *spec, double value,
         memmove64(buffer, buffer + 1, (body_len - 1));
         body_len -= 1;
     }
-    if ((spec->flags & FMT_FLAG_ALTERNATE) != 0) {
+    if (spec->flags & FMT_FLAG_ALTERNATE) {
         body_len = fmt_float_force_decimal_point(buffer, body_len, capacity);
         if (body_len < 0) {
             return body_len;
@@ -4108,18 +4108,18 @@ fmt_vsnprintf_estimate(char *format, va_list args) {
                 }
             } else if (spec.conversion == 'o') {
                 digits = (bits + 2)/3;
-                if ((spec.flags & FMT_FLAG_ALTERNATE) != 0) {
+                if (spec.flags & FMT_FLAG_ALTERNATE) {
                     prefix_len = 1;
                 }
             } else if (spec.conversion == 'x' || spec.conversion == 'X') {
                 digits = (bits + 3)/4;
-                if ((spec.flags & FMT_FLAG_ALTERNATE) != 0) {
+                if (spec.flags & FMT_FLAG_ALTERNATE) {
                     prefix_len = 2;
                 }
             } else {
                 ASSERT(spec.conversion == 'b' || spec.conversion == 'B');
                 digits = bits;
-                if ((spec.flags & FMT_FLAG_ALTERNATE) != 0) {
+                if (spec.flags & FMT_FLAG_ALTERNATE) {
                     prefix_len = 2;
                 }
             }

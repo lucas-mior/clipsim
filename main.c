@@ -41,7 +41,7 @@ static noreturn void main_launch_daemon(void);
 int32
 main(int32 argc, char *argv[]) {
     DEBUG_PRINT("%d, %s", argc, argv[0])
-    int32 id;
+    int64 id;
     bool spell_error = true;
 
     program = basename(argv[0]);
@@ -63,10 +63,16 @@ main(int32 argc, char *argv[]) {
             case COMMAND_INFO:
             case COMMAND_COPY:
             case COMMAND_REMOVE:
-                if ((argc != 3) || util_string_int32(&id, argv[2]) < 0) {
+                if (argc != 3) {
                     main_usage(stderr);
                 }
-                ipc_client_speak(i, id);
+                if ((parse_integer(argv[2], strlen32(argv[2]), &id)) < 0) {
+                    main_usage(stderr);
+                }
+                if ((id <= INT32_MIN) || (id >= INT32_MAX)) {
+                    main_usage(stderr);
+                }
+                ipc_client_speak(i, (int32)id);
                 break;
             case COMMAND_SAVE:
                 ipc_client_speak(COMMAND_SAVE, 0);
