@@ -494,7 +494,7 @@ fmt_parse_spec(char *cursor, char **next, FormatSpec *spec) {
     ASSERT(next != NULL);
     ASSERT(spec != NULL);
 
-    memset(spec, 0, SIZEOF(*spec));
+    memset64(spec, 0, SIZEOF(*spec));
 
     if (*cursor == '\0') {
         return -EINVAL;
@@ -534,6 +534,7 @@ typedef struct FormatSink {
     int64 written;
     int64 total;
     int32 status;
+    bool unchecked;
 } FormatSink;
 
 static int32
@@ -552,6 +553,7 @@ fmt_sink_init(FormatSink *sink, char *buffer, int64 capacity) {
     sink->written = 0;
     sink->total = 0;
     sink->status = 0;
+    sink->unchecked = false;
 
     if (capacity > 0) {
         buffer[0] = '\0';
@@ -590,6 +592,21 @@ fmt_sink_write(FormatSink *sink, char *data, int64 len) {
         return;
     }
 
+    if (sink->unchecked) {
+        fmt_sink_add_total(sink, len);
+        if (sink->status < 0) {
+            return;
+        }
+        if (DEBUGGING) {
+            ASSERT(sink->buffer != NULL);
+            ASSERT_LESS(sink->written + len, sink->capacity);
+        }
+        memcpy64(sink->buffer + sink->written, data, len);
+        sink->written += len;
+        sink->buffer[sink->written] = '\0';
+        return;
+    }
+
     fmt_sink_add_total(sink, len);
     if (sink->status < 0) {
         return;
@@ -607,7 +624,7 @@ fmt_sink_write(FormatSink *sink, char *data, int64 len) {
     }
 
     copy_len = MIN(len, available);
-    memcpy(sink->buffer + sink->written, data, (size_t)copy_len);
+    memcpy64(sink->buffer + sink->written, data, copy_len);
     sink->written += copy_len;
     sink->buffer[sink->written] = '\0';
     return;
@@ -645,6 +662,21 @@ fmt_sink_write_repeat(FormatSink *sink, char byte, int64 len) {
         return;
     }
 
+    if (sink->unchecked) {
+        fmt_sink_add_total(sink, len);
+        if (sink->status < 0) {
+            return;
+        }
+        if (DEBUGGING) {
+            ASSERT(sink->buffer != NULL);
+            ASSERT_LESS(sink->written + len, sink->capacity);
+        }
+        memset64(sink->buffer + sink->written, byte, len);
+        sink->written += len;
+        sink->buffer[sink->written] = '\0';
+        return;
+    }
+
     fmt_sink_add_total(sink, len);
     if (sink->status < 0) {
         return;
@@ -662,7 +694,7 @@ fmt_sink_write_repeat(FormatSink *sink, char byte, int64 len) {
     }
 
     copy_len = MIN(len, available);
-    memset(sink->buffer + sink->written, byte, (size_t)copy_len);
+    memset64(sink->buffer + sink->written, byte, copy_len);
     sink->written += copy_len;
     sink->buffer[sink->written] = '\0';
     return;
@@ -866,7 +898,7 @@ fmt_pad_len(int64 width, int64 used) {
 
 static int32
 fmt_integer_prefix(FormatSpec *spec, FormatIntegerValue value,
-                      char *prefix, int32 digit_len, int64 precision_zeros) {
+                   char *prefix, int32 digit_len, int64 precision_zeros) {
     ASSERT(spec != NULL);
     ASSERT(prefix != NULL);
     ASSERT_NON_NEGATIVE(digit_len);
@@ -931,7 +963,7 @@ fmt_integer_prefix(FormatSpec *spec, FormatIntegerValue value,
 
 static void
 fmt_write_integer(FormatSink *sink, FormatSpec *spec,
-                     FormatIntegerValue value) {
+                  FormatIntegerValue value) {
     char digits[64];
     char prefix[2];
     int32 base;
@@ -961,7 +993,7 @@ fmt_write_integer(FormatSink *sink, FormatSpec *spec,
     }
 
     prefix_len = fmt_integer_prefix(spec, value, prefix, digit_len,
-                                       precision_zeros);
+                                    precision_zeros);
     inner_len = prefix_len + precision_zeros + digit_len;
 
     zero_pad = 0;
@@ -1029,7 +1061,7 @@ fmt_string_len_limited(char *string, int64 limit) {
 
 static void
 fmt_write_padded_bytes(FormatSink *sink, FormatSpec *spec,
-                          char *data, int64 len) {
+                       char *data, int64 len) {
     int64 spaces;
 
     ASSERT(sink != NULL);
@@ -1072,7 +1104,7 @@ fmt_handle_char(FormatSink *sink, FormatSpec *spec, FormatArgs *args) {
 
 static int32
 fmt_load_string_precision(FormatSpec *spec, FormatArgs *args,
-                             bool *exact_span) {
+                          bool *exact_span) {
     ASSERT(spec != NULL);
     ASSERT(args != NULL);
     ASSERT(exact_span != NULL);
@@ -1135,7 +1167,7 @@ fmt_handle_string(FormatSink *sink, FormatSpec *spec, FormatArgs *args) {
 
 static int32
 fmt_handle_char_string(FormatSink *sink, FormatSpec *spec,
-                          FormatArgs *args) {
+                       FormatArgs *args) {
     ASSERT(sink != NULL);
     ASSERT(spec != NULL);
     ASSERT(args != NULL);
@@ -1341,7 +1373,7 @@ static void
 fmt_big_uint_zero(FormatBigUInt *value) {
     ASSERT(value != NULL);
 
-    memset(value->words, 0, (size_t)SIZEOF(value->words));
+    memset64(value->words, 0, SIZEOF(value->words));
     value->len = 0;
     return;
 }
@@ -1417,7 +1449,7 @@ fmt_big_uint_from_uint64(FormatBigUInt *value, uint64 source) {
 
 static int32 UNUSED
 fmt_big_uint_from_uint128_parts(FormatBigUInt *value, uint64 low,
-                                   uint64 high) {
+                                uint64 high) {
     ASSERT(value != NULL);
 
     fmt_big_uint_zero(value);
@@ -1494,7 +1526,7 @@ fmt_host_is_little_endian(void) {
     uchar bytes[SIZEOF(one)];
 
     one = 1;
-    memcpy(bytes, &one, (size_t)SIZEOF(one));
+    memcpy64(bytes, &one, SIZEOF(one));
     return bytes[0] == 1;
 }
 
@@ -1560,8 +1592,8 @@ fmt_big_uint_shift_left(FormatBigUInt *value, int32 shift) {
         return -EOVERFLOW;
     }
 
-    memcpy(original, value->words, (size_t)(original_len*SIZEOF(original[0])));
-    memset(value->words, 0, (size_t)SIZEOF(value->words));
+    memcpy64(original, value->words, (original_len*SIZEOF(original[0])));
+    memset64(value->words, 0, SIZEOF(value->words));
     value->len = new_len;
     for (int32 i = 0; i < original_len; i += 1) {
         uint64 shifted;
@@ -1728,7 +1760,7 @@ fmt_big_uint_div_small(FormatBigUInt *value, uint32 divisor) {
 
 static int32 UNUSED
 fmt_big_uint_to_decimal(FormatBigUInt *value, char *buffer,
-                           int32 capacity) {
+                        int32 capacity) {
     enum { GROUP_BASE = 1000000000, GROUP_DIGITS = 9 };
     uint32 groups[FORMAT_BIG_UINT_MAX_WORDS*2];
     FormatBigUInt work;
@@ -1774,7 +1806,7 @@ fmt_big_uint_to_decimal(FormatBigUInt *value, char *buffer,
             buffer[len] = '0';
             len += 1;
         }
-        memcpy(buffer + len, digits, (size_t)digit_len);
+        memcpy64(buffer + len, digits, digit_len);
         len += digit_len;
     }
 
@@ -1784,7 +1816,7 @@ fmt_big_uint_to_decimal(FormatBigUInt *value, char *buffer,
 
 static int32 UNUSED
 fmt_binary_float_to_exact_integer(FormatBinaryFloat *parts,
-                                     FormatBigUInt *integer) {
+                                  FormatBigUInt *integer) {
     int32 shift;
 
     ASSERT(parts != NULL);
@@ -1809,9 +1841,9 @@ fmt_binary_float_to_exact_integer(FormatBinaryFloat *parts,
 
 static int32 UNUSED
 fmt_binary_float_scaled_decimal(FormatBinaryFloat *parts,
-                                   int32 decimal_places,
-                                   FormatBigUInt *integer,
-                                   enum FormatRemainderHalf *remainder) {
+                                int32 decimal_places,
+                                FormatBigUInt *integer,
+                                enum FormatRemainderHalf *remainder) {
     int32 binary_shift;
     int32 status;
 
@@ -1845,7 +1877,7 @@ fmt_binary_float_scaled_decimal(FormatBinaryFloat *parts,
 
 static int32 UNUSED
 fmt_binary_float_set_zero(FormatBinaryFloat *parts, bool negative,
-                             int32 precision_bits) {
+                          int32 precision_bits) {
     ASSERT(parts != NULL);
     ASSERT_POSITIVE(precision_bits);
 
@@ -1861,7 +1893,7 @@ fmt_binary_float_set_zero(FormatBinaryFloat *parts, bool negative,
 
 static int32
 fmt_decode_binary64_long_double(ldouble value,
-                                   FormatBinaryFloat *parts) {
+                                FormatBinaryFloat *parts) {
     uint64 fraction_mask;
     uint64 exponent_bits;
     uint64 fraction;
@@ -1871,7 +1903,7 @@ fmt_decode_binary64_long_double(ldouble value,
     ASSERT(parts != NULL);
     ASSERT(SIZEOF(ldouble) == SIZEOF(double));
 
-    memcpy(&bits, &value, (size_t)SIZEOF(bits));
+    memcpy64(&bits, &value, SIZEOF(bits));
     negative = (bits >> 63) != 0;
     fraction_mask = (UINT64_C(1)
                      << FORMAT_LONG_DOUBLE_DOUBLE_FRACTION_BITS) - 1;
@@ -1893,9 +1925,9 @@ fmt_decode_binary64_long_double(ldouble value,
                                  - FORMAT_LONG_DOUBLE_DOUBLE_FRACTION_BITS;
     } else {
         fmt_big_uint_from_uint64(&parts->significand,
-                                    (UINT64_C(1)
-                                     << FORMAT_LONG_DOUBLE_DOUBLE_FRACTION_BITS)
-                                    |fraction);
+                                 (UINT64_C(1)
+                                  << FORMAT_LONG_DOUBLE_DOUBLE_FRACTION_BITS)
+                                 |fraction);
         parts->binary_exponent = (int32)exponent_bits
                                  - FORMAT_LONG_DOUBLE_DOUBLE_EXPONENT_BIAS
                                  - FORMAT_LONG_DOUBLE_DOUBLE_FRACTION_BITS;
@@ -1920,7 +1952,7 @@ fmt_decode_x87_long_double(ldouble value, FormatBinaryFloat *parts) {
         return -ENOSYS;
     }
 
-    memcpy(bytes, &value, (size_t)SIZEOF(bytes));
+    memcpy64(bytes, &value, SIZEOF(bytes));
     significand = fmt_read_le_uint64(bytes);
     sign_exp = (uint32)bytes[8] | ((uint32)bytes[9] << 8);
     negative = (sign_exp & UINT32_C(0x8000)) != 0;
@@ -1955,7 +1987,7 @@ fmt_decode_x87_long_double(ldouble value, FormatBinaryFloat *parts) {
 
 static int32
 fmt_decode_binary128_long_double(ldouble value,
-                                    FormatBinaryFloat *parts) {
+                                 FormatBinaryFloat *parts) {
     uchar bytes[SIZEOF(ldouble)];
     uint64 fraction_high;
     uint64 exponent_bits;
@@ -1969,7 +2001,7 @@ fmt_decode_binary128_long_double(ldouble value,
         return -ENOSYS;
     }
 
-    memcpy(bytes, &value, (size_t)SIZEOF(bytes));
+    memcpy64(bytes, &value, SIZEOF(bytes));
     if (fmt_host_is_little_endian()) {
         low = fmt_read_le_uint64(bytes);
         high = fmt_read_le_uint64(bytes + 8);
@@ -1990,7 +2022,7 @@ fmt_decode_binary128_long_double(ldouble value,
     }
 
     fmt_big_uint_from_uint128_parts(&parts->significand, low,
-                                       fraction_high);
+                                    fraction_high);
     if (exponent_bits != 0) {
         int32 status;
 
@@ -2156,25 +2188,25 @@ fmt_float_sign(double value, FormatSpec *spec) {
 
 static int32
 fmt_float_special_body(double value, FormatSpec *spec,
-                          char *body, int32 *body_len) {
+                       char *body, int32 *body_len) {
     ASSERT(spec != NULL);
     ASSERT(body != NULL);
     ASSERT(body_len != NULL);
 
     if (isnan(value)) {
         if (fmt_float_is_upper(spec->conversion)) {
-            memcpy(body, "NAN", 3);
+            memcpy64(body, "NAN", 3);
         } else {
-            memcpy(body, "nan", 3);
+            memcpy64(body, "nan", 3);
         }
         *body_len = 3;
         return 0;
     }
     if (isinf(value)) {
         if (fmt_float_is_upper(spec->conversion)) {
-            memcpy(body, "INF", 3);
+            memcpy64(body, "INF", 3);
         } else {
-            memcpy(body, "inf", 3);
+            memcpy64(body, "inf", 3);
         }
         *body_len = 3;
         return 0;
@@ -2198,7 +2230,7 @@ fmt_float_uppercase_body(char *body, int32 body_len) {
 
 static int32
 fmt_float_force_decimal_point(char *body, int32 body_len,
-                                 int32 capacity) {
+                              int32 capacity) {
     int32 exponent_index;
     bool found_point;
 
@@ -2223,8 +2255,8 @@ fmt_float_force_decimal_point(char *body, int32 body_len,
         return -EOVERFLOW;
     }
 
-    memmove(body + exponent_index + 1, body + exponent_index,
-            (size_t)(body_len - exponent_index));
+    memmove64(body + exponent_index + 1, body + exponent_index,
+            (body_len - exponent_index));
     body[exponent_index] = '.';
     return body_len + 1;
 }
@@ -2287,7 +2319,7 @@ fmt_float_hex_has_nonzero_tail(char *digits, int32 start) {
 
 static bool
 fmt_float_hex_should_round(char first_digit, char *digits,
-                              int32 precision) {
+                           int32 precision) {
     int32 round_digit;
     int32 even_digit;
 
@@ -2316,7 +2348,7 @@ fmt_float_hex_should_round(char first_digit, char *digits,
 
 static void
 fmt_float_hex_round(char *first_digit, char *digits, int32 precision,
-                       bool upper) {
+                    bool upper) {
     ASSERT(first_digit != NULL);
     ASSERT(digits != NULL);
     ASSERT_MORE_EQUAL(precision, 0);
@@ -2370,7 +2402,7 @@ fmt_buffer_put(char *buffer, int32 capacity, int32 len, char byte) {
 
 static int32
 fmt_buffer_write(char *buffer, int32 capacity, int32 len,
-                    char *source, int32 source_len) {
+                 char *source, int32 source_len) {
     ASSERT(buffer != NULL);
     ASSERT_POSITIVE(capacity);
     ASSERT_NON_NEGATIVE(len);
@@ -2380,13 +2412,13 @@ fmt_buffer_write(char *buffer, int32 capacity, int32 len,
     if (source_len > capacity - len) {
         return -EOVERFLOW;
     }
-    memcpy(buffer + len, source, (size_t)source_len);
+    memcpy64(buffer + len, source, source_len);
     return len + source_len;
 }
 
 static int32
 fmt_float_hex_append_exponent(char *buffer, int32 capacity, int32 len,
-                                 int32 exponent, bool upper) {
+                              int32 exponent, bool upper) {
     char digits[16];
     uint64 magnitude;
     int32 digit_len;
@@ -2426,8 +2458,8 @@ fmt_float_hex_append_exponent(char *buffer, int32 capacity, int32 len,
 
 static int32 UNUSED
 fmt_float_decimal_append_exponent(char *buffer, int32 capacity,
-                                     int32 len, int32 exponent,
-                                     bool upper) {
+                                  int32 len, int32 exponent,
+                                  bool upper) {
     char digits[16];
     uint64 magnitude;
     int32 digit_len;
@@ -2474,7 +2506,7 @@ fmt_float_decimal_append_exponent(char *buffer, int32 capacity,
 
 static bool UNUSED
 fmt_remainder_should_round(enum FormatRemainderHalf remainder,
-                              bool odd) {
+                           bool odd) {
     if (remainder == FORMAT_REMAINDER_MORE_HALF) {
         return true;
     }
@@ -2495,11 +2527,11 @@ fmt_big_uint_is_odd(FormatBigUInt *value) {
 
 static int32
 fmt_big_uint_round_half_even(FormatBigUInt *value,
-                                enum FormatRemainderHalf remainder) {
+                             enum FormatRemainderHalf remainder) {
     ASSERT(value != NULL);
 
     if (fmt_remainder_should_round(remainder,
-                                      fmt_big_uint_is_odd(value))) {
+                                   fmt_big_uint_is_odd(value))) {
         return fmt_big_uint_add_one(value);
     }
     return 0;
@@ -2507,25 +2539,25 @@ fmt_big_uint_round_half_even(FormatBigUInt *value,
 
 static int32
 fmt_long_double_special_body(ldouble value, FormatSpec *spec,
-                                char *body, int32 *body_len) {
+                             char *body, int32 *body_len) {
     ASSERT(spec != NULL);
     ASSERT(body != NULL);
     ASSERT(body_len != NULL);
 
     if (isnan(value)) {
         if (fmt_float_is_upper(spec->conversion)) {
-            memcpy(body, "NAN", 3);
+            memcpy64(body, "NAN", 3);
         } else {
-            memcpy(body, "nan", 3);
+            memcpy64(body, "nan", 3);
         }
         *body_len = 3;
         return 0;
     }
     if (isinf(value)) {
         if (fmt_float_is_upper(spec->conversion)) {
-            memcpy(body, "INF", 3);
+            memcpy64(body, "INF", 3);
         } else {
-            memcpy(body, "inf", 3);
+            memcpy64(body, "inf", 3);
         }
         *body_len = 3;
         return 0;
@@ -2553,8 +2585,8 @@ fmt_long_double_sign(ldouble value, FormatSpec *spec) {
 
 static int32
 fmt_long_double_write_fixed_digits(char *buffer, int32 capacity,
-                                      char *digits, int32 digit_len,
-                                      int32 precision, bool alternate) {
+                                   char *digits, int32 digit_len,
+                                   int32 precision, bool alternate) {
     int32 integer_len;
     int32 len;
     int32 zeros;
@@ -2569,7 +2601,7 @@ fmt_long_double_write_fixed_digits(char *buffer, int32 capacity,
     len = 0;
     if (precision == 0) {
         if ((status = fmt_buffer_write(buffer, capacity, len,
-                                          digits, digit_len)) < 0) {
+                                       digits, digit_len)) < 0) {
             return status;
         }
         len = status;
@@ -2582,7 +2614,7 @@ fmt_long_double_write_fixed_digits(char *buffer, int32 capacity,
     integer_len = digit_len - precision;
     if (integer_len > 0) {
         if ((status = fmt_buffer_write(buffer, capacity, len,
-                                          digits, integer_len)) < 0) {
+                                       digits, integer_len)) < 0) {
             return status;
         }
         len = status;
@@ -2613,13 +2645,13 @@ fmt_long_double_write_fixed_digits(char *buffer, int32 capacity,
         return fmt_buffer_write(buffer, capacity, len, digits, digit_len);
     }
     return fmt_buffer_write(buffer, capacity, len,
-                               digits + integer_len,
-                               digit_len - integer_len);
+                            digits + integer_len,
+                            digit_len - integer_len);
 }
 
 static int32
 fmt_long_double_generate_fixed_body(FormatSpec *spec, ldouble value,
-                                       char *buffer, int32 capacity) {
+                                    char *buffer, int32 capacity) {
     enum FormatRemainderHalf remainder;
     FormatBinaryFloat parts;
     FormatBigUInt integer;
@@ -2639,9 +2671,9 @@ fmt_long_double_generate_fixed_body(FormatSpec *spec, ldouble value,
         return status;
     }
     if ((status = fmt_binary_float_scaled_decimal(&parts,
-                                                     (int32)spec->precision,
-                                                     &integer,
-                                                     &remainder)) < 0) {
+                                                  (int32)spec->precision,
+                                                  &integer,
+                                                  &remainder)) < 0) {
         return status;
     }
     if ((status = fmt_big_uint_round_half_even(&integer, remainder)) < 0) {
@@ -2672,7 +2704,7 @@ fmt_long_double_generate_fixed_body(FormatSpec *spec, ldouble value,
 
 static bool
 fmt_decimal_digits_have_nonzero_tail(char *digits, int32 start,
-                                        int32 len) {
+                                     int32 len) {
     ASSERT(digits != NULL);
     ASSERT_MORE_EQUAL(start, 0);
     ASSERT_LESS_EQUAL(start, len);
@@ -2692,7 +2724,7 @@ fmt_decimal_fraction_nonzero(enum FormatRemainderHalf remainder) {
 
 static int32
 fmt_decimal_round_digits(char *digits, int32 *len, int32 keep,
-                            bool round_up) {
+                         bool round_up) {
     ASSERT(digits != NULL);
     ASSERT(len != NULL);
     ASSERT_POSITIVE(*len);
@@ -2715,7 +2747,7 @@ fmt_decimal_round_digits(char *digits, int32 *len, int32 keep,
     if (keep >= INT32_MAX) {
         return -EOVERFLOW;
     }
-    memmove(digits + 1, digits, (size_t)keep);
+    memmove64(digits + 1, digits, keep);
     digits[0] = '1';
     *len = keep + 1;
     return 0;
@@ -2723,8 +2755,8 @@ fmt_decimal_round_digits(char *digits, int32 *len, int32 keep,
 
 static int32
 fmt_long_double_scientific_exponent_small(FormatBinaryFloat *parts,
-                                             ldouble value,
-                                             int32 *exponent) {
+                                          ldouble value,
+                                          int32 *exponent) {
     FormatBigUInt integer;
     enum FormatRemainderHalf remainder;
     ldouble estimate_float;
@@ -2747,12 +2779,12 @@ fmt_long_double_scientific_exponent_small(FormatBinaryFloat *parts,
             return -EINVAL;
         }
         if ((status = fmt_binary_float_scaled_decimal(parts, -estimate,
-                                                         &integer,
-                                                         &remainder)) < 0) {
+                                                      &integer,
+                                                      &remainder)) < 0) {
             return status;
         }
         digit_len = fmt_big_uint_to_decimal(&integer, digits,
-                                               SIZEOF(digits));
+                                            SIZEOF(digits));
         if (digit_len < 0) {
             return digit_len;
         }
@@ -2771,8 +2803,8 @@ fmt_long_double_scientific_exponent_small(FormatBinaryFloat *parts,
 
 static int32
 fmt_long_double_scientific_exponent(FormatBinaryFloat *parts,
-                                       ldouble value,
-                                       int32 *exponent) {
+                                    ldouble value,
+                                    int32 *exponent) {
     FormatBigUInt integer;
     enum FormatRemainderHalf remainder;
     char digits[FORMAT_LONG_DOUBLE_MAX_FIXED_PREFIX];
@@ -2789,11 +2821,11 @@ fmt_long_double_scientific_exponent(FormatBinaryFloat *parts,
     }
     if (value < 1.0L) {
         return fmt_long_double_scientific_exponent_small(parts, value,
-                                                            exponent);
+                                                         exponent);
     }
 
     if ((status = fmt_binary_float_scaled_decimal(parts, 0, &integer,
-                                                     &remainder)) < 0) {
+                                                  &remainder)) < 0) {
         return status;
     }
     digit_len = fmt_big_uint_to_decimal(&integer, digits, SIZEOF(digits));
@@ -2806,10 +2838,10 @@ fmt_long_double_scientific_exponent(FormatBinaryFloat *parts,
 
 static int32
 fmt_long_double_scientific_digits(FormatBinaryFloat *parts, ldouble value,
-                                     int32 exponent, int32 significant_len,
-                                     char *digits, int32 capacity,
-                                     int32 *digits_len,
-                                     int32 *decimal_exponent) {
+                                  int32 exponent, int32 significant_len,
+                                  char *digits, int32 capacity,
+                                  int32 *digits_len,
+                                  int32 *decimal_exponent) {
     FormatBigUInt integer;
     enum FormatRemainderHalf remainder;
     int32 decimal_places;
@@ -2832,12 +2864,12 @@ fmt_long_double_scientific_digits(FormatBinaryFloat *parts, ldouble value,
 
     if (value >= 1.0L) {
         if ((status = fmt_binary_float_scaled_decimal(parts, 0,
-                                                         &integer,
-                                                         &remainder)) < 0) {
+                                                      &integer,
+                                                      &remainder)) < 0) {
             return status;
         }
         integer_digit_len = fmt_big_uint_to_decimal(&integer, digits,
-                                                       capacity);
+                                                    capacity);
         if (integer_digit_len < 0) {
             return integer_digit_len;
         }
@@ -2862,7 +2894,7 @@ fmt_long_double_scientific_digits(FormatBinaryFloat *parts, ldouble value,
                 round_up = ((digits[significant_len - 1] - '0') & 1) != 0;
             }
             status = fmt_decimal_round_digits(digits, &integer_digit_len,
-                                                 significant_len, round_up);
+                                              significant_len, round_up);
             if (status < 0) {
                 return status;
             }
@@ -2879,7 +2911,7 @@ fmt_long_double_scientific_digits(FormatBinaryFloat *parts, ldouble value,
             round_up = fmt_remainder_should_round(
                 remainder, ((digits[integer_digit_len - 1] - '0') & 1) != 0);
             status = fmt_decimal_round_digits(digits, &integer_digit_len,
-                                                 significant_len, round_up);
+                                              significant_len, round_up);
             if (status < 0) {
                 return status;
             }
@@ -2900,8 +2932,8 @@ fmt_long_double_scientific_digits(FormatBinaryFloat *parts, ldouble value,
         return -EINVAL;
     }
     if ((status = fmt_binary_float_scaled_decimal(parts, decimal_places,
-                                                     &integer,
-                                                     &remainder)) < 0) {
+                                                  &integer,
+                                                  &remainder)) < 0) {
         return status;
     }
     if ((status = fmt_big_uint_round_half_even(&integer, remainder)) < 0) {
@@ -2913,7 +2945,7 @@ fmt_long_double_scientific_digits(FormatBinaryFloat *parts, ldouble value,
         return integer_digit_len;
     }
     while (integer_digit_len < significant_len) {
-        memmove(digits + 1, digits, (size_t)integer_digit_len);
+        memmove64(digits + 1, digits, integer_digit_len);
         digits[0] = '0';
         integer_digit_len += 1;
     }
@@ -2927,9 +2959,9 @@ fmt_long_double_scientific_digits(FormatBinaryFloat *parts, ldouble value,
 
 static int32
 fmt_long_double_write_scientific_digits(char *buffer, int32 capacity,
-                                           char *digits, int32 digit_len,
-                                           int32 precision, int32 exponent,
-                                           bool alternate, bool upper) {
+                                        char *digits, int32 digit_len,
+                                        int32 precision, int32 exponent,
+                                        bool alternate, bool upper) {
     int32 len;
     int32 status;
 
@@ -2966,12 +2998,12 @@ fmt_long_double_write_scientific_digits(char *buffer, int32 capacity,
     }
 
     return fmt_float_decimal_append_exponent(buffer, capacity, len,
-                                                exponent, upper);
+                                             exponent, upper);
 }
 
 static int32
 fmt_long_double_generate_scientific_body(FormatSpec *spec, ldouble value,
-                                            char *buffer, int32 capacity) {
+                                         char *buffer, int32 capacity) {
     FormatBinaryFloat parts;
     char *digits;
     char stack_digits[FORMAT_FLOAT_PRINTF_STACK_BUFFER_SIZE];
@@ -2992,8 +3024,8 @@ fmt_long_double_generate_scientific_body(FormatSpec *spec, ldouble value,
         return status;
     }
     if ((status = fmt_long_double_scientific_exponent(&parts,
-                                                         fabsl(value),
-                                                         &exponent)) < 0) {
+                                                      fabsl(value),
+                                                      &exponent)) < 0) {
         return status;
     }
 
@@ -3012,10 +3044,10 @@ fmt_long_double_generate_scientific_body(FormatSpec *spec, ldouble value,
     }
 
     status = fmt_long_double_scientific_digits(&parts, fabsl(value),
-                                                  exponent, significant_len,
-                                                  digits, digit_capacity,
-                                                  &digit_len,
-                                                  &decimal_exponent);
+                                               exponent, significant_len,
+                                               digits, digit_capacity,
+                                               &digit_len,
+                                               &decimal_exponent);
     if (status == 0) {
         status = fmt_long_double_write_scientific_digits(
             buffer, capacity, digits, digit_len, (int32)spec->precision,
@@ -3032,11 +3064,11 @@ fmt_long_double_generate_scientific_body(FormatSpec *spec, ldouble value,
 
 static int32
 fmt_long_double_generate_body(FormatSpec *spec, ldouble value,
-                                 char *buffer, int32 capacity);
+                              char *buffer, int32 capacity);
 
 static int32
 fmt_long_double_parse_decimal_exponent(char *body, int32 body_len,
-                                          int32 *exponent) {
+                                       int32 *exponent) {
     int32 index;
     int64 value;
     int32 sign;
@@ -3124,8 +3156,8 @@ fmt_long_double_strip_trailing_zeros(char *body, int32 body_len) {
     }
 
     if (exponent_index < body_len) {
-        memmove(body + end, body + exponent_index,
-                (size_t)(body_len - exponent_index));
+        memmove64(body + end, body + exponent_index,
+                (body_len - exponent_index));
         end += body_len - exponent_index;
     }
 
@@ -3134,7 +3166,7 @@ fmt_long_double_strip_trailing_zeros(char *body, int32 body_len) {
 
 static int32
 fmt_long_double_generate_general_body(FormatSpec *spec, ldouble value,
-                                         char *buffer, int32 capacity) {
+                                      char *buffer, int32 capacity) {
     FormatSpec work_spec;
     int32 exponent;
     int32 body_len;
@@ -3154,14 +3186,14 @@ fmt_long_double_generate_general_body(FormatSpec *spec, ldouble value,
     }
     work_spec.precision = spec->precision - 1;
     body_len = fmt_long_double_generate_body(&work_spec, value, buffer,
-                                                capacity);
+                                             capacity);
     if (body_len < 0) {
         return body_len;
     }
 
     if ((status = fmt_long_double_parse_decimal_exponent(buffer,
-                                                            body_len,
-                                                            &exponent)) < 0) {
+                                                         body_len,
+                                                         &exponent)) < 0) {
         return status;
     }
 
@@ -3174,7 +3206,7 @@ fmt_long_double_generate_general_body(FormatSpec *spec, ldouble value,
         }
         work_spec.precision = spec->precision - (exponent + 1);
         body_len = fmt_long_double_generate_body(&work_spec, value,
-                                                    buffer, capacity);
+                                                 buffer, capacity);
         if (body_len < 0) {
             return body_len;
         }
@@ -3201,8 +3233,8 @@ fmt_long_double_hex_digit_count(FormatBinaryFloat *parts) {
 
 static void
 fmt_long_double_hex_fraction_digits(FormatBinaryFloat *parts,
-                                       char *digits, int32 digit_len,
-                                       bool upper) {
+                                    char *digits, int32 digit_len,
+                                    bool upper) {
     int32 fraction_bits;
 
     ASSERT(parts != NULL);
@@ -3220,7 +3252,7 @@ fmt_long_double_hex_fraction_digits(FormatBinaryFloat *parts,
             bit_index = fraction_bits - 1 - i*4 - j;
             if (bit_index >= 0
                 && fmt_big_uint_test_bit(&parts->significand,
-                                            bit_index)) {
+                                         bit_index)) {
                 digit |= 1 << (3 - j);
             }
         }
@@ -3231,7 +3263,7 @@ fmt_long_double_hex_fraction_digits(FormatBinaryFloat *parts,
 
 static bool
 fmt_long_double_hex_has_nonzero_tail(char *digits, int32 start,
-                                        int32 digit_len) {
+                                     int32 digit_len) {
     ASSERT(digits != NULL);
     ASSERT_MORE_EQUAL(start, 0);
     ASSERT_LESS_EQUAL(start, digit_len);
@@ -3246,7 +3278,7 @@ fmt_long_double_hex_has_nonzero_tail(char *digits, int32 start,
 
 static bool
 fmt_long_double_hex_should_round(char first_digit, char *digits,
-                                    int32 digit_len, int32 precision) {
+                                 int32 digit_len, int32 precision) {
     int32 round_digit;
     int32 even_digit;
 
@@ -3263,8 +3295,8 @@ fmt_long_double_hex_should_round(char first_digit, char *digits,
         return false;
     }
     if (fmt_long_double_hex_has_nonzero_tail(digits,
-                                                precision + 1,
-                                                digit_len)) {
+                                             precision + 1,
+                                             digit_len)) {
         return true;
     }
 
@@ -3278,8 +3310,8 @@ fmt_long_double_hex_should_round(char first_digit, char *digits,
 
 static void
 fmt_long_double_hex_round(char *first_digit, char *digits,
-                             int32 digit_len, int32 precision,
-                             bool upper) {
+                          int32 digit_len, int32 precision,
+                          bool upper) {
     ASSERT(first_digit != NULL);
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(digit_len);
@@ -3287,7 +3319,7 @@ fmt_long_double_hex_round(char *first_digit, char *digits,
     ASSERT_LESS(precision, digit_len);
 
     if (!fmt_long_double_hex_should_round(*first_digit, digits,
-                                             digit_len, precision)) {
+                                          digit_len, precision)) {
         return;
     }
 
@@ -3320,9 +3352,9 @@ fmt_long_double_hex_trim_digits(char *digits, int32 digit_len) {
 
 static int32
 fmt_long_double_write_hex_body(FormatSpec *spec, char *buffer,
-                                  int32 capacity, char first_digit,
-                                  char *digits, int32 digit_len,
-                                  int32 exponent) {
+                               int32 capacity, char first_digit,
+                               char *digits, int32 digit_len,
+                               int32 exponent) {
     bool upper;
     int32 len;
     int32 status;
@@ -3337,19 +3369,19 @@ fmt_long_double_write_hex_body(FormatSpec *spec, char *buffer,
     len = 0;
     if (upper) {
         if ((status = fmt_buffer_write(buffer, capacity, len,
-                                          "0X", 2)) < 0) {
+                                       "0X", 2)) < 0) {
             return status;
         }
     } else {
         if ((status = fmt_buffer_write(buffer, capacity, len,
-                                          "0x", 2)) < 0) {
+                                       "0x", 2)) < 0) {
             return status;
         }
     }
     len = status;
 
     if ((status = fmt_buffer_put(buffer, capacity, len,
-                                    first_digit)) < 0) {
+                                 first_digit)) < 0) {
         return status;
     }
     len = status;
@@ -3363,19 +3395,19 @@ fmt_long_double_write_hex_body(FormatSpec *spec, char *buffer,
 
     for (int32 i = 0; i < digit_len; i += 1) {
         if ((status = fmt_buffer_put(buffer, capacity, len,
-                                        digits[i])) < 0) {
+                                     digits[i])) < 0) {
             return status;
         }
         len = status;
     }
 
     return fmt_float_hex_append_exponent(buffer, capacity, len,
-                                            exponent, upper);
+                                         exponent, upper);
 }
 
 static int32
 fmt_long_double_generate_hex_body(FormatSpec *spec, ldouble value,
-                                     char *buffer, int32 capacity) {
+                                  char *buffer, int32 capacity) {
     FormatBinaryFloat parts;
     char stack_digits[64];
     char *digits;
@@ -3414,7 +3446,7 @@ fmt_long_double_generate_hex_body(FormatSpec *spec, ldouble value,
     } else {
         digits = malloc2(digit_capacity);
     }
-    memset(digits, '0', (size_t)digit_capacity);
+    memset64(digits, '0', digit_capacity);
 
     if (parts.zero) {
         first_digit = '0';
@@ -3422,23 +3454,23 @@ fmt_long_double_generate_hex_body(FormatSpec *spec, ldouble value,
     } else {
         exponent = parts.binary_exponent + parts.precision_bits - 1;
         if (fmt_big_uint_test_bit(&parts.significand,
-                                     parts.precision_bits - 1)) {
+                                  parts.precision_bits - 1)) {
             first_digit = '1';
         } else {
             first_digit = '0';
         }
         fmt_long_double_hex_fraction_digits(&parts, digits,
-                                               available_digits, upper);
+                                            available_digits, upper);
     }
 
     if (spec->precision < 0) {
         digit_len = fmt_long_double_hex_trim_digits(digits,
-                                                       available_digits);
+                                                    available_digits);
     } else {
         if (spec->precision < available_digits) {
             fmt_long_double_hex_round(&first_digit, digits,
-                                         available_digits,
-                                         (int32)spec->precision, upper);
+                                      available_digits,
+                                      (int32)spec->precision, upper);
         }
         for (int32 i = available_digits; i < spec->precision; i += 1) {
             digits[i] = '0';
@@ -3447,8 +3479,8 @@ fmt_long_double_generate_hex_body(FormatSpec *spec, ldouble value,
     }
 
     status = fmt_long_double_write_hex_body(spec, buffer, capacity,
-                                               first_digit, digits,
-                                               digit_len, exponent);
+                                            first_digit, digits,
+                                            digit_len, exponent);
     if (digits != stack_digits) {
         free2(digits, digit_capacity);
     }
@@ -3457,7 +3489,7 @@ fmt_long_double_generate_hex_body(FormatSpec *spec, ldouble value,
 
 static int32
 fmt_long_double_generate_body(FormatSpec *spec, ldouble value,
-                                 char *buffer, int32 capacity) {
+                              char *buffer, int32 capacity) {
     int32 body_len;
     int32 status;
 
@@ -3467,7 +3499,7 @@ fmt_long_double_generate_body(FormatSpec *spec, ldouble value,
 
     if (isnan(value) || isinf(value)) {
         status = fmt_long_double_special_body(value, spec, buffer,
-                                                 &body_len);
+                                              &body_len);
         if (status < 0) {
             return status;
         }
@@ -3476,20 +3508,20 @@ fmt_long_double_generate_body(FormatSpec *spec, ldouble value,
 
     if (fmt_float_is_general(spec->conversion)) {
         return fmt_long_double_generate_general_body(spec, value, buffer,
-                                                        capacity);
+                                                     capacity);
     }
     if (fmt_float_is_hex(spec->conversion)) {
         return fmt_long_double_generate_hex_body(spec, value, buffer,
-                                                    capacity);
+                                                 capacity);
     }
     if (fmt_float_is_fixed(spec->conversion)) {
         return fmt_long_double_generate_fixed_body(spec, value, buffer,
-                                                      capacity);
+                                                   capacity);
     }
     if (fmt_float_is_scientific(spec->conversion)) {
         return fmt_long_double_generate_scientific_body(spec, value,
-                                                           buffer,
-                                                           capacity);
+                                                        buffer,
+                                                        capacity);
     }
 
     return -ENOSYS;
@@ -3521,7 +3553,7 @@ fmt_long_double_sign(ldouble value, FormatSpec *spec) {
 
 static int32
 fmt_long_double_generate_body(FormatSpec *spec, ldouble value,
-                                 char *buffer, int32 capacity) {
+                              char *buffer, int32 capacity) {
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
     ASSERT_POSITIVE(capacity);
@@ -3534,7 +3566,7 @@ fmt_long_double_generate_body(FormatSpec *spec, ldouble value,
 
 static void
 fmt_write_float_sign(FormatSink *sink, FormatSpec *spec, char sign,
-                        char *body, int32 body_len) {
+                     char *body, int32 body_len) {
     int64 zero_pad;
     int64 inner_len;
     int64 spaces;
@@ -3582,7 +3614,7 @@ fmt_write_float_sign(FormatSink *sink, FormatSpec *spec, char sign,
 
 static int32
 fmt_float_generate_hex_body(FormatSpec *spec, double value,
-                               char *buffer, int32 capacity) {
+                            char *buffer, int32 capacity) {
     char digits[FORMAT_DOUBLE_HEX_DIGITS];
     uint64 fraction_mask;
     uint64 exponent_bits;
@@ -3601,7 +3633,7 @@ fmt_float_generate_hex_body(FormatSpec *spec, double value,
     ASSERT(fmt_float_is_hex(spec->conversion));
 
     upper = fmt_float_is_upper(spec->conversion);
-    memcpy(&bits, &value, (size_t)SIZEOF(bits));
+    memcpy64(&bits, &value, SIZEOF(bits));
     fraction_mask = (UINT64_C(1) << FORMAT_DOUBLE_FRACTION_BITS) - 1;
     exponent_bits = (bits >> FORMAT_DOUBLE_FRACTION_BITS) & 0x7ff;
     fraction = bits & fraction_mask;
@@ -3624,7 +3656,7 @@ fmt_float_generate_hex_body(FormatSpec *spec, double value,
         ASSERT(spec->precision <= INT32_MAX);
         if (spec->precision < FORMAT_DOUBLE_HEX_DIGITS) {
             fmt_float_hex_round(&first_digit, digits,
-                                   (int32)spec->precision, upper);
+                                (int32)spec->precision, upper);
         }
         digit_len = (int32)spec->precision;
     }
@@ -3632,19 +3664,19 @@ fmt_float_generate_hex_body(FormatSpec *spec, double value,
     len = 0;
     if (upper) {
         if ((status = fmt_buffer_write(buffer, capacity, len,
-                                          "0X", 2)) < 0) {
+                                       "0X", 2)) < 0) {
             return status;
         }
     } else {
         if ((status = fmt_buffer_write(buffer, capacity, len,
-                                          "0x", 2)) < 0) {
+                                       "0x", 2)) < 0) {
             return status;
         }
     }
     len = status;
 
     if ((status = fmt_buffer_put(buffer, capacity, len,
-                                    first_digit)) < 0) {
+                                 first_digit)) < 0) {
         return status;
     }
     len = status;
@@ -3665,23 +3697,23 @@ fmt_float_generate_hex_body(FormatSpec *spec, double value,
             digit = '0';
         }
         if ((status = fmt_buffer_put(buffer, capacity, len,
-                                        digit)) < 0) {
+                                     digit)) < 0) {
             return status;
         }
         len = status;
     }
 
     return fmt_float_hex_append_exponent(buffer, capacity, len,
-                                            exponent, upper);
+                                         exponent, upper);
 }
 
 static int32
 fmt_float_generate_body(FormatSpec *spec, double value,
-                           char *buffer, int32 capacity);
+                        char *buffer, int32 capacity);
 
 static int32
 fmt_float_parse_exponent(char *body, int32 body_len,
-                            int32 *exponent) {
+                         int32 *exponent) {
     int32 index;
     int64 value;
     int32 sign;
@@ -3769,8 +3801,8 @@ fmt_float_strip_trailing_zeros(char *body, int32 body_len) {
     }
 
     if (exponent_index < body_len) {
-        memmove(body + end, body + exponent_index,
-                (size_t)(body_len - exponent_index));
+        memmove64(body + end, body + exponent_index,
+                (body_len - exponent_index));
         end += body_len - exponent_index;
     }
 
@@ -3779,7 +3811,7 @@ fmt_float_strip_trailing_zeros(char *body, int32 body_len) {
 
 static int32
 fmt_float_generate_general_body(FormatSpec *spec, double value,
-                                   char *buffer, int32 capacity) {
+                                char *buffer, int32 capacity) {
     FormatSpec work_spec;
     int32 exponent;
     int32 body_len;
@@ -3799,13 +3831,13 @@ fmt_float_generate_general_body(FormatSpec *spec, double value,
     }
     work_spec.precision = spec->precision - 1;
     body_len = fmt_float_generate_body(&work_spec, value, buffer,
-                                          capacity);
+                                       capacity);
     if (body_len < 0) {
         return body_len;
     }
 
     if ((status = fmt_float_parse_exponent(buffer, body_len,
-                                              &exponent)) < 0) {
+                                           &exponent)) < 0) {
         return status;
     }
 
@@ -3818,7 +3850,7 @@ fmt_float_generate_general_body(FormatSpec *spec, double value,
         }
         work_spec.precision = spec->precision - (exponent + 1);
         body_len = fmt_float_generate_body(&work_spec, value, buffer,
-                                              capacity);
+                                           capacity);
         if (body_len < 0) {
             return body_len;
         }
@@ -3833,7 +3865,7 @@ fmt_float_generate_general_body(FormatSpec *spec, double value,
 
 static int32
 fmt_float_generate_body(FormatSpec *spec, double value,
-                           char *buffer, int32 capacity) {
+                        char *buffer, int32 capacity) {
     int32 body_len;
 
     ASSERT(spec != NULL);
@@ -3852,7 +3884,7 @@ fmt_float_generate_body(FormatSpec *spec, double value,
 
     if (fmt_float_is_general(spec->conversion)) {
         return fmt_float_generate_general_body(spec, value, buffer,
-                                                  capacity);
+                                               capacity);
     }
     if (fmt_float_is_hex(spec->conversion)) {
         return fmt_float_generate_hex_body(spec, value, buffer, capacity);
@@ -3870,12 +3902,12 @@ fmt_float_generate_body(FormatSpec *spec, double value,
     }
 
     if (buffer[0] == '-') {
-        memmove(buffer, buffer + 1, (size_t)(body_len - 1));
+        memmove64(buffer, buffer + 1, (body_len - 1));
         body_len -= 1;
     }
     if ((spec->flags & FORMAT_FLAG_ALTERNATE) != 0) {
         body_len = fmt_float_force_decimal_point(buffer, body_len,
-                                                    capacity);
+                                                 capacity);
         if (body_len < 0) {
             return body_len;
         }
@@ -3889,14 +3921,14 @@ fmt_float_generate_body(FormatSpec *spec, double value,
 
 static void
 fmt_write_float(FormatSink *sink, FormatSpec *spec,
-                   double value, char *body, int32 body_len) {
+                double value, char *body, int32 body_len) {
     ASSERT(sink != NULL);
     ASSERT(spec != NULL);
     ASSERT(body != NULL);
     ASSERT_NON_NEGATIVE(body_len);
 
     fmt_write_float_sign(sink, spec, fmt_float_sign(value, spec),
-                            body, body_len);
+                         body, body_len);
     return;
 }
 
@@ -3945,7 +3977,7 @@ fmt_handle_float(FormatSink *sink, FormatSpec *spec, FormatArgs *args) {
 
         long_value = va_arg(args->args, ldouble);
         body_len = fmt_long_double_generate_body(spec, long_value, body,
-                                                    capacity);
+                                                 capacity);
         if (body_len >= 0) {
             fmt_write_float_sign(
                 sink, spec, fmt_long_double_sign(long_value, spec),
@@ -3971,20 +4003,297 @@ fmt_handle_float(FormatSink *sink, FormatSpec *spec, FormatArgs *args) {
     return status;
 }
 
-int32 ATTR_PRINTF(3, 0)
-fmt_vsnprintf(char *buffer, int64 capacity, char *format, va_list args) {
+static int32
+fmt_estimate_add(int64 *total, int64 len) {
+    ASSERT(total != NULL);
+    ASSERT_NON_NEGATIVE(len);
+
+    if (len > INT64_MAX - *total) {
+        return -EOVERFLOW;
+    }
+    *total += len;
+    if (*total > INT32_MAX) {
+        return -EOVERFLOW;
+    }
+    return 0;
+}
+
+static int64
+fmt_estimate_apply_width(FormatSpec *spec, int64 len) {
+    ASSERT(spec != NULL);
+    ASSERT_NON_NEGATIVE(len);
+
+    return MAX(len, spec->width);
+}
+
+int32 ATTR_PRINTF(1, 0)
+fmt_vsnprintf_estimate(char *format, va_list args) {
     FormatArgs fmt_args;
-    FormatSink sink;
     char *literal;
     char *cursor;
+    int64 total;
     int32 result;
     int32 status;
 
     if (format == NULL) {
         return -EINVAL;
     }
-    if ((status = fmt_sink_init(&sink, buffer, capacity)) < 0) {
-        return status;
+
+    va_copy(fmt_args.args, args);
+    total = 0;
+    literal = format;
+    cursor = format;
+    while (*cursor != '\0') {
+        FormatSpec spec;
+        int64 estimate;
+
+        if (*cursor != '%') {
+            cursor += 1;
+            continue;
+        }
+
+        if ((status = fmt_estimate_add(&total, cursor - literal)) < 0) {
+            result = status;
+            goto done;
+        }
+
+        cursor += 1;
+        if ((status = fmt_parse_spec(cursor, &cursor, &spec)) < 0) {
+            result = status;
+            goto done;
+        }
+
+        estimate = 0;
+        if (fmt_is_integer_conversion(spec.conversion)) {
+            int32 bits;
+            int64 digits;
+            int64 prefix_len;
+
+            if ((status = fmt_load_dynamic_width_precision(&spec,
+                                                           &fmt_args)) < 0) {
+                result = status;
+                goto done;
+            }
+
+            if (spec.length == FORMAT_LENGTH_HH
+                || spec.length == FORMAT_LENGTH_W8) {
+                bits = 8;
+            } else if (spec.length == FORMAT_LENGTH_H
+                       || spec.length == FORMAT_LENGTH_W16) {
+                bits = 16;
+            } else if (spec.length == FORMAT_LENGTH_LL
+                       || spec.length == FORMAT_LENGTH_W64) {
+                bits = 64;
+            } else {
+                ASSERT(spec.length == FORMAT_LENGTH_NONE
+                       || spec.length == FORMAT_LENGTH_W32);
+                bits = 32;
+            }
+
+            prefix_len = 0;
+            if (fmt_is_signed_integer_conversion(spec.conversion)) {
+                prefix_len = 1;
+                if (bits == 8) {
+                    digits = 3;
+                } else if (bits == 16) {
+                    digits = 5;
+                } else if (bits == 64) {
+                    digits = 19;
+                } else {
+                    digits = 10;
+                }
+            } else if (spec.conversion == 'u') {
+                if (bits == 8) {
+                    digits = 3;
+                } else if (bits == 16) {
+                    digits = 5;
+                } else if (bits == 64) {
+                    digits = 20;
+                } else {
+                    digits = 10;
+                }
+            } else if (spec.conversion == 'o') {
+                digits = (bits + 2)/3;
+                if ((spec.flags & FORMAT_FLAG_ALTERNATE) != 0) {
+                    prefix_len = 1;
+                }
+            } else if (spec.conversion == 'x' || spec.conversion == 'X') {
+                digits = (bits + 3)/4;
+                if ((spec.flags & FORMAT_FLAG_ALTERNATE) != 0) {
+                    prefix_len = 2;
+                }
+            } else {
+                ASSERT(spec.conversion == 'b' || spec.conversion == 'B');
+                digits = bits;
+                if ((spec.flags & FORMAT_FLAG_ALTERNATE) != 0) {
+                    prefix_len = 2;
+                }
+            }
+
+            if (fmt_has_precision(&spec) && spec.precision > digits) {
+                digits = spec.precision;
+            }
+            if (fmt_is_signed_integer_conversion(spec.conversion)) {
+                if (spec.length == FORMAT_LENGTH_LL
+                    || spec.length == FORMAT_LENGTH_W64) {
+                    (void)va_arg(fmt_args.args, int64);
+                } else {
+                    (void)va_arg(fmt_args.args, int32);
+                }
+            } else if (spec.length == FORMAT_LENGTH_HH
+                       || spec.length == FORMAT_LENGTH_H
+                       || spec.length == FORMAT_LENGTH_W8
+                       || spec.length == FORMAT_LENGTH_W16) {
+                (void)va_arg(fmt_args.args, int32);
+            } else if (spec.length == FORMAT_LENGTH_LL
+                       || spec.length == FORMAT_LENGTH_W64) {
+                (void)va_arg(fmt_args.args, uint64);
+            } else {
+                ASSERT(spec.length == FORMAT_LENGTH_NONE
+                       || spec.length == FORMAT_LENGTH_W32);
+                (void)va_arg(fmt_args.args, uint32);
+            }
+            estimate = fmt_estimate_apply_width(&spec, prefix_len + digits);
+        } else if (spec.conversion == 'c') {
+            if ((status = fmt_load_dynamic_width(&spec, &fmt_args)) < 0) {
+                result = status;
+                goto done;
+            }
+            (void)va_arg(fmt_args.args, int32);
+            estimate = fmt_estimate_apply_width(&spec, 1);
+        } else if (spec.conversion == 's') {
+            char *string;
+            bool exact_span;
+
+            if ((status = fmt_load_dynamic_width(&spec, &fmt_args)) < 0) {
+                result = status;
+                goto done;
+            }
+            exact_span = false;
+            if (spec.precision_kind == FORMAT_PRECISION_ARG) {
+                int32 precision = va_arg(fmt_args.args, int32);
+
+                if (precision < 0) {
+                    result = -EINVAL;
+                    goto done;
+                }
+                exact_span = true;
+                spec.precision = precision;
+                spec.precision_kind = FORMAT_PRECISION_LITERAL;
+            }
+
+            string = va_arg(fmt_args.args, char *);
+            if (exact_span) {
+                estimate = spec.precision;
+                if (string == NULL && estimate > 0) {
+                    result = -EINVAL;
+                    goto done;
+                }
+            } else if (fmt_has_precision(&spec)) {
+                estimate = spec.precision;
+            } else if (string == NULL) {
+                estimate = 6;
+            } else {
+                estimate = fmt_string_len_limited(string, INT64_MAX);
+            }
+            estimate = fmt_estimate_apply_width(&spec, estimate);
+        } else if (spec.conversion == 'p') {
+            if ((status = fmt_load_dynamic_width(&spec, &fmt_args)) < 0) {
+                result = status;
+                goto done;
+            }
+            (void)va_arg(fmt_args.args, void *);
+            estimate = 2 + 2*SIZEOF(uintptr);
+            estimate = fmt_estimate_apply_width(&spec, estimate);
+        } else if (spec.conversion == 'n') {
+            void *pointer;
+
+            if (spec.length == FORMAT_LENGTH_HH
+                || spec.length == FORMAT_LENGTH_W8) {
+                pointer = va_arg(fmt_args.args, int8 *);
+            } else if (spec.length == FORMAT_LENGTH_H
+                       || spec.length == FORMAT_LENGTH_W16) {
+                pointer = va_arg(fmt_args.args, int16 *);
+            } else if (spec.length == FORMAT_LENGTH_LL
+                       || spec.length == FORMAT_LENGTH_W64) {
+                pointer = va_arg(fmt_args.args, int64 *);
+            } else {
+                ASSERT(spec.length == FORMAT_LENGTH_NONE
+                       || spec.length == FORMAT_LENGTH_W32);
+                pointer = va_arg(fmt_args.args, int32 *);
+            }
+            if (pointer == NULL) {
+                result = -EINVAL;
+                goto done;
+            }
+            estimate = 0;
+        } else if (fmt_is_float_conversion(spec.conversion)) {
+            int64 capacity64;
+
+            if ((status = fmt_load_float_width_precision(&spec,
+                                                         &fmt_args)) < 0) {
+                result = status;
+                goto done;
+            }
+            if (fmt_float_is_general(spec.conversion) && spec.precision == 0) {
+                spec.precision = 1;
+            }
+            if ((status = fmt_float_temp_capacity(&spec, &capacity64)) < 0) {
+                result = status;
+                goto done;
+            }
+            if (spec.length == FORMAT_LENGTH_BIG_L) {
+                (void)va_arg(fmt_args.args, ldouble);
+            } else {
+                (void)va_arg(fmt_args.args, double);
+            }
+            estimate = fmt_estimate_apply_width(&spec, capacity64 + 1);
+        } else {
+            ASSERT(spec.conversion == '%');
+            estimate = 1;
+        }
+
+        if ((status = fmt_estimate_add(&total, estimate)) < 0) {
+            result = status;
+            goto done;
+        }
+        literal = cursor;
+    }
+
+    if ((status = fmt_estimate_add(&total, cursor - literal)) < 0) {
+        result = status;
+        goto done;
+    }
+    result = (int32)total;
+
+done:
+    va_end(fmt_args.args);
+    return result;
+}
+
+int32 ATTR_PRINTF(1, 2)
+fmt_snprintf_estimate(char *format, ...) {
+    va_list args;
+    int32 estimate;
+
+    va_start(args, format);
+    estimate = fmt_vsnprintf_estimate(format, args);
+    va_end(args);
+    return estimate;
+}
+
+static int32
+fmt_vsnprintf_sink(FormatSink *sink, char *format, va_list args) {
+    FormatArgs fmt_args;
+    char *literal;
+    char *cursor;
+    int32 result;
+    int32 status;
+
+    ASSERT(sink != NULL);
+
+    if (format == NULL) {
+        return -EINVAL;
     }
 
     va_copy(fmt_args.args, args);
@@ -3998,9 +4307,9 @@ fmt_vsnprintf(char *buffer, int64 capacity, char *format, va_list args) {
             continue;
         }
 
-        fmt_sink_write(&sink, literal, cursor - literal);
-        if (sink.status < 0) {
-            result = fmt_sink_finish(&sink);
+        fmt_sink_write(sink, literal, cursor - literal);
+        if (sink->status < 0) {
+            result = fmt_sink_finish(sink);
             goto done;
         }
 
@@ -4010,37 +4319,37 @@ fmt_vsnprintf(char *buffer, int64 capacity, char *format, va_list args) {
             goto done;
         }
         if (fmt_is_integer_conversion(spec.conversion)) {
-            status = fmt_handle_integer(&sink, &spec, &fmt_args);
+            status = fmt_handle_integer(sink, &spec, &fmt_args);
             if (status < 0) {
                 result = status;
                 goto done;
             }
         } else if (spec.conversion == 'c' || spec.conversion == 's') {
-            status = fmt_handle_char_string(&sink, &spec, &fmt_args);
+            status = fmt_handle_char_string(sink, &spec, &fmt_args);
             if (status < 0) {
                 result = status;
                 goto done;
             }
         } else if (spec.conversion == 'p') {
-            status = fmt_handle_pointer(&sink, &spec, &fmt_args);
+            status = fmt_handle_pointer(sink, &spec, &fmt_args);
             if (status < 0) {
                 result = status;
                 goto done;
             }
         } else if (spec.conversion == 'n') {
-            status = fmt_handle_count(&sink, &spec, &fmt_args);
+            status = fmt_handle_count(sink, &spec, &fmt_args);
             if (status < 0) {
                 result = status;
                 goto done;
             }
         } else if (fmt_is_float_conversion(spec.conversion)) {
-            status = fmt_handle_float(&sink, &spec, &fmt_args);
+            status = fmt_handle_float(sink, &spec, &fmt_args);
             if (status < 0) {
                 result = status;
                 goto done;
             }
         } else if (spec.conversion == '%') {
-            fmt_sink_write_byte(&sink, '%');
+            fmt_sink_write_byte(sink, '%');
         } else {
             result = -ENOSYS;
             goto done;
@@ -4049,12 +4358,23 @@ fmt_vsnprintf(char *buffer, int64 capacity, char *format, va_list args) {
         literal = cursor;
     }
 
-    fmt_sink_write(&sink, literal, cursor - literal);
-    result = fmt_sink_finish(&sink);
+    fmt_sink_write(sink, literal, cursor - literal);
+    result = fmt_sink_finish(sink);
 
 done:
     va_end(fmt_args.args);
     return result;
+}
+
+int32 ATTR_PRINTF(3, 0)
+fmt_vsnprintf(char *buffer, int64 capacity, char *format, va_list args) {
+    FormatSink sink;
+    int32 status;
+
+    if ((status = fmt_sink_init(&sink, buffer, capacity)) < 0) {
+        return status;
+    }
+    return fmt_vsnprintf_sink(&sink, format, args);
 }
 
 int32 ATTR_PRINTF(3, 4)
@@ -4064,6 +4384,51 @@ fmt_snprintf(char *buffer, int64 capacity, char *format, ...) {
 
     va_start(args, format);
     len = fmt_vsnprintf(buffer, capacity, format, args);
+    va_end(args);
+    return len;
+}
+
+int32 ATTR_PRINTF(3, 0)
+fmt_vsprintf(char *buffer, int64 capacity, char *format, va_list args) {
+    FormatSink sink;
+    int32 status;
+
+    if (buffer == NULL) {
+        return -EINVAL;
+    }
+    if (capacity <= 0) {
+        return -EINVAL;
+    }
+
+    if (DEBUGGING) {
+        va_list check_args;
+        int32 estimate_len;
+
+        va_copy(check_args, args);
+        estimate_len = fmt_vsnprintf_estimate(format, check_args);
+        va_end(check_args);
+        if (estimate_len < 0) {
+            return estimate_len;
+        }
+        if ((int64)estimate_len >= capacity) {
+            return -ENOSPC;
+        }
+    }
+
+    if ((status = fmt_sink_init(&sink, buffer, capacity)) < 0) {
+        return status;
+    }
+    sink.unchecked = true;
+    return fmt_vsnprintf_sink(&sink, format, args);
+}
+
+int32 ATTR_PRINTF(3, 4)
+fmt_sprintf(char *buffer, int64 capacity, char *format, ...) {
+    va_list args;
+    int32 len;
+
+    va_start(args, format);
+    len = fmt_vsprintf(buffer, capacity, format, args);
     va_end(args);
     return len;
 }
@@ -4094,7 +4459,7 @@ fmt_float_validate_precision(int32 precision) {
 
 static int32
 fmt_float_copy(char *buffer, int64 capacity,
-                  char *source, int32 source_len) {
+               char *source, int32 source_len) {
     ASSERT(buffer != NULL);
     ASSERT_POSITIVE(capacity);
     ASSERT(source != NULL);
@@ -4105,7 +4470,7 @@ fmt_float_copy(char *buffer, int64 capacity,
         return -ENOSPC;
     }
 
-    memcpy(buffer, source, (size_t)source_len);
+    memcpy64(buffer, source, source_len);
     buffer[source_len] = '\0';
     return source_len;
 }
@@ -4140,7 +4505,7 @@ fmt_float64_shortest(char *buffer, int64 capacity, double value) {
 
 int32
 fmt_float64_fixed(char *buffer, int64 capacity, double value,
-                     int32 precision) {
+                  int32 precision) {
     int32 status;
     int32 len;
     char temp[FORMAT_FLOAT_RYU_BUFFER_SIZE];
@@ -4158,7 +4523,7 @@ fmt_float64_fixed(char *buffer, int64 capacity, double value,
 
 int32
 fmt_float64_scientific(char *buffer, int64 capacity, double value,
-                          int32 precision) {
+                       int32 precision) {
     int32 status;
     int32 len;
     char temp[FORMAT_FLOAT_RYU_BUFFER_SIZE];
@@ -4371,7 +4736,7 @@ test_fmt_sink_capacity(char *format, char *expected) {
         int32 copied;
         int32 len;
 
-        memset(buffer, 0x7f, SIZEOF(buffer));
+        memset64(buffer, 0x7f, SIZEOF(buffer));
         len = fmt_test_snprintf(buffer, capacity, format);
         ASSERT_EQUAL(len, expected_len);
 
@@ -4402,7 +4767,7 @@ test_fmt_integer_capacity(char *expected, char *format, ...) {
         int32 copied;
         int32 len;
 
-        memset(buffer, 0x7f, SIZEOF(buffer));
+        memset64(buffer, 0x7f, SIZEOF(buffer));
         va_start(args, format);
         len = fmt_vsnprintf(buffer, capacity, format, args);
         va_end(args);
@@ -4424,7 +4789,7 @@ test_fmt_integer_capacity(char *expected, char *format, ...) {
 
 static void
 test_fmt_bytes_capacity(char *expected, int32 expected_len,
-                           char *format, ...) {
+                        char *format, ...) {
     char buffer[256];
 
     ASSERT_NON_NEGATIVE(expected_len);
@@ -4435,7 +4800,7 @@ test_fmt_bytes_capacity(char *expected, int32 expected_len,
         int32 copied;
         int32 len;
 
-        memset(buffer, 0x7f, SIZEOF(buffer));
+        memset64(buffer, 0x7f, SIZEOF(buffer));
         va_start(args, format);
         len = fmt_vsnprintf(buffer, capacity, format, args);
         va_end(args);
@@ -4497,27 +4862,27 @@ test_fmt_integer_outputs(void) {
     test_fmt_integer_capacity("   00042", "%*.*d", 8, 5, 42);
 
     test_fmt_integer_capacity("-1 2a 3", "%d %x %u", -1,
-                                 (uint32)0x2a, (uint32)3);
+                              (uint32)0x2a, (uint32)3);
 
     test_fmt_integer_capacity("18", "%hhd", 0x12);
     test_fmt_integer_capacity("44", "%hhu", 300);
     test_fmt_integer_capacity("-1234", "%hd", -1234);
     test_fmt_integer_capacity("65535", "%hu", 65535);
     test_fmt_integer_capacity("-9223372036854775808", "%lld",
-                                 (int64)INT64_MIN);
+                              (int64)INT64_MIN);
     test_fmt_integer_capacity("18446744073709551615", "%llu",
-                                 (uint64)UINT64_MAX);
+                              (uint64)UINT64_MAX);
 
     test_fmt_integer_capacity("-128", "%w8d", -128);
     test_fmt_integer_capacity("255", "%w8u", 255);
     test_fmt_integer_capacity("65535", "%w16u", 65535);
     test_fmt_integer_capacity("-2147483648", "%w32d", INT32_MIN);
     test_fmt_integer_capacity("4294967295", "%w32u",
-                                 (uint32)UINT32_MAX);
+                              (uint32)UINT32_MAX);
     test_fmt_integer_capacity("-9223372036854775808", "%w64d",
-                                 (int64)INT64_MIN);
+                              (int64)INT64_MIN);
     test_fmt_integer_capacity("18446744073709551615", "%w64u",
-                                 (uint64)UINT64_MAX);
+                              (uint64)UINT64_MAX);
 
     return;
 }
@@ -4555,17 +4920,17 @@ test_fmt_char_string_outputs(void) {
     test_fmt_bytes_capacity(spaces, 3, "%3.*s", 0, (char *)NULL);
 
     test_fmt_bytes_capacity("x=abc n=7 c=Z", 13, "x=%s n=%d c=%c",
-                               "abc", 7, 'Z');
+                            "abc", 7, 'Z');
 
-    memset(buffer, 0x7f, SIZEOF(buffer));
+    memset64(buffer, 0x7f, SIZEOF(buffer));
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*s", -1,
-                                      "abc"), -EINVAL);
+                                   "abc"), -EINVAL);
     ASSERT_EQUAL(buffer[0], '\0');
     ASSERT_EQUAL(buffer[1], (char)0x7f);
 
-    memset(buffer, 0x7f, SIZEOF(buffer));
+    memset64(buffer, 0x7f, SIZEOF(buffer));
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*s", 1,
-                                      (char *)NULL), -EINVAL);
+                                   (char *)NULL), -EINVAL);
     ASSERT_EQUAL(buffer[0], '\0');
     ASSERT_EQUAL(buffer[1], (char)0x7f);
 
@@ -4595,7 +4960,7 @@ test_fmt_pointer_count_outputs(void) {
     test_fmt_bytes_capacity("abcd", 4, "ab%ncd", &count32);
     ASSERT_EQUAL(count32, 2);
 
-    memset(buffer, 0x7f, SIZEOF(buffer));
+    memset64(buffer, 0x7f, SIZEOF(buffer));
     count32 = -1;
     ASSERT_EQUAL(fmt_test_snprintf(buffer, 2, "abcd%n", &count32), 4);
     ASSERT_EQUAL(count32, 4);
@@ -4605,51 +4970,51 @@ test_fmt_pointer_count_outputs(void) {
 
     count8 = -1;
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%hhn",
-                                      &count8), 3);
+                                   &count8), 3);
     ASSERT_EQUAL(count8, 3);
 
     count16 = -1;
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%hn",
-                                      &count16), 3);
+                                   &count16), 3);
     ASSERT_EQUAL(count16, 3);
 
     count64 = -1;
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%lln",
-                                      &count64), 3);
+                                   &count64), 3);
     ASSERT_EQUAL(count64, 3);
 
     count8 = -1;
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%w8n",
-                                      &count8), 3);
+                                   &count8), 3);
     ASSERT_EQUAL(count8, 3);
 
     count16 = -1;
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%w16n",
-                                      &count16), 3);
+                                   &count16), 3);
     ASSERT_EQUAL(count16, 3);
 
     count32 = -1;
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%w32n",
-                                      &count32), 3);
+                                   &count32), 3);
     ASSERT_EQUAL(count32, 3);
 
     count64 = -1;
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%w64n",
-                                      &count64), 3);
+                                   &count64), 3);
     ASSERT_EQUAL(count64, 3);
 
     count8 = -7;
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%128d%hhn", 0,
-                                      &count8), -EOVERFLOW);
+                                   &count8), -EOVERFLOW);
     ASSERT_EQUAL(count8, -7);
 
     count16 = -7;
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%32768d%hn", 0,
-                                      &count16), -EOVERFLOW);
+                                   &count16), -EOVERFLOW);
     ASSERT_EQUAL(count16, -7);
 
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%n",
-                                      (int32 *)NULL), -EINVAL);
+                                   (int32 *)NULL), -EINVAL);
 
     return;
 }
@@ -4658,7 +5023,7 @@ static double
 fmt_test_double_from_bits(uint64 bits) {
     double value;
 
-    memcpy(&value, &bits, (size_t)SIZEOF(value));
+    memcpy64(&value, &bits, SIZEOF(value));
     return value;
 }
 
@@ -4713,10 +5078,10 @@ test_fmt_printf_float_outputs(void) {
     test_fmt_bytes_capacity("-NAN", 4, "%F", neg_nan);
 
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*f",
-                                      -1, 1.25), 8);
+                                   -1, 1.25), 8);
     ASSERT_EQUAL(buffer, "1.250000");
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.1048576f",
-                                      1.0), -EOVERFLOW);
+                                   1.0), -EOVERFLOW);
 
     return;
 }
@@ -4754,10 +5119,10 @@ test_fmt_printf_general_outputs(void) {
     test_fmt_bytes_capacity("-nan", 4, "%g", fmt_test_negative_nan());
 
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*g",
-                                      -1, 1.25), 4);
+                                   -1, 1.25), 4);
     ASSERT_EQUAL(buffer, "1.25");
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*g",
-                                      0, 123.0), 5);
+                                   0, 123.0), 5);
     ASSERT_EQUAL(buffer, "1e+02");
 
     return;
@@ -4801,15 +5166,15 @@ test_fmt_printf_hex_float_outputs(void) {
     test_fmt_bytes_capacity("0x2.0p-1", 8, "%.1a", before_one);
 
     test_fmt_bytes_capacity("0x1.0000000000001p+0", 20, "%a",
-                               lsb_after_one);
+                            lsb_after_one);
     test_fmt_bytes_capacity("0x0.0000000000001p-1022", 23, "%a",
-                               true_min);
+                            true_min);
     test_fmt_bytes_capacity("0x1p-1022", 9, "%a", normal_min);
     test_fmt_bytes_capacity("0x0.fffffffffffffp-1022", 23, "%a",
-                               largest_subnormal);
+                            largest_subnormal);
     test_fmt_bytes_capacity("0x1p-1022", 9, "%.0a", largest_subnormal);
     test_fmt_bytes_capacity("0x1.0p-1022", 11, "%.1a",
-                               largest_subnormal);
+                            largest_subnormal);
 
     test_fmt_bytes_capacity("INF", 3, "%A", HUGE_VAL);
     test_fmt_bytes_capacity("NAN", 3, "%A", fmt_test_positive_nan());
@@ -4818,10 +5183,10 @@ test_fmt_printf_hex_float_outputs(void) {
     test_fmt_bytes_capacity("-nan", 4, "%a", fmt_test_negative_nan());
 
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*a",
-                                      -1, 1.5), 8);
+                                   -1, 1.5), 8);
     ASSERT_EQUAL(buffer, "0x1.8p+0");
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.1048576a",
-                                      1.0), -EOVERFLOW);
+                                   1.0), -EOVERFLOW);
 
     return;
 }
@@ -4842,7 +5207,7 @@ fmt_test_long_double_supported(void) {
 
 static void
 test_fmt_long_double_parts(ldouble value, bool negative,
-                              int32 bit_len, int32 binary_exponent) {
+                           int32 bit_len, int32 binary_exponent) {
     FormatBinaryFloat parts;
 
     ASSERT_EQUAL(fmt_decompose_long_double(value, &parts), 0);
@@ -4871,8 +5236,8 @@ test_fmt_long_double_exact_integer(ldouble value, char *expected) {
 
 static void
 test_fmt_long_double_scaled(ldouble value, int32 decimal_places,
-                               char *expected,
-                               enum FormatRemainderHalf expected_rem) {
+                            char *expected,
+                            enum FormatRemainderHalf expected_rem) {
     char buffer[128];
     FormatBinaryFloat parts;
     FormatBigUInt integer;
@@ -4881,7 +5246,7 @@ test_fmt_long_double_scaled(ldouble value, int32 decimal_places,
 
     ASSERT_EQUAL(fmt_decompose_long_double(value, &parts), 0);
     ASSERT_EQUAL(fmt_binary_float_scaled_decimal(&parts, decimal_places,
-                                                    &integer, &remainder), 0);
+                                                 &integer, &remainder), 0);
     ASSERT(remainder == expected_rem);
     len = fmt_big_uint_to_decimal(&integer, buffer, SIZEOF(buffer));
     ASSERT_EQUAL(len, strlen32(expected));
@@ -4900,29 +5265,27 @@ test_fmt_long_double_decomposition(void) {
         return;
     }
 
-    ASSERT_EQUAL(fmt_decompose_long_double((ldouble)INFINITY, &parts),
-                 -EINVAL);
-    ASSERT_EQUAL(fmt_decompose_long_double((ldouble)NAN, &parts),
-                 -EINVAL);
+    ASSERT_EQUAL(fmt_decompose_long_double((ldouble)INFINITY, &parts), -EINVAL);
+    ASSERT_EQUAL(fmt_decompose_long_double((ldouble)NAN, &parts), -EINVAL);
 
     test_fmt_long_double_parts(0.0L, false, 0, 0);
     test_fmt_long_double_parts(-0.0L, true, 0, 0);
     test_fmt_long_double_parts(1.0L, false, LDBL_MANT_DIG,
-                                  1 - LDBL_MANT_DIG);
+                               1 - LDBL_MANT_DIG);
     test_fmt_long_double_parts(-1.0L, true, LDBL_MANT_DIG,
-                                  1 - LDBL_MANT_DIG);
+                               1 - LDBL_MANT_DIG);
     test_fmt_long_double_parts(0.5L, false, LDBL_MANT_DIG,
-                                  -LDBL_MANT_DIG);
+                               -LDBL_MANT_DIG);
     test_fmt_long_double_parts(2.0L, false, LDBL_MANT_DIG,
-                                  2 - LDBL_MANT_DIG);
+                               2 - LDBL_MANT_DIG);
 
     expected_exp = LDBL_MIN_EXP - LDBL_MANT_DIG;
     test_fmt_long_double_parts(LDBL_MIN, false, LDBL_MANT_DIG,
-                                  expected_exp);
+                               expected_exp);
 
     expected_exp = LDBL_MAX_EXP - LDBL_MANT_DIG;
     test_fmt_long_double_parts(LDBL_MAX, false, LDBL_MANT_DIG,
-                                  expected_exp);
+                               expected_exp);
     ASSERT_EQUAL(fmt_decompose_long_double(LDBL_MAX, &parts), 0);
     ASSERT_EQUAL(fmt_binary_float_to_exact_integer(&parts, &integer), 0);
     ASSERT_EQUAL(fmt_big_uint_bit_len(&integer), LDBL_MAX_EXP);
@@ -4930,7 +5293,7 @@ test_fmt_long_double_decomposition(void) {
     true_min = ldexpl(1.0L, LDBL_MIN_EXP - LDBL_MANT_DIG);
     if (true_min != 0.0L) {
         test_fmt_long_double_parts(true_min, false, 1,
-                                      LDBL_MIN_EXP - LDBL_MANT_DIG);
+                                   LDBL_MIN_EXP - LDBL_MANT_DIG);
     }
 
     return;
@@ -4949,22 +5312,22 @@ test_fmt_long_double_decimal_helpers(void) {
     test_fmt_long_double_exact_integer(1.0L, "1");
     test_fmt_long_double_exact_integer(2.0L, "2");
     test_fmt_long_double_exact_integer(ldexpl(1.0L, 64),
-                                          "18446744073709551616");
+                                       "18446744073709551616");
 
     ASSERT_EQUAL(fmt_decompose_long_double(0.5L, &parts), 0);
     ASSERT_EQUAL(fmt_binary_float_to_exact_integer(&parts, &integer),
                  -ERANGE);
 
     test_fmt_long_double_scaled(0.125L, 3, "125",
-                                   FORMAT_REMAINDER_ZERO);
+                                FORMAT_REMAINDER_ZERO);
     test_fmt_long_double_scaled(0.25L, 0, "0",
-                                   FORMAT_REMAINDER_LESS_HALF);
+                                FORMAT_REMAINDER_LESS_HALF);
     test_fmt_long_double_scaled(0.5L, 0, "0",
-                                   FORMAT_REMAINDER_HALF);
+                                FORMAT_REMAINDER_HALF);
     test_fmt_long_double_scaled(0.75L, 0, "0",
-                                   FORMAT_REMAINDER_MORE_HALF);
+                                FORMAT_REMAINDER_MORE_HALF);
     test_fmt_long_double_scaled(1.25L, 1, "12",
-                                   FORMAT_REMAINDER_HALF);
+                                FORMAT_REMAINDER_HALF);
     return;
 }
 
@@ -5004,7 +5367,7 @@ test_fmt_printf_long_double_outputs(void) {
     if (fmt_test_long_double_supported() && LDBL_MANT_DIG > DBL_MANT_DIG) {
         precise = ldexpl(1.0L, 63) + 1.0L;
         test_fmt_bytes_capacity("9223372036854775809", 19, "%.0Lf",
-                                   precise);
+                                precise);
     }
 
     test_fmt_bytes_capacity("1", 1, "%Lg", (ldouble)1.0);
@@ -5035,13 +5398,13 @@ test_fmt_printf_long_double_outputs(void) {
     test_fmt_bytes_capacity("inf", 3, "%La", (ldouble)INFINITY);
 
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*Lf",
-                                      -1, (ldouble)1.25), 8);
+                                   -1, (ldouble)1.25), 8);
     ASSERT_EQUAL(buffer, "1.250000");
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*Lg",
-                                      -1, (ldouble)1.25), 4);
+                                   -1, (ldouble)1.25), 4);
     ASSERT_EQUAL(buffer, "1.25");
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*La",
-                                      -1, (ldouble)1.5), 8);
+                                   -1, (ldouble)1.5), 8);
     ASSERT_EQUAL(buffer, "0x1.8p+0");
 
     return;
@@ -5058,6 +5421,17 @@ fmt_test_public_vsnprintf(char *buffer, int64 capacity, char *format, ...) {
     return len;
 }
 
+static int32
+fmt_test_public_vsprintf(char *buffer, int64 capacity, char *format, ...) {
+    va_list args;
+    int32 len;
+
+    va_start(args, format);
+    len = fmt_vsprintf(buffer, capacity, format, args);
+    va_end(args);
+    return len;
+}
+
 static void
 test_fmt_public_api(void) {
     char buffer[32];
@@ -5066,7 +5440,7 @@ test_fmt_public_api(void) {
     int32 count;
 
     len = fmt_snprintf(buffer, SIZEOF(buffer), "public:%d:%s",
-                          42, "ok");
+                       42, "ok");
     ASSERT_EQUAL(len, 12);
     ASSERT_EQUAL(buffer, len + 1, "public:42:ok", 13);
 
@@ -5078,7 +5452,7 @@ test_fmt_public_api(void) {
     ASSERT_EQUAL(len, 6);
 
     len = fmt_test_public_vsnprintf(buffer, SIZEOF(buffer), "%s:%.*s",
-                                       NULL, 3, "a\0b");
+                                    NULL, 3, "a\0b");
     ASSERT_EQUAL(len, 10);
     ASSERT_EQUAL(buffer, len + 1, "(null):a\0b", 11);
 
@@ -5087,6 +5461,68 @@ test_fmt_public_api(void) {
     ASSERT_EQUAL(len, 4);
     ASSERT_EQUAL(count, 4);
     ASSERT_EQUAL(tiny, SIZEOF(tiny), "abc", 4);
+
+    len = fmt_sprintf(buffer, SIZEOF(buffer), "fast:%d:%s", 42, "ok");
+    ASSERT_EQUAL(len, 10);
+    ASSERT_EQUAL(buffer, len + 1, "fast:42:ok", 11);
+
+    len = fmt_test_public_vsprintf(buffer, SIZEOF(buffer), "%s:%.*s",
+                                   NULL, 3, "a\0b");
+    ASSERT_EQUAL(len, 10);
+    ASSERT_EQUAL(buffer, len + 1, "(null):a\0b", 11);
+
+    count = -1;
+    len = fmt_sprintf(buffer, SIZEOF(buffer), "abcd%n", &count);
+    ASSERT_EQUAL(len, 4);
+    ASSERT_EQUAL(count, 4);
+    ASSERT_EQUAL(buffer, "abcd");
+
+    ASSERT_EQUAL(fmt_sprintf(tiny, SIZEOF(tiny), "abcdef"), -ENOSPC);
+    ASSERT_EQUAL(fmt_test_public_vsprintf(tiny, SIZEOF(tiny), "abcdef"),
+                 -ENOSPC);
+
+    return;
+}
+
+static void
+test_fmt_estimate(void) {
+    char span[] = {'a', '\0', 'b', 'c'};
+    char buffer[64];
+    int32 estimate;
+    int32 exact;
+    int32 count;
+
+    ASSERT_EQUAL(fmt_snprintf_estimate("abc"), 3);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%d", 0), 11);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%lld", (int64)0), 20);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%#b", 0), 34);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%100d", 0), 100);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%p", (void *)NULL),
+                                       (2 + 2*SIZEOF(uintptr)));
+
+    ASSERT_EQUAL(fmt_snprintf_estimate("%s", "abc"), 3);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%s", (char *)NULL), 6);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%.10s", "abc"), 10);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%.*s", 4, span), 4);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%5.*s", 3, span), 5);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%.*s", -1, "abc"), -EINVAL);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%.*s", 1, (char *)NULL), -EINVAL);
+
+    ASSERT_EQUAL(fmt_snprintf_estimate("%f", 1.0),
+                 FORMAT_FLOAT_MAX_FIXED_PREFIX + 6 + 8 + 1);
+    ASSERT_EQUAL(fmt_snprintf_estimate("%20.2f", 1.0),
+                 FORMAT_FLOAT_MAX_FIXED_PREFIX + 2 + 8 + 1);
+
+    count = -1;
+    ASSERT_EQUAL(fmt_snprintf_estimate("ab%ncd", &count), 4);
+    ASSERT_EQUAL(count, -1);
+    ASSERT_EQUAL(fmt_snprintf_estimate("abc%n", (int32 *)NULL), -EINVAL);
+
+    estimate = fmt_snprintf_estimate("x=%d s=%.*s f=%g", 7, 4, span, 1.25);
+    exact = fmt_test_snprintf(buffer, SIZEOF(buffer), "x=%d s=%.*s f=%g",
+                              7, 4, span, 1.25);
+    ASSERT_MORE_EQUAL(estimate, exact);
+
     return;
 }
 
@@ -5100,10 +5536,10 @@ test_fmt_sink_validation(void) {
     ASSERT_EQUAL(fmt_test_snprintf(buffer, -1, "abc"), -EINVAL);
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), NULL), -EINVAL);
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%*d",
-                                      INT32_MIN, 0), -EOVERFLOW);
+                                   INT32_MIN, 0), -EOVERFLOW);
 
-    memset(buffer, 0x7f, SIZEOF(buffer));
-    memset(buffer, 0x7f, SIZEOF(buffer));
+    memset64(buffer, 0x7f, SIZEOF(buffer));
+    memset64(buffer, 0x7f, SIZEOF(buffer));
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%"), -EINVAL);
     ASSERT_EQUAL(buffer[0], '\0');
     ASSERT_EQUAL(buffer[1], (char)0x7f);
@@ -5118,9 +5554,8 @@ test_fmt_sink_validation(void) {
 static void
 test_fmt_float32_shortest(float value, char *expected) {
     char buffer[FORMAT_FLOAT_RYU_BUFFER_SIZE];
-    int32 len;
+    int32 len = fmt_float32_shortest(buffer, SIZEOF(buffer), value);
 
-    len = fmt_float32_shortest(buffer, SIZEOF(buffer), value);
     ASSERT_EQUAL(len, strlen32(expected));
     ASSERT_EQUAL(buffer, expected);
 
@@ -5130,9 +5565,8 @@ test_fmt_float32_shortest(float value, char *expected) {
 static void
 test_fmt_float64_shortest(double value, char *expected) {
     char buffer[FORMAT_FLOAT_RYU_BUFFER_SIZE];
-    int32 len;
+    int32 len = fmt_float64_shortest(buffer, SIZEOF(buffer), value);
 
-    len = fmt_float64_shortest(buffer, SIZEOF(buffer), value);
     ASSERT_EQUAL(len, strlen32(expected));
     ASSERT_EQUAL(buffer, expected);
 
@@ -5142,9 +5576,8 @@ test_fmt_float64_shortest(double value, char *expected) {
 static void
 test_fmt_float64_fixed(double value, int32 precision, char *expected) {
     char buffer[FORMAT_FLOAT_RYU_BUFFER_SIZE];
-    int32 len;
+    int32 len = fmt_float64_fixed(buffer, SIZEOF(buffer), value, precision);
 
-    len = fmt_float64_fixed(buffer, SIZEOF(buffer), value, precision);
     ASSERT_EQUAL(len, strlen32(expected));
     ASSERT_EQUAL(buffer, expected);
 
@@ -5154,9 +5587,9 @@ test_fmt_float64_fixed(double value, int32 precision, char *expected) {
 static void
 test_fmt_float64_scientific(double value, int32 precision, char *expected) {
     char buffer[FORMAT_FLOAT_RYU_BUFFER_SIZE];
-    int32 len;
+    int32 len = fmt_float64_scientific(buffer, SIZEOF(buffer),
+                                       value, precision);
 
-    len = fmt_float64_scientific(buffer, SIZEOF(buffer), value, precision);
     ASSERT_EQUAL(len, strlen32(expected));
     ASSERT_EQUAL(buffer, expected);
 
@@ -5166,16 +5599,14 @@ test_fmt_float64_scientific(double value, int32 precision, char *expected) {
 static uint32
 test_fmt_float32_bits(float value) {
     uint32 bits;
-
-    memcpy(&bits, &value, SIZEOF(bits));
+    memcpy64(&bits, &value, SIZEOF(bits));
     return bits;
 }
 
 static uint64
 test_fmt_float64_bits(double value) {
     uint64 bits;
-
-    memcpy(&bits, &value, SIZEOF(bits));
+    memcpy64(&bits, &value, SIZEOF(bits));
     return bits;
 }
 
@@ -5238,6 +5669,7 @@ main(void) {
     test_fmt_long_double_decomposition();
     test_fmt_long_double_decimal_helpers();
     test_fmt_public_api();
+    test_fmt_estimate();
     test_fmt_sink_validation();
 
     test_fmt_float64_shortest(0.0, "0E0");
@@ -5273,12 +5705,10 @@ main(void) {
 
     ASSERT_EQUAL(fmt_float64_shortest(NULL, 64, 1.0), -EINVAL);
     ASSERT_EQUAL(fmt_float64_shortest(buffer, 0, 1.0), -EINVAL);
-    ASSERT_EQUAL(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0, -1),
-                 -EINVAL);
+    ASSERT_EQUAL(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0, -1), -EINVAL);
     ASSERT_EQUAL(fmt_float64_fixed(buffer, 4, 1.25, 2), -ENOSPC);
     ASSERT_EQUAL(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0,
-                                      FORMAT_FLOAT_MAX_PRECISION + 1),
-                 -ERANGE);
+                                   FORMAT_FLOAT_MAX_PRECISION + 1), -ERANGE);
 
     test_fmt_float64_round_trip(0.1);
     test_fmt_float32_round_trip(0.1f);

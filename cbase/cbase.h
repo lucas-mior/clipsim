@@ -227,6 +227,12 @@ int32 fmt_vsnprintf(char *buffer, int64 capacity, char *format, va_list args)
     ATTR_PRINTF(3, 0);
 int32 fmt_snprintf(char *buffer, int64 capacity, char *format, ...)
     ATTR_PRINTF(3, 4);
+int32 fmt_vsprintf(char *buffer, int64 capacity, char *format, va_list args)
+    ATTR_PRINTF(3, 0);
+int32 fmt_sprintf(char *buffer, int64 capacity, char *format, ...)
+    ATTR_PRINTF(3, 4);
+int32 fmt_vsnprintf_estimate(char *format, va_list args) ATTR_PRINTF(1, 0);
+int32 fmt_snprintf_estimate(char *format, ...) ATTR_PRINTF(1, 2);
 
 int32 snprintf2(char *buffer, int64 size, char *format, ...);
 StrBuilder *str_builder_array_append(StrBuilderArray *);
