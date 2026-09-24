@@ -147,17 +147,17 @@ int32 ascii_normalize_camel_compact(char *out, char *string,
 #define MAX_FILES_COPY 256
 #endif
 
-typedef struct StrBuilder {
+typedef struct String {
     char *data;
     int32 len;
     int32 cap;
-} StrBuilder;
+} String;
 
-typedef struct StrBuilderArray {
-    StrBuilder *items;
+typedef struct StringArray {
+    String *items;
     int32 len;
     int32 cap;
-} StrBuilderArray;
+} StringArray;
 
 typedef struct StrFlex {
     int32 len;
@@ -223,23 +223,23 @@ int32 random_ascii_string(char *buffer, int32 capacity, int32 min_len);
 bool path_missing(char *path);
 int32 read_entire_file(char *path, char **file_bytes);
 char *remove_escape_sequences(char *data, int32 *data_len);
-void sb_append(StrBuilder *str_builder, char *data, int64 data_len);
-void sb_append_byte(StrBuilder *str_builder, char byte);
-void sb_append_byte_if_not(StrBuilder *str_builder, char byte);
-void sb_clear(StrBuilder *);
-int32 sb_copy(StrBuilder *dest, StrBuilder *source);
-void sb_free(StrBuilder *);
-void sb_itoa(StrBuilder *str_builder, llong num);
-void sb_float64(StrBuilder *str_builder, double value);
-void sb_float64_fixed(StrBuilder *str_builder, double value, int32 precision);
-void sb_bytes_pretty(StrBuilder *str_builder, llong size);
-void sb_move(StrBuilder *dest, StrBuilder *source);
-void sb_printf(StrBuilder *str_builder, char *fmt, ...);
-void sb_reserve(StrBuilder *str_builder, int64 extra);
-int32 sb_set(StrBuilder *str_builder, char *data, int32 data_len);
-char *sb_steal(StrBuilder *str_builder, int32 *len, int32 *cap);
-char *sb_steal_exact(StrBuilder *str_builder, int32 *len);
-char *sb_opt_cstr(StrBuilder *);
+void sb_append(String *string, char *data, int64 data_len);
+void sb_append_byte(String *string, char byte);
+void sb_append_byte_if_not(String *string, char byte);
+void sb_clear(String *);
+int32 sb_copy(String *dest, String *source);
+void sb_free(String *);
+void sb_itoa(String *string, llong num);
+void sb_float64(String *string, double value);
+void sb_float64_fixed(String *string, double value, int32 precision);
+void sb_bytes_pretty(String *string, llong size);
+void sb_move(String *dest, String *source);
+void sb_printf(String *string, char *fmt, ...);
+void sb_reserve(String *string, int64 extra);
+int32 sb_set(String *string, char *data, int32 data_len);
+char *sb_steal(String *string, int32 *len, int32 *cap);
+char *sb_steal_exact(String *string, int32 *len);
+char *sb_opt_cstr(String *);
 void send_signal(char *executable, int32 signal_number);
 
 // cbase printf-compatible formatter. It returns the byte count that would
@@ -258,14 +258,14 @@ int32 fmt_sprintf(char *buffer, int64 capacity, char *format, ...)
 int32 fmt_vsnprintf_estimate(char *format, va_list args) ATTR_PRINTF(1, 0);
 int32 fmt_snprintf_estimate(char *format, ...) ATTR_PRINTF(1, 2);
 
-StrBuilder *str_builder_array_append(StrBuilderArray *);
-int32 str_builder_array_append_copy(StrBuilderArray *array, StrBuilder *item);
-void str_builder_array_clear(StrBuilderArray *);
-int32 str_builder_array_copy(StrBuilderArray *dest, StrBuilderArray *source);
-void str_builder_array_destroy(StrBuilderArray *);
-void str_builder_array_move(StrBuilderArray *dest, StrBuilderArray *source);
-int32 str_builder_array_reserve(StrBuilderArray *array, int32 extra);
-void str_builder_array_swap(StrBuilderArray *left, StrBuilderArray *right);
+String *string_array_append(StringArray *);
+int32 string_array_append_copy(StringArray *array, String *item);
+void string_array_clear(StringArray *);
+int32 string_array_copy(StringArray *dest, StringArray *source);
+void string_array_destroy(StringArray *);
+void string_array_move(StringArray *dest, StringArray *source);
+int32 string_array_reserve(StringArray *array, int32 extra);
+void string_array_swap(StringArray *left, StringArray *right);
 void strflex_list_push(StrFlexList *, char *, int32);
 void strflex_list_destroy(StrFlexList *);
 void strflex_list_clear(StrFlexList *);
@@ -730,8 +730,8 @@ void command_push_split(Command *command, char *arguments, char *delimiters);
 int32 command_stdin_buffer_set(Command *command, char *data, int64 data_len);
 void command_stdin_buffer_clear(Command *);
 void command_reset(Command *);
-void command_result_append(StrBuilder *output,
-                           StrBuilder *stdout_output, StrBuilder *stderr_output,
+void command_result_append(String *output,
+                           String *stdout_output, String *stderr_output,
                            bool is_stderr,
                            char *data, int32 data_len);
 void command_result_file_descriptors_close(CommandResult *);

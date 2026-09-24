@@ -134,9 +134,9 @@ command_result_free(CommandResult *result) {
 
 void
 command_result_append(
-    StrBuilder *output,
-    StrBuilder *stdout_output,
-    StrBuilder *stderr_output,
+    String *output,
+    String *stdout_output,
+    String *stderr_output,
     bool is_stderr,
     char *data,
     int32 data_len
@@ -274,7 +274,7 @@ command_windows_result_read_captured(
     CommandWindowsCaptureFile *stdout_capture,
     CommandWindowsCaptureFile *stderr_capture
 ) {
-    StrBuilder output = {0};
+    String output = {0};
     char *stdout_output = NULL;
     char *stderr_output = NULL;
     int32 stdout_len = 0;
@@ -657,9 +657,9 @@ command_result_process_output_event(
     struct pollfd *pipe,
     int32 *fd,
     int32 *left,
-    StrBuilder *output,
-    StrBuilder *stdout_output,
-    StrBuilder *stderr_output,
+    String *output,
+    String *stdout_output,
+    String *stderr_output,
     bool is_stderr
 ) {
     char buffer[4096];
@@ -704,9 +704,9 @@ command_result_process_io(Command *command, enum CommandFlag flags) {
         COMMAND_PIPE_COUNT = 3,
     };
     struct pollfd pipes[COMMAND_PIPE_COUNT] = {0};
-    StrBuilder output = {0};
-    StrBuilder stdout_output = {0};
-    StrBuilder stderr_output = {0};
+    String output = {0};
+    String stdout_output = {0};
+    String stderr_output = {0};
     int32 nfds = 0;
     int32 left = 0;
     int64 stdin_offset = 0;
@@ -1187,15 +1187,15 @@ command_print(Command *command) {
 
 char *
 command_str(Command *command, int32 *len) {
-    StrBuilder str_builder = {0};
+    String string = {0};
 
     for (int32 i = 0; i < command->argc; i += 1) {
         if (i > 0) {
-            sb_append_byte(&str_builder, ' ');
+            sb_append_byte(&string, ' ');
         }
-        SB_APPEND(&str_builder, command->argv[i], command->argvs_lens[i]);
+        SB_APPEND(&string, command->argv[i], command->argvs_lens[i]);
     }
-    return sb_steal_exact(&str_builder, len);
+    return sb_steal_exact(&string, len);
 }
 
 void

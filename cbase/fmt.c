@@ -4489,18 +4489,18 @@ fmt_float64_scientific(char *buffer, int64 capacity,
 }
 
 void
-sb_float64(StrBuilder *str_builder, double value) {
+sb_float64(String *string, double value) {
     int32 len;
 
-    sb_reserve(str_builder, FMT_FLOAT_RYU_BUFFER_SIZE);
-    len = d2s_buffered_n(value, str_builder->data + str_builder->len);
-    str_builder->len += len;
-    str_builder->data[str_builder->len] = '\0';
+    sb_reserve(string, FMT_FLOAT_RYU_BUFFER_SIZE);
+    len = d2s_buffered_n(value, string->data + string->len);
+    string->len += len;
+    string->data[string->len] = '\0';
     return;
 }
 
 void
-sb_float64_fixed(StrBuilder *sb, double value, int32 precision) {
+sb_float64_fixed(String *sb, double value, int32 precision) {
     int32 status;
     int32 len;
 
@@ -5608,7 +5608,7 @@ main(void) {
     test_fmt_float64_scientific(0.00123, 3, "1.230e-03");
 
     {
-        StrBuilder builder = {0};
+        String builder = {0};
 
         SB_APPEND(&builder, "x=");
         sb_float64(&builder, 0.1);

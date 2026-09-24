@@ -854,7 +854,7 @@ send_signal(char *executable, int32 signal_number) {
     DIR *processes;
     struct dirent *process;
     int64 len = strlen32(executable);
-    StrBuilder buffer = {0};
+    String buffer = {0};
     sb_reserve(&buffer, 256);
 
     if ((processes = opendir("/proc")) == NULL) {

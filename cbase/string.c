@@ -262,10 +262,10 @@ strflex_list_at(StrFlexList *list, int32 idx) {
     return list->items[idx];
 }
 
-#define STR_BUILDER_INITIAL_CAPACITY 16
+#define STRING_INITIAL_CAPACITY 16
 
 char *
-sb_opt_cstr(StrBuilder *buffer) {
+sb_opt_cstr(String *buffer) {
     if (buffer == NULL) {
         return "";
     }
@@ -277,14 +277,14 @@ sb_opt_cstr(StrBuilder *buffer) {
 }
 
 void
-sb_free(StrBuilder *str) {
+sb_free(String *str) {
     free2(str->data, str->cap);
-    *str = (StrBuilder){0};
+    *str = (String){0};
     return;
 }
 
 void
-sb_clear(StrBuilder *str) {
+sb_clear(String *str) {
     str->len = 0;
     if (str->data) {
         str->data[0] = '\0';
@@ -293,7 +293,7 @@ sb_clear(StrBuilder *str) {
 }
 
 int32
-sb_copy(StrBuilder *dest, StrBuilder *source) {
+sb_copy(String *dest, String *source) {
     if (dest == NULL) {
         return -EINVAL;
     }
@@ -311,7 +311,7 @@ sb_copy(StrBuilder *dest, StrBuilder *source) {
 }
 
 void
-sb_move(StrBuilder *dest, StrBuilder *source) {
+sb_move(String *dest, String *source) {
     if (dest == NULL) {
         return;
     }
@@ -321,17 +321,17 @@ sb_move(StrBuilder *dest, StrBuilder *source) {
 
     sb_free(dest);
     if (source == NULL) {
-        *dest = (StrBuilder){0};
+        *dest = (String){0};
         return;
     }
 
     *dest = *source;
-    *source = (StrBuilder){0};
+    *source = (String){0};
     return;
 }
 
 int32
-sb_set(StrBuilder *str, char *data, int32 data_len) {
+sb_set(String *str, char *data, int32 data_len) {
     if (str == NULL) {
         return -EINVAL;
     }
@@ -356,7 +356,7 @@ sb_set(StrBuilder *str, char *data, int32 data_len) {
 }
 
 void
-sb_reserve(StrBuilder *str, int64 extra) {
+sb_reserve(String *str, int64 extra) {
     int64 needed;
     int64 new_cap;
     int32 old_cap;
@@ -366,7 +366,7 @@ sb_reserve(StrBuilder *str, int64 extra) {
     }
 
     if (UNLIKELY(extra >= MAXOF(str->cap))) {
-        error("StrBuilder only supports strings shorter than 2GB.\n");
+        error("String only supports strings shorter than 2GB.\n");
         fatal(EXIT_FAILURE);
     }
 
@@ -375,7 +375,7 @@ sb_reserve(StrBuilder *str, int64 extra) {
         return;
     }
     if (UNLIKELY(needed >= MAXOF(str->cap))) {
-        error("StrBuilder only supports strings shorter than 2GB.\n");
+        error("String only supports strings shorter than 2GB.\n");
         fatal(EXIT_FAILURE);
     }
 
@@ -386,7 +386,7 @@ sb_reserve(StrBuilder *str, int64 extra) {
 
     new_cap = str->cap;
     if (new_cap <= 0) {
-        new_cap = STR_BUILDER_INITIAL_CAPACITY;
+        new_cap = STRING_INITIAL_CAPACITY;
     }
     while (new_cap < needed) {
         new_cap *= 2;
@@ -395,14 +395,13 @@ sb_reserve(StrBuilder *str, int64 extra) {
         new_cap = needed;
     }
 
-    str->data = realloc2(str->data, old_cap, new_cap,
-                                 SIZEOF(*str->data));
+    str->data = realloc2(str->data, old_cap, new_cap, SIZEOF(*str->data));
     str->cap = (int32)new_cap;
     return;
 }
 
 void
-sb_append(StrBuilder *str, char *data, int64 data_len) {
+sb_append(String *str, char *data, int64 data_len) {
     bool aliases = false;
     int32 data_offset = 0;
 
@@ -440,7 +439,7 @@ sb_append(StrBuilder *str, char *data, int64 data_len) {
 }
 
 void
-sb_append_byte(StrBuilder *str, char byte) {
+sb_append_byte(String *str, char byte) {
     if (byte == '\0') {
         return;
     }
@@ -452,7 +451,7 @@ sb_append_byte(StrBuilder *str, char byte) {
 }
 
 void
-sb_append_byte_if_not(StrBuilder *str, char byte) {
+sb_append_byte_if_not(String *str, char byte) {
     if ((str->len > 0)
         && (str->data[str->len - 1] == byte)) {
         return;
@@ -462,7 +461,7 @@ sb_append_byte_if_not(StrBuilder *str, char byte) {
 }
 
 void
-sb_itoa(StrBuilder *str, llong num) {
+sb_itoa(String *str, llong num) {
     int32 len;
 
     sb_reserve(str, 21);
@@ -473,7 +472,7 @@ sb_itoa(StrBuilder *str, llong num) {
 }
 
 void
-sb_bytes_pretty(StrBuilder *str, llong size) {
+sb_bytes_pretty(String *str, llong size) {
     int32 len;
 
     sb_reserve(str, 16);
@@ -484,7 +483,7 @@ sb_bytes_pretty(StrBuilder *str, llong size) {
 }
 
 void
-sb_printf(StrBuilder *str, char *fmt, ...) {
+sb_printf(String *str, char *fmt, ...) {
     va_list ap;
     va_list ap2;
     int32 estimate;
@@ -520,7 +519,7 @@ sb_printf(StrBuilder *str, char *fmt, ...) {
 }
 
 char *
-sb_steal(StrBuilder *str, int32 *len, int32 *cap) {
+sb_steal(String *str, int32 *len, int32 *cap) {
     char *data = str->data;
 
     if (len) {
@@ -530,12 +529,12 @@ sb_steal(StrBuilder *str, int32 *len, int32 *cap) {
         *cap = str->cap;
     }
 
-    *str = (StrBuilder){0};
+    *str = (String){0};
     return data;
 }
 
 char *
-sb_steal_exact(StrBuilder *str, int32 *len) {
+sb_steal_exact(String *str, int32 *len) {
     char *data;
     int32 data_len;
     int32 cap;
@@ -553,7 +552,7 @@ sb_steal_exact(StrBuilder *str, int32 *len) {
 }
 
 void
-str_builder_array_clear(StrBuilderArray *array) {
+string_array_clear(StringArray *array) {
     if (array == NULL) {
         return;
     }
@@ -566,20 +565,20 @@ str_builder_array_clear(StrBuilderArray *array) {
 }
 
 void
-str_builder_array_destroy(StrBuilderArray *array) {
+string_array_destroy(StringArray *array) {
     if (array == NULL) {
         return;
     }
 
-    str_builder_array_clear(array);
+    string_array_clear(array);
     free2(array->items, array->cap*SIZEOF(*array->items));
-    *array = (StrBuilderArray){0};
+    *array = (StringArray){0};
     return;
 }
 
 int32
-str_builder_array_copy(StrBuilderArray *dest, StrBuilderArray *source) {
-    StrBuilderArray replacement = {0};
+string_array_copy(StringArray *dest, StringArray *source) {
+    StringArray replacement = {0};
     int32 err;
 
     if (dest == NULL) {
@@ -590,26 +589,26 @@ str_builder_array_copy(StrBuilderArray *dest, StrBuilderArray *source) {
     }
 
     if (source) {
-        if ((err = str_builder_array_reserve(&replacement, source->len)) < 0) {
-            str_builder_array_destroy(&replacement);
+        if ((err = string_array_reserve(&replacement, source->len)) < 0) {
+            string_array_destroy(&replacement);
             return err;
         }
         for (int32 i = 0; i < source->len; i += 1) {
-            if ((err = str_builder_array_append_copy(
+            if ((err = string_array_append_copy(
                      &replacement, &source->items[i])) < 0) {
-                str_builder_array_destroy(&replacement);
+                string_array_destroy(&replacement);
                 return err;
             }
         }
     }
 
-    str_builder_array_destroy(dest);
+    string_array_destroy(dest);
     *dest = replacement;
     return dest->len;
 }
 
 void
-str_builder_array_move(StrBuilderArray *dest, StrBuilderArray *source) {
+string_array_move(StringArray *dest, StringArray *source) {
     if (dest == NULL) {
         return;
     }
@@ -617,19 +616,19 @@ str_builder_array_move(StrBuilderArray *dest, StrBuilderArray *source) {
         return;
     }
 
-    str_builder_array_destroy(dest);
+    string_array_destroy(dest);
     if (source == NULL) {
-        *dest = (StrBuilderArray){0};
+        *dest = (StringArray){0};
         return;
     }
     *dest = *source;
-    *source = (StrBuilderArray){0};
+    *source = (StringArray){0};
     return;
 }
 
 void
-str_builder_array_swap(StrBuilderArray *left, StrBuilderArray *right) {
-    StrBuilderArray temp;
+string_array_swap(StringArray *left, StringArray *right) {
+    StringArray temp;
 
     if (left == NULL) {
         return;
@@ -645,7 +644,7 @@ str_builder_array_swap(StrBuilderArray *left, StrBuilderArray *right) {
 }
 
 int32
-str_builder_array_reserve(StrBuilderArray *array, int32 extra) {
+string_array_reserve(StringArray *array, int32 extra) {
     int64 needed;
     int32 old_cap;
     int32 new_cap;
@@ -665,7 +664,7 @@ str_builder_array_reserve(StrBuilderArray *array, int32 extra) {
         return array->cap;
     }
     if (needed >= MAXOF(array->cap)) {
-        error("StrBuilderArray only supports fewer than 2GB items.\n");
+        error("StringArray only supports fewer than 2GB items.\n");
         fatal(EXIT_FAILURE);
     }
 
@@ -689,23 +688,23 @@ str_builder_array_reserve(StrBuilderArray *array, int32 extra) {
     return array->cap;
 }
 
-StrBuilder *
-str_builder_array_append(StrBuilderArray *array) {
-    StrBuilder *item;
+String *
+string_array_append(StringArray *array) {
+    String *item;
 
-    if (str_builder_array_reserve(array, 1) < 0) {
+    if (string_array_reserve(array, 1) < 0) {
         return NULL;
     }
 
     item = &array->items[array->len];
     array->len += 1;
-    *item = (StrBuilder){0};
+    *item = (String){0};
     return item;
 }
 
 int32
-str_builder_array_append_copy(StrBuilderArray *array, StrBuilder *item) {
-    StrBuilder *dest;
+string_array_append_copy(StringArray *array, String *item) {
+    String *dest;
     int32 err;
     int32 index;
 
@@ -713,14 +712,14 @@ str_builder_array_append_copy(StrBuilderArray *array, StrBuilder *item) {
         return -EINVAL;
     }
 
-    if ((err = str_builder_array_reserve(array, 1)) < 0) {
+    if ((err = string_array_reserve(array, 1)) < 0) {
         return err;
     }
 
     index = array->len;
     dest = &array->items[index];
     array->len += 1;
-    *dest = (StrBuilder){0};
+    *dest = (String){0};
     if ((err = sb_copy(dest, item)) < 0) {
         array->len -= 1;
         sb_free(dest);
@@ -750,9 +749,9 @@ string_functions_sink(void) {
     (void)sb_move;
     (void)sb_opt_cstr;
     (void)sb_printf;
-    (void)str_builder_array_copy;
-    (void)str_builder_array_move;
-    (void)str_builder_array_swap;
+    (void)string_array_copy;
+    (void)string_array_move;
+    (void)string_array_swap;
     (void)strflex_list_at;
     (void)strflex_list_clear;
     (void)strflex_list_destroy;
@@ -795,7 +794,7 @@ main(void) {
     ASSERT(!STRIQUAL("MiXeD", 5, "match", 5));
 
     {
-        StrBuilder builder = {0};
+        String builder = {0};
         int32 old_cap;
 
         SB_APPEND(&builder, "0123456789abcde");
@@ -808,7 +807,7 @@ main(void) {
     }
 
     {
-        StrBuilder builder = {0};
+        String builder = {0};
 
         SB_APPEND(&builder, "x");
         sb_itoa(&builder, 0);
@@ -821,7 +820,7 @@ main(void) {
         sb_free(&builder);
     }
     {
-        StrBuilder builder = {0};
+        String builder = {0};
         int32 count = 0;
 
         sb_printf(&builder, "%s %.10s %d%n", "x", "abc", 7, &count);
@@ -832,7 +831,7 @@ main(void) {
     }
 
     {
-        StrBuilder builder = {0};
+        String builder = {0};
         SB_APPEND(&builder, "x");
         sb_bytes_pretty(&builder, UINT32_MAX);
         ASSERT_EQUAL(builder.data, "x4.0000GB");

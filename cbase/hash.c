@@ -870,16 +870,16 @@ static bool hash_remove_map_by_value(struct Hash_map_by_value *, int64 *);
 #define NSTRINGS 10000
 #define NBYTES 100*ALIGNMENT
 
-typedef struct String {
+typedef struct HashBenchString {
     char *s;
     int32 len;
     int32 value;
-} String;
+} HashBenchString;
 
-static String
+static HashBenchString
 random_string(Arena *arena, uint32 nbytes) {
     char characters[] = "abcdefghijklmnopqrstuvwxyz1234567890";
-    String string;
+    HashBenchString string;
     int32 len = (int32)(nbytes + (uint32)rand_int() % 16u);
     int32 size = len + 1;
 
@@ -903,9 +903,9 @@ main(void) {
     struct timespec t1;
     struct Hash_map *map = hash_create_map(100, "strings_map");
     Arena *arena = arena_create(NBYTES*NSTRINGS, "strings_arena");
-    String *strings = malloc(NSTRINGS*sizeof(*strings));
-    String str1 = {.s = "aaaaaaaaaaaaaaaa", .value = 10};
-    String str2 = {.s = "bbbbbbbbbbbbbbb", .value = 20};
+    HashBenchString *strings = malloc(NSTRINGS*sizeof(*strings));
+    HashBenchString str1 = {.s = "aaaaaaaaaaaaaaaa", .value = 10};
+    HashBenchString str2 = {.s = "bbbbbbbbbbbbbbb", .value = 20};
     uint32 initial_capacity;
     int32 test = 0;
 

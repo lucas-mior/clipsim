@@ -14,9 +14,9 @@
 
 #include "cbase.h"
 
-StrBuilder
+String
 c_string_literal(char *value, int32 value_len) {
-    StrBuilder out = {0};
+    String out = {0};
 
     SB_APPEND(&out, "\"");
     for (int32 i = 0; i < value_len; i += 1) {
@@ -80,9 +80,9 @@ c_identifier_is_keyword(char *identifier) {
     return false;
 }
 
-StrBuilder
+String
 c_identifier(char *value, int32 value_len) {
-    StrBuilder out = {0};
+    String out = {0};
 
     for (int32 i = 0; i < value_len; i += 1) {
         char c;
@@ -108,7 +108,7 @@ c_identifier(char *value, int32 value_len) {
         }
 
         if (needs_prefix) {
-            StrBuilder pref = {0};
+            String pref = {0};
 
             SB_APPEND(&pref, "c_");
             if (out.data) {
@@ -129,7 +129,7 @@ c_identifier(char *value, int32 value_len) {
 }
 
 void
-emit_string_array_init(StrBuilder *out, char *field, char **values,
+emit_string_array_init(String *out, char *field, char **values,
                               int32 *value_lens, int32 count,
                               char *fallback_prefix) {
     if (count <= 0) {
@@ -142,7 +142,7 @@ emit_string_array_init(StrBuilder *out, char *field, char **values,
         char fb[32];
         char *value;
         int32 value_len;
-        StrBuilder cs;
+        String cs;
 
         if (values[i]) {
             value = values[i];
@@ -163,7 +163,7 @@ emit_string_array_init(StrBuilder *out, char *field, char **values,
 }
 
 void
-emit_lens_init(StrBuilder *out, char *field, char **values,
+emit_lens_init(String *out, char *field, char **values,
                       int32 *value_lens, int32 count, char *fallback_prefix) {
     if (count <= 0) {
         return;
@@ -193,7 +193,7 @@ emit_lens_init(StrBuilder *out, char *field, char **values,
 }
 
 void
-emit_int_array_init(StrBuilder *out, char *field, int32 *values,
+emit_int_array_init(String *out, char *field, int32 *values,
                            int32 count) {
     if (count <= 0) {
         return;
@@ -212,7 +212,7 @@ emit_int_array_init(StrBuilder *out, char *field, int32 *values,
 }
 
 void
-emit_u64_array_init(StrBuilder *out, char *field, uint64 *values,
+emit_u64_array_init(String *out, char *field, uint64 *values,
                            int32 count) {
     if (count <= 0) {
         return;
@@ -230,7 +230,7 @@ emit_u64_array_init(StrBuilder *out, char *field, uint64 *values,
 }
 
 void
-c_emit_wrapped_expr(StrBuilder *out, char *indent, char *prefix, char *expr,
+c_emit_wrapped_expr(String *out, char *indent, char *prefix, char *expr,
                     char *suffix) {
     int32 prefix_len = strlen32(prefix);
 
@@ -279,7 +279,7 @@ test_c_string_literal(void) {
         '"',
         '\x7f',
     };
-    StrBuilder literal;
+    String literal;
 
     literal = c_string_literal("a\\b\"c", strlen32("a\\b\"c"));
     ASSERT_EQUAL(literal.data, "\"a\\\\b\\\"c\"");
@@ -297,7 +297,7 @@ test_c_string_literal(void) {
 
 static void
 test_c_identifier(void) {
-    StrBuilder identifier;
+    String identifier;
 
     identifier = c_identifier("1 bad-name", strlen32("1 bad-name"));
     ASSERT_EQUAL(identifier.data, "c_1_bad_name");
@@ -325,7 +325,7 @@ test_c_identifier(void) {
 
 static void
 test_emit_string_and_lens_inits(void) {
-    StrBuilder out = {0};
+    String out = {0};
     char *values[3] = {"alpha", NULL, "quo\"te"};
     int32 lens[3] = {5, 0, 6};
 
@@ -345,7 +345,7 @@ test_emit_string_and_lens_inits(void) {
 
 static void
 test_emit_number_inits(void) {
-    StrBuilder out = {0};
+    String out = {0};
     int32 ints[3] = {-1, 0, 42};
     uint64 u64s[2] = {UINT64_C(0x1234), UINT64_C(0)};
 
@@ -362,7 +362,7 @@ test_emit_number_inits(void) {
 
 static void
 test_emit_wrapped_expr(void) {
-    StrBuilder out = {0};
+    String out = {0};
 
     c_emit_wrapped_expr(&out, "  ", "return ", "f(a,b)", ";");
     ASSERT_EQUAL(out.data, "  return f(\n"

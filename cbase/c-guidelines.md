@@ -301,7 +301,7 @@ In general, we must always know the lengths of our strings:
 In general, pass `char *string` and `int32 string_len` around. Also use this
 convention in struct definitions.
 
-If the string is expected to be appended to later, use StrBuilder directly:
+If the string is expected to be appended to later, use String directly:
 ```c
 // bad
 typedef struct MyStruct {
@@ -316,8 +316,8 @@ typedef struct MyStruct {
 
 // good
 typedef struct MyStruct {
-    StrBuilder string;
-    StrBuilder other;
+    String string;
+    String other;
 } MyStruct;
 ```
 
@@ -364,7 +364,7 @@ That means to also avoid calling `strlen32`:
   receive only the `char *pointer` without the length. In this case it is
   ok to let the function call `strlen32` inside. But try to avoid it, prefer to
   pass the `char *string` and `int32 string_len` via `STRLIT("literal")`.
-- `StrBuilder`: use this struct and its functions to build long, dynamic
+- `String`: use this struct and its functions to build long, dynamic
   strings. Do not use it where a single
   `SNPRINTF(stack_array, "format_%s_string", args);` would be enough.
   * Use `SB_APPEND` for appending literals or strings of known length, and
@@ -405,7 +405,7 @@ Also, never create stupid string helpers like
 `<module>_string_copy`,
 `<module>_string_equal`,
 `<module>_string_destroy`,
-`<module>_string_free`, etc. Use StrBuilder, memcpy64, xstrndup, whatever,
+`<module>_string_free`, etc. Use String, memcpy64, xstrndup, whatever,
 but NEVER create helper like those.
 
 ## Comparing strings:

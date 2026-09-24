@@ -101,7 +101,7 @@
       #undef XX_2
       C_KEYWORD_COUNT,
   };
-  typedef struct StrBuilder StrBuilder;
+  typedef struct String String;
 #endif
 
 enum TokenizeFlags {
@@ -271,13 +271,13 @@ void free_line(Line *);
 Document *parse_c_text(char *, int32);
 Document *parse_text(char *, int32);
 Document *parse_text_with_flags(char *, int32, int32);
-void c_emit_wrapped_expr(StrBuilder *, char *, char *, char *, char *);
-StrBuilder c_identifier(char *, int32);
+void c_emit_wrapped_expr(String *, char *, char *, char *, char *);
+String c_identifier(char *, int32);
 bool c_identifier_is_keyword(char *);
-StrBuilder c_string_literal(char *, int32);
-void emit_int_array_init(StrBuilder *, char *, int32 *, int32);
+String c_string_literal(char *, int32);
+void emit_int_array_init(String *, char *, int32 *, int32);
 void emit_lens_init(
-    StrBuilder *,
+    String *,
     char *,
     char **,
     int32 *,
@@ -285,14 +285,14 @@ void emit_lens_init(
     char *
 );
 void emit_string_array_init(
-    StrBuilder *,
+    String *,
     char *,
     char **,
     int32 *,
     int32,
     char *
 );
-void emit_u64_array_init(StrBuilder *, char *, uint64 *, int32);
+void emit_u64_array_init(String *, char *, uint64 *, int32);
 
 #define token_is_2(TOKEN, WHAT)                \
 _Generic((TOKEN),                              \
