@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
+#define CBASE_INCLUDE_ONLY 1
+
 #if !defined(MINMAX_C)
 #define MINMAX_C
 
@@ -446,3 +448,5 @@ main(void) {
 #endif
 
 #endif /* MINMAX_C */
+
+#undef CBASE_INCLUDE_ONLY

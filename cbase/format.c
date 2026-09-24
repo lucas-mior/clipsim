@@ -30,12 +30,6 @@ enum {
     FORMAT_DOUBLE_FRACTION_BITS = 52,
     FORMAT_DOUBLE_EXPONENT_BIAS = 1023,
     FORMAT_DOUBLE_SUBNORMAL_EXPONENT = -1022,
-    FORMAT_UTF8_MAX_BYTES = 4,
-    FORMAT_UNICODE_MAX = 0x10FFFF,
-    FORMAT_UNICODE_SURROGATE_FIRST = 0xD800,
-    FORMAT_UNICODE_SURROGATE_LAST = 0xDFFF,
-    FORMAT_UNICODE_SURROGATE_LOW_FIRST = 0xDC00,
-    FORMAT_UNICODE_SURROGATE_MASK = 0x3FF,
     FORMAT_BIG_UINT_WORD_BITS = 32,
     FORMAT_BIG_UINT_MAX_WORDS = 640,
     FORMAT_LONG_DOUBLE_DOUBLE_FRACTION_BITS = 52,
@@ -46,6 +40,15 @@ enum {
     FORMAT_LONG_DOUBLE_BINARY128_FRACTION_BITS = 112,
     FORMAT_LONG_DOUBLE_BINARY128_EXPONENT_BIAS = 16383,
 };
+
+#if FLT_RADIX == 2 \
+    && ((LDBL_MANT_DIG == DBL_MANT_DIG && LDBL_MAX_EXP == DBL_MAX_EXP) \
+        || (LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384) \
+        || (LDBL_MANT_DIG == 113 && LDBL_MAX_EXP == 16384))
+#define FORMAT_LONG_DOUBLE_SUPPORTED 1
+#else
+#define FORMAT_LONG_DOUBLE_SUPPORTED 0
+#endif
 
 _Static_assert(FORMAT_FLOAT_MAX_FIXED_PREFIX
                + FORMAT_FLOAT_MAX_PRECISION < FORMAT_FLOAT_RYU_BUFFER_SIZE,
@@ -78,7 +81,6 @@ enum FormatLength {
     FORMAT_LENGTH_NONE,
     FORMAT_LENGTH_HH,
     FORMAT_LENGTH_H,
-    FORMAT_LENGTH_L,
     FORMAT_LENGTH_LL,
     FORMAT_LENGTH_BIG_L,
     FORMAT_LENGTH_W8,
@@ -332,8 +334,7 @@ format_parse_length(char **cursor, FormatSpec *spec) {
         spec->length = FORMAT_LENGTH_LL;
         *cursor += 2;
     } else if (**cursor == 'l') {
-        spec->length = FORMAT_LENGTH_L;
-        *cursor += 1;
+        return -EINVAL;
     } else if (**cursor == 'L') {
         spec->length = FORMAT_LENGTH_BIG_L;
         *cursor += 1;
@@ -384,7 +385,7 @@ format_length_is_integer(enum FormatLength length) {
 
 static bool
 format_length_is_char_string(enum FormatLength length) {
-    return length == FORMAT_LENGTH_NONE || length == FORMAT_LENGTH_L;
+    return length == FORMAT_LENGTH_NONE;
 }
 
 static bool
@@ -1132,315 +1133,6 @@ format_handle_string(FormatSink *sink, FormatSpec *spec, FormatArgs *args) {
 }
 
 
-static bool
-format_unicode_is_surrogate(uint32 rune) {
-    return BETWEEN(rune, FORMAT_UNICODE_SURROGATE_FIRST,
-                   FORMAT_UNICODE_SURROGATE_LAST);
-}
-
-static int32
-format_encode_utf8_scalar(uint32 rune, char *buffer, int32 *len) {
-    ASSERT(buffer != NULL);
-    ASSERT(len != NULL);
-
-    if (rune > FORMAT_UNICODE_MAX || format_unicode_is_surrogate(rune)) {
-        return -EILSEQ;
-    }
-
-    *len = utf8_encode_raw(rune, buffer);
-    if (*len <= 0 || *len > FORMAT_UTF8_MAX_BYTES) {
-        return -EILSEQ;
-    }
-
-    return 0;
-}
-
-static int32
-format_wint_to_rune(wint_t value, uint32 *rune) {
-    uint64 raw;
-
-    ASSERT(rune != NULL);
-
-    raw = (uint64)value;
-    if (raw > FORMAT_UNICODE_MAX) {
-        return -EILSEQ;
-    }
-
-    *rune = (uint32)raw;
-    if (format_unicode_is_surrogate(*rune)) {
-        return -EILSEQ;
-    }
-
-    return 0;
-}
-
-static int32
-format_wchar32_to_rune(wchar_t value, uint32 *rune) {
-    uint64 raw;
-
-    ASSERT(rune != NULL);
-
-    raw = (uint64)value;
-    if (raw > FORMAT_UNICODE_MAX) {
-        return -EILSEQ;
-    }
-
-    *rune = (uint32)raw;
-    if (format_unicode_is_surrogate(*rune)) {
-        return -EILSEQ;
-    }
-
-    return 0;
-}
-
-static bool
-format_wchar16_is_high_surrogate(uint32 code_unit) {
-    return BETWEEN(code_unit, FORMAT_UNICODE_SURROGATE_FIRST,
-                   FORMAT_UNICODE_SURROGATE_LOW_FIRST - 1);
-}
-
-static bool
-format_wchar16_is_low_surrogate(uint32 code_unit) {
-    return BETWEEN(code_unit, FORMAT_UNICODE_SURROGATE_LOW_FIRST,
-                   FORMAT_UNICODE_SURROGATE_LAST);
-}
-
-static uint32
-format_wchar16_pair_to_rune(uint32 high, uint32 low) {
-    uint32 high_bits;
-    uint32 low_bits;
-
-    ASSERT(format_wchar16_is_high_surrogate(high));
-    ASSERT(format_wchar16_is_low_surrogate(low));
-
-    high_bits = (high - FORMAT_UNICODE_SURROGATE_FIRST)
-                & FORMAT_UNICODE_SURROGATE_MASK;
-    low_bits = (low - FORMAT_UNICODE_SURROGATE_LOW_FIRST)
-               & FORMAT_UNICODE_SURROGATE_MASK;
-    return 0x10000 + (high_bits << 10) + low_bits;
-}
-
-static int32
-format_wide_string_next_rune(wchar_t *string, int64 index, uint32 *rune,
-                             int64 *consumed) {
-    ASSERT(string != NULL);
-    ASSERT_NON_NEGATIVE(index);
-    ASSERT(rune != NULL);
-    ASSERT(consumed != NULL);
-
-#if WCHAR_MAX <= 0xffff
-    {
-        uint32 first;
-
-        first = (uint16)string[index];
-        if (format_wchar16_is_high_surrogate(first)) {
-            uint32 second = (uint16)string[index + 1];
-
-            if (!format_wchar16_is_low_surrogate(second)) {
-                return -EILSEQ;
-            }
-            *rune = format_wchar16_pair_to_rune(first, second);
-            *consumed = 2;
-            return 0;
-        }
-        if (format_wchar16_is_low_surrogate(first)) {
-            return -EILSEQ;
-        }
-
-        *rune = first;
-        *consumed = 1;
-        return 0;
-    }
-#elif WCHAR_MAX <= 0xffffffffu
-    {
-        int32 status;
-
-        if ((status = format_wchar32_to_rune(string[index], rune)) < 0) {
-            return status;
-        }
-        *consumed = 1;
-        return 0;
-    }
-#else
-    return -EILSEQ;
-#endif
-}
-
-static int32
-format_load_wide_string_precision(FormatSpec *spec, FormatArgs *args) {
-    ASSERT(spec != NULL);
-    ASSERT(args != NULL);
-
-    if (spec->precision_kind == FORMAT_PRECISION_ARG) {
-        int32 precision = va_arg(args->args, int32);
-
-        if (precision < 0) {
-            spec->precision = 0;
-            spec->precision_kind = FORMAT_PRECISION_NONE;
-        } else {
-            spec->precision = precision;
-            spec->precision_kind = FORMAT_PRECISION_LITERAL;
-        }
-    }
-
-    return 0;
-}
-
-static int32
-format_wide_string_utf8_len(wchar_t *string, int64 limit, int64 *len) {
-    int64 total;
-    int64 index;
-
-    ASSERT(string != NULL);
-    ASSERT(len != NULL);
-    ASSERT(limit >= -1);
-
-    total = 0;
-    index = 0;
-    while (string[index] != 0) {
-        char encoded[FORMAT_UTF8_MAX_BYTES];
-        int64 consumed;
-        uint32 rune;
-        int32 encoded_len;
-        int32 status;
-
-        if ((status = format_wide_string_next_rune(string, index, &rune,
-                                                   &consumed)) < 0) {
-            return status;
-        }
-        if ((status = format_encode_utf8_scalar(rune, encoded,
-                                                &encoded_len)) < 0) {
-            return status;
-        }
-        if (limit >= 0 && encoded_len > limit - total) {
-            break;
-        }
-        if (encoded_len > INT64_MAX - total) {
-            return -EOVERFLOW;
-        }
-
-        total += encoded_len;
-        index += consumed;
-    }
-
-    *len = total;
-    return 0;
-}
-
-static void
-format_write_wide_string_utf8(FormatSink *sink, wchar_t *string, int64 len) {
-    int64 written;
-    int64 index;
-
-    ASSERT(sink != NULL);
-    ASSERT(string != NULL);
-    ASSERT_NON_NEGATIVE(len);
-
-    written = 0;
-    index = 0;
-    while (written < len) {
-        char encoded[FORMAT_UTF8_MAX_BYTES];
-        int64 consumed;
-        uint32 rune;
-        int32 encoded_len;
-        int32 status;
-
-        status = format_wide_string_next_rune(string, index, &rune, &consumed);
-        ASSERT_EQUAL(status, 0);
-        status = format_encode_utf8_scalar(rune, encoded, &encoded_len);
-        ASSERT_EQUAL(status, 0);
-        ASSERT(encoded_len <= len - written);
-
-        format_sink_write(sink, encoded, encoded_len);
-        written += encoded_len;
-        index += consumed;
-    }
-    return;
-}
-
-static int32
-format_handle_wide_char(FormatSink *sink, FormatSpec *spec,
-                        FormatArgs *args) {
-    char encoded[FORMAT_UTF8_MAX_BYTES];
-    uint32 rune;
-    int32 encoded_len;
-    int32 status;
-    wint_t value;
-
-    ASSERT(sink != NULL);
-    ASSERT(spec != NULL);
-    ASSERT(args != NULL);
-
-    if ((status = format_load_dynamic_width(spec, args)) < 0) {
-        return status;
-    }
-
-    value = va_arg(args->args, wint_t);
-    if ((status = format_wint_to_rune(value, &rune)) < 0) {
-        return status;
-    }
-    if ((status = format_encode_utf8_scalar(rune, encoded,
-                                            &encoded_len)) < 0) {
-        return status;
-    }
-
-    format_write_padded_bytes(sink, spec, encoded, encoded_len);
-    return sink->status;
-}
-
-static int32
-format_handle_wide_string(FormatSink *sink, FormatSpec *spec,
-                          FormatArgs *args) {
-    int64 limit;
-    int64 len;
-    int64 spaces;
-    int32 status;
-    wchar_t *string;
-
-    ASSERT(sink != NULL);
-    ASSERT(spec != NULL);
-    ASSERT(args != NULL);
-
-    if ((status = format_load_dynamic_width(spec, args)) < 0) {
-        return status;
-    }
-    if ((status = format_load_wide_string_precision(spec, args)) < 0) {
-        return status;
-    }
-
-    string = va_arg(args->args, wchar_t *);
-    if (string == NULL) {
-        char *null_string = "(null)";
-
-        if (format_has_precision(spec)) {
-            len = format_string_len_limited(null_string, spec->precision);
-        } else {
-            len = format_string_len_limited(null_string, INT64_MAX);
-        }
-        format_write_padded_bytes(sink, spec, null_string, len);
-        return sink->status;
-    }
-
-    if (format_has_precision(spec)) {
-        limit = spec->precision;
-    } else {
-        limit = -1;
-    }
-    if ((status = format_wide_string_utf8_len(string, limit, &len)) < 0) {
-        return status;
-    }
-
-    spaces = format_pad_len(spec->width, len);
-    if ((spec->flags & FORMAT_FLAG_LEFT) == 0) {
-        format_sink_write_repeat(sink, ' ', spaces);
-    }
-    format_write_wide_string_utf8(sink, string, len);
-    if ((spec->flags & FORMAT_FLAG_LEFT) != 0) {
-        format_sink_write_repeat(sink, ' ', spaces);
-    }
-    return sink->status;
-}
-
 static int32
 format_handle_char_string(FormatSink *sink, FormatSpec *spec,
                           FormatArgs *args) {
@@ -1449,16 +1141,10 @@ format_handle_char_string(FormatSink *sink, FormatSpec *spec,
     ASSERT(args != NULL);
 
     if (spec->conversion == 'c') {
-        if (spec->length == FORMAT_LENGTH_L) {
-            return format_handle_wide_char(sink, spec, args);
-        }
         return format_handle_char(sink, spec, args);
     }
 
     ASSERT(spec->conversion == 's');
-    if (spec->length == FORMAT_LENGTH_L) {
-        return format_handle_wide_string(sink, spec, args);
-    }
     return format_handle_string(sink, spec, args);
 }
 
@@ -1694,7 +1380,7 @@ format_big_uint_ensure_word(FormatBigUInt *value, int32 index) {
     return 0;
 }
 
-static int32
+static int32 UNUSED
 format_big_uint_set_bit(FormatBigUInt *value, int32 bit_index) {
     int32 word_index;
     int32 bit_offset;
@@ -1713,7 +1399,7 @@ format_big_uint_set_bit(FormatBigUInt *value, int32 bit_index) {
     return 0;
 }
 
-static int32
+static int32 UNUSED
 format_big_uint_from_uint64(FormatBigUInt *value, uint64 source) {
     ASSERT(value != NULL);
 
@@ -1729,7 +1415,7 @@ format_big_uint_from_uint64(FormatBigUInt *value, uint64 source) {
     return 0;
 }
 
-static int32
+static int32 UNUSED
 format_big_uint_from_uint128_parts(FormatBigUInt *value, uint64 low,
                                    uint64 high) {
     ASSERT(value != NULL);
@@ -1744,7 +1430,7 @@ format_big_uint_from_uint128_parts(FormatBigUInt *value, uint64 low,
     return 0;
 }
 
-static int32
+static int32 UNUSED
 format_big_uint_add_one(FormatBigUInt *value) {
     uint64 carry;
 
@@ -1774,7 +1460,7 @@ format_big_uint_add_one(FormatBigUInt *value) {
     return 0;
 }
 
-static uint64
+static uint64 UNUSED
 format_read_le_uint64(uchar *bytes) {
     uint64 value;
 
@@ -1788,7 +1474,7 @@ format_read_le_uint64(uchar *bytes) {
     return value;
 }
 
-static uint64
+static uint64 UNUSED
 format_read_be_uint64(uchar *bytes) {
     uint64 value;
 
@@ -1802,7 +1488,7 @@ format_read_be_uint64(uchar *bytes) {
     return value;
 }
 
-static bool
+static bool UNUSED
 format_host_is_little_endian(void) {
     uint32 one;
     uchar bytes[SIZEOF(one)];
@@ -2157,7 +1843,7 @@ format_binary_float_scaled_decimal(FormatBinaryFloat *parts,
     return 0;
 }
 
-static int32
+static int32 UNUSED
 format_binary_float_set_zero(FormatBinaryFloat *parts, bool negative,
                              int32 precision_bits) {
     ASSERT(parts != NULL);
@@ -2170,6 +1856,8 @@ format_binary_float_set_zero(FormatBinaryFloat *parts, bool negative,
     parts->zero = true;
     return 0;
 }
+
+#if FORMAT_LONG_DOUBLE_SUPPORTED
 
 static int32
 format_decode_binary64_long_double(ldouble value,
@@ -2356,6 +2044,8 @@ format_decompose_long_double(ldouble value, FormatBinaryFloat *parts) {
     return -ENOSYS;
 #endif
 }
+
+#endif
 
 static bool
 format_float_is_upper(char conversion) {
@@ -2734,7 +2424,7 @@ format_float_hex_append_exponent(char *buffer, int32 capacity, int32 len,
     return format_buffer_write(buffer, capacity, len, digits, digit_len);
 }
 
-static int32
+static int32 UNUSED
 format_float_decimal_append_exponent(char *buffer, int32 capacity,
                                      int32 len, int32 exponent,
                                      bool upper) {
@@ -2782,7 +2472,7 @@ format_float_decimal_append_exponent(char *buffer, int32 capacity,
     return format_buffer_write(buffer, capacity, len, digits, digit_len);
 }
 
-static bool
+static bool UNUSED
 format_remainder_should_round(enum FormatRemainderHalf remainder,
                               bool odd) {
     if (remainder == FORMAT_REMAINDER_MORE_HALF) {
@@ -2794,12 +2484,14 @@ format_remainder_should_round(enum FormatRemainderHalf remainder,
     return false;
 }
 
-static bool
+static bool UNUSED
 format_big_uint_is_odd(FormatBigUInt *value) {
     ASSERT(value != NULL);
 
     return value->len > 0 && (value->words[0] & 1) != 0;
 }
+
+#if FORMAT_LONG_DOUBLE_SUPPORTED
 
 static int32
 format_big_uint_round_half_even(FormatBigUInt *value,
@@ -3042,8 +2734,8 @@ format_long_double_scientific_exponent_small(FormatBinaryFloat *parts,
     char digits[16];
 
     ASSERT(parts != NULL);
-    ASSERT(value > 0.0L && value < 1.0L);
     ASSERT(exponent != NULL);
+    ASSERT(value > 0.0L && value < 1.0L);
 
     estimate_float = floorl(log10l(value));
     if (estimate_float < INT32_MIN || estimate_float > INT32_MAX) {
@@ -3088,8 +2780,8 @@ format_long_double_scientific_exponent(FormatBinaryFloat *parts,
     int32 status;
 
     ASSERT(parts != NULL);
-    ASSERT(value >= 0.0L);
     ASSERT(exponent != NULL);
+    ASSERT(value >= 0.0L);
 
     if (parts->zero) {
         *exponent = 0;
@@ -3802,6 +3494,43 @@ format_long_double_generate_body(FormatSpec *spec, ldouble value,
 
     return -ENOSYS;
 }
+
+#else
+
+static int32 UNUSED
+format_decompose_long_double(ldouble value, FormatBinaryFloat *parts) {
+    ASSERT(parts != NULL);
+
+    (void)value;
+    return -ENOSYS;
+}
+
+static char
+format_long_double_sign(ldouble value, FormatSpec *spec) {
+    ASSERT(spec != NULL);
+
+    (void)value;
+    if ((spec->flags & FORMAT_FLAG_SIGN) != 0) {
+        return '+';
+    }
+    if ((spec->flags & FORMAT_FLAG_SPACE) != 0) {
+        return ' ';
+    }
+    return '\0';
+}
+
+static int32
+format_long_double_generate_body(FormatSpec *spec, ldouble value,
+                                 char *buffer, int32 capacity) {
+    ASSERT(spec != NULL);
+    ASSERT(buffer != NULL);
+    ASSERT_POSITIVE(capacity);
+
+    (void)value;
+    return -ENOSYS;
+}
+
+#endif
 
 static void
 format_write_float_sign(FormatSink *sink, FormatSpec *spec, char sign,
@@ -4583,16 +4312,6 @@ test_format_parser_valid_specs(void) {
     ASSERT_EQUAL(spec.conversion, 'B');
     ASSERT(spec.length == FORMAT_LENGTH_W64);
 
-    spec = format_test_parse_one("%lc");
-    ASSERT_EQUAL(spec.conversion, 'c');
-    ASSERT(spec.length == FORMAT_LENGTH_L);
-
-    spec = format_test_parse_one("%.5ls");
-    ASSERT_EQUAL(spec.conversion, 's');
-    ASSERT(spec.length == FORMAT_LENGTH_L);
-    ASSERT(spec.precision_kind == FORMAT_PRECISION_LITERAL);
-    ASSERT_EQUAL(spec.precision, 5);
-
     spec = format_test_parse_one("%La");
     ASSERT_EQUAL(spec.conversion, 'a');
     ASSERT(spec.length == FORMAT_LENGTH_BIG_L);
@@ -4615,6 +4334,8 @@ test_format_parser_invalid_specs(void) {
     ASSERT_EQUAL(format_test_validate("%q"), -EINVAL);
 
     ASSERT_EQUAL(format_test_validate("%ld"), -EINVAL);
+    ASSERT_EQUAL(format_test_validate("%lc"), -EINVAL);
+    ASSERT_EQUAL(format_test_validate("%.5ls"), -EINVAL);
     ASSERT_EQUAL(format_test_validate("%zd"), -EINVAL);
     ASSERT_EQUAL(format_test_validate("%td"), -EINVAL);
     ASSERT_EQUAL(format_test_validate("%jd"), -EINVAL);
@@ -4856,93 +4577,6 @@ test_format_char_string_outputs(void) {
     return;
 }
 
-
-static void
-test_format_wide_char_string_outputs(void) {
-    char nul_char_expected[] = {'\0'};
-    char e_acute[] = {(char)0xC3, (char)0xA9};
-    char euro[] = {(char)0xE2, (char)0x82, (char)0xAC};
-    char emoji[] = {(char)0xF0, (char)0x9F, (char)0x98, (char)0x80};
-    char wide_text_expected[] = {
-        'A', (char)0xC3, (char)0xA9,
-        (char)0xE2, (char)0x82, (char)0xAC,
-    };
-    char wide_text_precision_expected[] = {
-        'A', (char)0xC3, (char)0xA9,
-    };
-    char wide_text_width_expected[] = {
-        ' ', ' ', 'A', (char)0xC3, (char)0xA9,
-    };
-    char wide_text_left_expected[] = {
-        'A', (char)0xC3, (char)0xA9, ' ', ' ',
-    };
-    wchar_t wide_text[] = {'A', 0x00E9, 0x20AC, 0};
-    wchar_t bad_high[] = {(wchar_t)0xD800, 0};
-    wchar_t bad_low[] = {(wchar_t)0xDC00, 0};
-    char buffer[32];
-
-    test_format_bytes_capacity("A", 1, "%lc", (wint_t)'A');
-    test_format_bytes_capacity(e_acute, 2, "%lc", (wint_t)0x00E9);
-    test_format_bytes_capacity(euro, 3, "%lc", (wint_t)0x20AC);
-    test_format_bytes_capacity(emoji, 4, "%lc", (wint_t)0x1F600);
-    test_format_bytes_capacity("  A", 3, "%3lc", (wint_t)'A');
-    test_format_bytes_capacity("A  ", 3, "%-3lc", (wint_t)'A');
-    test_format_bytes_capacity(nul_char_expected, 1, "%lc", (wint_t)0);
-
-    test_format_bytes_capacity(wide_text_expected, 6, "%ls", wide_text);
-    test_format_bytes_capacity(wide_text_precision_expected, 3, "%.3ls",
-                               wide_text);
-    test_format_bytes_capacity(wide_text_precision_expected, 3, "%.4ls",
-                               wide_text);
-    test_format_bytes_capacity(wide_text_width_expected, 5, "%5.3ls",
-                               wide_text);
-    test_format_bytes_capacity(wide_text_left_expected, 5, "%-5.3ls",
-                               wide_text);
-    test_format_bytes_capacity(wide_text_precision_expected, 3, "%.*ls", 3,
-                               wide_text);
-    test_format_bytes_capacity(wide_text_expected, 6, "%.*ls", -1,
-                               wide_text);
-    test_format_bytes_capacity("(null)", 6, "%ls", (wchar_t *)NULL);
-    test_format_bytes_capacity("(nu", 3, "%.3ls", (wchar_t *)NULL);
-
-    {
-        wchar_t wide_emoji[3] = {0};
-
-#if WCHAR_MAX <= 0xffff
-        wide_emoji[0] = (wchar_t)0xD83D;
-        wide_emoji[1] = (wchar_t)0xDE00;
-#else
-        wide_emoji[0] = (wchar_t)0x1F600;
-#endif
-        test_format_bytes_capacity(emoji, 4, "%ls", wide_emoji);
-    }
-
-    memset(buffer, 0x7f, SIZEOF(buffer));
-    ASSERT_EQUAL(format_test_snprintf(buffer, SIZEOF(buffer), "%lc",
-                                      (wint_t)0xD800), -EILSEQ);
-    ASSERT_EQUAL(buffer[0], '\0');
-    ASSERT_EQUAL(buffer[1], (char)0x7f);
-
-    memset(buffer, 0x7f, SIZEOF(buffer));
-    ASSERT_EQUAL(format_test_snprintf(buffer, SIZEOF(buffer), "%lc",
-                                      (wint_t)0x110000), -EILSEQ);
-    ASSERT_EQUAL(buffer[0], '\0');
-    ASSERT_EQUAL(buffer[1], (char)0x7f);
-
-    memset(buffer, 0x7f, SIZEOF(buffer));
-    ASSERT_EQUAL(format_test_snprintf(buffer, SIZEOF(buffer), "%ls",
-                                      bad_high), -EILSEQ);
-    ASSERT_EQUAL(buffer[0], '\0');
-    ASSERT_EQUAL(buffer[1], (char)0x7f);
-
-    memset(buffer, 0x7f, SIZEOF(buffer));
-    ASSERT_EQUAL(format_test_snprintf(buffer, SIZEOF(buffer), "%ls",
-                                      bad_low), -EILSEQ);
-    ASSERT_EQUAL(buffer[0], '\0');
-    ASSERT_EQUAL(buffer[1], (char)0x7f);
-
-    return;
-}
 
 static void
 test_format_pointer_count_outputs(void) {
@@ -5601,7 +5235,6 @@ main(void) {
     test_format_parser_invalid_specs();
     test_format_integer_outputs();
     test_format_char_string_outputs();
-    test_format_wide_char_string_outputs();
     test_format_pointer_count_outputs();
     test_format_printf_float_outputs();
     test_format_printf_general_outputs();

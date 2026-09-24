@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
+#define CBASE_INCLUDE_ONLY 1
+
 #include "base_macros.h"
 
 #if CC_CLANG
@@ -660,3 +662,5 @@ main(void) {
 #if CC_CLANG
 #pragma clang diagnostic pop
 #endif
+
+#undef CBASE_INCLUDE_ONLY

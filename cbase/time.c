@@ -14,6 +14,9 @@
 
 #include "cbase.h"
 
+static bool timezone_initialized = false;
+static time_t timezone_offset = 0;
+
 int64
 strftime2(char *buffer, int64 size, char *format, struct tm *time_info) {
     int64 n;

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
+#define CBASE_INCLUDE_ONLY 1
+
 #if !defined(SORT_C)
 #define SORT_C
 
@@ -283,3 +285,5 @@ main(void) {
 #endif /* TESTING_sort */
 
 #endif /* SORT_C */
+
+#undef CBASE_INCLUDE_ONLY

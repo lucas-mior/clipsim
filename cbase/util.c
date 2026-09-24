@@ -14,6 +14,46 @@
 
 #include "cbase.h"
 
+char *program = __FILE__;
+int32 program_len;
+
+#if OS_UNIX
+#define XSIGNAL(NAME) [NAME] = #NAME
+static char *signal_names[] = {
+    XSIGNAL(SIGABRT),
+    XSIGNAL(SIGALRM),
+    XSIGNAL(SIGVTALRM),
+    XSIGNAL(SIGPROF),
+    XSIGNAL(SIGBUS),
+    XSIGNAL(SIGCHLD),
+    XSIGNAL(SIGCONT),
+    XSIGNAL(SIGFPE),
+    XSIGNAL(SIGHUP),
+    XSIGNAL(SIGILL),
+    XSIGNAL(SIGINT),
+    XSIGNAL(SIGKILL),
+    XSIGNAL(SIGPIPE),
+#if defined(SIGPOLL)
+    XSIGNAL(SIGPOLL),
+#endif
+    XSIGNAL(SIGQUIT),
+    XSIGNAL(SIGSEGV),
+    XSIGNAL(SIGSTOP),
+    XSIGNAL(SIGSYS),
+    XSIGNAL(SIGTERM),
+    XSIGNAL(SIGTSTP),
+    XSIGNAL(SIGTTIN),
+    XSIGNAL(SIGTTOU),
+    XSIGNAL(SIGTRAP),
+    XSIGNAL(SIGURG),
+    XSIGNAL(SIGUSR1),
+    XSIGNAL(SIGUSR2),
+    XSIGNAL(SIGXCPU),
+    XSIGNAL(SIGXFSZ),
+};
+#undef XSIGNAL
+#endif
+
 void
 here_impl(char *file, int32 line, char *func) {
     static llong here_counter = 0;

@@ -717,6 +717,170 @@ common_gcc_flags_to_msvc() {
 }
 
 
+common_test_cbase_archive_sources () {
+    awk '
+        /^#define CBASE_IMPLEMENTED 1$/ {
+            implementation = 1
+            next
+        }
+        implementation \
+                && /^[[:space:]]*#[[:space:]]*include[[:space:]]*"[^"]+\.c"/ {
+            source = $0
+            sub(/^[^"]*"/, "", source)
+            sub(/".*$/, "", source)
+            print "cbase/" source
+        }
+    ' cbase/cbase.h
+}
+
+common_test_cbase_source_is_include_only () {
+    source_file=$1
+    include_only_pattern='^[[:space:]]*#[[:space:]]*define[[:space:]]+'
+    include_only_pattern="${include_only_pattern}CBASE_INCLUDE_ONLY"
+    include_only_pattern="${include_only_pattern}[[:space:]]+1([[:space:]]|$)"
+
+    grep -Eq "$include_only_pattern" "$source_file"
+}
+
+common_test_prepare_cbase_archive () {
+    test_cbase_archive=
+
+    if [ "${TEST_CBASE_ARCHIVE:-1}" = 0 ]; then
+        return 0
+    fi
+
+    case "${mode:-}" in
+    cross)
+        return 0
+        ;;
+    esac
+
+    case "$CC" in
+    clang-cl|*/clang-cl|cl|*/cl|cl.exe|*/cl.exe)
+        return 0
+        ;;
+    esac
+
+    test_cbase_ar=${AR:-ar}
+    test_cbase_ar_program=$(printf '%s\n' "$test_cbase_ar" | awk '{print $1}')
+    if ! common_command_exists "$test_cbase_ar_program"; then
+        error "Static archive tool not found: %s\n" "$test_cbase_ar_program"
+        exit 1
+    fi
+
+    test_cbase_objdir=${TEST_CBASE_OBJDIR:-bin/obj/test-cbase}
+    test_cbase_archive=$test_cbase_objdir/libcbase.a
+    test_cbase_flags_file=$test_cbase_objdir/flags
+    test_cbase_compile_flags="$CPPFLAGS $TEST_CPPFLAGS $CFLAGS $TEST_CFLAGS"
+    if [ "${TEST_DEFINE_TESTING:-1}" != 0 ]; then
+        test_cbase_compile_flags="$test_cbase_compile_flags -DTESTING=1"
+    fi
+
+    if [ "${TEST_DISABLE_UNUSED_VARIABLE_WARNING:-1}" != 0 ]; then
+        test_cbase_no_unused=-Wno-unused-variable
+        test_cbase_compile_flags="$test_cbase_compile_flags \
+$test_cbase_no_unused"
+    fi
+    test_cbase_compile_flags="$test_cbase_compile_flags $TEST_EXTRA_DEFS"
+
+    test_cbase_sources=
+    test_cbase_objects=
+    for test_cbase_source in $(common_test_cbase_archive_sources); do
+        if [ ! -f "$test_cbase_source" ]; then
+            error "Cbase archive source not found: %s\n" "$test_cbase_source"
+            exit 1
+        fi
+        if common_test_cbase_source_is_include_only "$test_cbase_source"; then
+            continue
+        fi
+
+        test_cbase_module=${test_cbase_source##*/}
+        test_cbase_module=${test_cbase_module%.c}
+        test_cbase_object=$test_cbase_objdir/$test_cbase_module.o
+        test_cbase_sources="$test_cbase_sources $test_cbase_source"
+        test_cbase_objects="$test_cbase_objects $test_cbase_object"
+    done
+
+    if [ -z "$test_cbase_sources" ]; then
+        error "No cbase archive sources found.\n"
+        exit 1
+    fi
+
+    mkdir -p "$test_cbase_objdir"
+
+    test_cbase_flags="CC=$CC
+AR=$test_cbase_ar
+OS=${OS:-}
+COMPILE_FLAGS=$test_cbase_compile_flags
+SOURCES=$test_cbase_sources"
+    if [ ! -f "$test_cbase_flags_file" ] \
+            || ! printf '%s\n' "$test_cbase_flags" \
+                | cmp -s - "$test_cbase_flags_file"; then
+        rm -f "$test_cbase_objdir"/*.o "$test_cbase_archive"
+        printf '%s\n' "$test_cbase_flags" > "$test_cbase_flags_file"
+    fi
+
+    test_cbase_rebuild_all=0
+    if [ ! -f "$test_cbase_archive" ] \
+            || [ cbase/common.sh -nt "$test_cbase_archive" ] \
+            || find cbase -type f \
+                \( -name '*.c' -o -name '*.h' \) \
+                -newer "$test_cbase_archive" -print | grep -q .; then
+        test_cbase_rebuild_all=1
+    fi
+
+    test_cbase_compile_pids=
+    test_cbase_rebuild_archive=$test_cbase_rebuild_all
+    for test_cbase_source in $test_cbase_sources; do
+        test_cbase_module=${test_cbase_source##*/}
+        test_cbase_module=${test_cbase_module%.c}
+        test_cbase_object=$test_cbase_objdir/$test_cbase_module.o
+
+        if [ "$test_cbase_rebuild_all" != 0 ] \
+                || [ ! -f "$test_cbase_object" ]; then
+            test_cbase_rebuild_archive=1
+            (
+                trace_on
+                $CC \
+                    $test_cbase_compile_flags \
+                    -DTESTING_$test_cbase_module=0 \
+                    -c "$test_cbase_source" \
+                    -o "$test_cbase_object"
+                trace_off
+            ) &
+            test_cbase_compile_pids="$test_cbase_compile_pids $!"
+        elif [ "$test_cbase_object" -nt "$test_cbase_archive" ]; then
+            test_cbase_rebuild_archive=1
+        fi
+    done
+
+    test_cbase_compile_failed=0
+    for test_cbase_compile_pid in $test_cbase_compile_pids; do
+        if ! wait "$test_cbase_compile_pid"; then
+            test_cbase_compile_failed=1
+        fi
+    done
+    if [ "$test_cbase_compile_failed" != 0 ]; then
+        exit 1
+    fi
+
+    for test_cbase_object in $test_cbase_objects; do
+        if [ ! -f "$test_cbase_object" ]; then
+            error "Cbase archive object not found: %s\n" "$test_cbase_object"
+            exit 1
+        fi
+    done
+
+    if [ "$test_cbase_rebuild_archive" != 0 ]; then
+        rm -f "$test_cbase_archive"
+        trace_on
+        $test_cbase_ar rcs "$test_cbase_archive" $test_cbase_objects
+        trace_off
+    fi
+
+    return 0
+}
+
 common_test_run_binary () {
     test_exe=$1
     test_status=0
@@ -848,6 +1012,7 @@ common_test_compile_and_run_source () {
     test_tail_ldflags="$LDFLAGS"
     test_run_after_compile=1
     test_msvc_compiler=
+    test_use_cbase_archive=0
 
     mkdir -p "$(dirname "$test_exe")"
 
@@ -867,6 +1032,10 @@ common_test_compile_and_run_source () {
         test_tail_ldflags=${TEST_WINDOWS_LDFLAGS:-}
         test_run_after_compile=${TEST_WINDOWS_RUN:-1}
     else
+        if [ -n "${test_cbase_archive:-}" ]; then
+            test_use_cbase_archive=1
+        fi
+
         case "$test_cc" in
         clang-cl|*/clang-cl)
             test_msvc_compiler=clang-cl
@@ -909,6 +1078,10 @@ common_test_compile_and_run_source () {
         test_added_flags="$test_added_flags -DTESTING=1"
     fi
 
+    if [ "$test_use_cbase_archive" != 0 ]; then
+        test_added_flags="$test_added_flags -DCBASE_SEPARATE_COMPILATION=1"
+    fi
+
     test_added_flags="$test_added_flags $TEST_EXTRA_DEFS"
     if [ -n "$test_msvc_compiler" ]; then
         test_added_flags=$(common_gcc_flags_to_msvc \
@@ -921,6 +1094,9 @@ common_test_compile_and_run_source () {
         test_cmdline="$test_cmdline /Fe$test_exe $test_src"
     else
         test_cmdline="$test_cmdline -o $test_exe $test_src"
+    fi
+    if [ "$test_use_cbase_archive" != 0 ]; then
+        test_cmdline="$test_cmdline $test_cbase_archive"
     fi
     test_cmdline="$test_cmdline $test_tail_ldflags"
 
@@ -970,6 +1146,8 @@ common_test () {
     if [ -z "${TEST_WINDOWS_SOURCE_PATTERN:-}" ]; then
         TEST_WINDOWS_SOURCE_PATTERN='.*windows\.c$'
     fi
+
+    common_test_prepare_cbase_archive
 
     {
         if [ -n "${TEST_MAXDEPTH:-}" ]; then

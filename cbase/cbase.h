@@ -22,10 +22,8 @@
 #include "primitives.h"
 #include "base_macros.h"
 
-static char UNUSED *program = __FILE__;
-static int32 UNUSED program_len;
-static bool UNUSED timezone_initialized = false;
-static time_t UNUSED timezone_offset = 0;
+extern char *program;
+extern int32 program_len;
 
 #define error(...)  error_impl(__FILE__, __LINE__, FUNC__, __VA_ARGS__)
 #define error2(...) fprintf(stderr, __VA_ARGS__)
@@ -383,43 +381,6 @@ int64 read64(int32 fd, void *buffer, int64 len);
 int64 write64(int32 fd, void *buffer, int64 len);
 int64 fread64(void *data, int64 item_size, int64 nitems, FILE *file);
 int64 fwrite64(void *data, int64 item_size, int64 nitems, FILE *file);
-
-#if OS_UNIX
-#define XSIGNAL(NAME) [NAME] = #NAME
-static char UNUSED *signal_names[] = {
-    XSIGNAL(SIGABRT),
-    XSIGNAL(SIGALRM),
-    XSIGNAL(SIGVTALRM),
-    XSIGNAL(SIGPROF),
-    XSIGNAL(SIGBUS),
-    XSIGNAL(SIGCHLD),
-    XSIGNAL(SIGCONT),
-    XSIGNAL(SIGFPE),
-    XSIGNAL(SIGHUP),
-    XSIGNAL(SIGILL),
-    XSIGNAL(SIGINT),
-    XSIGNAL(SIGKILL),
-    XSIGNAL(SIGPIPE),
-#if defined(SIGPOLL)
-    XSIGNAL(SIGPOLL),
-#endif
-    XSIGNAL(SIGQUIT),
-    XSIGNAL(SIGSEGV),
-    XSIGNAL(SIGSTOP),
-    XSIGNAL(SIGSYS),
-    XSIGNAL(SIGTERM),
-    XSIGNAL(SIGTSTP),
-    XSIGNAL(SIGTTIN),
-    XSIGNAL(SIGTTOU),
-    XSIGNAL(SIGTRAP),
-    XSIGNAL(SIGURG),
-    XSIGNAL(SIGUSR1),
-    XSIGNAL(SIGUSR2),
-    XSIGNAL(SIGXCPU),
-    XSIGNAL(SIGXFSZ),
-};
-#undef XSIGNAL
-#endif
 
 #if !defined(PARALLEL_FOR_MAX_THREADS)
 #define PARALLEL_FOR_MAX_THREADS 64
@@ -868,7 +829,8 @@ void throw_away_function();
 #endif /* CBASE_H */
 
 #if defined(CBASE_IMPLEMENT) && defined(CBASE_DECLARATIONS_COMPLETE) \
-        && !defined(CBASE_IMPLEMENTED)
+        && !defined(CBASE_IMPLEMENTED) \
+        && !defined(CBASE_SEPARATE_COMPILATION)
 #define CBASE_IMPLEMENTED 1
 
 #include "arena.c"

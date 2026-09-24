@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
+#define CBASE_INCLUDE_ONLY 1
+
 #if !defined(TESTING_hash)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
 #define TESTING_hash 1
@@ -1036,3 +1038,5 @@ main(void) {
 #include "cbase.h"
 
 #endif /* standalone hash tests */
+
+#undef CBASE_INCLUDE_ONLY

@@ -14,6 +14,7 @@
 
 #if TESTING_ryu_include
 #define CBASE_IMPLEMENT
+#include "cbase.h"
 #include "ryu.h"
 
 static void
