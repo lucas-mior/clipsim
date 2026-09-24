@@ -145,9 +145,9 @@ typedef struct StrFlexList {
     Arena *arena;
 } StrFlexList;
 
-#define SFLIT(literal) ((StrFlex *)&(struct {            \
-    int32 len;                                           \
-    char data[sizeof(literal)];                          \
+#define SFLIT(literal) ((StrFlex *)&(struct {  \
+    int32 len;                                 \
+    char data[sizeof(literal)];                \
 }){ sizeof(literal) - 1, literal })
 
 #if OS_UNIX
@@ -463,26 +463,26 @@ bool test_symlink_supported(char *dir);
 #endif
 void here_impl(char *file, int32 line, char *func);
 
-#define STRING_FROM_ARRAY(BUFFER, SEP, ARRAY, LENGTH)                          \
-_Generic((ARRAY),                                                              \
-    double *: string_from_doubles,                                             \
-    char **: string_from_strings                                               \
+#define STRING_FROM_ARRAY(BUFFER, SEP, ARRAY, LENGTH)  \
+_Generic((ARRAY),                                      \
+    double *: string_from_doubles,                     \
+    char **: string_from_strings                       \
 )(BUFFER, SIZEOF(BUFFER), SEP, ARRAY, LENGTH)
 
-#define CLAMP(VAR, VMIN, VMAX)                                                 \
-_Generic((VAR),                                                                \
-    float:   clamp_double,                                                     \
-    double:  clamp_double,                                                     \
-    int32:   clamp_int32,                                                      \
-    default: clamp_int64                                                       \
+#define CLAMP(VAR, VMIN, VMAX)                         \
+_Generic((VAR),                                        \
+    float:   clamp_double,                             \
+    double:  clamp_double,                             \
+    int32:   clamp_int32,                              \
+    default: clamp_int64                               \
 )(VAR, VMIN, VMAX)
 
-#define SQUARE(VAR)                                                            \
-_Generic((VAR),                                                                \
-    float:   square_double,                                                    \
-    double:  square_double,                                                    \
-    int32:   square_int32,                                                     \
-    default: square_int64                                                      \
+#define SQUARE(VAR)                                    \
+_Generic((VAR),                                        \
+    float:   square_double,                            \
+    double:  square_double,                            \
+    int32:   square_int32,                             \
+    default: square_int64                              \
 )(VAR)
 
 #define strequal2_3(A, A_LEN, B)        strequal2(A, A_LEN, B, STRLIT_LEN(B))
@@ -493,132 +493,132 @@ _Generic((VAR),                                                                \
 #define striqual2_4(A, A_LEN, B, B_LEN) striqual2(A, A_LEN, B, B_LEN)
 #define STRIQUAL(...) SELECT_ON_NUM_ARGS(striqual2_, __VA_ARGS__)
 
-#define MEMMEM_3(LONG, LONG_LEN, SHORT)                                        \
+#define MEMMEM_3(LONG, LONG_LEN, SHORT)                                \
     memmem64(LONG, LONG_LEN, SHORT, strlen32(SHORT))
-#define MEMMEM_4(LONG, LONG_LEN, SHORT, LEN)                                   \
+#define MEMMEM_4(LONG, LONG_LEN, SHORT, LEN)                           \
     memmem64(LONG, LONG_LEN, SHORT, LEN)
 #define MEMMEM(...) SELECT_ON_NUM_ARGS(MEMMEM_, __VA_ARGS__)
 
-#define STRLIT_ARRAY(LITERAL, SIZE)                                            \
-    ((void)SIZEOF(struct {                                                     \
-        _Static_assert(sizeof(LITERAL) <= ((SIZE) + 1),                        \
-                       "string literal does not fit in STRLIT_ARRAY");         \
-        char dummy;                                                            \
-    }),                                                                        \
+#define STRLIT_ARRAY(LITERAL, SIZE)                                    \
+    ((void)SIZEOF(struct {                                             \
+        _Static_assert(sizeof(LITERAL) <= ((SIZE) + 1),                \
+                       "string literal does not fit in STRLIT_ARRAY"); \
+        char dummy;                                                    \
+    }),                                                                \
     (char[SIZE]){ LITERAL })
 
-#define MEM_LITERAL_SHORT_LENGTHS(XX)                                          \
-    XX(2),                                                                     \
-    XX(3),                                                                     \
-    XX(4),                                                                     \
-    XX(5),                                                                     \
-    XX(6),                                                                     \
-    XX(7),                                                                     \
-    XX(8),                                                                     \
-    XX(9),                                                                     \
-    XX(10),                                                                    \
-    XX(11),                                                                    \
-    XX(12),                                                                    \
-    XX(13),                                                                    \
-    XX(14),                                                                    \
+#define MEM_LITERAL_SHORT_LENGTHS(XX)                                  \
+    XX(2),                                                             \
+    XX(3),                                                             \
+    XX(4),                                                             \
+    XX(5),                                                             \
+    XX(6),                                                             \
+    XX(7),                                                             \
+    XX(8),                                                             \
+    XX(9),                                                             \
+    XX(10),                                                            \
+    XX(11),                                                            \
+    XX(12),                                                            \
+    XX(13),                                                            \
+    XX(14),                                                            \
     XX(15)
 
-#define MEM_LITERAL_SHORT_GENERIC_SLOT(N)                                      \
+#define MEM_LITERAL_SHORT_GENERIC_SLOT(N)                              \
     char (*)[N]: CAT(mem_literal_short_, N)
 
-#define MEM_LITERAL_SHORT(HAYSTACK, HAYSTACK_LEN, LITERAL)                     \
-_Generic((char (*)[STRLIT_LEN(LITERAL)])0,                                     \
-    MEM_LITERAL_SHORT_LENGTHS(MEM_LITERAL_SHORT_GENERIC_SLOT),                 \
-    default: memmem64                                                          \
+#define MEM_LITERAL_SHORT(HAYSTACK, HAYSTACK_LEN, LITERAL)             \
+_Generic((char (*)[STRLIT_LEN(LITERAL)])0,                             \
+    MEM_LITERAL_SHORT_LENGTHS(MEM_LITERAL_SHORT_GENERIC_SLOT),         \
+    default: memmem64                                                  \
 )(HAYSTACK, HAYSTACK_LEN, LITERAL, STRLIT_LEN(LITERAL))
 
-#define BEGINS_WITH_3(STRING, STRING_LEN, PREFIX)                              \
+#define BEGINS_WITH_3(STRING, STRING_LEN, PREFIX)                      \
     begins_with(STRING, STRING_LEN, PREFIX, STRLIT_LEN(PREFIX))
-#define BEGINS_WITH_4(STRING, STRING_LEN, PREFIX, PREFIX_LEN)                  \
+#define BEGINS_WITH_4(STRING, STRING_LEN, PREFIX, PREFIX_LEN)          \
     begins_with(STRING, STRING_LEN, PREFIX, PREFIX_LEN)
 #define BEGINS_WITH(...) SELECT_ON_NUM_ARGS(BEGINS_WITH_, __VA_ARGS__)
 
-#define ENDS_WITH_3(STRING, STRING_LEN, SUFFIX)                                \
+#define ENDS_WITH_3(STRING, STRING_LEN, SUFFIX)                        \
     ends_with(STRING, STRING_LEN, SUFFIX, STRLIT_LEN(SUFFIX))
-#define ENDS_WITH_4(STRING, STRING_LEN, SUFFIX, SUFFIX_LEN)                    \
+#define ENDS_WITH_4(STRING, STRING_LEN, SUFFIX, SUFFIX_LEN)            \
     ends_with(STRING, STRING_LEN, SUFFIX, SUFFIX_LEN)
 #define ENDS_WITH(...) SELECT_ON_NUM_ARGS(ENDS_WITH_, __VA_ARGS__)
 
-#define BYTE_MATCHES_ANY_2(BYTE, MEMORY)                                       \
+#define BYTE_MATCHES_ANY_2(BYTE, MEMORY)                               \
     byte_matches_any(BYTE, MEMORY, strlen32(MEMORY))
-#define BYTE_MATCHES_ANY_3(BYTE, MEMORY, MEMORY_LEN)                           \
+#define BYTE_MATCHES_ANY_3(BYTE, MEMORY, MEMORY_LEN)                   \
     byte_matches_any(BYTE, MEMORY, MEMORY_LEN)
-#define BYTE_MATCHES_ANY(...)                                                  \
+#define BYTE_MATCHES_ANY(...)                                          \
     SELECT_ON_NUM_ARGS(BYTE_MATCHES_ANY_, __VA_ARGS__)
 
 #define ITOA(BUFFER, NUM) itoa2(BUFFER, SIZEOF(BUFFER), NUM)
 
-#define SNPRINTF(BUFFER, FORMAT, ...)                                          \
+#define SNPRINTF(BUFFER, FORMAT, ...)                                  \
     fmt_sprintf(BUFFER, SIZEOF(BUFFER), FORMAT, __VA_ARGS__)
-#define STRFTIME(BUFFER, FORMAT, TIME)                                         \
+#define STRFTIME(BUFFER, FORMAT, TIME)                                 \
     strftime2(BUFFER, SIZEOF(BUFFER), FORMAT, TIME)
 
-#define STRUCT_ARRAY_SIZE(STRUCT_OBJECT, ARRAY_TYPE, ARRAY_LENGTH)             \
+#define STRUCT_ARRAY_SIZE(STRUCT_OBJECT, ARRAY_TYPE, ARRAY_LENGTH)     \
     (SIZEOF(*(STRUCT_OBJECT)) + (ARRAY_LENGTH)*SIZEOF(ARRAY_TYPE))
 
 #define XCLOSE_1(FD) xclose(__FILE__, __LINE__, FD, #FD, NULL)
 #define XCLOSE_2(FD, NAME) xclose(__FILE__, __LINE__, FD, #FD, NAME)
 #define XCLOSE(...) SELECT_ON_NUM_ARGS(XCLOSE_, __VA_ARGS__)
 
-#define XFOPEN(FILENAME, MODE)                                                 \
+#define XFOPEN(FILENAME, MODE)                                         \
     xfopen(__FILE__, __LINE__, FUNC__, FILENAME, MODE)
-#define XFCLOSE(F, FILENAME)                                                   \
+#define XFCLOSE(F, FILENAME)                                           \
     xfclose(__FILE__, __LINE__, FUNC__, F, FILENAME)
 
-#define SB_APPEND_2(BUILDER, STRING)                                           \
+#define SB_APPEND_2(BUILDER, STRING)                                   \
     sb_append(BUILDER, STRING, STRLIT_LEN(STRING))
-#define SB_APPEND_3(BUILDER, STRING, LEN)                                      \
+#define SB_APPEND_3(BUILDER, STRING, LEN)                              \
     sb_append(BUILDER, STRING, LEN)
 #define SB_APPEND(...) SELECT_ON_NUM_ARGS(SB_APPEND_, __VA_ARGS__)
 
 #define HERE here_impl(__FILE__, __LINE__, FUNC__)
 
-#define NCALLS(INTERVAL) do {                                                  \
-    static int64 ncalls_ncalls = 1;                                            \
-    if ((ncalls_ncalls % (INTERVAL)) == 0) {                                   \
-        fprintf(stderr, "%s:%d:%s: called %lld times\n",                       \
-                        __FILE__, __LINE__, FUNC__, ncalls_ncalls);            \
-    }                                                                          \
-    ncalls_ncalls += 1;                                                        \
+#define NCALLS(INTERVAL) do {                                          \
+    static int64 ncalls_ncalls = 1;                                    \
+    if ((ncalls_ncalls % (INTERVAL)) == 0) {                           \
+        fprintf(stderr, "%s:%d:%s: called %lld times\n",               \
+                        __FILE__, __LINE__, FUNC__, ncalls_ncalls);    \
+    }                                                                  \
+    ncalls_ncalls += 1;                                                \
 } while (0)
 
-#define PRINT_TIMINGS_3(N, T0, T1)                                             \
+#define PRINT_TIMINGS_3(N, T0, T1)                                     \
     print_timings(__FILE__, __LINE__, FUNC__, N, T0, T1)
-#define PRINT_TIMINGS_4(N, T0, T1, NAME)                                       \
+#define PRINT_TIMINGS_4(N, T0, T1, NAME)                               \
     print_timings(__FILE__, __LINE__, NAME, N, T0, T1)
 #define PRINT_TIMINGS(...) SELECT_ON_NUM_ARGS(PRINT_TIMINGS_, __VA_ARGS__)
 
-#define GETENV(VAR) do {                                                       \
-    if (((VAR) = getenv(#VAR)) == NULL) {                                      \
-        if (DEBUGGING) {                                                       \
-            error_impl(__FILE__, __LINE__, FUNC__,                             \
-                       RED("%s") " is not defined.", #VAR);                    \
-        }                                                                      \
-    }                                                                          \
+#define GETENV(VAR) do {                                               \
+    if (((VAR) = getenv(#VAR)) == NULL) {                              \
+        if (DEBUGGING) {                                               \
+            error_impl(__FILE__, __LINE__, FUNC__,                     \
+                       RED("%s") " is not defined.", #VAR);            \
+        }                                                              \
+    }                                                                  \
 } while (0)
 
-#define PARSE_OPTION(ARG, NAME)                                                \
-    if (parse_option(&(NAME), ARG, #NAME) >= 0) {                              \
-        continue;                                                              \
+#define PARSE_OPTION(ARG, NAME)                                        \
+    if (parse_option(&(NAME), ARG, #NAME) >= 0) {                      \
+        continue;                                                      \
     }
 
 #define ENUM_NAME CommandFlag
 #define ENUM_BITFLAGS 1
 #define ENUM_PREFIX_ COMMAND_
-#define ENUM_FIELDS                                                            \
-    XX(COMMAND_CAPTURE_STDOUT)                                                 \
-    XX(COMMAND_CAPTURE_STDERR)                                                 \
-    XX(COMMAND_MERGE_STDERR)                                                   \
-    XX(COMMAND_ASYNC)                                                          \
-    XX(COMMAND_DETACHED)                                                       \
-    XX(COMMAND_NEW_SESSION)                                                    \
-    XX(COMMAND_NEW_PROCESS_GROUP)                                              \
-    XX(COMMAND_STDIN_TTY)                                                      \
+#define ENUM_FIELDS                                                    \
+    XX(COMMAND_CAPTURE_STDOUT)                                         \
+    XX(COMMAND_CAPTURE_STDERR)                                         \
+    XX(COMMAND_MERGE_STDERR)                                           \
+    XX(COMMAND_ASYNC)                                                  \
+    XX(COMMAND_DETACHED)                                               \
+    XX(COMMAND_NEW_SESSION)                                            \
+    XX(COMMAND_NEW_PROCESS_GROUP)                                      \
+    XX(COMMAND_STDIN_TTY)                                              \
     XX(COMMAND_CLOSE_STDIN)
 #define XENUMS_DECLARE_ONLY 1
 #define XENUMS_NO_TESTS 1
@@ -741,16 +741,16 @@ void command_vector_reserve(char ***items, int32 **item_lens, int32 *cap,
                             int32 len, int32 extra);
 int32 command_wait(Command *);
 
-#define COMMAND_PUSH(CMD, ...)                                                 \
-    command_push_array(CMD,                                                    \
-                       (int32)(sizeof((char *[]){__VA_ARGS__})                 \
-                               /sizeof(char *)),                               \
+#define COMMAND_PUSH(CMD, ...)                                 \
+    command_push_array(CMD,                                    \
+                       (int32)(sizeof((char *[]){__VA_ARGS__}) \
+                               /sizeof(char *)),               \
                        (char *[]){__VA_ARGS__})
 
 #define COMMAND_ENV_PUSH_2(A, B) command_env_push(A, B)
-#define COMMAND_ENV_PUSH_3(A, B, B_LEN)                                        \
+#define COMMAND_ENV_PUSH_3(A, B, B_LEN)                        \
     command_env_push_length(A, B, B_LEN)
-#define COMMAND_ENV_PUSH(...)                                                  \
+#define COMMAND_ENV_PUSH(...)                                  \
     SELECT_ON_NUM_ARGS(COMMAND_ENV_PUSH_, __VA_ARGS__)
 
 #if !defined(MAX_NTHREADS)
