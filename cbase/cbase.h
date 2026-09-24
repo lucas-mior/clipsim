@@ -698,29 +698,19 @@ enum CommandFlag command_flags_normalized(enum CommandFlag);
 void command_free(Command *);
 void command_print(Command *);
 void command_printf(Command *command, char *fmt, ...);
-void command_push_length(Command *command, char *argument,
-                         int32 argument_len);
+void command_push_length(Command *command, char *argument, int32 argument_len);
 void command_push_array(Command *command, int32 argc, char **argv);
-void command_push_owned_length(
-    char ***items,
-    int32 **item_lens,
-    int32 *len,
-    int32 *cap,
-    char *argument,
-    int32 argument_len
-);
+void command_push_owned_length(char ***items, int32 **item_lens,
+                               int32 *len, int32 *cap,
+                               char *argument, int32 argument_len);
 void command_push_split(Command *command, char *arguments, char *delimiters);
 int32 command_stdin_buffer_set(Command *command, char *data, int64 data_len);
 void command_stdin_buffer_clear(Command *);
 void command_reset(Command *);
-void command_result_append(
-    StrBuilder *output,
-    StrBuilder *stdout_output,
-    StrBuilder *stderr_output,
-    bool is_stderr,
-    char *data,
-    int32 data_len
-);
+void command_result_append(StrBuilder *output,
+                           StrBuilder *stdout_output, StrBuilder *stderr_output,
+                           bool is_stderr,
+                           char *data, int32 data_len);
 void command_result_file_descriptors_close(CommandResult *);
 void command_result_free(CommandResult *);
 void command_result_init(CommandResult *);
