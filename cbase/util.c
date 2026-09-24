@@ -1197,9 +1197,9 @@ test_command_exists(char *command) {
         }
 
         if (end == start) {
-            len = fmt_sprintf(candidate, SIZEOF(candidate), "./%s", command);
+            len = SNPRINTF(candidate, "./%s", command);
         } else {
-            len = fmt_sprintf(candidate, SIZEOF(candidate), "%.*s/%s",
+            len = SNPRINTF(candidate, "%.*s/%s",
                             end - start, path + start, command);
         }
         if ((len > 0) && (len < SIZEOF(candidate))
