@@ -598,11 +598,11 @@ _Generic((char (*)[STRLIT_LEN(LITERAL)])0,                             \
 #define XFCLOSE(F, FILENAME)                                           \
     xfclose(__FILE__, __LINE__, FUNC__, F, FILENAME)
 
-#define SB_APPEND_2(BUILDER, STRING)                                   \
+#define STR_APPEND_2(BUILDER, STRING)                                   \
     sb_append(BUILDER, STRING, STRLIT_LEN(STRING))
-#define SB_APPEND_3(BUILDER, STRING, LEN)                              \
+#define STR_APPEND_3(BUILDER, STRING, LEN)                              \
     sb_append(BUILDER, STRING, LEN)
-#define SB_APPEND(...) SELECT_ON_NUM_ARGS(SB_APPEND_, __VA_ARGS__)
+#define STR_APPEND(...) SELECT_ON_NUM_ARGS(STR_APPEND_, __VA_ARGS__)
 
 #define HERE here_impl(__FILE__, __LINE__, FUNC__)
 

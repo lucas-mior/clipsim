@@ -797,7 +797,7 @@ main(void) {
         String builder = {0};
         int32 old_cap;
 
-        SB_APPEND(&builder, "0123456789abcde");
+        STR_APPEND(&builder, "0123456789abcde");
         old_cap = builder.cap;
         sb_append(&builder, builder.data + 1, builder.len - 1);
         ASSERT_MORE(builder.cap, old_cap);
@@ -809,11 +809,11 @@ main(void) {
     {
         String builder = {0};
 
-        SB_APPEND(&builder, "x");
+        STR_APPEND(&builder, "x");
         sb_itoa(&builder, 0);
-        SB_APPEND(&builder, " ");
+        STR_APPEND(&builder, " ");
         sb_itoa(&builder, -9223372036854775807LL - 1);
-        SB_APPEND(&builder, " ");
+        STR_APPEND(&builder, " ");
         sb_itoa(&builder, 9223372036854775807LL);
         ASSERT_EQUAL(builder.data,
                      "x0 -9223372036854775808 9223372036854775807");
@@ -832,7 +832,7 @@ main(void) {
 
     {
         String builder = {0};
-        SB_APPEND(&builder, "x");
+        STR_APPEND(&builder, "x");
         sb_bytes_pretty(&builder, UINT32_MAX);
         ASSERT_EQUAL(builder.data, "x4.0000GB");
         sb_free(&builder);

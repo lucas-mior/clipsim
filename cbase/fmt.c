@@ -1426,13 +1426,6 @@ fmt_big_uint_normalize(FormatBigUInt *value) {
     return;
 }
 
-static bool
-fmt_big_uint_is_zero(FormatBigUInt *value) {
-    ASSERT(value != NULL);
-
-    return value->len == 0;
-}
-
 static int32
 fmt_big_uint_ensure_word(FormatBigUInt *value, int32 index) {
     ASSERT(value != NULL);
@@ -1804,6 +1797,7 @@ fmt_big_uint_to_decimal(FormatBigUInt *value, char *buffer, int32 capacity) {
     ASSERT(value != NULL);
     ASSERT(buffer != NULL);
     ASSERT_POSITIVE(capacity);
+    ASSERT_BETWEEN(value->len, 0, FMT_BIG_UINT_MAX_WORDS);
 
     if (value->len == 0) {
         if (capacity < 2) {
@@ -1816,10 +1810,10 @@ fmt_big_uint_to_decimal(FormatBigUInt *value, char *buffer, int32 capacity) {
 
     work = *value;
     group_count = 0;
-    while (!fmt_big_uint_is_zero(&work)) {
+    do {
         groups[group_count] = fmt_big_uint_div_small(&work, GROUP_BASE);
         group_count += 1;
-    }
+    } while (work.len > 0);
 
     len = fmt_integer_digits(buffer, groups[group_count - 1], 10, false);
     if (len >= capacity) {
@@ -4057,7 +4051,6 @@ fmt_vsnprintf_estimate(char *format, va_list args) {
             goto done;
         }
 
-        estimate = 0;
         if (fmt_is_integer_conversion(spec.conversion)) {
             int32 bits;
             int64 digits;
@@ -4550,10 +4543,9 @@ sb_float64(String *string, double value) {
 
 void
 sb_float64_fixed(String *sb, double value, int32 precision) {
-    int32 status;
     int32 len;
 
-    if ((status = fmt_float_validate_precision(precision)) < 0) {
+    if (fmt_float_validate_precision(precision) < 0) {
         error("Invalid float precision %d.\n", precision);
         fatal(EXIT_FAILURE);
     }
@@ -5664,9 +5656,9 @@ main(void) {
     {
         String builder = {0};
 
-        SB_APPEND(&builder, "x=");
+        STR_APPEND(&builder, "x=");
         sb_float64(&builder, 0.1);
-        SB_APPEND(&builder, " y=");
+        STR_APPEND(&builder, " y=");
         sb_float64_fixed(&builder, 1.25, 2);
         ASSERT_EQUAL(builder.data, "x=1E-1 y=1.25");
         sb_free(&builder);

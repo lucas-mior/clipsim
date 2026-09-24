@@ -1193,7 +1193,7 @@ command_str(Command *command, int32 *len) {
         if (i > 0) {
             sb_append_byte(&string, ' ');
         }
-        SB_APPEND(&string, command->argv[i], command->argvs_lens[i]);
+        STR_APPEND(&string, command->argv[i], command->argvs_lens[i]);
     }
     return sb_steal_exact(&string, len);
 }

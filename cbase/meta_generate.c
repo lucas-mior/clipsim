@@ -18,31 +18,31 @@ String
 c_string_literal(char *value, int32 value_len) {
     String out = {0};
 
-    SB_APPEND(&out, "\"");
+    STR_APPEND(&out, "\"");
     for (int32 i = 0; i < value_len; i += 1) {
         uint8 c = (uint8)value[i];
 
         switch (c) {
         case '\a':
-            SB_APPEND(&out, "\\a");
+            STR_APPEND(&out, "\\a");
             break;
         case '\b':
-            SB_APPEND(&out, "\\b");
+            STR_APPEND(&out, "\\b");
             break;
         case '\f':
-            SB_APPEND(&out, "\\f");
+            STR_APPEND(&out, "\\f");
             break;
         case '\n':
-            SB_APPEND(&out, "\\n");
+            STR_APPEND(&out, "\\n");
             break;
         case '\r':
-            SB_APPEND(&out, "\\r");
+            STR_APPEND(&out, "\\r");
             break;
         case '\t':
-            SB_APPEND(&out, "\\t");
+            STR_APPEND(&out, "\\t");
             break;
         case '\v':
-            SB_APPEND(&out, "\\v");
+            STR_APPEND(&out, "\\v");
             break;
         case '\\':
         case '"':
@@ -58,7 +58,7 @@ c_string_literal(char *value, int32 value_len) {
             break;
         }
     }
-    SB_APPEND(&out, "\"");
+    STR_APPEND(&out, "\"");
 
     if (out.cap != out.len + 1) {
         out.data = realloc2(out.data,
@@ -91,7 +91,7 @@ c_identifier(char *value, int32 value_len) {
         } else {
             c = '_';
         }
-        SB_APPEND(&out, &c, 1);
+        STR_APPEND(&out, &c, 1);
     }
 
     {
@@ -110,9 +110,9 @@ c_identifier(char *value, int32 value_len) {
         if (needs_prefix) {
             String pref = {0};
 
-            SB_APPEND(&pref, "c_");
+            STR_APPEND(&pref, "c_");
             if (out.data) {
-                SB_APPEND(&pref, out.data, out.len);
+                STR_APPEND(&pref, out.data, out.len);
                 free2(out.data, out.cap);
             }
             out = pref;
@@ -158,7 +158,7 @@ emit_string_array_init(String *out, char *field, char **values,
         free2(cs.data, cs.cap);
     }
 
-    SB_APPEND(out, "    },\n");
+    STR_APPEND(out, "    },\n");
     return;
 }
 
@@ -175,7 +175,7 @@ emit_lens_init(String *out, char *field, char **values,
         int32 value_len;
 
         if (i > 0) {
-            SB_APPEND(out, ", ");
+            STR_APPEND(out, ", ");
         }
 
         if (values[i]) {
@@ -187,7 +187,7 @@ emit_lens_init(String *out, char *field, char **values,
 
         sb_itoa(out, value_len);
     }
-    SB_APPEND(out, " },\n");
+    STR_APPEND(out, " },\n");
 
     return;
 }
@@ -202,11 +202,11 @@ emit_int_array_init(String *out, char *field, int32 *values,
     sb_printf(out, "    .%s = { ", field);
     for (int32 i = 0; i < count; i += 1) {
         if (i) {
-            SB_APPEND(out, ", ");
+            STR_APPEND(out, ", ");
         }
         sb_itoa(out, values[i]);
     }
-    SB_APPEND(out, " },\n");
+    STR_APPEND(out, " },\n");
 
     return;
 }
@@ -220,12 +220,12 @@ emit_u64_array_init(String *out, char *field, uint64 *values, int32 count) {
     sb_printf(out, "    .%s = { ", field);
     for (int32 i = 0; i < count; i += 1) {
         if (i) {
-            SB_APPEND(out, ", ");
+            STR_APPEND(out, ", ");
         }
         sb_printf(out, "UINT64_C(0x%w64x)", values[i]);
     }
 
-    SB_APPEND(out, " },\n");
+    STR_APPEND(out, " },\n");
 }
 
 void
@@ -233,20 +233,20 @@ c_emit_wrapped_expr(String *out, char *indent, char *prefix, char *expr,
                     char *suffix) {
     int32 prefix_len = strlen32(prefix);
 
-    SB_APPEND(out, indent, strlen32(indent));
-    SB_APPEND(out, prefix, strlen32(prefix));
+    STR_APPEND(out, indent, strlen32(indent));
+    STR_APPEND(out, prefix, strlen32(prefix));
     for (int32 i = 0; expr[i] != '\0'; i += 1) {
-        SB_APPEND(out, expr + i, 1);
+        STR_APPEND(out, expr + i, 1);
         if (expr[i] == '(' || expr[i] == ',') {
-            SB_APPEND(out, "\n");
-            SB_APPEND(out, indent, strlen32(indent));
+            STR_APPEND(out, "\n");
+            STR_APPEND(out, indent, strlen32(indent));
             for (int32 j = 0; j < prefix_len; j += 1) {
-                SB_APPEND(out, " ");
+                STR_APPEND(out, " ");
             }
         }
     }
-    SB_APPEND(out, suffix, strlen32(suffix));
-    SB_APPEND(out, "\n");
+    STR_APPEND(out, suffix, strlen32(suffix));
+    STR_APPEND(out, "\n");
 }
 
 #if 0 == TESTING_meta_generate

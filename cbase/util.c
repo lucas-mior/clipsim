@@ -717,9 +717,9 @@ send_signal(char *executable, int32 signal_number) {
         sb_clear(&buffer);
         d_name_len = strlen32(process->d_name);
 
-        SB_APPEND(&buffer, "/proc/");
-        SB_APPEND(&buffer, process->d_name, d_name_len);
-        SB_APPEND(&buffer, "/cmdline");
+        STR_APPEND(&buffer, "/proc/");
+        STR_APPEND(&buffer, process->d_name, d_name_len);
+        STR_APPEND(&buffer, "/cmdline");
 
         if ((cmdline = open(buffer.data, O_RDONLY)) < 0) {
             continue;

@@ -367,9 +367,9 @@ That means to also avoid calling `strlen32`:
 - `String`: use this struct and its functions to build long, dynamic
   strings. Do not use it where a single
   `SNPRINTF(stack_array, "format_%s_string", args);` would be enough.
-  * Use `SB_APPEND` for appending literals or strings of known length, and
+  * Use `STR_APPEND` for appending literals or strings of known length, and
     `sb_printf` for formatting. `sb_append` is internal code, not external API.
-    Use `SB_APPEND` instead.
+    Use `STR_APPEND` instead.
   * `SNPRINTF` returns the number of bytes written (excluding the
     terminating null byte). No need to call `strlen32` on the buffer:
     ```c
