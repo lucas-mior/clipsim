@@ -91,7 +91,7 @@ attribute. That still catches ordinary type mistakes, but the compiler only
 checks the printf grammar it knows. Warnings for newer conversions such as
 `%b`, `%B`, or `wN` therefore depend on compiler support for those spellings.
 
-`SNPRINTF` and `sb_printf` use this formatter.
+`SNPRINTF` and `str_printf` use this formatter.
 
 ## Alternative usage: compile cbase as a separate object
 ```sh

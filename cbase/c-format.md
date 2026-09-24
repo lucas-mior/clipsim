@@ -95,13 +95,9 @@ if ((flags & MY_FLAG_EXAMPLE1)
 }
 ```
 
-When formatting printf-like function calls, if the entire call does not fit in a
-single line, either keep the format string and all format arguments together on
-the same continuation line, or put the format string on its own line and put the
-format arguments together on the next line. For functions such as `fprintf`,
-arguments before the format string, such as the output file, are prefix
-arguments. The rule below applies to the format string and to the arguments
-consumed by that format string.
+When formatting printf-like function calls, try to fit the entire call in a
+single line. If it does not fit, the beggining of the first argument for the
+format string must be aligned with the beggining of the format string:
 ```c
 static void
 function(void) {
