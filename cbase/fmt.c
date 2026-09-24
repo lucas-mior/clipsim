@@ -4531,7 +4531,7 @@ fmt_float64_scientific(char *buffer, int64 capacity,
 }
 
 void
-sb_float64(String *string, double value) {
+str_float64(String *string, double value) {
     int32 len;
 
     str_reserve(string, FMT_FLOAT_RYU_BUFFER_SIZE);
@@ -4542,7 +4542,7 @@ sb_float64(String *string, double value) {
 }
 
 void
-sb_float64_fixed(String *sb, double value, int32 precision) {
+str_float64_fixed(String *sb, double value, int32 precision) {
     int32 len;
 
     if (fmt_float_validate_precision(precision) < 0) {
@@ -5657,9 +5657,9 @@ main(void) {
         String builder = {0};
 
         STR_APPEND(&builder, "x=");
-        sb_float64(&builder, 0.1);
+        str_float64(&builder, 0.1);
         STR_APPEND(&builder, " y=");
-        sb_float64_fixed(&builder, 1.25, 2);
+        str_float64_fixed(&builder, 1.25, 2);
         ASSERT_EQUAL(builder.data, "x=1E-1 y=1.25");
         str_free(&builder);
     }
