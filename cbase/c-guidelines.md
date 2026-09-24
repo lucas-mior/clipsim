@@ -755,6 +755,19 @@ if (pointer) {
 ASSERT(pointer != NULL);
 ```
 
+Don't check if ((enum & ENUM_BITFLAG) != 0), since true is implicit:
+```c
+// bad
+if ((enum & ENUM_BITFLAG) != 0) {
+    // do stuff
+}
+
+// good
+if (enum & ENUM_BITFLAG) {
+    // do stuff
+}
+```
+
 ## Assertions
 - Use the assertions defined in `cbase/assertions.c`.
   - `ASSERT(expression)`

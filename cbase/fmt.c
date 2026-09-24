@@ -543,6 +543,7 @@ typedef struct FormatSink {
     int32 total;
     int32 status;
     bool unchecked;
+    bool write_count;
 } FormatSink;
 
 static int32
@@ -565,6 +566,7 @@ fmt_sink_init(FormatSink *sink, char *buffer, int64 capacity) {
     sink->total = 0;
     sink->status = 0;
     sink->unchecked = false;
+    sink->write_count = true;
 
     if (capacity > 0) {
         buffer[0] = '\0';
@@ -862,14 +864,11 @@ fmt_integer_base(char conversion) {
 
 static int32
 fmt_integer_digits(char *digits, uint64 value, int32 base, bool upper) {
-    char lower_digits[] = "0123456789abcdef";
-    char upper_digits[] = "0123456789ABCDEF";
-    char reversed[64];
+    char *lower_digits = "0123456789abcdef";
+    char *upper_digits = "0123456789ABCDEF";
     char *digit_table;
+    char reversed[64];
     int32 len;
-
-    ASSERT(digits != NULL);
-    ASSERT(base == 2 || base == 8 || base == 10 || base == 16);
 
     if (upper) {
         digit_table = upper_digits;
@@ -884,10 +883,32 @@ fmt_integer_digits(char *digits, uint64 value, int32 base, bool upper) {
 
     len = 0;
     while (value > 0) {
-        uint64 digit = value%(uint64)base;
+        uint64 digit;
+
+        switch (base) {
+            case 16:
+                digit = value & 15;
+                value >>= 4;
+                break;
+            case 10:
+                digit = value % 10;
+                value /= 10;
+                break;
+            case 8:
+                digit = value & 7;
+                value >>= 3;
+                break;
+            case 2:
+                digit = value & 1;
+                value >>= 1;
+                break;
+            default:
+                digit = value % (uint64)base;
+                value /= (uint64)base;
+                break;
+        }
 
         reversed[len] = digit_table[digit];
-        value /= (uint64)base;
         len += 1;
     }
 
@@ -1008,8 +1029,8 @@ fmt_write_integer(FormatSink *sink, FormatSpec *spec,
     inner_len = prefix_len + precision_zeros + digit_len;
 
     zero_pad = 0;
-    if ((spec->flags & FMT_FLAG_ZERO) != 0
-        && (spec->flags & FMT_FLAG_LEFT) == 0
+    if ((spec->flags & FMT_FLAG_ZERO)
+        && (spec->flags & FMT_FLAG_LEFT)
         && !fmt_has_precision(spec)) {
         zero_pad = fmt_pad_len(spec->width, inner_len);
     }
@@ -1026,7 +1047,7 @@ fmt_write_integer(FormatSink *sink, FormatSpec *spec,
     if (digit_len > 0) {
         fmt_sink_write(sink, digits, digit_len);
     }
-    if ((spec->flags & FMT_FLAG_LEFT) != 0) {
+    if (spec->flags & FMT_FLAG_LEFT) {
         fmt_sink_write_repeat(sink, ' ', spaces);
     }
     return;
@@ -1247,7 +1268,8 @@ fmt_count_fits(FormatSpec *spec, int64 count) {
 }
 
 static int32
-fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count) {
+fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count,
+                bool write_count) {
     ASSERT(spec != NULL);
     ASSERT(args != NULL);
     ASSERT_NON_NEGATIVE(count);
@@ -1262,7 +1284,9 @@ fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count) {
         if (pointer == NULL) {
             return -EINVAL;
         }
-        *pointer = (int8)count;
+        if (write_count) {
+            *pointer = (int8)count;
+        }
         return 0;
     }
     if (spec->length == FMT_LENGTH_H) {
@@ -1271,7 +1295,9 @@ fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count) {
         if (pointer == NULL) {
             return -EINVAL;
         }
-        *pointer = (int16)count;
+        if (write_count) {
+            *pointer = (int16)count;
+        }
         return 0;
     }
     if (spec->length == FMT_LENGTH_LL) {
@@ -1280,7 +1306,9 @@ fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count) {
         if (pointer == NULL) {
             return -EINVAL;
         }
-        *pointer = count;
+        if (write_count) {
+            *pointer = count;
+        }
         return 0;
     }
     if (spec->length == FMT_LENGTH_W8) {
@@ -1289,7 +1317,9 @@ fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count) {
         if (pointer == NULL) {
             return -EINVAL;
         }
-        *pointer = (int8)count;
+        if (write_count) {
+            *pointer = (int8)count;
+        }
         return 0;
     }
     if (spec->length == FMT_LENGTH_W16) {
@@ -1298,7 +1328,9 @@ fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count) {
         if (pointer == NULL) {
             return -EINVAL;
         }
-        *pointer = (int16)count;
+        if (write_count) {
+            *pointer = (int16)count;
+        }
         return 0;
     }
     if (spec->length == FMT_LENGTH_W32) {
@@ -1307,7 +1339,9 @@ fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count) {
         if (pointer == NULL) {
             return -EINVAL;
         }
-        *pointer = (int32)count;
+        if (write_count) {
+            *pointer = (int32)count;
+        }
         return 0;
     }
     if (spec->length == FMT_LENGTH_W64) {
@@ -1316,7 +1350,9 @@ fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count) {
         if (pointer == NULL) {
             return -EINVAL;
         }
-        *pointer = count;
+        if (write_count) {
+            *pointer = count;
+        }
         return 0;
     }
 
@@ -1327,7 +1363,9 @@ fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count) {
         if (pointer == NULL) {
             return -EINVAL;
         }
-        *pointer = (int32)count;
+        if (write_count) {
+            *pointer = (int32)count;
+        }
         return 0;
     }
 }
@@ -1341,7 +1379,7 @@ fmt_handle_count(FormatSink *sink, FormatSpec *spec, FormatArgs *args) {
     if (sink->status < 0) {
         return sink->status;
     }
-    return fmt_store_count(spec, args, sink->total);
+    return fmt_store_count(spec, args, sink->total, sink->write_count);
 }
 
 
@@ -4351,16 +4389,21 @@ fmt_vsprintf(char *buffer, int64 capacity, char *format, va_list args) {
     }
 
     if (DEBUGGING) {
+        FormatSink check_sink;
         va_list check_args;
-        int32 estimate_len;
+        int32 len;
 
-        va_copy(check_args, args);
-        estimate_len = fmt_vsnprintf_estimate(format, check_args);
-        va_end(check_args);
-        if (estimate_len < 0) {
-            return estimate_len;
+        if ((status = fmt_sink_init(&check_sink, NULL, 0)) < 0) {
+            return status;
         }
-        if ((int64)estimate_len >= capacity) {
+        check_sink.write_count = false;
+        va_copy(check_args, args);
+        len = fmt_vsnprintf_sink(&check_sink, format, check_args);
+        va_end(check_args);
+        if (len < 0) {
+            return len;
+        }
+        if ((int64)len >= capacity) {
             return -ENOSPC;
         }
     }
@@ -5363,6 +5406,11 @@ test_fmt_public_api(void) {
     len = fmt_snprintf(buffer, SIZEOF(buffer), "public:%d:%s", 42, "ok");
     ASSERT_EQUAL(len, 12);
     ASSERT_EQUAL(buffer, len + 1, "public:42:ok", 13);
+
+    ASSERT_LESS_EQUAL(SIZEOF(buffer), fmt_snprintf_estimate("%g", 1.0));
+    len = fmt_sprintf(buffer, SIZEOF(buffer), "%g", 1.0);
+    ASSERT_EQUAL(len, 1);
+    ASSERT_EQUAL(buffer, "1");
 
     len = fmt_snprintf(tiny, SIZEOF(tiny), "abcdef");
     ASSERT_EQUAL(len, 6);
