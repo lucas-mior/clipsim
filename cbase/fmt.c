@@ -2814,7 +2814,7 @@ fmt_ldouble_scientific_exponent(FormatBinaryFloat *parts,
 
     ASSERT(parts != NULL);
     ASSERT(exponent != NULL);
-    ASSERT(value >= 0.0L);
+    ASSERT_NON_NEGATIVE(value);
 
     if (parts->zero) {
         *exponent = 0;
@@ -4397,6 +4397,7 @@ fmt_sprintf(char *buffer, int64 capacity, char *format, ...) {
     va_start(args, format);
     len = fmt_vsprintf(buffer, capacity, format, args);
     va_end(args);
+
     return len;
 }
 
@@ -4451,7 +4452,7 @@ fmt_float32_shortest(char *buffer, int64 capacity, float value) {
         return status;
     }
 
-    len = (int32)f2s_buffered_n(value, temp);
+    len = f2s_buffered_n(value, temp);
     return fmt_float_copy(buffer, capacity, temp, len);
 }
 
@@ -4465,7 +4466,7 @@ fmt_float64_shortest(char *buffer, int64 capacity, double value) {
         return status;
     }
 
-    len = (int32)d2s_buffered_n(value, temp);
+    len = d2s_buffered_n(value, temp);
     return fmt_float_copy(buffer, capacity, temp, len);
 }
 
@@ -4482,7 +4483,7 @@ fmt_float64_fixed(char *buffer, int64 capacity, double value, int32 precision) {
         return status;
     }
 
-    len = (int32)d2fixed_buffered_n(value, (uint32)precision, temp);
+    len = d2fixed_buffered_n(value, (uint32)precision, temp);
     return fmt_float_copy(buffer, capacity, temp, len);
 }
 
@@ -4500,7 +4501,7 @@ fmt_float64_scientific(char *buffer, int64 capacity,
         return status;
     }
 
-    len = (int32)d2exp_buffered_n(value, (uint32)precision, temp);
+    len = d2exp_buffered_n(value, (uint32)precision, temp);
     return fmt_float_copy(buffer, capacity, temp, len);
 }
 
@@ -4509,7 +4510,7 @@ sb_float64(StrBuilder *str_builder, double value) {
     int32 len;
 
     sb_reserve(str_builder, FMT_FLOAT_RYU_BUFFER_SIZE);
-    len = (int32)d2s_buffered_n(value, str_builder->data + str_builder->len);
+    len = d2s_buffered_n(value, str_builder->data + str_builder->len);
     str_builder->len += len;
     str_builder->data[str_builder->len] = '\0';
     return;
@@ -5491,10 +5492,7 @@ static void
 test_fmt_float32_shortest(float value, char *expected) {
     char buffer[FMT_FLOAT_RYU_BUFFER_SIZE];
     int32 len = fmt_float32_shortest(buffer, SIZEOF(buffer), value);
-
-    ASSERT_EQUAL(len, strlen32(expected));
-    ASSERT_EQUAL(buffer, expected);
-
+    ASSERT_EQUAL(buffer, len, expected);
     return;
 }
 
@@ -5502,10 +5500,7 @@ static void
 test_fmt_float64_shortest(double value, char *expected) {
     char buffer[FMT_FLOAT_RYU_BUFFER_SIZE];
     int32 len = fmt_float64_shortest(buffer, SIZEOF(buffer), value);
-
-    ASSERT_EQUAL(len, strlen32(expected));
-    ASSERT_EQUAL(buffer, expected);
-
+    ASSERT_EQUAL(buffer, len, expected);
     return;
 }
 
@@ -5514,8 +5509,7 @@ test_fmt_float64_fixed(double value, int32 precision, char *expected) {
     char buffer[FMT_FLOAT_RYU_BUFFER_SIZE];
     int32 len = fmt_float64_fixed(buffer, SIZEOF(buffer), value, precision);
 
-    ASSERT_EQUAL(len, strlen32(expected));
-    ASSERT_EQUAL(buffer, expected);
+    ASSERT_EQUAL(buffer, len, expected);
 
     return;
 }
@@ -5523,11 +5517,10 @@ test_fmt_float64_fixed(double value, int32 precision, char *expected) {
 static void
 test_fmt_float64_scientific(double value, int32 precision, char *expected) {
     char buffer[FMT_FLOAT_RYU_BUFFER_SIZE];
-    int32 len = fmt_float64_scientific(buffer, SIZEOF(buffer),
-                                       value, precision);
+    int32 len;
 
-    ASSERT_EQUAL(len, strlen32(expected));
-    ASSERT_EQUAL(buffer, expected);
+    len = fmt_float64_scientific(buffer, SIZEOF(buffer), value, precision);
+    ASSERT_EQUAL(buffer, len, expected);
 
     return;
 }

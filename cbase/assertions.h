@@ -201,7 +201,8 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_SIGN(void *, ...);
 
 #define ASSERT_DECLARE_SIGN(MODE)                                              \
 void a_sign_integer_##MODE(char *, int32, char *, char *, llong);              \
-void a_sign_double_##MODE(char *, int32, char *, char *, double);
+void a_sign_double_##MODE(char *, int32, char *, char *, double);              \
+void a_sign_ldouble_##MODE(char *, int32, char *, char *, ldouble);
 
 ASSERT_DECLARE_SIGN(positive)
 ASSERT_DECLARE_SIGN(negative)
@@ -214,6 +215,7 @@ ASSERT_DECLARE_SIGN(non_negative)
 _Generic((VAR1),                                                               \
     float:   a_sign_double_##MODE,                                             \
     double:  a_sign_double_##MODE,                                             \
+    ldouble: a_sign_ldouble_##MODE,                                            \
     default: a_sign_integer_##MODE                                             \
 )(__FILE__, __LINE__, FUNC__, #VAR1, VAR1)
 
