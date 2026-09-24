@@ -223,9 +223,9 @@ void send_signal(char *executable, int32 signal_number);
 // '\0' when capacity is positive. buffer may be NULL only when capacity is
 // zero. Negative returns are errno-style failures. See cbase/README.md for
 // the exact supported grammar and deliberate differences from libc printf.
-int32 format_vsnprintf(char *buffer, int64 capacity, char *format,
-                       va_list args) ATTR_PRINTF(3, 0);
-int32 format_snprintf(char *buffer, int64 capacity, char *format, ...)
+int32 fmt_vsnprintf(char *buffer, int64 capacity, char *format, va_list args)
+    ATTR_PRINTF(3, 0);
+int32 fmt_snprintf(char *buffer, int64 capacity, char *format, ...)
     ATTR_PRINTF(3, 4);
 
 int32 snprintf2(char *buffer, int64 size, char *format, ...);
@@ -251,12 +251,12 @@ StrFlex *strflex_list_at(StrFlexList *, int32);
 // precision formatting. It intentionally does not expose a %g/general format
 // helper: exact %g behavior needs a separate policy layer to choose between
 // fixed and scientific output and to handle trailing-zero rules.
-int32 format_float32_shortest(char *buffer, int64 capacity, float value);
-int32 format_float64_shortest(char *buffer, int64 capacity, double value);
-int32 format_float64_fixed(char *buffer, int64 capacity, double value,
-                           int32 precision);
-int32 format_float64_scientific(char *buffer, int64 capacity, double value,
-                                int32 precision);
+int32 fmt_float32_shortest(char *buffer, int64 capacity, float value);
+int32 fmt_float64_shortest(char *buffer, int64 capacity, double value);
+int32 fmt_float64_fixed(char *buffer, int64 capacity, double value,
+                        int32 precision);
+int32 fmt_float64_scientific(char *buffer, int64 capacity, double value,
+                             int32 precision);
 
 int32 string_from_strings(char *buffer, int32 size, char *separator,
                           char **array, int32 length);
@@ -854,7 +854,7 @@ void throw_away_function();
 #include "threads.c"
 
 #include "some_math.c"
-#include "format.c"
+#include "fmt.c"
 
 #include "command.c"
 #include "cbase.h"

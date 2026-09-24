@@ -42,7 +42,7 @@ Code compiling utf8.c depends on `-D_XOPEN_SOURCE=700` because of `wcwidth`.
 cbase in general depends on `-D_DEFAULT_SOURCE`.
 
 ## Formatter
-`format_snprintf` and `format_vsnprintf` are cbase's deterministic printf-style
+`fmt_snprintf` and `fmt_vsnprintf` are cbase's deterministic printf-style
 formatters. They return the number of bytes that would have been written,
 excluding the terminating `'\0'`, and write a terminating `'\0'` whenever the
 capacity is positive. `buffer == NULL` is valid only when `capacity == 0`.
@@ -86,7 +86,7 @@ extension semantics:
 - `%a` and `%La` are tied to the binary representation and are generated from
   the decoded floating-point bits.
 
-The variadic `format_snprintf` declaration uses the compiler's printf format
+The variadic `fmt_snprintf` declaration uses the compiler's printf format
 attribute. That still catches ordinary type mistakes, but the compiler only
 checks the printf grammar it knows. Warnings for newer conversions such as
 `%b`, `%B`, or `wN` therefore depend on compiler support for those spellings.
