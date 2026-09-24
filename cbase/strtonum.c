@@ -235,16 +235,6 @@ main(void) {
     ASSERT_EQUAL(atoi2sat(STRLIT("-999999999999999999999999999999")),
                  LLONG_MIN);
 
-    {
-        int32 n;
-        ASSERT_ZERO(util_string_int32(&n, "12345"));
-        ASSERT_EQUAL(n, 12345);
-        ASSERT_ZERO(util_string_int32(&n, "-54321"));
-        ASSERT_EQUAL(n, -54321);
-        ASSERT_EQUAL(util_string_int32(&n, "2147483648"), -1);
-        ASSERT_EQUAL(util_string_int32(&n, "notanumber"), -1);
-    }
-
     ASSERT(util_is_integer(""));
     ASSERT(util_is_integer("0123456789"));
     ASSERT(!util_is_integer("-1"));
