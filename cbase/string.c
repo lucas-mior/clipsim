@@ -519,27 +519,12 @@ str_printf(String *str, char *fmt, ...) {
 }
 
 char *
-str_steal(String *str, int32 *len, int32 *cap) {
+str_steal(String *str, int32 *len) {
     char *data = str->data;
-
-    if (len) {
-        *len = str->len;
-    }
-    if (cap) {
-        *cap = str->cap;
-    }
+    int32 data_len = str->len;
+    int32 cap = str->cap;
 
     *str = (String){0};
-    return data;
-}
-
-char *
-str_steal_exact(String *str, int32 *len) {
-    char *data;
-    int32 data_len;
-    int32 cap;
-
-    data = str_steal(str, &data_len, &cap);
     if (cap != data_len + 1) {
         data = realloc2(data, cap, data_len + 1, SIZEOF(*data));
     }

@@ -251,8 +251,7 @@ void str_move(String *dest, String *source);
 void str_printf(String *string, char *fmt, ...);
 void str_reserve(String *string, int64 extra);
 int32 str_set(String *string, char *data, int32 data_len);
-char *str_steal(String *string, int32 *len, int32 *cap);
-char *str_steal_exact(String *string, int32 *len);
+char *str_steal(String *string, int32 *len);
 char *str_opt_cstr(String *);
 void send_signal(char *executable, int32 signal_number);
 

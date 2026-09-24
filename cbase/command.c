@@ -309,7 +309,7 @@ command_windows_result_read_captured(
             && !(flags & COMMAND_MERGE_STDERR)) {
             str_append(&output, stderr_output, stderr_len);
         }
-        command->result.output = str_steal_exact(&output,
+        command->result.output = str_steal(&output,
                                                 &command->result.output_len);
     }
 
@@ -800,20 +800,20 @@ command_result_process_io(Command *command, enum CommandFlag flags) {
     }
 
     if (command_flags_capture(flags)) {
-        command->result.output = str_steal_exact(&output,
+        command->result.output = str_steal(&output,
                                                 &command->result.output_len);
     } else {
         str_free(&output);
     }
     if (flags & COMMAND_CAPTURE_STDOUT) {
-        command->result.stdout_output = str_steal_exact(
+        command->result.stdout_output = str_steal(
             &stdout_output,
             &command->result.stdout_len);
     } else {
         str_free(&stdout_output);
     }
     if (flags & COMMAND_CAPTURE_STDERR) {
-        command->result.stderr_output = str_steal_exact(
+        command->result.stderr_output = str_steal(
             &stderr_output,
             &command->result.stderr_len);
     } else {
@@ -1195,7 +1195,7 @@ command_str(Command *command, int32 *len) {
         }
         STR_APPEND(&string, command->argv[i], command->argvs_lens[i]);
     }
-    return str_steal_exact(&string, len);
+    return str_steal(&string, len);
 }
 
 void
