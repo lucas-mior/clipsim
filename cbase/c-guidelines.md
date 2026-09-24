@@ -282,7 +282,6 @@ In general, we must always know the lengths of our strings:
   ```
 - Lots of functions already return the length, no need to call strlen32 on the
   result:
-  - `snprintf2`
   - `SNPRINTF`
   - `read_entire_file`
   - lots of other functions in cbase/.
@@ -371,7 +370,7 @@ That means to also avoid calling `strlen32`:
   * Use `SB_APPEND` for appending literals or strings of known length, and
     `sb_printf` for formatting. `sb_append` is internal code, not external API.
     Use `SB_APPEND` instead.
-  * `SNPRINTF` and `snprintf2` return the number of bytes written (excluding the
+  * `SNPRINTF` returns the number of bytes written (excluding the
     terminating null byte). No need to call `strlen32` on the buffer:
     ```c
     // bad

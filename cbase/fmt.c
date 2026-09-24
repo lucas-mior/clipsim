@@ -1902,6 +1902,7 @@ fmt_binary_float_set_zero(FormatBinaryFloat *parts, bool negative,
 
 #if FMT_LDOUBLE_SUPPORTED
 
+#if LDBL_MANT_DIG == DBL_MANT_DIG && LDBL_MAX_EXP == DBL_MAX_EXP
 static int32
 fmt_decode_binary64_ldouble(ldouble value, FormatBinaryFloat *parts) {
     uint64 fraction_mask;
@@ -1947,7 +1948,9 @@ fmt_decode_binary64_ldouble(ldouble value, FormatBinaryFloat *parts) {
     parts->zero = false;
     return 0;
 }
+#endif
 
+#if LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384
 static int32
 fmt_decode_x87_ldouble(ldouble value, FormatBinaryFloat *parts) {
     uchar bytes[SIZEOF(ldouble)];
@@ -1994,7 +1997,9 @@ fmt_decode_x87_ldouble(ldouble value, FormatBinaryFloat *parts) {
     parts->zero = false;
     return 0;
 }
+#endif
 
+#if LDBL_MANT_DIG == 113 && LDBL_MAX_EXP == 16384
 static int32
 fmt_decode_binary128_ldouble(ldouble value, FormatBinaryFloat *parts) {
     uchar bytes[SIZEOF(ldouble)];
@@ -2052,6 +2057,7 @@ fmt_decode_binary128_ldouble(ldouble value, FormatBinaryFloat *parts) {
     parts->zero = false;
     return 0;
 }
+#endif
 
 static int32 UNUSED
 fmt_decompose_ldouble(ldouble value, FormatBinaryFloat *parts) {

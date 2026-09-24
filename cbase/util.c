@@ -521,23 +521,6 @@ qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
     return;
 }
 
-int32 ATTR_PRINTF(3, 4)
-snprintf2(char *buffer, int64 size, char *format, ...) {
-    int n;
-    va_list args;
-
-    ASSERT_NON_NEGATIVE(size);
-    va_start(args, format);
-    n = vsnprintf(buffer, (size_t)size, format, args);
-    va_end(args);
-
-    if ((n < 0) || (n >= size)) {
-        error2("Error in vsnprintf(\"%s\") (n = %d)\n", format, n);
-        fatal(EXIT_FAILURE);
-    }
-    return n;
-}
-
 int32
 itoa2(char *buffer, int32 size, llong num) {
     ullong magnitude;
@@ -1006,13 +989,13 @@ bytes_pretty(char *buffer, int64 raw) {
     }
 
     if (aux_pretty >= 1000) {
-        n = snprintf2(buffer, 16, "%.1f%s", aux_pretty, suffixes[i]);
+        n = fmt_sprintf(buffer, 16, "%.1f%s", aux_pretty, suffixes[i]);
     } else if (aux_pretty >= 100) {
-        n = snprintf2(buffer, 16, "%.2f%s", aux_pretty, suffixes[i]);
+        n = fmt_sprintf(buffer, 16, "%.2f%s", aux_pretty, suffixes[i]);
     } else if (aux_pretty >= 10) {
-        n = snprintf2(buffer, 16, "%.3f%s", aux_pretty, suffixes[i]);
+        n = fmt_sprintf(buffer, 16, "%.3f%s", aux_pretty, suffixes[i]);
     } else {
-        n = snprintf2(buffer, 16, "%.4f%s", aux_pretty, suffixes[i]);
+        n = fmt_sprintf(buffer, 16, "%.4f%s", aux_pretty, suffixes[i]);
     }
 
     if ((comma = memchr64(buffer, ',', n))) {
@@ -1214,9 +1197,9 @@ test_command_exists(char *command) {
         }
 
         if (end == start) {
-            len = snprintf2(candidate, SIZEOF(candidate), "./%s", command);
+            len = fmt_sprintf(candidate, SIZEOF(candidate), "./%s", command);
         } else {
-            len = snprintf2(candidate, SIZEOF(candidate), "%.*s/%s",
+            len = fmt_sprintf(candidate, SIZEOF(candidate), "%.*s/%s",
                             end - start, path + start, command);
         }
         if ((len > 0) && (len < SIZEOF(candidate))

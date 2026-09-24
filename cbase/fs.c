@@ -188,17 +188,17 @@ cbase_make_temp_file(
             return -1;
         }
         prefix_len = (int32)temp_len;
-        len = snprintf2(buffer + prefix_len, capacity - prefix_len,
+        len = fmt_sprintf(buffer + prefix_len, capacity - prefix_len,
                         "%s_XXXXXX%s", prefix, suffix);
     } else {
-        len = snprintf2(buffer, capacity, "%s/%s_XXXXXX%s",
+        len = fmt_sprintf(buffer, capacity, "%s/%s_XXXXXX%s",
                         tmpdir, prefix, suffix);
     }
 #else
     if (tmpdir == NULL) {
         tmpdir = "/tmp";
     }
-    len = snprintf2(buffer, capacity, "%s/%s_XXXXXX%s",
+    len = fmt_sprintf(buffer, capacity, "%s/%s_XXXXXX%s",
                     tmpdir, prefix, suffix);
 #endif
     if ((len <= 0) || (len >= (capacity - prefix_len))) {
@@ -1221,7 +1221,7 @@ void
 test_join_path(char *buffer, int64 buffer_len, char *dir, char *name) {
     int32 len;
 
-    len = snprintf2(buffer, buffer_len, "%s/%s", dir, name);
+    len = fmt_sprintf(buffer, buffer_len, "%s/%s", dir, name);
     ASSERT_POSITIVE(len);
     ASSERT_LESS(len, buffer_len);
 
@@ -1246,16 +1246,16 @@ test_make_temp_dir(char *buffer, int32 capacity, char *name) {
             fatal(EXIT_FAILURE);
         }
         prefix_len = (int32)temp_len;
-        len = snprintf2(buffer + prefix_len, capacity - prefix_len,
+        len = fmt_sprintf(buffer + prefix_len, capacity - prefix_len,
                         "%s_XXXXXX", name);
     } else {
-        len = snprintf2(buffer, capacity, "%s/%s_XXXXXX", tmpdir, name);
+        len = fmt_sprintf(buffer, capacity, "%s/%s_XXXXXX", tmpdir, name);
     }
 #else
     if (tmpdir == NULL) {
         tmpdir = "/tmp";
     }
-    len = snprintf2(buffer, capacity, "%s/%s_XXXXXX", tmpdir, name);
+    len = fmt_sprintf(buffer, capacity, "%s/%s_XXXXXX", tmpdir, name);
 #endif
     if ((len <= 0) || (len >= (capacity - prefix_len))) {
         error("Temporary directory path too long.\n");
