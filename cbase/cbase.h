@@ -67,6 +67,30 @@ strlen32(char *string) {
 }
 
 INLINE int32
+strnlen32(char *string, int32 limit) {
+    size_t len;
+
+    if (DEBUGGING) {
+        if (string == NULL) {
+            TRAP();
+        }
+        if (limit < 0) {
+            TRAP();
+        }
+    }
+    len = strnlen(string, (size_t)limit);
+
+    if (DEBUGGING) {
+        if (len >= INT32_MAX) {
+            error("Error: string (%.*s ...) is too long.\n", 50, string);
+            fatal(EXIT_FAILURE);
+        }
+    }
+
+    return (int32)len;
+}
+
+INLINE int32
 optional_strlen32(char *string) {
     if (string == NULL) {
         return 0;

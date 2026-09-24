@@ -277,17 +277,17 @@ sb_opt_cstr(StrBuilder *buffer) {
 }
 
 void
-sb_free(StrBuilder *str_builder) {
-    free2(str_builder->data, str_builder->cap);
-    *str_builder = (StrBuilder){0};
+sb_free(StrBuilder *str) {
+    free2(str->data, str->cap);
+    *str = (StrBuilder){0};
     return;
 }
 
 void
-sb_clear(StrBuilder *str_builder) {
-    str_builder->len = 0;
-    if (str_builder->data) {
-        str_builder->data[0] = '\0';
+sb_clear(StrBuilder *str) {
+    str->len = 0;
+    if (str->data) {
+        str->data[0] = '\0';
     }
     return;
 }
@@ -331,8 +331,8 @@ sb_move(StrBuilder *dest, StrBuilder *source) {
 }
 
 int32
-sb_set(StrBuilder *str_builder, char *data, int32 data_len) {
-    if (str_builder == NULL) {
+sb_set(StrBuilder *str, char *data, int32 data_len) {
+    if (str == NULL) {
         return -EINVAL;
     }
     if (data_len < 0) {
@@ -341,22 +341,22 @@ sb_set(StrBuilder *str_builder, char *data, int32 data_len) {
     if ((data == NULL) && (data_len > 0)) {
         return -EINVAL;
     }
-    if ((data == str_builder->data) && str_builder->data) {
-        if (data_len > str_builder->len) {
+    if ((data == str->data) && str->data) {
+        if (data_len > str->len) {
             return -EINVAL;
         }
-        str_builder->len = data_len;
-        str_builder->data[data_len] = '\0';
-        return str_builder->len;
+        str->len = data_len;
+        str->data[data_len] = '\0';
+        return str->len;
     }
 
-    sb_clear(str_builder);
-    sb_append(str_builder, data, data_len);
-    return str_builder->len;
+    sb_clear(str);
+    sb_append(str, data, data_len);
+    return str->len;
 }
 
 void
-sb_reserve(StrBuilder *str_builder, int64 extra) {
+sb_reserve(StrBuilder *str, int64 extra) {
     int64 needed;
     int64 new_cap;
     int32 old_cap;
@@ -365,44 +365,44 @@ sb_reserve(StrBuilder *str_builder, int64 extra) {
         return;
     }
 
-    if (UNLIKELY(extra >= MAXOF(str_builder->cap))) {
+    if (UNLIKELY(extra >= MAXOF(str->cap))) {
         error("StrBuilder only supports strings shorter than 2GB.\n");
         fatal(EXIT_FAILURE);
     }
 
-    needed = str_builder->len + extra + 1;
-    if (str_builder->data && (needed <= str_builder->cap)) {
+    needed = str->len + extra + 1;
+    if (str->data && (needed <= str->cap)) {
         return;
     }
-    if (UNLIKELY(needed >= MAXOF(str_builder->cap))) {
+    if (UNLIKELY(needed >= MAXOF(str->cap))) {
         error("StrBuilder only supports strings shorter than 2GB.\n");
         fatal(EXIT_FAILURE);
     }
 
-    old_cap = str_builder->cap;
-    if (str_builder->data == NULL) {
+    old_cap = str->cap;
+    if (str->data == NULL) {
         old_cap = 0;
     }
 
-    new_cap = str_builder->cap;
+    new_cap = str->cap;
     if (new_cap <= 0) {
         new_cap = STR_BUILDER_INITIAL_CAPACITY;
     }
     while (new_cap < needed) {
         new_cap *= 2;
     }
-    if (new_cap >= MAXOF(str_builder->cap)) {
+    if (new_cap >= MAXOF(str->cap)) {
         new_cap = needed;
     }
 
-    str_builder->data = realloc2(str_builder->data, old_cap, new_cap,
-                                 SIZEOF(*str_builder->data));
-    str_builder->cap = (int32)new_cap;
+    str->data = realloc2(str->data, old_cap, new_cap,
+                                 SIZEOF(*str->data));
+    str->cap = (int32)new_cap;
     return;
 }
 
 void
-sb_append(StrBuilder *str_builder, char *data, int64 data_len) {
+sb_append(StrBuilder *str, char *data, int64 data_len) {
     bool aliases = false;
     int32 data_offset = 0;
 
@@ -410,128 +410,137 @@ sb_append(StrBuilder *str_builder, char *data, int64 data_len) {
         return;
     }
 
-    if (UNLIKELY(data == str_builder->data)) {
+    if (UNLIKELY(data == str->data)) {
         aliases = true;
-    } else if (LIKELY(str_builder->data != NULL)) {
+    } else if (LIKELY(str->data != NULL)) {
         uintptr data_address = (uintptr)data;
-        uintptr start = (uintptr)str_builder->data;
+        uintptr start = (uintptr)str->data;
 
         if (data_address >= start) {
             uintptr offset = data_address - start;
 
-            if (UNLIKELY(offset < (uint32)str_builder->cap)) {
+            if (UNLIKELY(offset < (uint32)str->cap)) {
                 aliases = true;
                 data_offset = (int32)offset;
             }
         }
     }
 
-    sb_reserve(str_builder, data_len);
+    sb_reserve(str, data_len);
     if (UNLIKELY(aliases)) {
-        data = str_builder->data + data_offset;
-        memmove64(str_builder->data + str_builder->len, data, data_len);
+        data = str->data + data_offset;
+        memmove64(str->data + str->len, data, data_len);
     } else {
-        memcpy64(str_builder->data + str_builder->len, data, data_len);
+        memcpy64(str->data + str->len, data, data_len);
     }
-    str_builder->len += (int32)data_len;
-    str_builder->data[str_builder->len] = '\0';
+    str->len += (int32)data_len;
+    str->data[str->len] = '\0';
 
     return;
 }
 
 void
-sb_append_byte(StrBuilder *str_builder, char byte) {
+sb_append_byte(StrBuilder *str, char byte) {
     if (byte == '\0') {
         return;
     }
-    sb_reserve(str_builder, 1);
-    str_builder->data[str_builder->len] = byte;
-    str_builder->len += 1;
-    str_builder->data[str_builder->len] = '\0';
+    sb_reserve(str, 1);
+    str->data[str->len] = byte;
+    str->len += 1;
+    str->data[str->len] = '\0';
     return;
 }
 
 void
-sb_append_byte_if_not(StrBuilder *str_builder, char byte) {
-    if ((str_builder->len > 0)
-        && (str_builder->data[str_builder->len - 1] == byte)) {
+sb_append_byte_if_not(StrBuilder *str, char byte) {
+    if ((str->len > 0)
+        && (str->data[str->len - 1] == byte)) {
         return;
     }
-    sb_append_byte(str_builder, byte);
+    sb_append_byte(str, byte);
     return;
 }
 
 void
-sb_itoa(StrBuilder *str_builder, llong num) {
+sb_itoa(StrBuilder *str, llong num) {
     int32 len;
 
-    sb_reserve(str_builder, 21);
-    len = itoa2(str_builder->data + str_builder->len,
-                str_builder->cap - str_builder->len, num);
-    str_builder->len += len;
+    sb_reserve(str, 21);
+    len = itoa2(str->data + str->len, str->cap - str->len, num);
+    str->len += len;
+
     return;
 }
 
 void
-sb_bytes_pretty(StrBuilder *str_builder, llong size) {
+sb_bytes_pretty(StrBuilder *str, llong size) {
     int32 len;
 
-    sb_reserve(str_builder, 16);
-    len = bytes_pretty(str_builder->data + str_builder->len, size);
-    str_builder->len += len;
+    sb_reserve(str, 16);
+    len = bytes_pretty(str->data + str->len, size);
+    str->len += len;
+
     return;
 }
 
 void
-sb_printf(StrBuilder *str_builder, char *fmt, ...) {
+sb_printf(StrBuilder *str, char *fmt, ...) {
     va_list ap;
     va_list ap2;
-    int32 n;
+    int32 estimate;
+    int32 len;
 
     va_start(ap, fmt);
     va_copy(ap2, ap);
-    n = vsnprintf(NULL, 0, fmt, ap);
+    estimate = fmt_vsnprintf_estimate(fmt, ap);
     va_end(ap);
 
-    if (n < 0) {
+    if (estimate < 0) {
         va_end(ap2);
         error("Error formatting \"%s\".", fmt);
         fatal(EXIT_FAILURE);
     }
-    if (n == 0) {
-        va_end(ap2);
-        return;
+
+    sb_reserve(str, estimate);
+
+    len = fmt_vsnprintf(str->data + str->len, estimate + 1, fmt, ap2);
+    va_end(ap2);
+
+    if (len < 0) {
+        error("Error formatting \"%s\".", fmt);
+        fatal(EXIT_FAILURE);
+    }
+    if (len > estimate) {
+        error("Error: Format estimate was too small for \"%s\".", fmt);
+        fatal(EXIT_FAILURE);
     }
 
-    sb_reserve(str_builder, n);
-    vsnprintf(str_builder->data + str_builder->len, (size_t)n + 1, fmt, ap2);
-    va_end(ap2);
-    str_builder->len += n;
+    str->len += len;
     return;
 }
 
 char *
-sb_steal(StrBuilder *str_builder, int32 *len, int32 *cap) {
-    char *data = str_builder->data;
+sb_steal(StrBuilder *str, int32 *len, int32 *cap) {
+    char *data = str->data;
 
     if (len) {
-        *len = str_builder->len;
+        *len = str->len;
     }
     if (cap) {
-        *cap = str_builder->cap;
+        *cap = str->cap;
     }
 
-    *str_builder = (StrBuilder){0};
+    *str = (StrBuilder){0};
     return data;
 }
 
 char *
-sb_steal_exact(StrBuilder *str_builder, int32 *len) {
+sb_steal_exact(StrBuilder *str, int32 *len) {
     char *data;
     int32 data_len;
     int32 cap;
 
-    data = sb_steal(str_builder, &data_len, &cap);
+    data = sb_steal(str, &data_len, &cap);
     if (cap != data_len + 1) {
         data = realloc2(data, cap, data_len + 1, SIZEOF(*data));
     }
@@ -811,6 +820,17 @@ main(void) {
                      "x0 -9223372036854775808 9223372036854775807");
         sb_free(&builder);
     }
+    {
+        StrBuilder builder = {0};
+        int32 count = 0;
+
+        sb_printf(&builder, "%s %.10s %d%n", "x", "abc", 7, &count);
+        ASSERT_EQUAL(builder.data, "x abc 7");
+        ASSERT_EQUAL(builder.len, 7);
+        ASSERT_EQUAL(count, builder.len);
+        sb_free(&builder);
+    }
+
     {
         StrBuilder builder = {0};
         SB_APPEND(&builder, "x");
