@@ -57,13 +57,18 @@ _Static_assert(FMT_FLOAT_MAX_EXP_PREFIX
                + FMT_FLOAT_MAX_PRECISION < FMT_FLOAT_RYU_BUFFER_SIZE,
                "format scientific temporary buffer is too small");
 
-enum {
-    FMT_FLAG_LEFT = 1 << 0,
-    FMT_FLAG_SIGN = 1 << 1,
-    FMT_FLAG_SPACE = 1 << 2,
-    FMT_FLAG_ALTERNATE = 1 << 3,
-    FMT_FLAG_ZERO = 1 << 4,
-};
+#define ENUM_NAME FmtFlags
+#define ENUM_BITFLAGS 1
+#define ENUM_PREFIX_ FMT_FLAG_
+#define ENUM_FIELDS             \
+    XX(FMT_FLAG_LEFT)           \
+    XX(FMT_FLAG_SIGN)           \
+    XX(FMT_FLAG_SPACE)          \
+    XX(FMT_FLAG_ALTERNATE)      \
+    XX(FMT_FLAG_ZERO)
+#define XENUMS_NO_TESTS 1
+#include "xenums.c"
+#undef XENUMS_NO_TESTS
 
 enum FormatWidthKind {
     FMT_WIDTH_NONE,
@@ -90,7 +95,7 @@ enum FormatLength {
 };
 
 typedef struct FormatSpec {
-    int32 flags;
+    enum FmtFlags flags;
     int32 width;
     int32 precision;
     enum FormatWidthKind width_kind;
@@ -416,7 +421,7 @@ fmt_has_precision(FormatSpec *spec) {
 }
 
 static int32
-fmt_validate_flags(FormatSpec *spec, int32 allowed_flags) {
+fmt_validate_flags(FormatSpec *spec, enum FmtFlags allowed_flags) {
     ASSERT(spec != NULL);
 
     if ((spec->flags & ~allowed_flags) != 0) {
@@ -540,9 +545,9 @@ fmt_parse_spec(char *cursor, char **next, FormatSpec *spec) {
 
 typedef struct FormatSink {
     char *buffer;
-    int64 capacity;
-    int64 written;
-    int64 total;
+    int32 capacity;
+    int32 written;
+    int32 total;
     int32 status;
     bool unchecked;
 } FormatSink;
@@ -554,12 +559,15 @@ fmt_sink_init(FormatSink *sink, char *buffer, int64 capacity) {
     if (capacity < 0) {
         return -EINVAL;
     }
+    if (capacity > INT32_MAX) {
+        return -EOVERFLOW;
+    }
     if (capacity > 0 && buffer == NULL) {
         return -EINVAL;
     }
 
     sink->buffer = buffer;
-    sink->capacity = capacity;
+    sink->capacity = (int32)capacity;
     sink->written = 0;
     sink->total = 0;
     sink->status = 0;
@@ -580,19 +588,19 @@ fmt_sink_add_total(FormatSink *sink, int64 len) {
     if (sink->status < 0) {
         return;
     }
-    if (len > INT64_MAX - sink->total) {
+    if (len > INT32_MAX - sink->total) {
         sink->status = -EOVERFLOW;
         return;
     }
 
-    sink->total += len;
+    sink->total += (int32)len;
     return;
 }
 
 static void
 fmt_sink_write(FormatSink *sink, char *data, int64 len) {
-    int64 available;
-    int64 copy_len;
+    int32 available;
+    int32 copy_len;
 
     ASSERT(sink != NULL);
     ASSERT(data != NULL);
@@ -612,7 +620,7 @@ fmt_sink_write(FormatSink *sink, char *data, int64 len) {
             ASSERT_LESS(sink->written + len, sink->capacity);
         }
         memcpy64(sink->buffer + sink->written, data, len);
-        sink->written += len;
+        sink->written += (int32)len;
         sink->buffer[sink->written] = '\0';
         return;
     }
@@ -633,7 +641,7 @@ fmt_sink_write(FormatSink *sink, char *data, int64 len) {
         return;
     }
 
-    copy_len = MIN(len, available);
+    copy_len = (int32)MIN(len, (int64)available);
     memcpy64(sink->buffer + sink->written, data, copy_len);
     sink->written += copy_len;
     sink->buffer[sink->written] = '\0';
@@ -653,17 +661,14 @@ fmt_sink_finish(FormatSink *sink) {
     if (sink->status < 0) {
         return sink->status;
     }
-    if (sink->total > INT32_MAX) {
-        return -EOVERFLOW;
-    }
 
-    return (int32)sink->total;
+    return sink->total;
 }
 
 static void
 fmt_sink_write_repeat(FormatSink *sink, char byte, int64 len) {
-    int64 available;
-    int64 copy_len;
+    int32 available;
+    int32 copy_len;
 
     ASSERT(sink != NULL);
     ASSERT_NON_NEGATIVE(len);
@@ -682,7 +687,7 @@ fmt_sink_write_repeat(FormatSink *sink, char byte, int64 len) {
             ASSERT_LESS(sink->written + len, sink->capacity);
         }
         memset64(sink->buffer + sink->written, byte, len);
-        sink->written += len;
+        sink->written += (int32)len;
         sink->buffer[sink->written] = '\0';
         return;
     }
@@ -703,7 +708,7 @@ fmt_sink_write_repeat(FormatSink *sink, char byte, int64 len) {
         return;
     }
 
-    copy_len = MIN(len, available);
+    copy_len = (int32)MIN(len, (int64)available);
     memset64(sink->buffer + sink->written, byte, copy_len);
     sink->written += copy_len;
     sink->buffer[sink->written] = '\0';
@@ -4602,7 +4607,7 @@ test_fmt_parser_valid_specs(void) {
 
     spec = fmt_test_parse_one("%08.3d");
     ASSERT_EQUAL(spec.conversion, 'd');
-    ASSERT_EQUAL(spec.flags, FMT_FLAG_ZERO);
+    ASSERT(spec.flags == FMT_FLAG_ZERO);
     ASSERT(spec.width_kind == FMT_WIDTH_LITERAL);
     ASSERT_EQUAL(spec.width, 8);
     ASSERT(spec.precision_kind == FMT_PRECISION_LITERAL);
@@ -4617,11 +4622,11 @@ test_fmt_parser_valid_specs(void) {
 
     spec = fmt_test_parse_one("%-+ #0w32x");
     ASSERT_EQUAL(spec.conversion, 'x');
-    ASSERT_EQUAL(spec.flags, FMT_FLAG_LEFT
-                             |FMT_FLAG_SIGN
-                             |FMT_FLAG_SPACE
-                             |FMT_FLAG_ALTERNATE
-                             |FMT_FLAG_ZERO);
+    ASSERT(spec.flags == (FMT_FLAG_LEFT
+                          |FMT_FLAG_SIGN
+                          |FMT_FLAG_SPACE
+                          |FMT_FLAG_ALTERNATE
+                          |FMT_FLAG_ZERO));
     ASSERT(spec.length == FMT_LENGTH_W32);
 
     spec = fmt_test_parse_one("%hhd");
@@ -5471,6 +5476,8 @@ test_fmt_sink_validation(void) {
     ASSERT_EQUAL(fmt_test_snprintf(NULL, 0, "abc"), 3);
     ASSERT_EQUAL(fmt_test_snprintf(NULL, 1, "abc"), -EINVAL);
     ASSERT_EQUAL(fmt_test_snprintf(buffer, -1, "abc"), -EINVAL);
+    ASSERT_EQUAL(fmt_test_snprintf(buffer, (int64)INT32_MAX + 1, "abc"),
+                 -EOVERFLOW);
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), NULL), -EINVAL);
     ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%*d",
                                    INT32_MIN, 0), -EOVERFLOW);
@@ -5482,8 +5489,11 @@ test_fmt_sink_validation(void) {
     ASSERT_EQUAL(buffer[1], (char)0x7f);
 
     ASSERT(!fmt_sink_init(&sink, buffer, SIZEOF(buffer)));
-    sink.total = (int64)INT32_MAX + 1;
+    fmt_sink_add_total(&sink, INT32_MAX);
+    fmt_sink_add_total(&sink, 1);
     ASSERT_EQUAL(fmt_sink_finish(&sink), -EOVERFLOW);
+    ASSERT_EQUAL(fmt_sink_init(&sink, buffer, (int64)INT32_MAX + 1),
+                 -EOVERFLOW);
 
     return;
 }
