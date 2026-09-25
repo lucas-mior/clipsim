@@ -92,12 +92,12 @@
 #include <string.h>
 
 // optional C11 headers
-#if !defined(_MSC_VER) && !defined(__STDC_NO_COMPLEX__)
-#include <complex.h>
-#if defined(I)
-#undef I
-#endif
-#endif
+/* #if !defined(_MSC_VER) && !defined(__STDC_NO_COMPLEX__) */
+/* #include <complex.h> */
+/* #if defined(I) */
+/* #undef I */
+/* #endif */
+/* #endif */
 
 #include <time.h>
 #include <wchar.h>

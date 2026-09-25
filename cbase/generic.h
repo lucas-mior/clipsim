@@ -199,7 +199,7 @@ _Generic((VAR),                \
 
 #define TYPEBITS(VAR) (SIZEOF(VAR)*CHAR_BIT)
 
-#define DOUBLE_GET(x)                                           \
+#define DOUBLE_GET2(x)                                          \
 _Generic((x),                                                   \
     void*:   double_from_voidp,                                 \
     char*:   double_from_charp,                                 \
@@ -221,9 +221,9 @@ _Generic((x),                                                   \
 )(x)
 
 #if CC_GCC || CC_CLANG
-#define DOUBLE_GET2(VAR, TYPE) double_get((union Primitive)(VAR), TYPE)
+#define DOUBLE_GET(VAR, TYPE) double_get((union Primitive)(VAR), TYPE)
 #else
-#define DOUBLE_GET2(VAR, TYPE) DOUBLE_GET(VAR)
+#define DOUBLE_GET(VAR, TYPE) DOUBLE_GET2(VAR)
 #endif
 
 #define PRINT_SIGNED(VAR, TYPE) \
@@ -236,7 +236,7 @@ _Generic((x),                                                   \
 
 #define PRINT_DOUBLE(VAR, TYPE) \
   fprintf(stderr, "["GREEN("%s%lld")"]%s = %f ", \
-                  typename(TYPE), typebits(TYPE), #VAR, DOUBLE_GET2(VAR, TYPE))
+                  typename(TYPE), typebits(TYPE), #VAR, DOUBLE_GET(VAR, TYPE))
 
 #define PRINT_OTHER(VAR, TYPE, FORMAT, CAST) \
   fprintf(stderr, "["GREEN("%s%lld")"]%s = "FORMAT" ", \

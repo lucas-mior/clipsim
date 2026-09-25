@@ -22,11 +22,11 @@
 #define ASSERT_FP_KIND_FLOAT   1
 #define ASSERT_FP_KIND_DOUBLE  2
 
-#define ASSERT_FP_KIND_EXPR(VAR)                                               \
-_Generic((VAR),                                                                \
-    float:  ASSERT_FP_KIND_FLOAT,                                              \
-    double: ASSERT_FP_KIND_DOUBLE,                                             \
-    default: ASSERT_FP_KIND_NONE                                               \
+#define ASSERT_FP_KIND_EXPR(VAR)     \
+_Generic((VAR),                      \
+    float:  ASSERT_FP_KIND_FLOAT,    \
+    double: ASSERT_FP_KIND_DOUBLE,   \
+    default: ASSERT_FP_KIND_NONE     \
 )
 
 #if !defined(ASSERT_FLOAT_MAX_ULPS)
@@ -64,8 +64,8 @@ void assert_not_equal_3(char *, int32, char *,
 void assert_not_equal_4(char *, int32, char *,
                         char *, char *, char *, int32, char *, int32);
 
-#define ASSERT_DECLARE_STRINGS(MODE)                                           \
-void a_strings_##MODE(char *, int32, char *,                                   \
+#define ASSERT_DECLARE_STRINGS(MODE)                      \
+void a_strings_##MODE(char *, int32, char *,              \
                       char *, char *, char *, char *);
 
 ASSERT_DECLARE_STRINGS(less)
@@ -77,8 +77,8 @@ ASSERT_DECLARE_STRINGS(more_equal)
 
 #undef ASSERT_DECLARE_STRINGS
 
-#define ASSERT_DECLARE_POINTERS(MODE)                                          \
-void a_pointers_##MODE(char *, int32, char *,                                  \
+#define ASSERT_DECLARE_POINTERS(MODE)                     \
+void a_pointers_##MODE(char *, int32, char *,             \
                        char *, char *, void *, void *);
 
 ASSERT_DECLARE_POINTERS(less)
@@ -90,10 +90,10 @@ ASSERT_DECLARE_POINTERS(more_equal)
 
 #undef ASSERT_DECLARE_POINTERS
 
-#define ASSERT_DECLARE_INTEGERS(SIGN, MODE)                                    \
-void a_both_##SIGN##_##MODE(char *, int32, char *,                             \
-                            char *, char *, char *, char *,                    \
-                            llong, llong,                                      \
+#define ASSERT_DECLARE_INTEGERS(SIGN, MODE)                   \
+void a_both_##SIGN##_##MODE(char *, int32, char *,            \
+                            char *, char *, char *, char *,   \
+                            llong, llong,                     \
                             SIGN long long, SIGN long long);
 
 ASSERT_DECLARE_INTEGERS(signed, less)
@@ -111,9 +111,9 @@ ASSERT_DECLARE_INTEGERS(unsigned, more_equal)
 
 #undef ASSERT_DECLARE_INTEGERS
 
-#define ASSERT_DECLARE_SIGN_UNSIGN(MODE)                                       \
-void a_signed_unsigned##MODE(char *, int32, char *,                            \
-                             char *, char *, char *, char *,                   \
+#define ASSERT_DECLARE_SIGN_UNSIGN(MODE)                      \
+void a_signed_unsigned##MODE(char *, int32, char *,           \
+                             char *, char *, char *, char *,  \
                              llong, llong, llong, ullong);
 
 ASSERT_DECLARE_SIGN_UNSIGN(less)
@@ -125,9 +125,9 @@ ASSERT_DECLARE_SIGN_UNSIGN(more_equal)
 
 #undef ASSERT_DECLARE_SIGN_UNSIGN
 
-#define ASSERT_DECLARE_UNSIGN_SIGN(MODE)                                       \
-void a_unsigned_signed_##MODE(char *, int32, char *,                           \
-                              char *, char *, char *, char *,                  \
+#define ASSERT_DECLARE_UNSIGN_SIGN(MODE)                      \
+void a_unsigned_signed_##MODE(char *, int32, char *,          \
+                              char *, char *, char *, char *, \
                               llong, llong, ullong, llong);
 
 ASSERT_DECLARE_UNSIGN_SIGN(less)
@@ -139,9 +139,9 @@ ASSERT_DECLARE_UNSIGN_SIGN(more_equal)
 
 #undef ASSERT_DECLARE_UNSIGN_SIGN
 
-#define ASSERT_DECLARE_DOUBLE(MODE)                                            \
-void a_double_##MODE(char *, int32, char *,                                    \
-                     char *, char *, char *, char *,                           \
+#define ASSERT_DECLARE_DOUBLE(MODE)                           \
+void a_double_##MODE(char *, int32, char *,                   \
+                     char *, char *, char *, char *,          \
                      llong, llong, double, double);
 
 ASSERT_DECLARE_DOUBLE(less)
@@ -153,9 +153,9 @@ ASSERT_DECLARE_DOUBLE(more_equal)
 
 #undef ASSERT_DECLARE_DOUBLE
 
-#define ASSERT_DECLARE_DOUBLE_CLOSE(MODE)                                      \
-void a_double_##MODE(char *, int32, char *,                                    \
-                     char *, char *, char *, char *,                           \
+#define ASSERT_DECLARE_DOUBLE_CLOSE(MODE)                     \
+void a_double_##MODE(char *, int32, char *,                   \
+                     char *, char *, char *, char *,          \
                      llong, llong, int, int, double, double);
 
 ASSERT_DECLARE_DOUBLE_CLOSE(close)
@@ -163,9 +163,9 @@ ASSERT_DECLARE_DOUBLE_CLOSE(not_close)
 
 #undef ASSERT_DECLARE_DOUBLE_CLOSE
 
-#define ASSERT_DECLARE_DOUBLE_CLOSE_TOL(MODE)                                  \
-void a_double_##MODE(char *, int32, char *,                                    \
-                     char *, char *, char *, char *,                           \
+#define ASSERT_DECLARE_DOUBLE_CLOSE_TOL(MODE)                 \
+void a_double_##MODE(char *, int32, char *,                   \
+                     char *, char *, char *, char *,          \
                      llong, llong, double, double, double);
 
 ASSERT_DECLARE_DOUBLE_CLOSE_TOL(close_tol)
@@ -173,9 +173,9 @@ ASSERT_DECLARE_DOUBLE_CLOSE_TOL(not_close_tol)
 
 #undef ASSERT_DECLARE_DOUBLE_CLOSE_TOL
 
-#define ASSERT_DECLARE_BOOL(MODE)                                              \
-void a_bool_##MODE(char *, int32, char *,                                      \
-                   char *, char *, char *, char *,                             \
+#define ASSERT_DECLARE_BOOL(MODE)                             \
+void a_bool_##MODE(char *, int32, char *,                     \
+                   char *, char *, char *, char *,            \
                    llong, llong, bool, bool);
 
 ASSERT_DECLARE_BOOL(equal)
@@ -199,10 +199,13 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_FIRST(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_SIGN(void *, ...);
 
-#define ASSERT_DECLARE_SIGN(MODE)                                              \
-void a_sign_integer_##MODE(char *, int32, char *, char *, llong);              \
-void a_sign_double_##MODE(char *, int32, char *, char *, double);              \
-void a_sign_ldouble_##MODE(char *, int32, char *, char *, ldouble);
+#define ASSERT_DECLARE_SIGN(MODE)                             \
+void a_sign_integer_##MODE(char *, int32, char *,             \
+                           char *, llong);                    \
+void a_sign_double_##MODE(char *, int32, char *,              \
+                          char *, double);                    \
+void a_sign_ldouble_##MODE(char *, int32, char *,             \
+                           char *, ldouble);
 
 ASSERT_DECLARE_SIGN(positive)
 ASSERT_DECLARE_SIGN(negative)
@@ -211,49 +214,50 @@ ASSERT_DECLARE_SIGN(non_negative)
 
 #undef ASSERT_DECLARE_SIGN
 
-#define ASSERT_SIGN_FUNCTION(MODE, VAR1)                                       \
-_Generic((VAR1),                                                               \
-    float:   a_sign_double_##MODE,                                             \
-    double:  a_sign_double_##MODE,                                             \
-    ldouble: a_sign_ldouble_##MODE,                                            \
-    default: a_sign_integer_##MODE                                             \
+#define ASSERT_SIGN_FUNCTION(MODE, VAR1)                           \
+_Generic((VAR1),                                                   \
+    float:   a_sign_double_##MODE,                                 \
+    double:  a_sign_double_##MODE,                                 \
+    ldouble: a_sign_ldouble_##MODE,                                \
+    default: a_sign_integer_##MODE                                 \
 )(__FILE__, __LINE__, FUNC__, #VAR1, VAR1)
 
-#define ASSERT(...) do {                                                       \
-    if (!(__VA_ARGS__)) {                                                      \
-        if (DEBUGGING) {                                                       \
-            assert_error(__FILE__, __LINE__, FUNC__, "%s\n", #__VA_ARGS__);    \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
-        }                                                                      \
-    }                                                                          \
+#define ASSERT(...) do {                                           \
+    if (!(__VA_ARGS__)) {                                          \
+        if (DEBUGGING) {                                           \
+            assert_error(__FILE__, __LINE__, FUNC__,               \
+                         "%s\n", #__VA_ARGS__);                    \
+            TRAP();                                                \
+        } else {                                                   \
+            UNREACHABLE();                                         \
+        }                                                          \
+    }                                                              \
 } while (0)
 
-#define ASSERT_NULL(VAR1) do {                                                 \
-    void *ASSERT_NULL = VAR1;                                                  \
-    if (ASSERT_NULL != NULL) {                                                 \
-        if (DEBUGGING) {                                                       \
-            assert_error(__FILE__, __LINE__, FUNC__,                           \
-                         "%s = %p == NULL\n", #VAR1, ASSERT_NULL);             \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
-        }                                                                      \
-    }                                                                          \
+#define ASSERT_NULL(VAR1) do {                                     \
+    void *ASSERT_NULL = VAR1;                                      \
+    if (ASSERT_NULL != NULL) {                                     \
+        if (DEBUGGING) {                                           \
+            assert_error(__FILE__, __LINE__, FUNC__,               \
+                         "%s = %p == NULL\n", #VAR1, ASSERT_NULL); \
+            TRAP();                                                \
+        } else {                                                   \
+            UNREACHABLE();                                         \
+        }                                                          \
+    }                                                              \
 } while (0)
 
-#define ASSERT_ZERO(VAR1) do {                                                 \
-    llong ASSERT_ZERO = VAR1;                                                  \
-    if (ASSERT_ZERO != 0) {                                                    \
-        if (DEBUGGING) {                                                       \
-            assert_error(__FILE__, __LINE__, FUNC__,                           \
-                         "%s = %lld == 0\n", #VAR1, ASSERT_ZERO);              \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
-        }                                                                      \
-    }                                                                          \
+#define ASSERT_ZERO(VAR1) do {                                     \
+    llong ASSERT_ZERO = VAR1;                                      \
+    if (ASSERT_ZERO != 0) {                                        \
+        if (DEBUGGING) {                                           \
+            assert_error(__FILE__, __LINE__, FUNC__,               \
+                         "%s = %lld == 0\n", #VAR1, ASSERT_ZERO);  \
+            TRAP();                                                \
+        } else {                                                   \
+            UNREACHABLE();                                         \
+        }                                                          \
+    }                                                              \
 } while (0)
 
 #define ASSERT_POSITIVE(VAR1)     ASSERT_SIGN_FUNCTION(positive, VAR1)
@@ -268,36 +272,36 @@ extern volatile sig_atomic_t assert_traps_caught;
 void assert_traps_install(char *, int32, char *);
 void assert_traps_restore(char *, int32, char *);
 
-#define ASSERT_TRAPS(BLOCK) do {                                               \
-    assert_traps_install(__FILE__, __LINE__, FUNC__);                          \
-    if (sigsetjmp(assert_traps_env, 1) == 0) {                                 \
-        BLOCK;                                                                 \
-        assert_traps_restore(__FILE__, __LINE__, FUNC__);                      \
-        assert_error(__FILE__, __LINE__, FUNC__,                               \
-                     "Code block did not trap: %s\n", #BLOCK);                 \
-        exit(EXIT_FAILURE);                                                    \
-    }                                                                          \
-    assert_traps_restore(__FILE__, __LINE__, FUNC__);                          \
-    ASSERT(assert_traps_caught);                                               \
+#define ASSERT_TRAPS(BLOCK) do {                                   \
+    assert_traps_install(__FILE__, __LINE__, FUNC__);              \
+    if (sigsetjmp(assert_traps_env, 1) == 0) {                     \
+        BLOCK;                                                     \
+        assert_traps_restore(__FILE__, __LINE__, FUNC__);          \
+        assert_error(__FILE__, __LINE__, FUNC__,                   \
+                     "Code block did not trap: %s\n", #BLOCK);     \
+        exit(EXIT_FAILURE);                                        \
+    }                                                              \
+    assert_traps_restore(__FILE__, __LINE__, FUNC__);              \
+    ASSERT(assert_traps_caught);                                   \
 } while (0)
 #else
-#define ASSERT_TRAPS(BLOCK) do {                                               \
-    assert_error(__FILE__, __LINE__, FUNC__,                                   \
-                 "ASSERT_TRAPS is only supported on Unix.\n");                 \
-    exit(EXIT_FAILURE);                                                        \
+#define ASSERT_TRAPS(BLOCK) do {                                   \
+    assert_error(__FILE__, __LINE__, FUNC__,                       \
+                 "ASSERT_TRAPS is only supported on Unix.\n");     \
+    exit(EXIT_FAILURE);                                            \
 } while (0)
 #endif
 
-#define ASSERT_FILE_CONTAINS(PATH, NEEDLE)                                     \
-    assert_file_contains(__FILE__, __LINE__, FUNC__,                           \
+#define ASSERT_FILE_CONTAINS(PATH, NEEDLE)                         \
+    assert_file_contains(__FILE__, __LINE__, FUNC__,               \
                          PATH, NEEDLE)
 
-#define ASSERT_CONTAINS(HAYSTACK, HAYSTACK_LEN, NEEDLE)                        \
-    assert_contains(__FILE__, __LINE__, FUNC__,                                \
+#define ASSERT_CONTAINS(HAYSTACK, HAYSTACK_LEN, NEEDLE)            \
+    assert_contains(__FILE__, __LINE__, FUNC__,                    \
                     HAYSTACK, HAYSTACK_LEN, NEEDLE)
 
-#define ASSERT_NOT_CONTAINS(HAYSTACK, HAYSTACK_LEN, NEEDLE)                    \
-    assert_not_contains(__FILE__, __LINE__, FUNC__,                            \
+#define ASSERT_NOT_CONTAINS(HAYSTACK, HAYSTACK_LEN, NEEDLE)        \
+    assert_not_contains(__FILE__, __LINE__, FUNC__,                \
                         HAYSTACK, HAYSTACK_LEN, NEEDLE)
 
 #define ASSERT_GLOB_MATCH_2(STRING, GLOB)                                      \
@@ -333,7 +337,7 @@ void assert_traps_restore(char *, int32, char *);
         if (DEBUGGING) {                                                       \
             assert_error(__FILE__, __LINE__, FUNC__,                           \
                          "[%s%lld]%s = %s between [%lld, %lld]\n",             \
-                         TYPENAME(X), TYPEBITS(X), #X, S_(X),                 \
+                         TYPENAME(X), TYPEBITS(X), #X, S_(X),                  \
                          (llong)(MIN_LIMIT), (llong)(MAX_LIMIT));              \
             TRAP();                                                            \
         } else {                                                               \
@@ -342,94 +346,94 @@ void assert_traps_restore(char *, int32, char *);
     }                                                                          \
 } while (0)
 
-#define A_BOTH_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                            \
-    a_both_signed_##MODE(__FILE__, __LINE__, FUNC__,                           \
-                         #VAR1, #VAR2,                                         \
-                         typename(TYPE1), typename(TYPE2),                     \
-                         typebits(TYPE1), typebits(TYPE2),                     \
+#define A_BOTH_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)           \
+    a_both_signed_##MODE(__FILE__, __LINE__, FUNC__,          \
+                         #VAR1, #VAR2,                        \
+                         typename(TYPE1), typename(TYPE2),    \
+                         typebits(TYPE1), typebits(TYPE2),    \
                          (llong)(VAR1), (llong)(VAR2))
 
-#define A_SIGN_UNSIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                          \
-    a_signed_unsigned##MODE(__FILE__, __LINE__, FUNC__,                        \
-                            #VAR1, #VAR2,                                      \
-                            typename(TYPE1), typename(TYPE2),                  \
-                            typebits(TYPE1), typebits(TYPE2),                  \
+#define A_SIGN_UNSIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)         \
+    a_signed_unsigned##MODE(__FILE__, __LINE__, FUNC__,       \
+                            #VAR1, #VAR2,                     \
+                            typename(TYPE1), typename(TYPE2), \
+                            typebits(TYPE1), typebits(TYPE2), \
                             (llong)(VAR1), (ullong)(VAR2))
 
 #if CHAR_MIN < 0
-#define A_CHAR_FOR_SIGN(MODE, VAR1, VAR2, TYPE1)                               \
+#define A_CHAR_FOR_SIGN(MODE, VAR1, VAR2, TYPE1)              \
     A_BOTH_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
 
-#define A_CHAR_FOR_UNSIGN(MODE, VAR1, VAR2, TYPE1)                             \
+#define A_CHAR_FOR_UNSIGN(MODE, VAR1, VAR2, TYPE1)            \
     A_UNSIGN_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
 
-#define A_FIRST_CHAR(MODE, VAR1, VAR2)                                         \
+#define A_FIRST_CHAR(MODE, VAR1, VAR2)                        \
     A_FIRST_SIGN(MODE, VAR1, VAR2, TYPE_CHAR)
 #else
-#define A_CHAR_FOR_SIGN(MODE, VAR1, VAR2, TYPE1)                               \
+#define A_CHAR_FOR_SIGN(MODE, VAR1, VAR2, TYPE1)              \
     A_SIGN_UNSIGN(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
 
-#define A_CHAR_FOR_UNSIGN(MODE, VAR1, VAR2, TYPE1)                             \
+#define A_CHAR_FOR_UNSIGN(MODE, VAR1, VAR2, TYPE1)            \
     A_BOTH_UNSIGN(MODE, VAR1, VAR2, TYPE1, TYPE_CHAR)
 
-#define A_FIRST_CHAR(MODE, VAR1, VAR2)                                         \
+#define A_FIRST_CHAR(MODE, VAR1, VAR2)                        \
     A_FIRST_UNSIGN(MODE, VAR1, VAR2, TYPE_CHAR)
 #endif
 
-#define A_FIRST_SIGN(MODE, VAR1, VAR2, TYPE1)                                  \
-_Generic((VAR2),                                                               \
-    char:    A_CHAR_FOR_SIGN(MODE, VAR1, VAR2, TYPE1),                         \
-    schar:   A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_SCHAR  ),           \
-    short:   A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_SHORT  ),           \
-    int:     A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_INT    ),           \
-    long:    A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_LONG   ),           \
-    llong:   A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_LLONG  ),           \
-    uchar:   A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UCHAR  ),           \
-    ushort:  A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_USHORT ),           \
-    uint:    A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UINT   ),           \
-    ulong:   A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULONG  ),           \
-    ullong:  A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULLONG ),           \
-    float:   A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_FLOAT  ),           \
-    double:  A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_DOUBLE ),           \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGN()                       \
+#define A_FIRST_SIGN(MODE, VAR1, VAR2, TYPE1)                        \
+_Generic((VAR2),                                                     \
+    char:    A_CHAR_FOR_SIGN(MODE, VAR1, VAR2, TYPE1),               \
+    schar:   A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_SCHAR  ), \
+    short:   A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_SHORT  ), \
+    int:     A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_INT    ), \
+    long:    A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_LONG   ), \
+    llong:   A_BOTH_SIGN(MODE,     VAR1, VAR2, TYPE1, TYPE_LLONG  ), \
+    uchar:   A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UCHAR  ), \
+    ushort:  A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_USHORT ), \
+    uint:    A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UINT   ), \
+    ulong:   A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULONG  ), \
+    ullong:  A_SIGN_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULLONG ), \
+    float:   A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_FLOAT  ), \
+    double:  A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGN()             \
 )
-#define A_BOTH_UNSIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                          \
-    a_both_unsigned_##MODE(__FILE__, __LINE__, FUNC__,                         \
-                           #VAR1, #VAR2,                                       \
-                           typename(TYPE1), typename(TYPE2),                   \
-                           typebits(TYPE1), typebits(TYPE2),                   \
+#define A_BOTH_UNSIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                \
+    a_both_unsigned_##MODE(__FILE__, __LINE__, FUNC__,               \
+                           #VAR1, #VAR2,                             \
+                           typename(TYPE1), typename(TYPE2),         \
+                           typebits(TYPE1), typebits(TYPE2),         \
                            (ullong)(VAR1), (ullong)(VAR2))
 
-#define A_UNSIGN_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                          \
-    a_unsigned_signed_##MODE(__FILE__, __LINE__, FUNC__,                       \
-                             #VAR1, #VAR2,                                     \
-                             typename(TYPE1), typename(TYPE2),                 \
-                             typebits(TYPE1), typebits(TYPE2),                 \
+#define A_UNSIGN_SIGN(MODE, VAR1, VAR2, TYPE1, TYPE2)                \
+    a_unsigned_signed_##MODE(__FILE__, __LINE__, FUNC__,             \
+                             #VAR1, #VAR2,                           \
+                             typename(TYPE1), typename(TYPE2),       \
+                             typebits(TYPE1), typebits(TYPE2),       \
                              (ullong)(VAR1), (llong)(VAR2))
 
-#define A_FIRST_UNSIGN(MODE, VAR1, VAR2, TYPE1)                                \
-_Generic((VAR2),                                                               \
-    char:    A_CHAR_FOR_UNSIGN(MODE, VAR1, VAR2, TYPE1),                       \
-    schar:   A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_SCHAR  ),           \
-    short:   A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_SHORT  ),           \
-    int:     A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_INT    ),           \
-    long:    A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_LONG   ),           \
-    llong:   A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_LLONG  ),           \
-    uchar:   A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UCHAR  ),           \
-    ushort:  A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_USHORT ),           \
-    uint:    A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UINT   ),           \
-    ulong:   A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULONG  ),           \
-    ullong:  A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULLONG ),           \
-    float:   A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_FLOAT  ),           \
-    double:  A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_DOUBLE ),           \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_UNSIGN()                     \
+#define A_FIRST_UNSIGN(MODE, VAR1, VAR2, TYPE1)                      \
+_Generic((VAR2),                                                     \
+    char:    A_CHAR_FOR_UNSIGN(MODE, VAR1, VAR2, TYPE1),             \
+    schar:   A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_SCHAR  ), \
+    short:   A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_SHORT  ), \
+    int:     A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_INT    ), \
+    long:    A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_LONG   ), \
+    llong:   A_UNSIGN_SIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_LLONG  ), \
+    uchar:   A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UCHAR  ), \
+    ushort:  A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_USHORT ), \
+    uint:    A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_UINT   ), \
+    ulong:   A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULONG  ), \
+    ullong:  A_BOTH_UNSIGN(MODE,   VAR1, VAR2, TYPE1, TYPE_ULLONG ), \
+    float:   A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_FLOAT  ), \
+    double:  A_BOTH_DOUBLE(MODE,   VAR1, VAR2, TYPE1, TYPE_DOUBLE ), \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_UNSIGN()           \
 )
 #define A_BOTH_DOUBLE(MODE, VAR1, VAR2, TYPE1, TYPE2)                          \
     a_double_##MODE(__FILE__, __LINE__, FUNC__,                                \
                     #VAR1, #VAR2,                                              \
                     typename(TYPE1), typename(TYPE2),                          \
                     typebits(TYPE1), typebits(TYPE2),                          \
-                    DOUBLE_GET2(VAR1, TYPE1), DOUBLE_GET2(VAR2, TYPE2))
+                    DOUBLE_GET(VAR1, TYPE1), DOUBLE_GET(VAR2, TYPE2))
 
 #define A_FIRST_DOUBLE(MODE, VAR1, VAR2, TYPE1)                                \
 _Generic((VAR2),                                                               \
@@ -532,12 +536,12 @@ _Generic((VAR1),                                                               \
   #define ASSERT_MORE_EQUAL(VAR1, VAR2)                                        \
       ASSERT_COMPARE_DIAGNOSTIC(more_equal, VAR1, VAR2)
 #else
-  #define ASSERT_EQUAL_2(VAR1, VAR2)    ASSERT_COMPARE(equal,      VAR1, VAR2)
+  #define ASSERT_EQUAL_2(VAR1, VAR2)     ASSERT_COMPARE(equal,      VAR1, VAR2)
   #define ASSERT_NOT_EQUAL_2(VAR1, VAR2) ASSERT_COMPARE(not_equal,  VAR1, VAR2)
-  #define ASSERT_LESS(VAR1, VAR2)       ASSERT_COMPARE(less,       VAR1, VAR2)
-  #define ASSERT_LESS_EQUAL(VAR1, VAR2) ASSERT_COMPARE(less_equal, VAR1, VAR2)
-  #define ASSERT_MORE(VAR1, VAR2)       ASSERT_COMPARE(more,       VAR1, VAR2)
-  #define ASSERT_MORE_EQUAL(VAR1, VAR2) ASSERT_COMPARE(more_equal, VAR1, VAR2)
+  #define ASSERT_LESS(VAR1, VAR2)        ASSERT_COMPARE(less,       VAR1, VAR2)
+  #define ASSERT_LESS_EQUAL(VAR1, VAR2)  ASSERT_COMPARE(less_equal, VAR1, VAR2)
+  #define ASSERT_MORE(VAR1, VAR2)        ASSERT_COMPARE(more,       VAR1, VAR2)
+  #define ASSERT_MORE_EQUAL(VAR1, VAR2)  ASSERT_COMPARE(more_equal, VAR1, VAR2)
 #endif
 
 #define ASSERT_EQUAL_CALL_2(VAR1, VAR2) ASSERT_EQUAL_2(VAR1, VAR2)
@@ -593,15 +597,14 @@ _Generic((VAR1),                                                               \
                     typename(TYPE1), typename(TYPE2),                          \
                     typebits(TYPE1), typebits(TYPE2),                          \
                     ASSERT_FP_KIND_EXPR(VAR1), ASSERT_FP_KIND_EXPR(VAR2),      \
-                    DOUBLE_GET2(VAR1, TYPE1), DOUBLE_GET2(VAR2, TYPE2))
+                    DOUBLE_GET(VAR1, TYPE1), DOUBLE_GET(VAR2, TYPE2))
 
 #define A_BOTH_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL, TYPE1, TYPE2)           \
     a_double_##MODE(__FILE__, __LINE__, FUNC__,                                \
                     #VAR1, #VAR2,                                              \
                     typename(TYPE1), typename(TYPE2),                          \
                     typebits(TYPE1), typebits(TYPE2),                          \
-                    DOUBLE_GET2(VAR1, TYPE1),                                  \
-                    DOUBLE_GET2(VAR2, TYPE2),                                  \
+                    DOUBLE_GET(VAR1, TYPE1), DOUBLE_GET(VAR2, TYPE2),          \
                     (double)(TOL))
 
 #define A_FIRST_DOUBLE_CLOSE(MODE, VAR1, VAR2, TYPE1)                          \
