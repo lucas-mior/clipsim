@@ -54,6 +54,19 @@ static char *signal_names[] = {
 #undef XSIGNAL
 #endif
 
+char *
+signal_name(int32 signum) {
+#if OS_UNIX
+    if ((signum >= 0)
+        && (signum < LENGTH(signal_names))
+        && (signal_names[signum] != NULL)) {
+        return signal_names[signum];
+    }
+#endif
+
+    return NULL;
+}
+
 void
 here_impl(char *file, int32 line, char *func) {
     static llong here_counter = 0;
@@ -782,8 +795,14 @@ xdup2(int fd1, int fd2) {
 void
 xkill(pid_t pid, int signum) {
     if (kill(pid, signum) < 0) {
-        error("Error sending signal %d=%s to %d: %s.\n",
-              signum, signal_names[signum], pid, strerror(errno));
+        char *name = signal_name(signum);
+        if (name != NULL) {
+            error("Error sending signal %d=%s to %d: %s.\n",
+                  signum, name, pid, strerror(errno));
+        } else {
+            error("Error sending signal %d to %d: %s.\n",
+                  signum, pid, strerror(errno));
+        }
     }
     return;
 }

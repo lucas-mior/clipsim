@@ -265,8 +265,10 @@ history_save(void) {
 
 void
 history_exit(int32 signum) {
-    if (signum < LENGTH(signal_names)) {
-        error("Received signal %s.\n", signal_names[signum]);
+    char *name = signal_name(signum);
+
+    if (name != NULL) {
+        error("Received signal %s.\n", name);
     } else {
         error("Received signal %d.\n", signum);
     }
