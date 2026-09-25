@@ -166,7 +166,9 @@ line_add_token(Line *line, enum TokenKind category, char *text, int32 len,
         return;
     }
 
-    line_reserve_tokens(line, 1);
+    if (line->token_count == line->token_capacity) {
+        line_reserve_tokens(line, 1);
+    }
 
     token = &line->tokens[line->token_count];
     token->kind = category;

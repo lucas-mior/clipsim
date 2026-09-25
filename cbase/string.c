@@ -361,7 +361,7 @@ str_reserve(String *str, int64 extra) {
     int64 new_cap;
     int32 old_cap;
 
-    if (extra <= 0) {
+    if (UNLIKELY(extra <= 0)) {
         return;
     }
 
@@ -371,7 +371,7 @@ str_reserve(String *str, int64 extra) {
     }
 
     needed = str->len + extra + 1;
-    if (str->data && (needed <= str->cap)) {
+    if (needed <= str->cap) {
         return;
     }
     if (UNLIKELY(needed >= MAXOF(str->cap))) {

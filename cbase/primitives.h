@@ -54,6 +54,8 @@ typedef intptr_t  intptr;
 typedef struct __declspec(align(16)) CbaseMaxAlign {
     char data[16];
 } CbaseMaxAlign;
+#elif CC_TCC
+typedef struct { char data[16]; } CbaseMaxAlign;
 #else
 typedef max_align_t CbaseMaxAlign;
 #endif
