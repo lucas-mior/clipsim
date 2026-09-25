@@ -521,43 +521,6 @@ qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
     return;
 }
 
-int32
-itoa2(char *buffer, int32 size, llong num) {
-    ullong magnitude;
-    int i = 0;
-    bool negative = false;
-
-    ASSERT_MORE_EQUAL(size, 22);
-
-    if (num < 0) {
-        negative = true;
-        magnitude = (ullong)(-(num + 1)) + 1;
-    } else {
-        magnitude = (ullong)num;
-    }
-
-    do {
-        buffer[i] = (char)(magnitude % 10 + '0');
-        i += 1;
-        magnitude /= 10;
-    } while (magnitude > 0);
-
-    if (negative) {
-        buffer[i] = '-';
-        i += 1;
-    }
-
-    buffer[i] = '\0';
-
-    for (long j = 0; j < i / 2; j += 1) {
-        char temp = buffer[j];
-        buffer[j] = buffer[i - j - 1];
-        buffer[i - j - 1] = temp;
-    }
-
-    return i;
-}
-
 void ATTR_PRINTF(4, 5)
 error_impl(char *file, int32 line, char *func, char *format, ...) {
     char buffer[BUFSIZ];
@@ -795,55 +758,6 @@ deg2rad(double degrees) {
     return degrees*DEG2RAD;
 }
 
-int32
-bytes_pretty(char *buffer, int64 raw) {
-    char *suffixes[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
-    double aux_pretty;
-    int64 i;
-    int32 n;
-    char *comma;
-
-    if (raw < 0) {
-        *buffer = '\0';
-        return 0;
-    }
-
-    if (raw <= 1023) {
-        n = itoa2(buffer, 22, raw);
-        buffer[n++] = 'B';
-        buffer[n] = '\0';
-        return n;
-    }
-
-    aux_pretty = (double)raw;
-    i = 0;
-    while ((aux_pretty >= 1024.0) && (i < LENGTH(suffixes))) {
-        aux_pretty /= 1024.0;
-        i += 1;
-    }
-
-    if (aux_pretty >= 1000) {
-        n = fmt_snprintf(buffer, 16, "%.1f%s", aux_pretty, suffixes[i]);
-    } else if (aux_pretty >= 100) {
-        n = fmt_snprintf(buffer, 16, "%.2f%s", aux_pretty, suffixes[i]);
-    } else if (aux_pretty >= 10) {
-        n = fmt_snprintf(buffer, 16, "%.3f%s", aux_pretty, suffixes[i]);
-    } else {
-        n = fmt_snprintf(buffer, 16, "%.4f%s", aux_pretty, suffixes[i]);
-    }
-
-    if ((n < 0) || (n >= 16)) {
-        error("Error formatting bytes: %d\n", n);
-        fatal(EXIT_FAILURE);
-    }
-
-    if ((comma = memchr64(buffer, ',', n))) {
-        *comma = '.';
-    }
-
-    return n;
-}
-
 #if !OS_WINDOWS
 #if OS_UNIX
 
@@ -964,7 +878,6 @@ util_functions_sink(void) {
     (void)command_signal;
     (void)command_wait;
 #endif
-    (void)bytes_pretty;
     (void)qsort64;
 
     (void)xmmap_commit;
@@ -1230,12 +1143,6 @@ main(int argc, char **argv) {
 #endif
 
     rand_int_seed((uint64)time(NULL));
-    for (int i = 0; i < 10; i += 1) {
-        int n = rand_int() - INT32_MAX / 2;
-        char itoa_buffer[32];
-        int32 itoa_len = ITOA(itoa_buffer, n);
-        ASSERT_EQUAL(atoi2(itoa_buffer, itoa_len), n);
-    }
 
     {
         int32 values[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -1258,15 +1165,6 @@ main(int argc, char **argv) {
         }
     }
 
-    {
-        char b[32];
-        bytes_pretty(b, 512);
-        ASSERT_EQUAL((char *)b, "512B");
-        bytes_pretty(b, 1024);
-        ASSERT_EQUAL((char *)b, "1.0000kB");
-        bytes_pretty(b, SIZEMB(2));
-        ASSERT_EQUAL((char *)b, "2.0000MB");
-    }
 
     {
         int32 arr[] = {10, 5, 20, 1};

@@ -252,8 +252,8 @@ static void
 test_get_directory_entries_reports_missing_directory(void) {
     DirEntry *entries = NULL;
 
-    ASSERT_EQUAL(get_directory_entries("cbase/this_directory_must_not_exist",
-                                       &entries), -1);
+    ASSERT_NEGATIVE(get_directory_entries("cbase/this_dir_must_not_exist",
+                                          &entries));
     return;
 }
 

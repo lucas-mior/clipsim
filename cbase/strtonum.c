@@ -108,6 +108,162 @@ parse_integer(char *str, int32 str_len, llong *result) {
     return i;
 }
 
+typedef struct AtoiLimit {
+    llong quotient;
+    int32 remainder;
+    llong overflow_result;
+} AtoiLimit;
+
+#define ATOI_POSITIVE_LIMIT_INDEX 0
+#define ATOI_NEGATIVE_LIMIT_INDEX 1
+#define ATOI_LIMITS_PER_BASE 2
+
+static const AtoiLimit atoi_limits[][ATOI_LIMITS_PER_BASE] = {
+    [2] = {
+        [ATOI_POSITIVE_LIMIT_INDEX] = {
+            .quotient = -LLONG_MAX/2,
+            .remainder = LLONG_MAX%2,
+            .overflow_result = LLONG_MAX,
+        },
+        [ATOI_NEGATIVE_LIMIT_INDEX] = {
+            .quotient = LLONG_MIN/2,
+            .remainder = -(LLONG_MIN%2),
+            .overflow_result = LLONG_MIN,
+        },
+    },
+    [8] = {
+        [ATOI_POSITIVE_LIMIT_INDEX] = {
+            .quotient = -LLONG_MAX/8,
+            .remainder = LLONG_MAX%8,
+            .overflow_result = LLONG_MAX,
+        },
+        [ATOI_NEGATIVE_LIMIT_INDEX] = {
+            .quotient = LLONG_MIN/8,
+            .remainder = -(LLONG_MIN%8),
+            .overflow_result = LLONG_MIN,
+        },
+    },
+    [10] = {
+        [ATOI_POSITIVE_LIMIT_INDEX] = {
+            .quotient = -LLONG_MAX/10,
+            .remainder = LLONG_MAX%10,
+            .overflow_result = LLONG_MAX,
+        },
+        [ATOI_NEGATIVE_LIMIT_INDEX] = {
+            .quotient = LLONG_MIN/10,
+            .remainder = -(LLONG_MIN%10),
+            .overflow_result = LLONG_MIN,
+        },
+    },
+    [16] = {
+        [ATOI_POSITIVE_LIMIT_INDEX] = {
+            .quotient = -LLONG_MAX/16,
+            .remainder = LLONG_MAX%16,
+            .overflow_result = LLONG_MAX,
+        },
+        [ATOI_NEGATIVE_LIMIT_INDEX] = {
+            .quotient = LLONG_MIN/16,
+            .remainder = -(LLONG_MIN%16),
+            .overflow_result = LLONG_MIN,
+        },
+    },
+};
+
+static bool
+atoi_would_overflow(llong value, int32 digit, AtoiLimit limit) {
+    if (value < limit.quotient) {
+        return true;
+    }
+    if ((value == limit.quotient) && (digit > limit.remainder)) {
+        return true;
+    }
+    return false;
+}
+
+static int32
+atoi_detect_base(char *str, int32 *i) {
+    int32 base = 10;
+
+    if (str[*i] != '0') {
+        return base;
+    }
+
+    switch (str[*i + 1]) {
+    case 'b':
+    case 'B':
+        base = 2;
+        *i += 2;
+        break;
+    case 'o':
+    case 'O':
+        base = 8;
+        *i += 2;
+        break;
+    case 'x':
+    case 'X':
+        base = 16;
+        *i += 2;
+        break;
+    default:
+        break;
+    }
+
+    return base;
+}
+
+static llong
+atoi_impl(char *str, int32 str_len, bool detect_base, bool saturate) {
+    int32 i = 0;
+    int32 base = 10;
+    int32 limit_index = ATOI_POSITIVE_LIMIT_INDEX;
+    llong value = 0;
+    AtoiLimit limit;
+    bool negative = false;
+
+    if ((str == NULL) || (str_len <= 0)) {
+        return 0;
+    }
+
+    if ((str[i] == '-') || (str[i] == '+')) {
+        negative = str[i] == '-';
+        if (negative) {
+            limit_index = ATOI_NEGATIVE_LIMIT_INDEX;
+        }
+        i += 1;
+    }
+
+    if (detect_base) {
+        base = atoi_detect_base(str, &i);
+    }
+
+    limit = atoi_limits[base][limit_index];
+
+    while (true) {
+        int32 digit = integer_digit_value(str[i]);
+
+        if ((digit < 0) || (digit >= base)) {
+            break;
+        }
+
+        if (saturate) {
+            if (atoi_would_overflow(value, digit, limit)) {
+                return limit.overflow_result;
+            }
+        } else if (DEBUGGING) {
+            if (atoi_would_overflow(value, digit, limit)) {
+                TRAP("overflow");
+            }
+        }
+        value = value*base - digit;
+        i += 1;
+    }
+
+    if (negative) {
+        return value;
+    }
+    return -value;
+}
+
 // low level without error checking, returns 0 on invalid input.
 // only to be used in the following situations:
 // - when the string was pre-parsed,
@@ -120,82 +276,30 @@ parse_integer(char *str, int32 str_len, llong *result) {
 //   - "do this forever, don't limit it"
 llong
 atoi2(char *str, int32 str_len) {
-    int32 i = 0;
-    llong value = 0;
-    llong limit = -MAXOF(value);
-    bool negative = false;
+    return atoi_impl(str, str_len, false, false);
+}
 
-    if ((str == NULL) || (str_len <= 0)) {
-        return 0;
-    }
-
-    if ((str[i] == '-') || (str[i] == '+')) {
-        negative = str[i] == '-';
-        if (negative) {
-            limit = MINOF(value);
-        }
-        i += 1;
-    }
-
-    (void)limit;
-
-    while ((str[i] >= '0') && (str[i] <= '9')) {
-        llong digit = str[i] - '0';
-
-        if (DEBUGGING) {
-            if (value < (limit + digit)/10) {
-                TRAP("overflow");
-            }
-        }
-        value = value*10 - digit;
-        i += 1;
-    }
-
-    if (negative) {
-        return value;
-    }
-    return -value;
+// Like atoi2, but detects 0b, 0o, and 0x prefixes.
+llong
+atoi_base(char *str, int32 str_len) {
+    return atoi_impl(str, str_len, true, false);
 }
 
 // Like atoi2, but saturates on overflow instead of trapping.
 llong
 atoi2sat(char *str, int32 str_len) {
-    int32 i = 0;
-    llong value = 0;
-    llong limit = -MAXOF(value);
-    bool negative = false;
-
-    if ((str == NULL) || (str_len <= 0)) {
-        return 0;
-    }
-
-    if ((str[i] == '-') || (str[i] == '+')) {
-        negative = str[i] == '-';
-        if (negative) {
-            limit = MINOF(value);
-        }
-        i += 1;
-    }
-
-    while ((str[i] >= '0') && (str[i] <= '9')) {
-        llong digit = str[i] - '0';
-
-        if (value < (limit + digit)/10) {
-            if (negative) {
-                return MINOF(value);
-            } else {
-                return MAXOF(value);
-            }
-        }
-        value = value*10 - digit;
-        i += 1;
-    }
-
-    if (negative) {
-        return value;
-    }
-    return -value;
+    return atoi_impl(str, str_len, false, true);
 }
+
+// Like atoi_base, but saturates on overflow instead of trapping.
+llong
+atoi_base_sat(char *str, int32 str_len) {
+    return atoi_impl(str, str_len, true, true);
+}
+
+#undef ATOI_LIMITS_PER_BASE
+#undef ATOI_NEGATIVE_LIMIT_INDEX
+#undef ATOI_POSITIVE_LIMIT_INDEX
 
 bool
 util_is_integer(char *string) {
@@ -217,7 +321,9 @@ strtonum_functions_sink(void) {
     (void)strtonum_functions_sink;
     (void)parse_integer;
     (void)atoi2;
+    (void)atoi_base;
     (void)atoi2sat;
+    (void)atoi_base_sat;
     (void)util_is_integer;
     return;
 }
@@ -328,6 +434,51 @@ main(void) {
     ASSERT_EQUAL(atoi2sat(STRLIT("999999999999999999999999999999")),
                  LLONG_MAX);
     ASSERT_EQUAL(atoi2sat(STRLIT("-999999999999999999999999999999")),
+                 LLONG_MIN);
+
+    ASSERT_EQUAL(atoi_base("-123x", 4), -123);
+    ASSERT_EQUAL(atoi_base("42", 0), 0);
+    ASSERT_EQUAL(atoi_base(STRLIT("123")), 123);
+    ASSERT_EQUAL(atoi_base(STRLIT("0123")), 123);
+    ASSERT_EQUAL(atoi_base(STRLIT("0b101010")), 42);
+    ASSERT_EQUAL(atoi_base(STRLIT("-0B101010")), -42);
+    ASSERT_EQUAL(atoi_base(STRLIT("0o755")), 493);
+    ASSERT_EQUAL(atoi_base(STRLIT("+0O17")), 15);
+    ASSERT_EQUAL(atoi_base(STRLIT("0x7f")), 127);
+    ASSERT_EQUAL(atoi_base(STRLIT("-0X7F")), -127);
+    ASSERT_EQUAL(atoi_base(STRLIT("0b102")), 2);
+    ASSERT_EQUAL(atoi_base(STRLIT("0o8")), 0);
+    ASSERT_EQUAL(atoi_base(STRLIT("0x")), 0);
+    ASSERT_EQUAL(atoi_base(STRLIT("0x7fffffffffffffff")), LLONG_MAX);
+    ASSERT_EQUAL(atoi_base(STRLIT("-0x8000000000000000")), LLONG_MIN);
+    ASSERT_EQUAL(atoi_base(STRLIT("0b1111111111111111111111111111111"
+                                  "11111111111111111111111111111111")),
+                 LLONG_MAX);
+    ASSERT_EQUAL(atoi_base(STRLIT("-0b1000000000000000000000000000000"
+                                  "000000000000000000000000000000000")),
+                 LLONG_MIN);
+#if OS_UNIX
+    ASSERT_TRAPS(atoi_base(STRLIT("0x8000000000000000")));
+    ASSERT_TRAPS(atoi_base(STRLIT("-0x8000000000000001")));
+    ASSERT_TRAPS(atoi_base(STRLIT("0xffffffffffffffff")));
+#endif
+
+    ASSERT_EQUAL(atoi_base_sat("-123x", 4), -123);
+    ASSERT_EQUAL(atoi_base_sat("42", 0), 0);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("0b101010")), 42);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("-0B101010")), -42);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("0o755")), 493);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("+0O17")), 15);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("0x7f")), 127);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("-0X7F")), -127);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("0x7fffffffffffffff")), LLONG_MAX);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("-0x8000000000000000")),
+                 LLONG_MIN);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("0x8000000000000000")), LLONG_MAX);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("-0x8000000000000001")),
+                 LLONG_MIN);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("0xffffffffffffffff")), LLONG_MAX);
+    ASSERT_EQUAL(atoi_base_sat(STRLIT("-0xffffffffffffffff")),
                  LLONG_MIN);
 
     ASSERT(util_is_integer(""));

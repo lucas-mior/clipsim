@@ -93,7 +93,7 @@ void UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC(void);
 toString((char[S_BSZ]){ "" }, S_BSZ, _Generic((X),      \
     void *:  "%p",                                      \
     char *:  "%s",                                      \
-    bool:    "%i",                                      \
+    bool:    "%d",                                      \
     char:    "%c",                                      \
     schar:   "%hhd",                                    \
     short:   "%hd",                                     \

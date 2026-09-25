@@ -10,35 +10,28 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
 - For indentation, never use tabs.
   * Use spaces for indentation.
   * Use 4 spaces for each indentation level.
+    + Macros are more free: use 0, 2, or 4 spaces for continuation lines.
 - Trim trailing whitespace.
 - Keep line length at maximum 80 characters.
 
 ## Operators
-- Space is forbidden around unary plus and minus (`a = -1;`)
-- Space is mandatory around binary plus and minus (`a + b` and `a - b`).
-  * But not when using `+=` or `-=`:
-    ```c
-    i += 1; // good
-
-    i+=1;   // bad
-    i+= 1;  // bad
-    i +=1;  // bad
-    ```
 - Space or newline (if at end of line) is mandatory after comma.
+- Space is mandatory around all assignment operators (`=`, `*=`, `+=`, etc).
 - Space is forbidden around `*` used for multiplication.
 - Space is optional around `/` used for division (keep as is).
+- Space is mandatory around `+` and `-` used for binary operation.
+- Space is optional around modulo operator (`%`)
+- Space is optional around bitwise xor (`^`)
 - Space is optional around bitwise or (`|`)
 - Space is mandatory around bitwise and (`&`)
-- Space is forbidden after bitwise not (`~`)
-- Space is mandatory before bitwise not (`~`)
 - Space is mandatory around bitshifts (`<<` and `>>`)
 - Space is forbidden around dot and arrow (`.` and `->`) for acessing struct and
   union fields.
 - Space is forbidden after dot used for initializing struct fields (but space
   before the dot is fine).
 - Space is mandatory around boolean or and boolean and (`&&`, and `||`).
-- Space is forbidden around boolean negation (`!`).
 - Space is mandatory around all comparison operators.
+- Space is forbidden between a unary operator and its operand.
 - In general, prefer `+= 1` instead of `++`.
 - In general, prefer `-= 1` instead of `--`.
 
@@ -96,57 +89,60 @@ if ((flags & MY_FLAG_EXAMPLE1)
 ```
 
 When formatting printf-like function calls, try to fit the entire call in a
-single line. If it does not fit, the beggining of the first argument for the
-format string must be aligned with the beggining of the format string:
+single line; If it does not fit, try to fit the format string and the arguments
+in the same line; if it still does not fit, try to align the beggining of the
+first argument for the format string with the beggining of the format string; if
+it still does not fit; put the format string on a new line and the arguments for
+the format string below it. See the examples below:
 ```c
 static void
 function(void) {
-    FILE *file = fopen("blabla", "w");
+    String str = {0};
     int32 x = 1;
     int32 y = 2;
 
     // good (all arguments fit in a single line)
-    fprintf(file, "this fits in one line: %d\n", x);
+    str_printf(&str, "this fits in one line: %d\n", x);
 
     // bad (unnecessarly breaking lines)
-    fprintf(file,
+    str_printf(&str,
             "this fits in one line: %d\n",
             x);
 
     // bad (format arguments are split across lines)
-    fprintf(file, "this does not fit in a single line because of: %d, %d\n", x,
-                  y);
+    str_printf(&str, "this does not fit in a single line because of: %d, %d\n", x,
+               y);
 
     // good (format arguments are on the same line)
-    fprintf(file, "this does not fit in a single line because of: %d, %d\n",
-                  x, y);
+    str_printf(&str, "this does not fit in a single line because of: %d, %d\n",
+               x, y);
 
     // also good (format string is separate; format arguments stay together)
-    fprintf(file,
+    str_printf(&str,
             "this does not fit in a single line because of: %d, %d\n", x, y);
 
     // bad (passes the 80 column limit)
-    fprintf(file, "this is a format string for writing the numbers %d and %d.", x, y);
+    str_printf(&str, "this is a format string for writing the numbers %d and %d.", x, y);
 
     // also bad (format string is with some format arguments, but not all)
-    fprintf(file, "this is a format string for writing the numbers %d and %d.",
-            x, y);
+    str_printf(&str, "this is a format string for writing the numbers %d and %d.",
+               x, y);
 
     // good (format string and all format arguments fit on the same line)
-    fprintf(file,
+    str_printf(&str,
             "this is a format string for writing the numbers %d and %d.", x, y);
 
     // also good (format string is separate; format arguments stay together)
-    fprintf(file,
+    str_printf(&str,
             "this is a format string for writing the numbers %d and %d.",
             x, y);
 
     // also good (format arguments are aligned with the format string)
-    fprintf(file, "this is a format string for writing the numbers %d and %d.",
-                  x, y);
+    str_printf(&str, "this is a format string for writing the numbers %d and %d.",
+               x, y);
 
     // bad (one format argument is left on the format-string line)
-    printf("%s = %g\n", states[i],
+    printf("%str = %g\n", states[i],
            X[final_step*nstates + i]);
 
     // good (format string is separate; format arguments stay together)
@@ -162,25 +158,25 @@ multiple lines or maybe break the printing into multiple calls:
 ```c
 static void
 function(void) {
-    FILE *file = fopen("blabla", "w");
+    String str = {0};
     int32 x = 1;
     int32 y = 2;
 
     // bad
-    fprintf(file,
-            "this is a huge huge huge huge huge huge huge huge huge huge format string = %d",
-            x);
+    str_printf(&str,
+               "this is a huge huge huge huge huge huge huge huge huge huge format string = %d",
+               x);
 
     // good
-    fprintf(file,
-            "this is a"
-            " huge huge huge huge huge huge huge huge huge huge"
-            " format string = %d", x);
+    str_printf(&str,
+               "this is a"
+               " huge huge huge huge huge huge huge huge huge huge"
+               " format string = %d", x);
 
     // also good
-    fprintf(file, "this is a");
-    fprintf(file, " huge huge huge huge huge huge huge huge huge huge"
-    fprintf(file, " format string = %d", x);
+    STR_APPEND(&str, "this is a");
+    STR_APPEND(&str, " huge huge huge huge huge huge huge huge huge huge");
+    str_printf(&str, " format string = %d", x);
 
     return;
 }
@@ -192,22 +188,22 @@ If does not fit, use good(2);
 if still does not fit, use good(3).
 ```c
 // good(1)
-pointer = realloc2(pointer, old_capacity, new_capacity, SIZEOF(*pointer);
+pointer = realloc2(pointer, old_capacity, new_capacity, SIZEOF(*pointer));
 
 // good(2)
 pointer_name = realloc2(pointer_name,
-                        old_capacity, new_capacity, SIZEOF(*pointer_name);
+                        old_capacity, new_capacity, SIZEOF(*pointer_name));
 // good(3)
 pointer_name_long = realloc2(pointer_name_long,
                              old_capacity, new_capacity,
-                             SIZEOF(*pointer_name_long);
+                             SIZEOF(*pointer_name_long));
 
 // bad
 pointer_name = realloc2(pointer_name, old_capacity,
-                        new_capacity, SIZEOF(*pointer_name);
+                        new_capacity, SIZEOF(*pointer_name));
 // bad
 pointer_name_long = realloc2(pointer_name_long, old_capacity, new_capacity,
-                             SIZEOF(*pointer_name_long);
+                             SIZEOF(*pointer_name_long));
 ```
 
 ## Switch formatting
@@ -236,7 +232,8 @@ default:
   int32 x;
   int32 y;
   ```
-- Always use trailing commas for arrays (except when initializing to zero):
+- Always use trailing commas for arrays and structs (except when initializing to
+  zero):
   ```c
   int32 array[] = {
       1,
@@ -261,10 +258,11 @@ default:
       do_only_one_thing();
   ```
 
-## Parentheses
+## Parenthesis
 
-Complex `if` conditions must have parentheses around each subexpression:
-
+## If expressions
+when an operand of `&&` or `||` is itself a binary expression,
+parenthesize that operand:
 ```c
 // bad
 if (x < 0 && y > 1) {
@@ -275,8 +273,7 @@ if ((x < 0) && (y > 1)) {
 }
 ```
 
-But do not add parentheses for the not operator if precedence is not confusing:
-
+Conditions that are unary operations in general don't need parenthesis:
 ```c
 // bad
 if ((!condition1) || (!condition2)) {
@@ -295,22 +292,38 @@ if (!condition1 || (x > 0)) {
 }
 
 // bad
-if (!condition1 || confusing_precedence || (x > 0)) {
-}
-
-// good
-if (!(condition1) || confusing_precedence || (x > 0)) {
-}
-```
-
-Don't use extra parenthesis if the condition is a simple variable:
-```c
-// bad
 if ((condition1) || (condition2)) {
 }
 
 // good
 if (condition1 || condition2) {
+}
+```
+
+### Confusing precedence
+If the subconditions are chained together using `&&` and `||`, try to make
+intent clear by adding parenthesis:
+```c
+// bad
+if (!condition1 && confusing_precedence || x > 0) {
+}
+
+// good
+if ((!condition1 && confusing_precedence) || (x > 0)) {
+}
+```
+
+If there are 3 or more `&&` or `||` operators chained together, add new lines:
+```c
+// bad
+if (this_condition && x < 0 && y > 1 && this_other_condition) {
+}
+
+// good
+if (this_condition
+    && (x < 0)
+    && (y > 1)
+    && this_other_condition) {
 }
 ```
 
@@ -432,8 +445,6 @@ if (STREQUAL(string, string_len, other, other_len)) {
 In the pattern above, if it is not possible to put string and string_len side by
 side withtout going over 80 columns, put them in separate lines.
 
-In standalone declarations, if one is needed at all, put all in one line. Break
-long lines so the 80-character limit rule is followed.
 Functions declarations: add parameter names only when there are two or more
 parameters of that type:
 ```c
@@ -466,11 +477,9 @@ first argument fits in the first line:
                    old_cap, new_cap, SIZEOF(*array->items));
 ```
 
-```c
-static int32 function(int32 arg);
-```
-
 ## Preprocessor directives
+- Macro continuation line: indent using 0, 2 or 4 spaces (feel free to decide at
+  each case).
 Don't use `#ifdef` and `#ifndef`, use `#if defined()` and `#if !defined()`
 instead. Prefer explicitly setting the macro to 0 or 1 and checking its value
 directly instead of checking if it is defined:

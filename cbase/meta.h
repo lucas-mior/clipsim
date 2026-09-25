@@ -170,7 +170,7 @@ enum CMemberOp {
 };
 
 typedef struct Token {
-    char *text;
+    char *text; /* Borrowed source span, not necessarily NUL-terminated. */
     enum TokenKind kind;
     int32 len;
     int32 column;

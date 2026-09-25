@@ -205,7 +205,9 @@ noreturn void util_segv_handler(int32 signal_number);
 int32 itoa2(char *buffer, int32 size, llong num);
 int32 parse_integer(char *str, int32 str_len, llong *result);
 llong atoi2(char *str, int32 str_len);
+llong atoi_base(char *str, int32 str_len);
 llong atoi2sat(char *str, int32 str_len);
+llong atoi_base_sat(char *str, int32 str_len);
 bool util_is_integer(char *string);
 char *basename2(char *path, int32 *full_length, int32 *base_len);
 char *begins_with(char *string, int32 string_len, char *prefix,
@@ -875,6 +877,7 @@ void throw_away_function();
 #include "ascii_normalization.c"
 #include "util.c"
 #include "strtonum.c"
+#include "numtostr.c"
 #include "string.c"
 #include "time.c"
 #include "fs.c"

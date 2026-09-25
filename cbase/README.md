@@ -47,7 +47,20 @@ formatters. They return the number of bytes that would have been written,
 excluding the terminating `'\0'`, and write a terminating `'\0'` whenever the
 capacity is positive. `buffer == NULL` is valid only when `capacity == 0`.
 Negative returns are errno-style failures such as `-EINVAL`, `-EOVERFLOW`,
-`-ENOSYS`, and `-EILSEQ`.
+`-ENOSPC`, and `-ENOSYS`.
+
+`fmt_sprintf` and `fmt_vsprintf` use the same formatter and take the same
+explicit `capacity`, but they are for callers that expect the whole result to
+fit. They do not truncate. In debug builds they first compute the output length
+and return `-ENOSPC` if the formatted string would not fit in `capacity`
+including the terminating `'\0'`. In non-debug builds the caller must ensure the
+buffer is large enough.
+
+`fmt_snprintf_estimate` and `fmt_vsnprintf_estimate` return a conservative
+upper bound for the formatted byte count, excluding the terminating `'\0'`.
+They consume and validate the same format grammar, but `%n` is only checked and
+does not write the count. `str_printf` uses the estimate helper to reserve
+space and then formats with `fmt_vsnprintf`.
 
 The formatter intentionally uses cbase semantics instead of libc locale or libc
 extension semantics:
@@ -56,8 +69,7 @@ extension semantics:
   decimal separator.
 - positional arguments are not supported.
 - GNU, glibc, and compiler-specific extensions such as `%m` are not supported.
-- the integer conversions are `%d`, `%i`, `%u`, `%o`, `%x`, `%X`, `%b`, and
-  `%B`.
+- the integer conversions are `%d`, `%u`, `%o`, `%x`, `%X`, `%b`, and `%B`.
 - the supported integer length modifiers are no modifier, `hh`, `h`, `ll`,
   `w8`, `w16`, `w32`, and `w64`.
 - integer `l`, `j`, `z`, `t`, and `wfN` length modifiers are not supported.
@@ -74,9 +86,7 @@ extension semantics:
   bytes. `NULL` is accepted only when the length is zero.
 - `%.Ns` remains an ordinary nul-terminated string precision and stops at the
   first `'\0'`.
-- `%lc` and `%ls` are deterministic Unicode-to-UTF-8 conversions. They do not
-  call locale-dependent conversion routines. Invalid Unicode input fails with
-  `-EILSEQ`; `%ls` precision is a byte limit and never splits a UTF-8 sequence.
+- `%c` and `%s` do not support length modifiers; `%lc` and `%ls` are rejected.
 - `%f`, `%F`, `%e`, `%E`, `%g`, `%G`, `%a`, and `%A` are supported for
   `double`.
 - `%Lf`, `%LF`, `%Le`, `%LE`, `%Lg`, `%LG`, `%La`, and `%LA` are supported for
@@ -86,12 +96,12 @@ extension semantics:
 - `%a` and `%La` are tied to the binary representation and are generated from
   the decoded floating-point bits.
 
-The variadic `fmt_snprintf` declaration uses the compiler's printf format
-attribute. That still catches ordinary type mistakes, but the compiler only
-checks the printf grammar it knows. Warnings for newer conversions such as
-`%b`, `%B`, or `wN` therefore depend on compiler support for those spellings.
+The variadic declarations use the compiler's printf format attribute. That
+still catches ordinary type mistakes, but the compiler only checks the printf
+grammar it knows. Warnings for newer conversions such as `%b`, `%B`, or `wN`
+therefore depend on compiler support for those spellings.
 
-`SNPRINTF` and `str_printf` use this formatter.
+`SNPRINTF` uses `fmt_sprintf` with `SIZEOF(buffer)`.
 
 ## Alternative usage: compile cbase as a separate object
 ```sh

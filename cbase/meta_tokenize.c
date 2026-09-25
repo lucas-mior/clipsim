@@ -173,10 +173,7 @@ line_add_token(Line *line, enum TokenKind category, char *text, int32 len,
     token->len = len;
     token->column = column;
     token->offset = column;
-
-    token->text = malloc2(len + 1);
-    memcpy64(token->text, text, len);
-    token->text[len] = '\0';
+    token->text = text;
 
     line->token_count += 1;
     return;
@@ -560,9 +557,6 @@ tokenize_cstyle_line(Line *line, bool *in_block_comment) {
 
 void
 free_line_tokens(Line *line) {
-    for (int32 i = 0; i < line->token_count; i += 1) {
-        free2(line->tokens[i].text, line->tokens[i].len + 1);
-    }
     free2(line->tokens, line->token_capacity*SIZEOF(*line->tokens));
 
     line->tokens = NULL;
@@ -697,14 +691,14 @@ tokenization_is_in_preprocessor_define(Tokenization *tokenization,
 int32
 tokenization_find_matching(Tokenization *tokenization, int32 open_index) {
     char *close;
-    char *open;
+    Token *open;
     int32 depth;
 
     if ((open_index < 0) || (open_index >= tokenization->token_count)) {
         return -1;
     }
 
-    open = tokenization->tokens[open_index].text;
+    open = &tokenization->tokens[open_index];
     close = NULL;
     if (TOKEN_IS(&tokenization->tokens[open_index], "(")) {
         close = ")";
@@ -722,7 +716,7 @@ tokenization_find_matching(Tokenization *tokenization, int32 open_index) {
         Token *token;
 
         token = &tokenization->tokens[i];
-        if (TOKEN_IS(token, open)) {
+        if (TOKEN_IS(token, open->text, open->len)) {
             depth += 1;
         } else if (TOKEN_IS(token, close)) {
             depth -= 1;
@@ -757,14 +751,6 @@ void
 free_tokenization(Tokenization *tokenization) {
     if (tokenization == NULL) {
         return;
-    }
-
-    if (tokenization->tokens) {
-        for (int32 i = 0; i < tokenization->token_count; i += 1) {
-            Token *token = &tokenization->tokens[i];
-
-            free2(token->text, token->len + 1);
-        }
     }
 
     free2(tokenization->tokens,
@@ -1127,6 +1113,9 @@ test_tokenize_with_flags_returns_source_metadata(void) {
     test_assert_token(&tokenization.tokens[0], TOKEN_IDENT, "x", 0);
     test_assert_token(&tokenization.tokens[1], TOKEN_OPERATOR, "+", 2);
     test_assert_token(&tokenization.tokens[2], TOKEN_IDENT, "y", 4);
+    ASSERT(tokenization.tokens[0].text == text);
+    ASSERT(tokenization.tokens[1].text == text + 2);
+    ASSERT(tokenization.tokens[2].text == text + 4);
     free_tokenization(&tokenization);
     return;
 }
