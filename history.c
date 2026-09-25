@@ -55,7 +55,7 @@ history_prepare_tmp_directory(void) {
         }
 
         n = SNPRINTF(tmp_directory_buffer,
-                     "%s/clipsim-images-%lu", TMPDIR, (ulong)getuid());
+                     "%s/clipsim-images-%llu", TMPDIR, (uint64)getuid());
         if ((n <= 0) || (n >= (int32)SIZEOF(tmp_directory_buffer))) {
             error("Error resolving temporary image directory.\n");
             exit(EXIT_FAILURE);

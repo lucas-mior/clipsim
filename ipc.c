@@ -76,7 +76,7 @@ ipc_resolve_socket_name(void) {
         }
     }
 
-    n = SNPRINTF(ipc_directory, "/tmp/clipsim-%lu", (unsigned long)getuid());
+    n = SNPRINTF(ipc_directory, "/tmp/clipsim-%llu", (uint64)getuid());
     if ((n <= 0) || (n >= (int32)SIZEOF(ipc_directory))) {
         error("Error resolving ipc directory name.\n");
         fatal(EXIT_FAILURE);
