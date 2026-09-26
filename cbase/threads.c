@@ -285,7 +285,8 @@ thread_pool_unlock(void) {
 static void
 thread_pool_wait_condition(CONDITION_VARIABLE *condition) {
     if (!SleepConditionVariableCS(condition, &thread_pool_mutex, INFINITE)) {
-        error("Error waiting for condition variable: %lu.\n", GetLastError());
+        error("Error waiting for condition variable: %llu.\n",
+              (ullong)GetLastError());
         fatal(EXIT_FAILURE);
     }
     return;
@@ -334,7 +335,7 @@ thread_pool_start_worker(int32 i) {
 
     thread = CreateThread(NULL, 0, thread_pool_worker, NULL, 0, NULL);
     if (thread == NULL) {
-        error("Error creating thread: %lu.\n", GetLastError());
+        error("Error creating thread: %llu.\n", (ullong)GetLastError());
         fatal(EXIT_FAILURE);
     }
     thread_pool_threads[i] = thread;
@@ -348,11 +349,12 @@ thread_pool_join_workers(void) {
     for (int32 i = 0; i < thread_pool_nthreads; i += 1) {
         wait_result = WaitForSingleObject(thread_pool_threads[i], INFINITE);
         if (wait_result == WAIT_FAILED) {
-            error("Error joining thread: %lu.\n", GetLastError());
+            error("Error joining thread: %llu.\n", (ullong)GetLastError());
             fatal(EXIT_FAILURE);
         }
         if (!CloseHandle(thread_pool_threads[i])) {
-            error("Error closing thread handle: %lu.\n", GetLastError());
+            error("Error closing thread handle: %llu.\n",
+                  (ullong)GetLastError());
             fatal(EXIT_FAILURE);
         }
         thread_pool_threads[i] = NULL;

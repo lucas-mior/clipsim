@@ -622,8 +622,8 @@ fs_copy_file_sync(char *destination, char *source) {
 
     error_code = GetLastError();
     windows_set_errno(error_code);
-    error("Error copying %s to %s: windows error %lu.\n",
-          source, destination, (ulong)error_code);
+    error("Error copying %s to %s: windows error %llu.\n",
+          source, destination, (ullong)error_code);
     return -1;
 }
 #endif
@@ -1341,8 +1341,8 @@ test_remove_tree(char *path) {
             return;
         }
 
-        error("Error checking test path %s: windows error %lu.\n",
-              path, (ulong)error_code);
+        error("Error checking test path %s: windows error %llu.\n",
+              path, (ullong)error_code);
         return;
     }
 
@@ -1357,7 +1357,7 @@ test_remove_tree(char *path) {
                 error_code = GetLastError();
                 if (error_code != ERROR_FILE_NOT_FOUND) {
                     error("Error reading test directory %s: windows error "
-                          "%lu.\n", path, (ulong)error_code);
+                          "%llu.\n", path, (ullong)error_code);
                     return;
                 }
             } else {
@@ -1377,11 +1377,11 @@ test_remove_tree(char *path) {
                 if ((error_code != ERROR_NO_MORE_FILES)
                     && (error_code != ERROR_SUCCESS)) {
                     error("Error reading test directory %s: windows error "
-                          "%lu.\n", path, (ulong)error_code);
+                          "%llu.\n", path, (ullong)error_code);
                 }
                 if (!FindClose(find_handle)) {
                     error("Error closing test directory %s: windows error "
-                          "%lu.\n", path, (ulong)GetLastError());
+                          "%llu.\n", path, (ullong)GetLastError());
                 }
             }
         }
@@ -1396,8 +1396,8 @@ test_remove_tree(char *path) {
             return;
         }
 
-        error("Error removing test directory %s: windows error %lu.\n",
-              path, (ulong)error_code);
+        error("Error removing test directory %s: windows error %llu.\n",
+              path, (ullong)error_code);
         return;
     }
 
@@ -1411,8 +1411,8 @@ test_remove_tree(char *path) {
         return;
     }
 
-    error("Error removing test path %s: windows error %lu.\n",
-          path, (ulong)error_code);
+    error("Error removing test path %s: windows error %llu.\n",
+          path, (ullong)error_code);
     return;
 #else
     (void)path;

@@ -541,8 +541,9 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
     char *pbuffer = buffer;
     va_list args;
     va_list args_copy;
+    int32 estimate;
     int32 n;
-    int32 m = SIZEOF(buffer);
+    int64 capacity = SIZEOF(buffer);
     int32 p;
     char fileline[256];
     char file2[4096];
@@ -559,20 +560,27 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
 
     va_start(args, format);
     va_copy(args_copy, args);
-    n = vsnprintf(buffer, (size_t)m, format, args_copy);
-    va_end(args_copy);
+    estimate = fmt_vsnprintf_estimate(format, args);
+    va_end(args);
 
-    if (n >= m) {
-        m = n + 1;
-        big_buffer = xmalloc(m, false);
-        n = vsnprintf(big_buffer, (size_t)m, format, args);
+    if (estimate < 0) {
+        va_end(args_copy);
+        error2("%s:%d:%s(): Error estimating format \"%s\" (n = %d).\n",
+               file, line, func, format, estimate);
+        fatal(EXIT_FAILURE);
+    }
+
+    if (estimate >= capacity) {
+        capacity = (int64)estimate + 1;
+        big_buffer = xmalloc(capacity, false);
         pbuffer = big_buffer;
     }
 
-    va_end(args);
+    n = fmt_vsprintf(pbuffer, capacity, format, args_copy);
+    va_end(args_copy);
 
-    if ((n < 0) || (n >= m)) {
-        error2("%s:%d:%s(): Error in vsnprintf(\"%s\") (n = %d).\n",
+    if ((n < 0) || (n > estimate)) {
+        error2("%s:%d:%s(): Error formatting \"%s\" (n = %d).\n",
                file, line, func, format, n);
         fatal(EXIT_FAILURE);
     }
@@ -612,7 +620,7 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
     }
 #endif
 
-    free2(big_buffer, m);
+    free2_(big_buffer, capacity);
     return;
 }
 
