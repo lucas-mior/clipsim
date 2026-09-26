@@ -20,8 +20,12 @@
 
 enum {
     NUMTOSTR_FLOAT_RYU_BUFFER_SIZE = 2000,
-    NUMTOSTR_FLOAT_MAX_PRECISION = 1024,
+    NUMTOSTR_FLOAT_MAX_PRECISION = DBL_MANT_DIG - DBL_MIN_EXP,
 };
+
+_Static_assert(DBL_MAX_10_EXP + NUMTOSTR_FLOAT_MAX_PRECISION + 4
+               < NUMTOSTR_FLOAT_RYU_BUFFER_SIZE,
+               "float formatting temporary buffer is too small");
 
 int32
 itoa2(char *buffer, int32 size, llong num) {
@@ -276,6 +280,7 @@ test_numtostr_bytes_pretty(void) {
 static void
 test_numtostr_float_buffers(void) {
     char buffer[64];
+    char large_buffer[NUMTOSTR_FLOAT_RYU_BUFFER_SIZE];
     int32 len;
 
     len = fmt_float64_shortest(buffer, SIZEOF(buffer), 0.1);
@@ -294,12 +299,19 @@ test_numtostr_float_buffers(void) {
     ASSERT_EQ(len, 8);
     ASSERT_EQ((char *)buffer, "1.23e+03");
 
+    len = fmt_float64_fixed(large_buffer, SIZEOF(large_buffer), 0.0,
+                            NUMTOSTR_FLOAT_MAX_PRECISION);
+    ASSERT_EQ(len, NUMTOSTR_FLOAT_MAX_PRECISION + 2);
+    len = fmt_float64_scientific(large_buffer, SIZEOF(large_buffer), 0.0,
+                                 NUMTOSTR_FLOAT_MAX_PRECISION);
+    ASSERT_EQ(len, NUMTOSTR_FLOAT_MAX_PRECISION + 6);
+
     ASSERT_EQ(fmt_float64_shortest(NULL, 64, 1.0), -EINVAL);
     ASSERT_EQ(fmt_float64_shortest(buffer, 0, 1.0), -EINVAL);
     ASSERT_EQ(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0, -1),
                  -EINVAL);
-    ASSERT_EQ(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0, 1025),
-                 -ERANGE);
+    ASSERT_EQ(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0,
+                                NUMTOSTR_FLOAT_MAX_PRECISION + 1), -ERANGE);
     ASSERT_EQ(fmt_float64_fixed(buffer, 4, 1.25, 2), -ENOSPC);
     return;
 }

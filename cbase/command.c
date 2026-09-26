@@ -1467,6 +1467,7 @@ command_free(Command *command) {
 
 void
 command_printf(Command *command, char *fmt, ...) {
+    FmtPlan plan;
     va_list ap;
     va_list ap2;
     Arena *argument_arena;
@@ -1477,7 +1478,7 @@ command_printf(Command *command, char *fmt, ...) {
 
     va_start(ap, fmt);
     va_copy(ap2, ap);
-    estimate = fmt_vsnprintf_estimate(fmt, ap);
+    estimate = fmt_vsnprintf_estimate_cached(&plan, fmt, ap);
     va_end(ap);
 
     if (estimate < 0) {
@@ -1487,7 +1488,7 @@ command_printf(Command *command, char *fmt, ...) {
     }
 
     argument = command_argument_alloc(command, estimate + 1);
-    len = fmt_vsprintf(argument, estimate + 1, fmt, ap2);
+    len = fmt_vsprintf_cached(&plan, argument, estimate + 1, ap2);
     va_end(ap2);
 
     if (len < 0) {

@@ -258,11 +258,42 @@ char *str_opt_cstr(String *);
 char *signal_name(int32 signum);
 void send_signal(char *executable, int32 signal_number);
 
+// Caller-owned parsed-format storage. Treat all fields as implementation
+// details. A successful fmt_vsnprintf_estimate_cached() makes the plan
+// self-contained and read-only for fmt_vsprintf_cached().
+enum {
+    FMT_PLAN_MAX_FORMAT_LEN = 200,
+    FMT_PLAN_MAX_SPECS = FMT_PLAN_MAX_FORMAT_LEN/2,
+};
+
+typedef struct FmtPlanSpec {
+    int32 width;
+    int32 precision;
+    uint8 literal_offset;
+    uint8 literal_len;
+    uint8 flags;
+    uint8 width_kind;
+    uint8 precision_kind;
+    uint8 length;
+    char conversion;
+} FmtPlanSpec;
+
+typedef struct FmtPlan {
+    char format[FMT_PLAN_MAX_FORMAT_LEN];
+    FmtPlanSpec specs[FMT_PLAN_MAX_SPECS];
+    uint8 spec_count;
+    uint8 tail_offset;
+    uint8 tail_len;
+    bool valid;
+} FmtPlan;
+
 // cbase printf-compatible formatter. It returns the byte count that would
 // have been written, excluding the terminating '\0'. It writes a terminating
 // '\0' when capacity is positive. buffer may be NULL only when capacity is
-// zero. Negative returns are errno-style failures. See cbase/README.md for
-// the exact supported grammar and deliberate differences from libc printf.
+// zero. Negative returns are errno-style failures. Floating precision is
+// bounded by the exact fixed-decimal limit of the argument type; larger
+// explicit precisions return -ERANGE. See cbase/README.md for the exact
+// supported grammar and deliberate differences from libc printf.
 int32 fmt_vsnprintf(char *buffer, int64 capacity, char *format, va_list args)
     ATTR_PRINTF(3, 0);
 int32 fmt_snprintf(char *buffer, int64 capacity, char *format, ...)
@@ -273,6 +304,10 @@ int32 fmt_sprintf(char *buffer, int64 capacity, char *format, ...)
     ATTR_PRINTF(3, 4);
 int32 fmt_vsnprintf_estimate(char *format, va_list args) ATTR_PRINTF(1, 0);
 int32 fmt_snprintf_estimate(char *format, ...) ATTR_PRINTF(1, 2);
+int32 fmt_vsnprintf_estimate_cached(FmtPlan *plan, char *format, va_list args)
+    ATTR_PRINTF(2, 0);
+int32 fmt_vsprintf_cached(const FmtPlan *plan, char *buffer, int64 capacity,
+                          va_list args);
 
 String *string_array_append(StringArray *);
 int32 string_array_append_copy(StringArray *array, String *item);
@@ -290,7 +325,8 @@ StrFlex *strflex_list_at(StrFlexList *, int32);
 // Float formatting functions return the formatted byte count, excluding the
 // terminating '\0'. Negative return values are errno-style failures:
 // -EINVAL for invalid input, -ENOSPC when capacity is insufficient, and
-// -ERANGE when the requested precision is unsupported.
+// -ERANGE when the requested precision is unsupported. Fixed/scientific
+// double precision is capped at DBL_MANT_DIG - DBL_MIN_EXP.
 //
 // This layer exposes shortest round-trip, fixed precision, and scientific
 // precision formatting. It intentionally does not expose a %g/general format

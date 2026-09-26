@@ -537,6 +537,7 @@ qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
 void ATTR_PRINTF(4, 5)
 error_impl(char *file, int32 line, char *func, char *format, ...) {
     char buffer[BUFSIZ];
+    FmtPlan plan;
     char *big_buffer = NULL;
     char *pbuffer = buffer;
     va_list args;
@@ -560,7 +561,7 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
 
     va_start(args, format);
     va_copy(args_copy, args);
-    estimate = fmt_vsnprintf_estimate(format, args);
+    estimate = fmt_vsnprintf_estimate_cached(&plan, format, args);
     va_end(args);
 
     if (estimate < 0) {
@@ -576,7 +577,7 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
         pbuffer = big_buffer;
     }
 
-    n = fmt_vsprintf(pbuffer, capacity, format, args_copy);
+    n = fmt_vsprintf_cached(&plan, pbuffer, capacity, args_copy);
     va_end(args_copy);
 
     if ((n < 0) || (n > estimate)) {
