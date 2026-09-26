@@ -776,11 +776,6 @@ common_test_prepare_cbase_archive () {
         test_cbase_compile_flags="$test_cbase_compile_flags -DTESTING=1"
     fi
 
-    if [ "${TEST_DISABLE_UNUSED_VARIABLE_WARNING:-1}" != 0 ]; then
-        test_cbase_no_unused=-Wno-unused-variable
-        test_cbase_compile_flags="$test_cbase_compile_flags \
-$test_cbase_no_unused"
-    fi
     test_cbase_compile_flags="$test_cbase_compile_flags $TEST_EXTRA_DEFS"
 
     test_cbase_sources=
@@ -1064,10 +1059,6 @@ common_test_compile_and_run_source () {
             test_cmd_flags="$test_cmd_flags /nologo"
         fi
         test_cmdline="$test_cc $test_cmd_flags"
-    fi
-
-    if [ "${TEST_DISABLE_UNUSED_VARIABLE_WARNING:-1}" != 0 ]; then
-        test_added_flags="$test_added_flags -Wno-unused-variable"
     fi
 
     if [ "${TEST_DEFINE_MODULE:-1}" != 0 ]; then
