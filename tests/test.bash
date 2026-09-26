@@ -292,7 +292,8 @@ unresponsive_bin="./unresponsive_owner"
 
 trace_on
 
-gcc -O2 $x11_cflags $unresponsive_c $x11_libs -lm -o $unresponsive_bin
+gcc -I../cbase -O2 $x11_cflags $unresponsive_c $x11_libs -lm \
+    -o $unresponsive_bin
 $unresponsive_bin &
 unresponsive_pid=$!
 
