@@ -917,7 +917,7 @@ main(void) {
         stat(img_content, &st);
         history_callback_delete(img_content, &st, FTW_F, NULL);
         res = stat(img_content, &st);
-        ASSERT_NOT_EQUAL(res, 0);
+        ASSERT_NE(res, 0);
 
         free2(img_content, 256);
     }

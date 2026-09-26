@@ -496,11 +496,11 @@ main(void) {
     arena_reset(arena);
     {
         uint32 index = arena_push_index32(arena, 32);
-        ASSERT_NOT_EQUAL(index, UINT32_MAX);
+        ASSERT_NE(index, UINT32_MAX);
         ASSERT(arena->begin + index == arena->begin);
 
         index = arena_push_index32(arena, 32);
-        ASSERT_NOT_EQUAL(index, UINT32_MAX);
+        ASSERT_NE(index, UINT32_MAX);
         ASSERT(arena->begin + index == arena->begin + 32);
     }
 

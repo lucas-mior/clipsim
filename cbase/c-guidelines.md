@@ -847,7 +847,7 @@ if (enum & ENUM_BITFLAG) {
   - `ASSERT_NON_POSITIVE(integer expression)`
   - `ASSERT_NON_NEGATIVE(integer expression)`
   - `ASSERT_EQ(value1, value2)`
-  - `ASSERT_NOT_EQUAL(value1, value2)`
+  - `ASSERT_NE(value1, value2)`
   - `ASSERT_EQ(string, string_len, other_string)`
   - `ASSERT_LT(value, constant expression)`
   - `ASSERT_GT(value, constant expression)`
@@ -899,7 +899,7 @@ if (enum & ENUM_BITFLAG) {
 - Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT(value < 0)`.
 - Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT(value <= 0)`.
 - Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT(value >= 0)`.
-- `ASSERT_EQ` and `ASSERT_NOT_EQUAL` accept either constant or variable
+- `ASSERT_EQ` and `ASSERT_NE` accept either constant or variable
   operands. For integer comparisons, both operands are normalized to `llong`.
   Unsigned integer values above `LLONG_MAX` are not supported and trigger an
   assertion failure. There are no `_VAR` equality forms.

@@ -636,7 +636,7 @@ _Generic((VAR),                                                               \
 
 #define ASSERT_EQ_2(VAR1, VAR2)                                               \
     ASSERT_COMPARE_NORMALIZED(EQUAL, VAR1, VAR2)
-#define ASSERT_NOT_EQUAL_2(VAR1, VAR2)                                         \
+#define ASSERT_NE_2(VAR1, VAR2)                                         \
     ASSERT_COMPARE_NORMALIZED(NOT_EQUAL, VAR1, VAR2)
 #define ASSERT_LT(VAR1, VAR2)                                                 \
     ASSERT_COMPARE_CONSTANT(LESS, VAR1, VAR2)
@@ -670,29 +670,29 @@ _Generic((VAR),                                                               \
 
 #define ASSERT_EQ(...) SELECT_ON_NUM_ARGS(ASSERT_EQ_CALL_, __VA_ARGS__)
 
-#define ASSERT_NOT_EQUAL_CALL_2(VAR1, VAR2) ASSERT_NOT_EQUAL_2(VAR1, VAR2)
+#define ASSERT_NE_CALL_2(VAR1, VAR2) ASSERT_NE_2(VAR1, VAR2)
 
-#define ASSERT_NOT_EQUAL_CALL_3(VAR1, VAR1_LEN, VAR2) do {                     \
-    char *ASSERT_NOT_EQUAL1 = VAR1;                                        \
-    int32 ASSERT_NOT_EQUAL1_LEN = VAR1_LEN;                                \
-    char *ASSERT_NOT_EQUAL2 = VAR2;                                        \
+#define ASSERT_NE_CALL_3(VAR1, VAR1_LEN, VAR2) do {                     \
+    char *ASSERT_NE1 = VAR1;                                        \
+    int32 ASSERT_NE1_LEN = VAR1_LEN;                                \
+    char *ASSERT_NE2 = VAR2;                                        \
     assert_not_equal_3(__FILE__, __LINE__, FUNC__, #VAR1, #VAR2,               \
-                       ASSERT_NOT_EQUAL1, ASSERT_NOT_EQUAL1_LEN,       \
-                       ASSERT_NOT_EQUAL2);                                 \
+                       ASSERT_NE1, ASSERT_NE1_LEN,       \
+                       ASSERT_NE2);                                 \
 } while (0)
 
-#define ASSERT_NOT_EQUAL_CALL_4(VAR1, VAR1_LEN, VAR2, VAR2_LEN) do {           \
-    char *ASSERT_NOT_EQUAL1 = VAR1;                                        \
-    int32 ASSERT_NOT_EQUAL1_LEN = VAR1_LEN;                                \
-    char *ASSERT_NOT_EQUAL2 = VAR2;                                        \
-    int32 ASSERT_NOT_EQUAL2_LEN = VAR2_LEN;                                \
+#define ASSERT_NE_CALL_4(VAR1, VAR1_LEN, VAR2, VAR2_LEN) do {           \
+    char *ASSERT_NE1 = VAR1;                                        \
+    int32 ASSERT_NE1_LEN = VAR1_LEN;                                \
+    char *ASSERT_NE2 = VAR2;                                        \
+    int32 ASSERT_NE2_LEN = VAR2_LEN;                                \
     assert_not_equal_4(__FILE__, __LINE__, FUNC__, #VAR1, #VAR2,               \
-                       ASSERT_NOT_EQUAL1, ASSERT_NOT_EQUAL1_LEN,       \
-                       ASSERT_NOT_EQUAL2, ASSERT_NOT_EQUAL2_LEN);      \
+                       ASSERT_NE1, ASSERT_NE1_LEN,       \
+                       ASSERT_NE2, ASSERT_NE2_LEN);      \
 } while (0)
 
-#define ASSERT_NOT_EQUAL(...)                                                  \
-    SELECT_ON_NUM_ARGS(ASSERT_NOT_EQUAL_CALL_, __VA_ARGS__)
+#define ASSERT_NE(...)                                                  \
+    SELECT_ON_NUM_ARGS(ASSERT_NE_CALL_, __VA_ARGS__)
 
 #define A_BOTH_DOUBLE_CLOSE(MODE, VAR1, VAR2, TYPE1, TYPE2)                    \
     a_double_##MODE(__FILE__, __LINE__, FUNC__,                                \

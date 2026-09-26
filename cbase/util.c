@@ -1198,7 +1198,7 @@ main(int argc, char **argv) {
         char *src = "memdup_test";
         char *dup = xmemdup(src, 12);
         ASSERT_EQ(src, dup);
-        ASSERT_NOT_EQUAL((void *)src, (void *)dup);
+        ASSERT_NE((void *)src, (void *)dup);
         free2(dup, 12);
     }
 
