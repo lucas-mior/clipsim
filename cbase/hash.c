@@ -801,7 +801,7 @@ hash_pow(double x, double n) {
     uint32 exponent;
 
     ASSERT_NON_NEGATIVE(n);
-    ASSERT_LESS_EQUAL(n, (double)UINT32_MAX);
+    ASSERT_LE(n, (double)UINT32_MAX);
     exponent = (uint32)n;
     ASSERT_EQ_VAR((double)exponent, n);
 

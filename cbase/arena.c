@@ -161,7 +161,7 @@ arena_back(Arena *arena, int64 size) {
     ASSERT_NON_NEGATIVE(size);
 
     used = (char *)arena->pos - arena->begin;
-    ASSERT_LESS_EQUAL_VAR(size, used);
+    ASSERT_LE_VAR(size, used);
     ASSERT_ZERO((ullong)size % ALIGNMENT);
 
     arena->pos = (char *)arena->pos - size;

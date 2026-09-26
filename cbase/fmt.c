@@ -1418,7 +1418,7 @@ static void
 fmt_big_uint_normalize(FormatBigUInt *value) {
     ASSERT(value != NULL);
     ASSERT_NON_NEGATIVE(value->len);
-    ASSERT_LESS_EQUAL(value->len, FMT_BIG_UINT_MAX_WORDS);
+    ASSERT_LE(value->len, FMT_BIG_UINT_MAX_WORDS);
 
     while (value->len > 0 && value->words[value->len - 1] == 0) {
         value->len -= 1;
@@ -2309,7 +2309,7 @@ fmt_hex_digit_char(int32 digit, bool upper) {
     char upper_digits[] = "0123456789ABCDEF";
 
     ASSERT_NON_NEGATIVE(digit);
-    ASSERT_LESS_EQUAL(digit, 15);
+    ASSERT_LE(digit, 15);
 
     if (upper) {
         return upper_digits[digit];
@@ -2336,7 +2336,7 @@ static bool
 fmt_float_hex_has_nonzero_tail(char *digits, int32 start) {
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(start);
-    ASSERT_LESS_EQUAL(start, FMT_DOUBLE_HEX_DIGITS);
+    ASSERT_LE(start, FMT_DOUBLE_HEX_DIGITS);
 
     for (int32 i = start; i < FMT_DOUBLE_HEX_DIGITS; i += 1) {
         if (fmt_hex_digit_value(digits[i]) != 0) {
@@ -2731,7 +2731,7 @@ static bool
 fmt_decimal_digits_have_nonzero_tail(char *digits, int32 start, int32 len) {
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(start);
-    ASSERT_LESS_EQUAL_VAR(start, len);
+    ASSERT_LE_VAR(start, len);
 
     for (int32 i = start; i < len; i += 1) {
         if (digits[i] != '0') {
@@ -2752,7 +2752,7 @@ fmt_decimal_round_digits(char *digits, int32 *len, int32 keep, bool round_up) {
     ASSERT(len != NULL);
     ASSERT_POSITIVE(*len);
     ASSERT_POSITIVE(keep);
-    ASSERT_LESS_EQUAL_VAR(keep, *len);
+    ASSERT_LE_VAR(keep, *len);
 
     *len = keep;
     if (!round_up) {
@@ -3280,7 +3280,7 @@ static bool
 fmt_ldouble_hex_has_nonzero_tail(char *digits, int32 start, int32 digit_len) {
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(start);
-    ASSERT_LESS_EQUAL_VAR(start, digit_len);
+    ASSERT_LE_VAR(start, digit_len);
 
     for (int32 i = start; i < digit_len; i += 1) {
         if (fmt_hex_digit_value(digits[i]) != 0) {
@@ -5305,7 +5305,7 @@ test_fmt_public_api(void) {
     ASSERT_EQ(len, 12);
     ASSERT_EQ(buffer, len + 1, "public:42:ok", 13);
 
-    ASSERT_LESS_EQUAL_VAR(SIZEOF(buffer), fmt_snprintf_estimate("%g", 1.0));
+    ASSERT_LE_VAR(SIZEOF(buffer), fmt_snprintf_estimate("%g", 1.0));
     len = fmt_sprintf(buffer, SIZEOF(buffer), "%g", 1.0);
     ASSERT_EQ(len, 1);
     ASSERT_EQ(buffer, "1");

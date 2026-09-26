@@ -331,7 +331,7 @@ realloc_debug(char *file, int32 line, char *func,
 
     old_size = old_capacity*obj_size;
     new_size = new_capacity*obj_size;
-    ASSERT_LESS_EQUAL(new_size, MAXOF(new_size) - 2*MEMORY_PADDING);
+    ASSERT_LE(new_size, MAXOF(new_size) - 2*MEMORY_PADDING);
 
     {
         DebugAllocInfo info;
@@ -498,7 +498,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
 
     old_size = struct_size + old_capacity*obj_size;
     new_size = struct_size + new_capacity*obj_size;
-    ASSERT_LESS_EQUAL(new_size, MAXOF(new_size) - 2*MEMORY_PADDING);
+    ASSERT_LE(new_size, MAXOF(new_size) - 2*MEMORY_PADDING);
 
     {
         DebugAllocInfo info;
