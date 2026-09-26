@@ -394,6 +394,7 @@ bool32 striqual(char *s1, char *s2);
 bool32 striqual2(char *a, int32 a_len, char *b, int32 b_len);
 int64 strftime2(char *buffer, int64 size, char *format,
                 struct tm *time_info);
+void time_localtime(time_t unix_timestamp, struct tm *time_info);
 int strncmp32(char *left, char *right, int64 size);
 void sleep_ms(int64 milliseconds);
 void sleep_ns(int64 nanoseconds);

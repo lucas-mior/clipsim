@@ -189,11 +189,8 @@ xarena_push(Arena *arena, int64 size) {
     if (arena == NULL) {
         if (global_arena == NULL) {
             global_arena = arena_create(SIZEMB(2), "global_arena");
-            arena = global_arena;
-        } else {
-            error("arena is NULL.\n");
-            fatal(EXIT_FAILURE);
         }
+        arena = global_arena;
     }
 
     if ((p = arena_push(arena, size)) == NULL) {
