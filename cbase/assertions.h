@@ -77,8 +77,8 @@ enum AssertCompareMode {
     ASSERT_COMPARE_MODE_LESS_EQUAL,
     ASSERT_COMPARE_MODE_EQUAL,
     ASSERT_COMPARE_MODE_NOT_EQUAL,
-    ASSERT_COMPARE_MODE_MORE,
-    ASSERT_COMPARE_MODE_MORE_EQUAL,
+    ASSERT_COMPARE_MODE_GREATER,
+    ASSERT_COMPARE_MODE_GREATER_EQUAL,
 };
 
 typedef struct AssertCompareValue {
@@ -116,8 +116,8 @@ ASSERT_DECLARE_STRINGS(less)
 ASSERT_DECLARE_STRINGS(less_equal)
 ASSERT_DECLARE_STRINGS(equal)
 ASSERT_DECLARE_STRINGS(not_equal)
-ASSERT_DECLARE_STRINGS(more)
-ASSERT_DECLARE_STRINGS(more_equal)
+ASSERT_DECLARE_STRINGS(greater)
+ASSERT_DECLARE_STRINGS(greater_equal)
 
 #undef ASSERT_DECLARE_STRINGS
 
@@ -129,8 +129,8 @@ ASSERT_DECLARE_POINTERS(less)
 ASSERT_DECLARE_POINTERS(less_equal)
 ASSERT_DECLARE_POINTERS(equal)
 ASSERT_DECLARE_POINTERS(not_equal)
-ASSERT_DECLARE_POINTERS(more)
-ASSERT_DECLARE_POINTERS(more_equal)
+ASSERT_DECLARE_POINTERS(greater)
+ASSERT_DECLARE_POINTERS(greater_equal)
 
 #undef ASSERT_DECLARE_POINTERS
 
@@ -144,14 +144,14 @@ ASSERT_DECLARE_INTEGERS(signed, less)
 ASSERT_DECLARE_INTEGERS(signed, less_equal)
 ASSERT_DECLARE_INTEGERS(signed, equal)
 ASSERT_DECLARE_INTEGERS(signed, not_equal)
-ASSERT_DECLARE_INTEGERS(signed, more)
-ASSERT_DECLARE_INTEGERS(signed, more_equal)
+ASSERT_DECLARE_INTEGERS(signed, greater)
+ASSERT_DECLARE_INTEGERS(signed, greater_equal)
 ASSERT_DECLARE_INTEGERS(unsigned, less)
 ASSERT_DECLARE_INTEGERS(unsigned, less_equal)
 ASSERT_DECLARE_INTEGERS(unsigned, equal)
 ASSERT_DECLARE_INTEGERS(unsigned, not_equal)
-ASSERT_DECLARE_INTEGERS(unsigned, more)
-ASSERT_DECLARE_INTEGERS(unsigned, more_equal)
+ASSERT_DECLARE_INTEGERS(unsigned, greater)
+ASSERT_DECLARE_INTEGERS(unsigned, greater_equal)
 
 #undef ASSERT_DECLARE_INTEGERS
 
@@ -164,8 +164,8 @@ ASSERT_DECLARE_SIGN_UNSIGN(less)
 ASSERT_DECLARE_SIGN_UNSIGN(less_equal)
 ASSERT_DECLARE_SIGN_UNSIGN(equal)
 ASSERT_DECLARE_SIGN_UNSIGN(not_equal)
-ASSERT_DECLARE_SIGN_UNSIGN(more)
-ASSERT_DECLARE_SIGN_UNSIGN(more_equal)
+ASSERT_DECLARE_SIGN_UNSIGN(greater)
+ASSERT_DECLARE_SIGN_UNSIGN(greater_equal)
 
 #undef ASSERT_DECLARE_SIGN_UNSIGN
 
@@ -178,8 +178,8 @@ ASSERT_DECLARE_UNSIGN_SIGN(less)
 ASSERT_DECLARE_UNSIGN_SIGN(less_equal)
 ASSERT_DECLARE_UNSIGN_SIGN(equal)
 ASSERT_DECLARE_UNSIGN_SIGN(not_equal)
-ASSERT_DECLARE_UNSIGN_SIGN(more)
-ASSERT_DECLARE_UNSIGN_SIGN(more_equal)
+ASSERT_DECLARE_UNSIGN_SIGN(greater)
+ASSERT_DECLARE_UNSIGN_SIGN(greater_equal)
 
 #undef ASSERT_DECLARE_UNSIGN_SIGN
 
@@ -192,8 +192,8 @@ ASSERT_DECLARE_DOUBLE(less)
 ASSERT_DECLARE_DOUBLE(less_equal)
 ASSERT_DECLARE_DOUBLE(equal)
 ASSERT_DECLARE_DOUBLE(not_equal)
-ASSERT_DECLARE_DOUBLE(more)
-ASSERT_DECLARE_DOUBLE(more_equal)
+ASSERT_DECLARE_DOUBLE(greater)
+ASSERT_DECLARE_DOUBLE(greater_equal)
 
 #undef ASSERT_DECLARE_DOUBLE
 
@@ -227,9 +227,9 @@ ASSERT_DECLARE_BOOL(not_equal)
 
 #undef ASSERT_DECLARE_BOOL
 
-noreturn void a_bool_more(void *, ...);
+noreturn void a_bool_greater(void *, ...);
 noreturn void a_bool_less(void *, ...);
-noreturn void a_bool_more_equal(void *, ...);
+noreturn void a_bool_greater_equal(void *, ...);
 noreturn void a_bool_less_equal(void *, ...);
 
 void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_SIGN(void);
@@ -613,18 +613,18 @@ _Generic((VAR),                                                               \
       ASSERT_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL);                          \
       ASSERT_DIAGNOSTIC_POP();                                                 \
   } while (0)
-  #define ASSERT_EQ_VAR(VAR1, VAR2)                                         \
+  #define ASSERT_EQ_VAR(VAR1, VAR2)                                           \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(equal, VAR1, VAR2)
   #define ASSERT_NOT_EQUAL_VAR(VAR1, VAR2)                                     \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(not_equal, VAR1, VAR2)
-  #define ASSERT_LT_VAR(VAR1, VAR2)                                          \
+  #define ASSERT_LT_VAR(VAR1, VAR2)                                           \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(less, VAR1, VAR2)
-  #define ASSERT_LE_VAR(VAR1, VAR2)                                    \
+  #define ASSERT_LE_VAR(VAR1, VAR2)                                           \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(less_equal, VAR1, VAR2)
-  #define ASSERT_GT_VAR(VAR1, VAR2)                                          \
-      ASSERT_COMPARE_VAR_DIAGNOSTIC(more, VAR1, VAR2)
-  #define ASSERT_GE_VAR(VAR1, VAR2)                                    \
-      ASSERT_COMPARE_VAR_DIAGNOSTIC(more_equal, VAR1, VAR2)
+  #define ASSERT_GT_VAR(VAR1, VAR2)                                           \
+      ASSERT_COMPARE_VAR_DIAGNOSTIC(greater, VAR1, VAR2)
+  #define ASSERT_GE_VAR(VAR1, VAR2)                                           \
+      ASSERT_COMPARE_VAR_DIAGNOSTIC(greater_equal, VAR1, VAR2)
 #else
   #define ASSERT_EQ_VAR(VAR1, VAR2) \
       ASSERT_COMPARE(equal, VAR1, VAR2)
@@ -635,43 +635,43 @@ _Generic((VAR),                                                               \
   #define ASSERT_LE_VAR(VAR1, VAR2) \
       ASSERT_COMPARE(less_equal, VAR1, VAR2)
   #define ASSERT_GT_VAR(VAR1, VAR2) \
-      ASSERT_COMPARE(more, VAR1, VAR2)
+      ASSERT_COMPARE(greater, VAR1, VAR2)
   #define ASSERT_GE_VAR(VAR1, VAR2) \
-      ASSERT_COMPARE(more_equal, VAR1, VAR2)
+      ASSERT_COMPARE(greater_equal, VAR1, VAR2)
 #endif
 
-#define ASSERT_EQ_2(VAR1, VAR2)                                             \
+#define ASSERT_EQ_2(VAR1, VAR2)                                               \
     ASSERT_COMPARE_CONSTANT(EQUAL, VAR1, VAR2)
 #define ASSERT_NOT_EQUAL_2(VAR1, VAR2)                                         \
     ASSERT_COMPARE_CONSTANT(NOT_EQUAL, VAR1, VAR2)
-#define ASSERT_LT(VAR1, VAR2)                                                \
+#define ASSERT_LT(VAR1, VAR2)                                                 \
     ASSERT_COMPARE_CONSTANT(LESS, VAR1, VAR2)
-#define ASSERT_LE(VAR1, VAR2)                                          \
+#define ASSERT_LE(VAR1, VAR2)                                                 \
     ASSERT_COMPARE_CONSTANT(LESS_EQUAL, VAR1, VAR2)
-#define ASSERT_GT(VAR1, VAR2)                                                \
-    ASSERT_COMPARE_CONSTANT(MORE, VAR1, VAR2)
-#define ASSERT_GE(VAR1, VAR2)                                          \
-    ASSERT_COMPARE_CONSTANT(MORE_EQUAL, VAR1, VAR2)
+#define ASSERT_GT(VAR1, VAR2)                                                 \
+    ASSERT_COMPARE_CONSTANT(GREATER, VAR1, VAR2)
+#define ASSERT_GE(VAR1, VAR2)                                                 \
+    ASSERT_COMPARE_CONSTANT(GREATER_EQUAL, VAR1, VAR2)
 
 #define ASSERT_EQ_CALL_2(VAR1, VAR2) ASSERT_EQ_2(VAR1, VAR2)
 
-#define ASSERT_EQ_CALL_3(VAR1, VAR1_LEN, VAR2) do {                         \
-    char *ASSERT_EQ_VAR1 = VAR1;                                            \
-    int32 ASSERT_EQ_VAR1_LEN = VAR1_LEN;                                    \
-    char *ASSERT_EQ_VAR2 = VAR2;                                            \
+#define ASSERT_EQ_CALL_3(VAR1, VAR1_LEN, VAR2) do {                           \
+    char *ASSERT_EQ_VAR1 = VAR1;                                              \
+    int32 ASSERT_EQ_VAR1_LEN = VAR1_LEN;                                      \
+    char *ASSERT_EQ_VAR2 = VAR2;                                              \
     assert_equal_3(__FILE__, __LINE__, FUNC__, #VAR1, #VAR2,                   \
-                   ASSERT_EQ_VAR1, ASSERT_EQ_VAR1_LEN,                   \
-                   ASSERT_EQ_VAR2);                                         \
+                   ASSERT_EQ_VAR1, ASSERT_EQ_VAR1_LEN,                         \
+                   ASSERT_EQ_VAR2);                                           \
 } while (0)
 
-#define ASSERT_EQ_CALL_4(VAR1, VAR1_LEN, VAR2, VAR2_LEN) do {               \
-    char *ASSERT_EQ_VAR1 = VAR1;                                            \
-    int32 ASSERT_EQ_VAR1_LEN = VAR1_LEN;                                    \
-    char *ASSERT_EQ_VAR2 = VAR2;                                            \
-    int32 ASSERT_EQ_VAR2_LEN = VAR2_LEN;                                    \
+#define ASSERT_EQ_CALL_4(VAR1, VAR1_LEN, VAR2, VAR2_LEN) do {                 \
+    char *ASSERT_EQ_VAR1 = VAR1;                                              \
+    int32 ASSERT_EQ_VAR1_LEN = VAR1_LEN;                                      \
+    char *ASSERT_EQ_VAR2 = VAR2;                                              \
+    int32 ASSERT_EQ_VAR2_LEN = VAR2_LEN;                                      \
     assert_equal_4(__FILE__, __LINE__, FUNC__, #VAR1, #VAR2,                   \
-                   ASSERT_EQ_VAR1, ASSERT_EQ_VAR1_LEN,                   \
-                   ASSERT_EQ_VAR2, ASSERT_EQ_VAR2_LEN);                  \
+                   ASSERT_EQ_VAR1, ASSERT_EQ_VAR1_LEN,                         \
+                   ASSERT_EQ_VAR2, ASSERT_EQ_VAR2_LEN);                        \
 } while (0)
 
 #define ASSERT_EQ(...) SELECT_ON_NUM_ARGS(ASSERT_EQ_CALL_, __VA_ARGS__)

@@ -181,32 +181,32 @@ assert_compare_mode_symbol(enum AssertCompareMode mode) {
         return "==";
     case ASSERT_COMPARE_MODE_NOT_EQUAL:
         return "!=";
-    case ASSERT_COMPARE_MODE_MORE:
+    case ASSERT_COMPARE_MODE_GREATER:
         return ">";
-    case ASSERT_COMPARE_MODE_MORE_EQUAL:
+    case ASSERT_COMPARE_MODE_GREATER_EQUAL:
         return ">=";
     default:
         UNREACHABLE();
     }
 }
 
-#define ASSERT_COMPARE_MODE_SWITCH(VAR1, VAR2)         \
-    switch (mode) {                                    \
-    case ASSERT_COMPARE_MODE_LESS:                     \
-        return (VAR1) < (VAR2);                        \
-    case ASSERT_COMPARE_MODE_LESS_EQUAL:               \
-        return (VAR1) <= (VAR2);                       \
-    case ASSERT_COMPARE_MODE_EQUAL:                    \
-        return (VAR1) == (VAR2);                       \
-    case ASSERT_COMPARE_MODE_NOT_EQUAL:                \
-        return (VAR1) != (VAR2);                       \
-    case ASSERT_COMPARE_MODE_MORE:                     \
-        return (VAR1) > (VAR2);                        \
-    case ASSERT_COMPARE_MODE_MORE_EQUAL:               \
-        return (VAR1) >= (VAR2);                       \
-    default:                                           \
-        UNREACHABLE();                                 \
-    }                                                  \
+#define ASSERT_COMPARE_MODE_SWITCH(VAR1, VAR2)                                 \
+    switch (mode) {                                                            \
+    case ASSERT_COMPARE_MODE_LESS:                                             \
+        return (VAR1) < (VAR2);                                                \
+    case ASSERT_COMPARE_MODE_LESS_EQUAL:                                       \
+        return (VAR1) <= (VAR2);                                               \
+    case ASSERT_COMPARE_MODE_EQUAL:                                            \
+        return (VAR1) == (VAR2);                                               \
+    case ASSERT_COMPARE_MODE_NOT_EQUAL:                                        \
+        return (VAR1) != (VAR2);                                               \
+    case ASSERT_COMPARE_MODE_GREATER:                                          \
+        return (VAR1) > (VAR2);                                                \
+    case ASSERT_COMPARE_MODE_GREATER_EQUAL:                                    \
+        return (VAR1) >= (VAR2);                                               \
+    default:                                                                   \
+        UNREACHABLE();                                                         \
+    }                                                                          \
     UNREACHABLE()
 
 static bool
@@ -254,8 +254,8 @@ assert_compare_constant_bool(enum AssertCompareMode mode,
         return var1 != var2;
     case ASSERT_COMPARE_MODE_LESS:
     case ASSERT_COMPARE_MODE_LESS_EQUAL:
-    case ASSERT_COMPARE_MODE_MORE:
-    case ASSERT_COMPARE_MODE_MORE_EQUAL:
+    case ASSERT_COMPARE_MODE_GREATER:
+    case ASSERT_COMPARE_MODE_GREATER_EQUAL:
         return false;
     default:
         UNREACHABLE();
@@ -802,8 +802,8 @@ GENERATE_ASSERT_STRINGS(less, <)
 GENERATE_ASSERT_STRINGS(less_equal, <=)
 GENERATE_ASSERT_STRINGS(equal, ==)
 GENERATE_ASSERT_STRINGS(not_equal, !=)
-GENERATE_ASSERT_STRINGS(more, >)
-GENERATE_ASSERT_STRINGS(more_equal, >=)
+GENERATE_ASSERT_STRINGS(greater, >)
+GENERATE_ASSERT_STRINGS(greater_equal, >=)
 
 #undef GENERATE_ASSERT_STRINGS
 
@@ -829,8 +829,8 @@ GENERATE_ASSERT_POINTERS(less, <)
 GENERATE_ASSERT_POINTERS(less_equal, <=)
 GENERATE_ASSERT_POINTERS(equal, ==)
 GENERATE_ASSERT_POINTERS(not_equal, !=)
-GENERATE_ASSERT_POINTERS(more, >)
-GENERATE_ASSERT_POINTERS(more_equal, >=)
+GENERATE_ASSERT_POINTERS(greater, >)
+GENERATE_ASSERT_POINTERS(greater_equal, >=)
 
 #undef GENERATE_ASSERT_POINTERS
 
@@ -864,10 +864,10 @@ GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", <,  less)
 GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", <,  less)
 GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", <=, less_equal)
 GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", <=, less_equal)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", >,  more)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", >,  more)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", >=, more_equal)
-GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", >=, more_equal)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", >,  greater)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", >,  greater)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", >=, greater_equal)
+GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", >=, greater_equal)
 
 #undef GENERATE_ASSERT_INTEGERS_SAME_SIGN
 
@@ -913,8 +913,8 @@ GENERATE_ASSERT_SIGNED_UNSIGNED(equal, ==)
 GENERATE_ASSERT_SIGNED_UNSIGNED(not_equal, !=)
 GENERATE_ASSERT_SIGNED_UNSIGNED(less, <)
 GENERATE_ASSERT_SIGNED_UNSIGNED(less_equal, <=)
-GENERATE_ASSERT_SIGNED_UNSIGNED(more, >)
-GENERATE_ASSERT_SIGNED_UNSIGNED(more_equal, >=)
+GENERATE_ASSERT_SIGNED_UNSIGNED(greater, >)
+GENERATE_ASSERT_SIGNED_UNSIGNED(greater_equal, >=)
 
 #undef GENERATE_ASSERT_SIGNED_UNSIGNED
 
@@ -944,8 +944,8 @@ GENERATE_ASSERT_UNSIGNED_SIGNED(equal, ==)
 GENERATE_ASSERT_UNSIGNED_SIGNED(not_equal, !=)
 GENERATE_ASSERT_UNSIGNED_SIGNED(less, <)
 GENERATE_ASSERT_UNSIGNED_SIGNED(less_equal, <=)
-GENERATE_ASSERT_UNSIGNED_SIGNED(more, >)
-GENERATE_ASSERT_UNSIGNED_SIGNED(more_equal, >=)
+GENERATE_ASSERT_UNSIGNED_SIGNED(greater, >)
+GENERATE_ASSERT_UNSIGNED_SIGNED(greater_equal, >=)
 
 #undef GENERATE_ASSERT_UNSIGNED_SIGNED
 
@@ -973,9 +973,9 @@ a_double_##MODE(char *file, int32 line, char *func,                            \
 GENERATE_ASSERT_DOUBLE(==, equal)
 GENERATE_ASSERT_DOUBLE(!=, not_equal)
 GENERATE_ASSERT_DOUBLE(<,  less)
-GENERATE_ASSERT_DOUBLE(>,  more)
+GENERATE_ASSERT_DOUBLE(>,  greater)
 GENERATE_ASSERT_DOUBLE(<=, less_equal)
-GENERATE_ASSERT_DOUBLE(>=, more_equal)
+GENERATE_ASSERT_DOUBLE(>=, greater_equal)
 
 #undef GENERATE_ASSERT_DOUBLE
 
@@ -1356,7 +1356,7 @@ GENERATE_ASSERT_BOOLS(equal, ==)
 GENERATE_ASSERT_BOOLS(not_equal, !=)
 
 noreturn void
-a_bool_more(void *p, ...) {
+a_bool_greater(void *p, ...) {
     (void)p;
     if (DEBUGGING) {
         TRAP();
@@ -1374,7 +1374,7 @@ a_bool_less(void *p, ...) {
     }
 }
 noreturn void
-a_bool_more_equal(void *p, ...) {
+a_bool_greater_equal(void *p, ...) {
     (void)p;
     if (DEBUGGING) {
         TRAP();
@@ -1402,15 +1402,15 @@ assert_functions_sink(void) {
     (void)a_strings_less_equal;
     (void)a_strings_equal;
     (void)a_strings_not_equal;
-    (void)a_strings_more;
-    (void)a_strings_more_equal;
+    (void)a_strings_greater;
+    (void)a_strings_greater_equal;
 
     (void)a_pointers_less;
     (void)a_pointers_less_equal;
     (void)a_pointers_equal;
     (void)a_pointers_not_equal;
-    (void)a_pointers_more;
-    (void)a_pointers_more_equal;
+    (void)a_pointers_greater;
+    (void)a_pointers_greater_equal;
 
     (void)a_sign_integer_positive;
     (void)a_sign_integer_negative;
@@ -1426,29 +1426,29 @@ assert_functions_sink(void) {
     (void)a_both_signed_less_equal;
     (void)a_both_signed_equal;
     (void)a_both_signed_not_equal;
-    (void)a_both_signed_more;
-    (void)a_both_signed_more_equal;
+    (void)a_both_signed_greater;
+    (void)a_both_signed_greater_equal;
 
     (void)a_both_unsigned_less;
     (void)a_both_unsigned_less_equal;
     (void)a_both_unsigned_equal;
     (void)a_both_unsigned_not_equal;
-    (void)a_both_unsigned_more;
-    (void)a_both_unsigned_more_equal;
+    (void)a_both_unsigned_greater;
+    (void)a_both_unsigned_greater_equal;
 
     (void)a_signed_unsignedless;
     (void)a_signed_unsignedless_equal;
     (void)a_signed_unsignedequal;
     (void)a_signed_unsignednot_equal;
-    (void)a_signed_unsignedmore;
-    (void)a_signed_unsignedmore_equal;
+    (void)a_signed_unsignedgreater;
+    (void)a_signed_unsignedgreater_equal;
 
     (void)a_unsigned_signed_less;
     (void)a_unsigned_signed_less_equal;
     (void)a_unsigned_signed_equal;
     (void)a_unsigned_signed_not_equal;
-    (void)a_unsigned_signed_more;
-    (void)a_unsigned_signed_more_equal;
+    (void)a_unsigned_signed_greater;
+    (void)a_unsigned_signed_greater_equal;
 
     (void)a_double_close;
     (void)a_double_not_close;
@@ -1456,8 +1456,8 @@ assert_functions_sink(void) {
     (void)a_double_less_equal;
     (void)a_double_equal;
     (void)a_double_not_equal;
-    (void)a_double_more;
-    (void)a_double_more_equal;
+    (void)a_double_greater;
+    (void)a_double_greater_equal;
     (void)a_double_close_tol;
     (void)a_double_not_close_tol;
     (void)assert_file_contains;
@@ -1471,8 +1471,8 @@ assert_functions_sink(void) {
     (void)a_bool_not_equal;
     (void)a_bool_less_equal;
     (void)a_bool_less;
-    (void)a_bool_more_equal;
-    (void)a_bool_more;
+    (void)a_bool_greater_equal;
+    (void)a_bool_greater;
     return;
 }
 #endif
