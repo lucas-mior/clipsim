@@ -153,6 +153,24 @@ arena_push(Arena *arena, int64 size) {
     return before;
 }
 
+void
+arena_back(Arena *arena, int64 size) {
+    int64 used;
+
+    ASSERT(arena != NULL);
+    ASSERT_NON_NEGATIVE(size);
+
+    used = (char *)arena->pos - arena->begin;
+    ASSERT_LESS_EQUAL(size, used);
+    ASSERT_ZERO(size % ALIGNMENT);
+
+    arena->pos = (char *)arena->pos - size;
+    if (DEBUGGING && (size > 0)) {
+        memset64(arena->pos, BYTE_POPED, size);
+    }
+    return;
+}
+
 void *
 arenas_push(Arena **arenas, int32 number, int64 size) {
     for (int32 i = 0; i < number; i += 1) {
@@ -323,6 +341,7 @@ static inline void
 arena_functions_sink(void) {
     (void)arena_functions_sink;
     (void)arena_print;
+    (void)arena_back;
     (void)xarenas_push;
     (void)xarena_push;
     (void)arena_push_index32;
@@ -364,6 +383,21 @@ main(void) {
     ASSERT_EQUAL(ALIGN_POWER_OF_2(18, 16), 32);
 
     ASSERT_EQUAL(arena_nlinked(arena), 1);
+
+    {
+        char *p;
+        void *pos;
+
+        ASSERT((p = arena_push(arena, 4*ALIGNMENT)));
+        pos = arena->pos;
+        arena_back(arena, 2*ALIGNMENT);
+        ASSERT(arena->pos == p + 2*ALIGNMENT);
+        ASSERT_EQUAL(arena->npushed, 1);
+        ASSERT(arena_push(arena, 2*ALIGNMENT) == p + 2*ALIGNMENT);
+        ASSERT(arena->pos == pos);
+        ASSERT_EQUAL(arena->npushed, 2);
+        arena_reset(arena);
+    }
 
     {
         int64 total_size = 0;

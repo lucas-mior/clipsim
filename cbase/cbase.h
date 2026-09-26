@@ -693,6 +693,7 @@ typedef struct Command {
     char **env;
     char *cwd;
     char *stdin_buffer;
+    Arena *argv_arena;
 
     int32 *argvs_lens;
     int32 *env_lens;
@@ -703,6 +704,7 @@ typedef struct Command {
     int32 env_cap;
     int32 error_status;
     int64 stdin_buffer_len;
+    int64 run_elapsed_ns;
 
     CommandResult result;
 } Command;
@@ -738,8 +740,7 @@ void command_print(Command *);
 void command_printf(Command *command, char *fmt, ...);
 void command_push_length(Command *command, char *argument, int32 argument_len);
 void command_push_array(Command *command, int32 argc, char **argv);
-void command_push_owned_length(char ***items, int32 **item_lens,
-                               int32 *len, int32 *cap,
+void command_push_owned_length(Command *command,
                                char *argument, int32 argument_len);
 void command_push_split(Command *command, char *arguments, char *delimiters);
 int32 command_stdin_buffer_set(Command *command, char *data, int64 data_len);
@@ -765,8 +766,6 @@ int32 command_signal(Command *command, int32 signal_number,
 int32 command_start(Command *command, enum CommandFlag flags);
 int32 command_status_from_wait(int status, CommandResult *result);
 char *command_str(Command *command, int32 *len);
-void command_vector_reserve(char ***items, int32 **item_lens, int32 *cap,
-                            int32 len, int32 extra);
 int32 command_wait(Command *);
 
 #define COMMAND_PUSH(CMD, ...)                                 \

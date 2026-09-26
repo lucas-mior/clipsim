@@ -26,6 +26,7 @@ enum ArenaErrors {
     EARENA_SIZE,
 };
 
+void arena_back(Arena *arena, int64 size);
 Arena *arena_create(int64 size, char *name);
 int64 arena_data_size(Arena *arena);
 bool arena_decr(Arena *arena, void *p);

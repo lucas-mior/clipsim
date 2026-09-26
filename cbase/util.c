@@ -63,7 +63,7 @@ signal_name(int32 signum) {
         return signal_names[signum];
     }
 #endif
-
+    (void)signum;
     return NULL;
 }
 
