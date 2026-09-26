@@ -614,7 +614,7 @@ fmt_sink_write(FormatSink *sink, char *data, int64 len) {
         }
         if (DEBUGGING) {
             ASSERT(sink->buffer != NULL);
-            ASSERT_LESS(sink->written + len, sink->capacity);
+            ASSERT_LESS_VAR(sink->written + len, sink->capacity);
         }
         memcpy64(sink->buffer + sink->written, data, len);
         sink->written += (int32)len;
@@ -631,7 +631,7 @@ fmt_sink_write(FormatSink *sink, char *data, int64 len) {
     }
 
     ASSERT(sink->buffer != NULL);
-    ASSERT_LESS(sink->written, sink->capacity);
+    ASSERT_LESS_VAR(sink->written, sink->capacity);
 
     available = sink->capacity - 1 - sink->written;
     if (available <= 0) {
@@ -681,7 +681,7 @@ fmt_sink_write_repeat(FormatSink *sink, char byte, int64 len) {
         }
         if (DEBUGGING) {
             ASSERT(sink->buffer != NULL);
-            ASSERT_LESS(sink->written + len, sink->capacity);
+            ASSERT_LESS_VAR(sink->written + len, sink->capacity);
         }
         memset64(sink->buffer + sink->written, byte, len);
         sink->written += (int32)len;
@@ -698,7 +698,7 @@ fmt_sink_write_repeat(FormatSink *sink, char byte, int64 len) {
     }
 
     ASSERT(sink->buffer != NULL);
-    ASSERT_LESS(sink->written, sink->capacity);
+    ASSERT_LESS_VAR(sink->written, sink->capacity);
 
     available = sink->capacity - 1 - sink->written;
     if (available <= 0) {
@@ -2731,7 +2731,7 @@ static bool
 fmt_decimal_digits_have_nonzero_tail(char *digits, int32 start, int32 len) {
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(start);
-    ASSERT_LESS_EQUAL(start, len);
+    ASSERT_LESS_EQUAL_VAR(start, len);
 
     for (int32 i = start; i < len; i += 1) {
         if (digits[i] != '0') {
@@ -2752,7 +2752,7 @@ fmt_decimal_round_digits(char *digits, int32 *len, int32 keep, bool round_up) {
     ASSERT(len != NULL);
     ASSERT_POSITIVE(*len);
     ASSERT_POSITIVE(keep);
-    ASSERT_LESS_EQUAL(keep, *len);
+    ASSERT_LESS_EQUAL_VAR(keep, *len);
 
     *len = keep;
     if (!round_up) {
@@ -3280,7 +3280,7 @@ static bool
 fmt_ldouble_hex_has_nonzero_tail(char *digits, int32 start, int32 digit_len) {
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(start);
-    ASSERT_LESS_EQUAL(start, digit_len);
+    ASSERT_LESS_EQUAL_VAR(start, digit_len);
 
     for (int32 i = start; i < digit_len; i += 1) {
         if (fmt_hex_digit_value(digits[i]) != 0) {
@@ -3299,7 +3299,7 @@ fmt_ldouble_hex_should_round(char first_digit,
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(digit_len);
     ASSERT_NON_NEGATIVE(precision);
-    ASSERT_LESS(precision, digit_len);
+    ASSERT_LESS_VAR(precision, digit_len);
 
     round_digit = fmt_hex_digit_value(digits[precision]);
     if (round_digit > 8) {
@@ -3327,7 +3327,7 @@ fmt_ldouble_hex_round(char *first_digit, char *digits,
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(digit_len);
     ASSERT_NON_NEGATIVE(precision);
-    ASSERT_LESS(precision, digit_len);
+    ASSERT_LESS_VAR(precision, digit_len);
 
     if (!fmt_ldouble_hex_should_round(*first_digit,
                                       digits, digit_len, precision)) {
@@ -4505,7 +4505,6 @@ fmt_test_parse_one(char *format) {
     FormatSpec spec;
     char *next;
 
-    ASSERT(format != NULL);
     ASSERT_EQUAL(format[0], '%');
 
     next = NULL;
@@ -4573,41 +4572,41 @@ test_fmt_parser_valid_specs(void) {
 
 static void
 test_fmt_parser_invalid_specs(void) {
-    ASSERT_EQUAL(fmt_test_validate("%"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%2$d"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%*2$d"), -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%"),      -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%2$d"),   -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%*2$d"),  -EINVAL);
     ASSERT_EQUAL(fmt_test_validate("%.*2$s"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%m"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%q"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%i"), -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%m"),     -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%q"),     -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%i"),     -EINVAL);
 
-    ASSERT_EQUAL(fmt_test_validate("%ld"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%lc"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.5ls"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%zd"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%td"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%jd"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%wfd"), -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%ld"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%lc"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%.5ls"),  -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%zd"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%td"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%jd"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%wfd"),   -EINVAL);
     ASSERT_EQUAL(fmt_test_validate("%wf32d"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%w24d"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%wd"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%Lx"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%lf"), -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%w24d"),  -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%wd"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%Lx"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%lf"),    -EINVAL);
 
-    ASSERT_EQUAL(fmt_test_validate("%+s"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%05s"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.2c"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%#p"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%0p"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%+p"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.2p"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%10n"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%-n"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%+n"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.0n"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%ln"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%5%"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.0%"), -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%+s"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%05s"),   -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%.2c"),   -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%#p"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%0p"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%+p"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%.2p"),   -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%10n"),   -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%-n"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%+n"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%.0n"),   -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%ln"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%5%"),    -EINVAL);
+    ASSERT_EQUAL(fmt_test_validate("%.0%"),   -EINVAL);
 
     ASSERT_EQUAL(fmt_test_validate("%2147483648d"), -EOVERFLOW);
     ASSERT_EQUAL(fmt_test_validate("%.2147483648d"), -EOVERFLOW);
@@ -4629,7 +4628,7 @@ test_fmt_sink_cap(char *format, char *expected) {
 
         memset64(buffer, 0x7f, SIZEOF(buffer));
         len = fmt_test_snprintf(buffer, capacity, format);
-        ASSERT_EQUAL(len, expected_len);
+        ASSERT_EQUAL_VAR(len, expected_len);
 
         if (capacity == 0) {
             ASSERT_EQUAL(buffer[0], (char)0x7f);
@@ -4662,7 +4661,7 @@ test_fmt_integer_cap(char *expected, char *format, ...) {
         va_start(args, format);
         len = fmt_vsnprintf(buffer, capacity, format, args);
         va_end(args);
-        ASSERT_EQUAL(len, expected_len);
+        ASSERT_EQUAL_VAR(len, expected_len);
 
         if (capacity == 0) {
             ASSERT_EQUAL(buffer[0], (char)0x7f);
@@ -4694,7 +4693,7 @@ test_fmt_bytes_cap(char *expected, int32 expected_len, char *format, ...) {
         va_start(args, format);
         len = fmt_vsnprintf(buffer, capacity, format, args);
         va_end(args);
-        ASSERT_EQUAL(len, expected_len);
+        ASSERT_EQUAL_VAR(len, expected_len);
 
         if (capacity == 0) {
             ASSERT_EQUAL(buffer[0], (char)0x7f);
@@ -4806,14 +4805,15 @@ test_fmt_char_string_outputs(void) {
     test_fmt_bytes_cap("x=abc n=7 c=Z", 13, "x=%s n=%d c=%c", "abc", 7, 'Z');
 
     memset64(buffer, 0x7f, SIZEOF(buffer));
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*s", -1,
-                                   "abc"), -EINVAL);
+    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*s", -1, "abc"),
+                 -EINVAL);
     ASSERT_EQUAL(buffer[0], '\0');
     ASSERT_EQUAL(buffer[1], (char)0x7f);
 
     memset64(buffer, 0x7f, SIZEOF(buffer));
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*s", 1,
-                                   (char *)NULL), -EINVAL);
+    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+                                   "%.*s", 1, (char *)NULL),
+                                   -EINVAL);
     ASSERT_EQUAL(buffer[0], '\0');
     ASSERT_EQUAL(buffer[1], (char)0x7f);
 
@@ -5091,8 +5091,8 @@ test_fmt_ldouble_parts(ldouble value, bool negative,
     ASSERT(parts.negative == negative);
     ASSERT(parts.zero == (bit_len == 0));
     ASSERT_EQUAL(parts.precision_bits, LDBL_MANT_DIG);
-    ASSERT_EQUAL(fmt_big_uint_bit_len(&parts.significand), bit_len);
-    ASSERT_EQUAL(parts.binary_exponent, binary_exponent);
+    ASSERT_EQUAL_VAR(fmt_big_uint_bit_len(&parts.significand), bit_len);
+    ASSERT_EQUAL_VAR(parts.binary_exponent, binary_exponent);
     return;
 }
 
@@ -5106,8 +5106,8 @@ test_fmt_ldouble_exact_integer(ldouble value, char *expected) {
     ASSERT(!fmt_decompose_ldouble(value, &parts));
     ASSERT(!fmt_binary_float_to_exact_integer(&parts, &integer));
     len = fmt_big_uint_to_decimal(&integer, buffer, SIZEOF(buffer));
-    ASSERT_EQUAL(len, strlen32(expected));
-    ASSERT_EQUAL(buffer, expected);
+    ASSERT_EQUAL_VAR(len, strlen32(expected));
+    ASSERT_EQUAL_VAR(buffer, expected);
     return;
 }
 
@@ -5125,8 +5125,8 @@ test_fmt_ldouble_scaled(ldouble value, int32 decimal_places,
                                             &integer, &remainder));
     ASSERT(remainder == expected_rem);
     len = fmt_big_uint_to_decimal(&integer, buffer, SIZEOF(buffer));
-    ASSERT_EQUAL(len, strlen32(expected));
-    ASSERT_EQUAL(buffer, expected);
+    ASSERT_EQUAL_VAR(len, strlen32(expected));
+    ASSERT_EQUAL_VAR(buffer, expected);
     return;
 }
 
@@ -5305,7 +5305,7 @@ test_fmt_public_api(void) {
     ASSERT_EQUAL(len, 12);
     ASSERT_EQUAL(buffer, len + 1, "public:42:ok", 13);
 
-    ASSERT_LESS_EQUAL(SIZEOF(buffer), fmt_snprintf_estimate("%g", 1.0));
+    ASSERT_LESS_EQUAL_VAR(SIZEOF(buffer), fmt_snprintf_estimate("%g", 1.0));
     len = fmt_sprintf(buffer, SIZEOF(buffer), "%g", 1.0);
     ASSERT_EQUAL(len, 1);
     ASSERT_EQUAL(buffer, "1");
@@ -5387,7 +5387,7 @@ test_fmt_estimate(void) {
     estimate = fmt_snprintf_estimate("x=%d s=%.*s f=%g", 7, 4, span, 1.25);
     exact = fmt_test_snprintf(buffer, SIZEOF(buffer), "x=%d s=%.*s f=%g",
                               7, 4, span, 1.25);
-    ASSERT_MORE_EQUAL(estimate, exact);
+    ASSERT_MORE_EQUAL_VAR(estimate, exact);
 
     return;
 }
@@ -5486,7 +5486,8 @@ test_fmt_float32_round_trip(float value) {
     end = NULL;
     parsed = strtof(buffer, &end);
     ASSERT(end == buffer + len);
-    ASSERT_EQUAL(test_fmt_float32_bits(parsed), test_fmt_float32_bits(value));
+    ASSERT_EQUAL_VAR(test_fmt_float32_bits(parsed),
+                     test_fmt_float32_bits(value));
 
     return;
 }
@@ -5504,7 +5505,8 @@ test_fmt_float64_round_trip(double value) {
     end = NULL;
     parsed = strtod(buffer, &end);
     ASSERT(end == buffer + len);
-    ASSERT_EQUAL(test_fmt_float64_bits(parsed), test_fmt_float64_bits(value));
+    ASSERT_EQUAL_VAR(test_fmt_float64_bits(parsed),
+                     test_fmt_float64_bits(value));
 
     return;
 }

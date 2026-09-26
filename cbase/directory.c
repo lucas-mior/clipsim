@@ -227,7 +227,7 @@ test_directory_entries_are_valid(DirEntry *entries, int32 length) {
     for (int32 i = 0; i < length; i += 1) {
         ASSERT_NON_NEGATIVE(entries[i].name_len);
         ASSERT_LESS(entries[i].name_len, SIZEOF(entries[i].name));
-        ASSERT_EQUAL(entries[i].name_len, strlen32(entries[i].name));
+        ASSERT_EQUAL_VAR(entries[i].name_len, strlen32(entries[i].name));
         ASSERT_EQUAL(entries[i].name[entries[i].name_len], '\0');
     }
 

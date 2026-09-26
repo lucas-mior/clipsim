@@ -803,7 +803,7 @@ hash_pow(double x, double n) {
     ASSERT_NON_NEGATIVE(n);
     ASSERT_LESS_EQUAL(n, (double)UINT32_MAX);
     exponent = (uint32)n;
-    ASSERT_EQUAL((double)exponent, n);
+    ASSERT_EQUAL_VAR((double)exponent, n);
 
     while (exponent > 0) {
         if (exponent & 1u) {
@@ -939,7 +939,7 @@ main(void) {
     ASSERT_EQUAL(test, 777);
     arena_print(map->arena_keys);
     hash_print_summary_map(map);
-    ASSERT_EQUAL(map->arena_keys->npushed, map->length);
+    ASSERT_EQUAL_VAR(map->arena_keys->npushed, map->length);
 
     ASSERT(!hash_lookup_map(map, "does_not_exist", 14, &test));
 
@@ -956,12 +956,12 @@ main(void) {
     time_monotonic_precise(&t1);
     PRINT_TIMINGS(NSTRINGS, t0, t1, "insertion with resizes");
 
-    ASSERT_MORE(map->capacity, initial_capacity);
+    ASSERT_MORE_VAR(map->capacity, initial_capacity);
 
     for (uint32 i = 0; i < NSTRINGS; i += 1) {
         int32 stored = 0;
         ASSERT(hash_lookup_map(map, strings[i].s, strings[i].len, &stored));
-        ASSERT_EQUAL(stored, strings[i].value);
+        ASSERT_EQUAL_VAR(stored, strings[i].value);
     }
 
     ASSERT(hash_remove_map(map, strings[0].s, strings[0].len));
@@ -985,7 +985,7 @@ main(void) {
 
         ASSERT(hash_insert_map(&map_value, str1.s, str1.len, str1.value));
         ASSERT(hash_lookup_map(&map_value, str1.s, str1.len, &test));
-        ASSERT_EQUAL(test, str1.value);
+        ASSERT_EQUAL_VAR(test, str1.value);
 
         hash_deinit_map(&map_value);
     }

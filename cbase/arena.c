@@ -161,7 +161,7 @@ arena_back(Arena *arena, int64 size) {
     ASSERT_NON_NEGATIVE(size);
 
     used = (char *)arena->pos - arena->begin;
-    ASSERT_LESS_EQUAL(size, used);
+    ASSERT_LESS_EQUAL_VAR(size, used);
     ASSERT_ZERO((ullong)size % ALIGNMENT);
 
     arena->pos = (char *)arena->pos - size;
@@ -409,8 +409,8 @@ main(void) {
 
             if (total_size < arena_data_size(arena)) {
                 ASSERT_EQUAL(arena_nlinked(arena), 1);
-                ASSERT_MORE_EQUAL((void *)objs[i], (void *)arena->begin);
-                ASSERT_MORE_EQUAL((void *)arena->pos, (void *)objs[i]);
+                ASSERT_MORE_EQUAL_VAR((void *)objs[i], (void *)arena->begin);
+                ASSERT_MORE_EQUAL_VAR((void *)arena->pos, (void *)objs[i]);
             }
         }
 

@@ -146,13 +146,13 @@ test_parse_c_text_splits_lines_and_tokens(void) {
     doc = parse_c_text(text, strlen32(text));
     ASSERT_EQUAL(doc->line_count, 2);
     ASSERT_EQUAL(doc->lines[0].text, "int x;\n");
-    ASSERT_EQUAL(doc->lines[0].len, strlen32("int x;\n"));
+    ASSERT_EQUAL_VAR(doc->lines[0].len, strlen32("int x;\n"));
     ASSERT_EQUAL(doc->lines[0].token_count, 5);
     ASSERT(TOKEN_IS(&doc->lines[0].tokens[0], "int"));
     ASSERT(TOKEN_IS(&doc->lines[0].tokens[2], "x"));
     ASSERT(TOKEN_IS(&doc->lines[0].tokens[3], ";"));
     ASSERT_EQUAL(doc->lines[1].text, "float y;");
-    ASSERT_EQUAL(doc->lines[1].len, strlen32("float y;"));
+    ASSERT_EQUAL_VAR(doc->lines[1].len, strlen32("float y;"));
     free_document(doc);
     return;
 }

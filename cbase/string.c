@@ -785,7 +785,7 @@ main(void) {
         STR_APPEND(&builder, "0123456789abcde");
         old_cap = builder.cap;
         str_append(&builder, builder.data + 1, builder.len - 1);
-        ASSERT_MORE(builder.cap, old_cap);
+        ASSERT_MORE_VAR(builder.cap, old_cap);
         ASSERT_EQUAL(builder.data,
                      "0123456789abcde123456789abcde");
         str_free(&builder);
@@ -811,7 +811,7 @@ main(void) {
         str_printf(&builder, "%s %.10s %d%n", "x", "abc", 7, &count);
         ASSERT_EQUAL(builder.data, "x abc 7");
         ASSERT_EQUAL(builder.len, 7);
-        ASSERT_EQUAL(count, builder.len);
+        ASSERT_EQUAL_VAR(count, builder.len);
         str_free(&builder);
     }
 

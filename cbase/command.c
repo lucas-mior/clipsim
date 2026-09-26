@@ -1636,7 +1636,7 @@ main(int argc, char **argv) {
         ASSERT_EQUAL(cmd.argv[128], "d");
         ASSERT_EQUAL(cmd.argv[129], "/destination");
         ASSERT_EQUAL(cmd.argv[130], "/source");
-        ASSERT_MORE(cmd.cap, cmd.argc);
+        ASSERT_MORE_VAR(cmd.cap, cmd.argc);
         ASSERT(cmd.argv[cmd.argc] == NULL);
 
         command_text = command_str(&cmd, &len);
@@ -1661,7 +1661,7 @@ main(int argc, char **argv) {
 
             command_text = command_str(&cmd, &len);
             ASSERT_EQUAL(len, SIZEOF(long_argument) - 1);
-            ASSERT_EQUAL(command_text, long_argument_string);
+            ASSERT_EQUAL_VAR(command_text, long_argument_string);
             free2(command_text, len + 1);
         }
 
@@ -1791,7 +1791,7 @@ main(int argc, char **argv) {
             command_cwd_set(&cmd, test_cwd);
             COMMAND_PUSH(&cmd, "pwd", "-P");
             ASSERT_ZERO((command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT)));
-            ASSERT_EQUAL(cmd.result.stdout_output, expected_cwd);
+            ASSERT_EQUAL_VAR(cmd.result.stdout_output, expected_cwd);
             command_cwd_clear(&cmd);
             test_remove_tree(test_cwd);
         }

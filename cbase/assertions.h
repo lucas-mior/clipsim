@@ -64,6 +64,50 @@ void assert_not_equal_3(char *, int32, char *,
 void assert_not_equal_4(char *, int32, char *,
                         char *, char *, char *, int32, char *, int32);
 
+enum AssertCompareValueKind {
+    ASSERT_COMPARE_VALUE_POINTER,
+    ASSERT_COMPARE_VALUE_STRING,
+    ASSERT_COMPARE_VALUE_BOOL,
+    ASSERT_COMPARE_VALUE_INTEGER,
+    ASSERT_COMPARE_VALUE_DOUBLE,
+};
+
+enum AssertCompareMode {
+    ASSERT_COMPARE_MODE_LESS,
+    ASSERT_COMPARE_MODE_LESS_EQUAL,
+    ASSERT_COMPARE_MODE_EQUAL,
+    ASSERT_COMPARE_MODE_NOT_EQUAL,
+    ASSERT_COMPARE_MODE_MORE,
+    ASSERT_COMPARE_MODE_MORE_EQUAL,
+};
+
+typedef struct AssertCompareValue {
+    enum AssertCompareValueKind kind;
+    union {
+        void *pointer;
+        char *string;
+        bool boolean;
+        llong integer;
+        double adouble;
+    };
+} AssertCompareValue;
+
+AssertCompareValue assert_compare_value_pointer(char *, int32, char *,
+                                                char *, void *);
+AssertCompareValue assert_compare_value_string(char *, int32, char *,
+                                               char *, char *);
+AssertCompareValue assert_compare_value_bool(char *, int32, char *,
+                                             char *, bool);
+AssertCompareValue assert_compare_value_signed(char *, int32, char *,
+                                               char *, llong);
+AssertCompareValue assert_compare_value_unsigned(char *, int32, char *,
+                                                 char *, ullong);
+AssertCompareValue assert_compare_value_double(char *, int32, char *,
+                                               char *, double);
+void assert_compare_constant(char *, int32, char *, enum AssertCompareMode,
+                             char *, char *, AssertCompareValue,
+                             AssertCompareValue);
+
 #define ASSERT_DECLARE_STRINGS(MODE)                      \
 void a_strings_##MODE(char *, int32, char *,              \
                       char *, char *, char *, char *);
@@ -195,6 +239,7 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_BOOL(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CHARP(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_VOIDP(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE(void);
+void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CONSTANT(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_FIRST(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_SIGN(void *, ...);
@@ -499,6 +544,49 @@ _Generic((VAR1),                                                               \
     default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE()                     \
 )
 
+#if CHAR_MIN < 0
+#define ASSERT_COMPARE_VALUE_CHAR assert_compare_value_signed
+#else
+#define ASSERT_COMPARE_VALUE_CHAR assert_compare_value_unsigned
+#endif
+
+#define ASSERT_COMPARE_VALUE(VAR)                                             \
+_Generic((VAR),                                                               \
+    void *: assert_compare_value_pointer,                                     \
+    char *: assert_compare_value_string,                                      \
+    bool:   assert_compare_value_bool,                                        \
+    char:   ASSERT_COMPARE_VALUE_CHAR,                                        \
+    schar:  assert_compare_value_signed,                                      \
+    short:  assert_compare_value_signed,                                      \
+    int:    assert_compare_value_signed,                                      \
+    long:   assert_compare_value_signed,                                      \
+    llong:  assert_compare_value_signed,                                      \
+    uchar:  assert_compare_value_unsigned,                                    \
+    ushort: assert_compare_value_unsigned,                                    \
+    uint:   assert_compare_value_unsigned,                                    \
+    ulong:  assert_compare_value_unsigned,                                    \
+    ullong: assert_compare_value_unsigned,                                    \
+    float:  assert_compare_value_double,                                      \
+    double: assert_compare_value_double,                                      \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CONSTANT             \
+)(__FILE__, __LINE__, FUNC__, #VAR, (VAR))
+
+#if CC_GCC || CC_CLANG || CC_TCC
+#define ASSERT_COMPARE_CONSTANT(MODE, VAR1, VAR2) do {                         \
+    _Static_assert(__builtin_constant_p(VAR2),                                 \
+                   "assertion RHS must be constant; use the _VAR form");      \
+    assert_compare_constant(__FILE__, __LINE__, FUNC__,                        \
+                            ASSERT_COMPARE_MODE_##MODE, #VAR1, #VAR2,          \
+                            ASSERT_COMPARE_VALUE(VAR1),                        \
+                            ASSERT_COMPARE_VALUE(VAR2));                       \
+} while (0)
+#else
+#define ASSERT_COMPARE_CONSTANT(MODE, VAR1, VAR2) do {                         \
+    _Static_assert(0,                                                          \
+                   "constant-RHS assertions require __builtin_constant_p");   \
+} while (0)
+#endif
+
 #if CC_GCC || CC_CLANG
   #define ASSERT_DIAGNOSTIC_PUSH() do {                                        \
       _Pragma("GCC diagnostic push")                                           \
@@ -508,7 +596,7 @@ _Generic((VAR1),                                                               \
   #define ASSERT_DIAGNOSTIC_POP() do {                                         \
       _Pragma("GCC diagnostic pop")                                            \
   } while (0)
-  #define ASSERT_COMPARE_DIAGNOSTIC(MODE, VAR1, VAR2) do {                     \
+  #define ASSERT_COMPARE_VAR_DIAGNOSTIC(MODE, VAR1, VAR2) do {                 \
       ASSERT_DIAGNOSTIC_PUSH();                                                \
       ASSERT_COMPARE(MODE, VAR1, VAR2);                                        \
       ASSERT_DIAGNOSTIC_POP();                                                 \
@@ -523,26 +611,45 @@ _Generic((VAR1),                                                               \
       ASSERT_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL);                          \
       ASSERT_DIAGNOSTIC_POP();                                                 \
   } while (0)
-  #define ASSERT_EQUAL_2(VAR1, VAR2)                                           \
-      ASSERT_COMPARE_DIAGNOSTIC(equal, VAR1, VAR2)
-  #define ASSERT_NOT_EQUAL_2(VAR1, VAR2)                                       \
-      ASSERT_COMPARE_DIAGNOSTIC(not_equal, VAR1, VAR2)
-  #define ASSERT_LESS(VAR1, VAR2)                                              \
-      ASSERT_COMPARE_DIAGNOSTIC(less, VAR1, VAR2)
-  #define ASSERT_LESS_EQUAL(VAR1, VAR2)                                        \
-      ASSERT_COMPARE_DIAGNOSTIC(less_equal, VAR1, VAR2)
-  #define ASSERT_MORE(VAR1, VAR2)                                              \
-      ASSERT_COMPARE_DIAGNOSTIC(more, VAR1, VAR2)
-  #define ASSERT_MORE_EQUAL(VAR1, VAR2)                                        \
-      ASSERT_COMPARE_DIAGNOSTIC(more_equal, VAR1, VAR2)
+  #define ASSERT_EQUAL_VAR(VAR1, VAR2)                                         \
+      ASSERT_COMPARE_VAR_DIAGNOSTIC(equal, VAR1, VAR2)
+  #define ASSERT_NOT_EQUAL_VAR(VAR1, VAR2)                                     \
+      ASSERT_COMPARE_VAR_DIAGNOSTIC(not_equal, VAR1, VAR2)
+  #define ASSERT_LESS_VAR(VAR1, VAR2)                                          \
+      ASSERT_COMPARE_VAR_DIAGNOSTIC(less, VAR1, VAR2)
+  #define ASSERT_LESS_EQUAL_VAR(VAR1, VAR2)                                    \
+      ASSERT_COMPARE_VAR_DIAGNOSTIC(less_equal, VAR1, VAR2)
+  #define ASSERT_MORE_VAR(VAR1, VAR2)                                          \
+      ASSERT_COMPARE_VAR_DIAGNOSTIC(more, VAR1, VAR2)
+  #define ASSERT_MORE_EQUAL_VAR(VAR1, VAR2)                                    \
+      ASSERT_COMPARE_VAR_DIAGNOSTIC(more_equal, VAR1, VAR2)
 #else
-  #define ASSERT_EQUAL_2(VAR1, VAR2)     ASSERT_COMPARE(equal,      VAR1, VAR2)
-  #define ASSERT_NOT_EQUAL_2(VAR1, VAR2) ASSERT_COMPARE(not_equal,  VAR1, VAR2)
-  #define ASSERT_LESS(VAR1, VAR2)        ASSERT_COMPARE(less,       VAR1, VAR2)
-  #define ASSERT_LESS_EQUAL(VAR1, VAR2)  ASSERT_COMPARE(less_equal, VAR1, VAR2)
-  #define ASSERT_MORE(VAR1, VAR2)        ASSERT_COMPARE(more,       VAR1, VAR2)
-  #define ASSERT_MORE_EQUAL(VAR1, VAR2)  ASSERT_COMPARE(more_equal, VAR1, VAR2)
+  #define ASSERT_EQUAL_VAR(VAR1, VAR2) \
+      ASSERT_COMPARE(equal, VAR1, VAR2)
+  #define ASSERT_NOT_EQUAL_VAR(VAR1, VAR2) \
+      ASSERT_COMPARE(not_equal, VAR1, VAR2)
+  #define ASSERT_LESS_VAR(VAR1, VAR2) \
+      ASSERT_COMPARE(less, VAR1, VAR2)
+  #define ASSERT_LESS_EQUAL_VAR(VAR1, VAR2) \
+      ASSERT_COMPARE(less_equal, VAR1, VAR2)
+  #define ASSERT_MORE_VAR(VAR1, VAR2) \
+      ASSERT_COMPARE(more, VAR1, VAR2)
+  #define ASSERT_MORE_EQUAL_VAR(VAR1, VAR2) \
+      ASSERT_COMPARE(more_equal, VAR1, VAR2)
 #endif
+
+#define ASSERT_EQUAL_2(VAR1, VAR2)                                             \
+    ASSERT_COMPARE_CONSTANT(EQUAL, VAR1, VAR2)
+#define ASSERT_NOT_EQUAL_2(VAR1, VAR2)                                         \
+    ASSERT_COMPARE_CONSTANT(NOT_EQUAL, VAR1, VAR2)
+#define ASSERT_LESS(VAR1, VAR2)                                                \
+    ASSERT_COMPARE_CONSTANT(LESS, VAR1, VAR2)
+#define ASSERT_LESS_EQUAL(VAR1, VAR2)                                          \
+    ASSERT_COMPARE_CONSTANT(LESS_EQUAL, VAR1, VAR2)
+#define ASSERT_MORE(VAR1, VAR2)                                                \
+    ASSERT_COMPARE_CONSTANT(MORE, VAR1, VAR2)
+#define ASSERT_MORE_EQUAL(VAR1, VAR2)                                          \
+    ASSERT_COMPARE_CONSTANT(MORE_EQUAL, VAR1, VAR2)
 
 #define ASSERT_EQUAL_CALL_2(VAR1, VAR2) ASSERT_EQUAL_2(VAR1, VAR2)
 

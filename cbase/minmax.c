@@ -330,8 +330,8 @@ main(void) {
         double y = 1.0;
         double min = MIN(x, y);
         double max = MAX(x, y);
-        ASSERT_EQUAL(min, x);
-        ASSERT_EQUAL(max, y);
+        ASSERT_EQUAL_VAR(min, x);
+        ASSERT_EQUAL_VAR(max, y);
     }
     {
         llong min01 = MIN(0, 1);
@@ -348,8 +348,8 @@ main(void) {
         int b = 1;
         llong min = MIN(a, b);
         llong max = MAX(a, b);
-        ASSERT_EQUAL(min, a);
-        ASSERT_EQUAL(max, a);
+        ASSERT_EQUAL_VAR(min, a);
+        ASSERT_EQUAL_VAR(max, a);
     }
 
     MSVC_WARNING_PUSH()
@@ -359,29 +359,29 @@ main(void) {
         uint b = 2;
         llong min = MIN(a, b);
         llong max = MAX(a, b);
-        ASSERT_EQUAL(min, a);
-        ASSERT_EQUAL(max, b);
+        ASSERT_EQUAL_VAR(min, a);
+        ASSERT_EQUAL_VAR(max, b);
     } {
         llong a = -1;
         ullong b = 0;
         double min = (double)MIN(a, b);
         double max = (double)MAX(a, b);
-        ASSERT_EQUAL(min, a);
-        ASSERT_EQUAL(max, b);
+        ASSERT_EQUAL_VAR(min, a);
+        ASSERT_EQUAL_VAR(max, b);
     } {
         llong a = MINOF(a);
         ullong b = MAXOF(a);
         double min = (double)MIN(a, b);
         ullong max = (ullong)MAX(a, b);
-        ASSERT_EQUAL((llong)min, a);
-        ASSERT_EQUAL(max, b);
+        ASSERT_EQUAL_VAR((llong)min, a);
+        ASSERT_EQUAL_VAR(max, b);
     } {
         ullong a = MINOF(a);
         llong b = MAXOF(b);
         llong min = MIN(a, b);
         llong max = MAX(a, b);
-        ASSERT_EQUAL(min, a);
-        ASSERT_EQUAL(max, b);
+        ASSERT_EQUAL_VAR(min, a);
+        ASSERT_EQUAL_VAR(max, b);
     }
     MSVC_WARNING_POP()
 
@@ -396,15 +396,15 @@ main(void) {
         double min = MIN(a, 2);
         double max = MAX(a, 2);
         ASSERT_EQUAL(min, 2.0);
-        ASSERT_EQUAL(max, a);
+        ASSERT_EQUAL_VAR(max, a);
     } {
         int array[100];
         void *a = &array[0];
         void *b = &array[1];
         void *min = MIN(a, b);
         void *max = MAX(a, b);
-        ASSERT_EQUAL(min, a);
-        ASSERT_EQUAL(max, b);
+        ASSERT_EQUAL_VAR(min, a);
+        ASSERT_EQUAL_VAR(max, b);
     }
 
     // Testing if conversion diagnostics are correctly given

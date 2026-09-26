@@ -846,12 +846,19 @@ if (enum & ENUM_BITFLAG) {
   - `ASSERT_NEGATIVE(integer expression)`
   - `ASSERT_NON_POSITIVE(integer expression)`
   - `ASSERT_NON_NEGATIVE(integer expression)`
-  - `ASSERT_EQUAL(number or string or pointer 1, number or string or pointer 2)`
+  - `ASSERT_EQUAL(value, constant expression)`
+  - `ASSERT_NOT_EQUAL(value, constant expression)`
   - `ASSERT_EQUAL(string, string_len, other_string)`
-  - `ASSERT_LESS(number expr 1, number expr 2)`
-  - `ASSERT_MORE(number expr 1, number expr 2)`
-  - `ASSERT_LESS_EQUAL(number expr 1, number expr 2)`
-  - `ASSERT_MORE_EQUAL(number expr 1, number expr 2)`
+  - `ASSERT_LESS(value, constant expression)`
+  - `ASSERT_MORE(value, constant expression)`
+  - `ASSERT_LESS_EQUAL(value, constant expression)`
+  - `ASSERT_MORE_EQUAL(value, constant expression)`
+  - `ASSERT_EQUAL_VAR(value1, value2)`
+  - `ASSERT_NOT_EQUAL_VAR(value1, value2)`
+  - `ASSERT_LESS_VAR(value1, value2)`
+  - `ASSERT_MORE_VAR(value1, value2)`
+  - `ASSERT_LESS_EQUAL_VAR(value1, value2)`
+  - `ASSERT_MORE_EQUAL_VAR(value1, value2)`
   - `ASSERT_BETWEEN(number, min_inclusive, max_inclusive)`
   - `ASSERT_CONTAINS(haystack, haystack_len, needle)`
   - `ASSERT_NOT_CONTAINS(haystack, haystack_len, needle)`
@@ -894,7 +901,30 @@ if (enum & ENUM_BITFLAG) {
 - Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT(value < 0)`.
 - Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT(value <= 0)`.
 - Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT(value >= 0)`.
-- Prefer `ASSERT_EQUAL(a, b);` instead of `ASSERT(a == b)` (except for enums).
+- Two-argument comparison assertions are optimized for the common case where
+  the right side is a compiler-known constant. Prefer:
+  ```c
+  ASSERT_EQUAL(value, 3);
+  ASSERT_NOT_EQUAL(value, -1);
+  ASSERT_LESS(value, 100);
+  ASSERT_LESS_EQUAL(value, 100);
+  ASSERT_MORE(value, 3);
+  ASSERT_MORE_EQUAL(value, 3);
+  ```
+  instead of writing the equivalent expressions with `ASSERT(...)` (except for
+  enums). The right side of these forms must satisfy `__builtin_constant_p()`;
+  passing a variable is a compile-time error.
+- If the right side is not a compiler-known constant, use the explicit variable
+  forms: `ASSERT_EQUAL_VAR`, `ASSERT_NOT_EQUAL_VAR`, `ASSERT_LESS_VAR`,
+  `ASSERT_LESS_EQUAL_VAR`, `ASSERT_MORE_VAR`, or `ASSERT_MORE_EQUAL_VAR`.
+  These use the heavier variable-vs-variable generic dispatch, so use them only
+  when the constant-RHS forms cannot be used.
+- Keep the constant on the right side. If necessary, reverse the comparison so
+  the variable remains on the left and the constant remains on the right.
+- Constant-RHS integer comparisons normalize integer operands to `llong`.
+  Unsigned integer values above `LLONG_MAX` are not supported by these forms.
+  The three- and four-argument string comparison forms are unaffected by the
+  constant-RHS rule.
 - Prefer `ASSERT_ZERO(value);` instead of `ASSERT_EQUAL(a, 0)`
 - Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT_MORE(a, 0)`
 - Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT_LESS(a, 0)`

@@ -567,14 +567,14 @@ main(void) {
             len = utf8_decode(test_str + consumed_total,
                               str_len - consumed_total, &u);
 
-            ASSERT_EQUAL(u, expected[expected_idx]);
+            ASSERT_EQUAL_VAR(u, expected[expected_idx]);
 
             consumed_total += len;
             expected_idx += 1;
         }
 
         ASSERT_EQUAL(expected_idx, 6);
-        ASSERT_EQUAL(consumed_total, str_len);
+        ASSERT_EQUAL_VAR(consumed_total, str_len);
     }
 
     {
@@ -639,7 +639,7 @@ main(void) {
                 ASSERT(u != UTF_INVALID);
                 consumed += dec_len;
             }
-            ASSERT_EQUAL(consumed, gen_len);
+            ASSERT_EQUAL_VAR(consumed, gen_len);
             PRINTLN(test_buf);
         }
         printf("utf8_random_string validation successful.\n");

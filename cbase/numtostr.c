@@ -243,16 +243,13 @@ test_numtostr_itoa(void) {
     int32 len;
 
     len = itoa2(buffer, SIZEOF(buffer), 0);
-    ASSERT_EQUAL(len, 1);
-    ASSERT_EQUAL((char *)buffer, "0");
+    ASSERT_EQUAL(buffer, len, "0");
 
     len = itoa2(buffer, SIZEOF(buffer), -9223372036854775807LL - 1);
-    ASSERT_EQUAL(len, 20);
-    ASSERT_EQUAL((char *)buffer, "-9223372036854775808");
+    ASSERT_EQUAL(buffer, len, "-9223372036854775808");
 
     len = itoa2(buffer, SIZEOF(buffer), 9223372036854775807LL);
-    ASSERT_EQUAL(len, 19);
-    ASSERT_EQUAL((char *)buffer, "9223372036854775807");
+    ASSERT_EQUAL(buffer, len, "9223372036854775807");
     return;
 }
 
@@ -262,20 +259,17 @@ test_numtostr_bytes_pretty(void) {
     int32 len;
 
     len = bytes_pretty(buffer, -1);
-    ASSERT_EQUAL(len, 0);
+    ASSERT_ZERO(len);
     ASSERT_EQUAL((char *)buffer, "");
 
     len = bytes_pretty(buffer, 512);
-    ASSERT_EQUAL(len, 4);
-    ASSERT_EQUAL((char *)buffer, "512B");
+    ASSERT_EQUAL(buffer, len, "512B");
 
     len = bytes_pretty(buffer, 1024);
-    ASSERT_EQUAL(len, 8);
-    ASSERT_EQUAL((char *)buffer, "1.0000kB");
+    ASSERT_EQUAL(buffer, len, "1.0000kB");
 
     len = bytes_pretty(buffer, SIZEMB(2));
-    ASSERT_EQUAL(len, 8);
-    ASSERT_EQUAL((char *)buffer, "2.0000MB");
+    ASSERT_EQUAL(buffer, len, "2.0000MB");
     return;
 }
 
