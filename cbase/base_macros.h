@@ -213,12 +213,12 @@ _Generic((SIZE), \
   #endif
 #endif
 
-#if __has_builtin(__builtin_unreachable)
+#if __has_builtin(__builtin_unreachable) || CC_TCC
   #define UNREACHABLE() __builtin_unreachable()
 #elif defined(_MSC_VER)
   #define UNREACHABLE() __assume(0)
 #else
-  #define UNREACHABLE() do { } while(0)
+  #define UNREACHABLE() abort()
 #endif
 
 // __func__ returns const char *

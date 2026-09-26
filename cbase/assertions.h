@@ -582,8 +582,10 @@ _Generic((VAR),                                                               \
 } while (0)
 #else
 #define ASSERT_COMPARE_CONSTANT(MODE, VAR1, VAR2) do {                         \
-    _Static_assert(0,                                                          \
-                   "constant-RHS assertions require __builtin_constant_p");   \
+    assert_compare_constant(__FILE__, __LINE__, FUNC__,                        \
+                            ASSERT_COMPARE_MODE_##MODE, #VAR1, #VAR2,          \
+                            ASSERT_COMPARE_VALUE(VAR1),                        \
+                            ASSERT_COMPARE_VALUE(VAR2));                       \
 } while (0)
 #endif
 
