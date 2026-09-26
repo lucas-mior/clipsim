@@ -622,7 +622,7 @@ main(void) {
     ASSERT_POSITIVE(workers);
     for (int64 i = 0; i < length; i += 1) {
         ASSERT_GE_VAR(values[i], i);
-        ASSERT_LESS_VAR(values[i], i + PARALLEL_FOR_MAX_THREADS);
+        ASSERT_LT_VAR(values[i], i + PARALLEL_FOR_MAX_THREADS);
     }
 
     free2(values, length*SIZEOF(*values));

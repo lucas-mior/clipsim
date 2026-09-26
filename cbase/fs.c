@@ -952,7 +952,7 @@ basename2(char *path, int32 *full_length, int32 *base_len) {
             p = bslash + 1;
         }
 
-        ASSERT_LESS(length, MAXOF(left));
+        ASSERT_LT(length, MAXOF(left));
         left -= (int32)length;
     }
 
@@ -1223,7 +1223,7 @@ test_join_path(char *buffer, int64 buffer_len, char *dir, char *name) {
 
     len = fmt_sprintf(buffer, buffer_len, "%s/%s", dir, name);
     ASSERT_POSITIVE(len);
-    ASSERT_LESS_VAR(len, buffer_len);
+    ASSERT_LT_VAR(len, buffer_len);
 
     return;
 }

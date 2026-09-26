@@ -1493,7 +1493,7 @@ main(void) {
     ASSERT_EQ(1, 1);
     ASSERT_EQ(3, 1 + 2);
     ASSERT_EQ((ullong)LLONG_MAX, LLONG_MAX);
-    ASSERT_LESS(1, 2);
+    ASSERT_LT(1, 2);
     ASSERT_LE(1, 1);
     ASSERT_MORE(2, 1);
     ASSERT_GE(1, 1);
@@ -1540,7 +1540,7 @@ main(void) {
         int a = 1;
         uint b = 2;
         ASSERT_NOT_EQUAL_VAR(a, b);
-        ASSERT_LESS_VAR(a, b);
+        ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
         ASSERT_GE_VAR(b, a);
@@ -1548,7 +1548,7 @@ main(void) {
         long a = -1;
         ulong b = 0;
         ASSERT_NOT_EQUAL_VAR(a, b);
-        ASSERT_LESS_VAR(a, b);
+        ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
         ASSERT_GE_VAR(b, a);
@@ -1556,7 +1556,7 @@ main(void) {
         long a = MINOF(a);
         ulong b = MAXOF(b);
         ASSERT_NOT_EQUAL_VAR(a, b);
-        ASSERT_LESS_VAR(a, b);
+        ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
         ASSERT_GE_VAR(b, a);
@@ -1564,7 +1564,7 @@ main(void) {
         ulong a = MINOF(a);
         long b = MAXOF(b);
         ASSERT_NOT_EQUAL_VAR(a, b);
-        ASSERT_LESS_VAR(a, b);
+        ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
         ASSERT_GE_VAR(b, a);
@@ -1587,7 +1587,7 @@ main(void) {
         char *a = "aaa";
         char *b = "bbb";
         ASSERT_NOT_EQUAL_VAR(a, b);
-        ASSERT_LESS_VAR(a, b);
+        ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
         ASSERT_GE_VAR(b, a);
@@ -1601,7 +1601,7 @@ main(void) {
     } {
         double a = 0.123;
         ASSERT_NOT_EQUAL(a, 0.123000001);
-        ASSERT_LESS(a, 0.123000001);
+        ASSERT_LT(a, 0.123000001);
         ASSERT_LE(a, 0.123000001);
         ASSERT_MORE_VAR(0.123000001, a);
         ASSERT_GE_VAR(0.123000001, a);
@@ -1612,7 +1612,7 @@ main(void) {
         ASSERT_CLOSE(a, b);
         ASSERT_CLOSE(b, a);
         ASSERT_NOT_EQUAL_VAR(a, b + 1.0e-9);
-        ASSERT_LESS_VAR(b, a);
+        ASSERT_LT_VAR(b, a);
         ASSERT_MORE_VAR(a, b);
         ASSERT_CLOSE(a, b, 0.01);
         ASSERT_CLOSE(c, 0.0, 0.01);
@@ -1647,7 +1647,7 @@ main(void) {
         double a = -1;
         double b = 0;
         ASSERT_NOT_EQUAL_VAR(a, b);
-        ASSERT_LESS_VAR(a, b);
+        ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
         ASSERT_GE_VAR(b, a);
@@ -1655,7 +1655,7 @@ main(void) {
         float a = -1;
         double b = 1;
         ASSERT_NOT_EQUAL_VAR(a, b);
-        ASSERT_LESS_VAR(a, b);
+        ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
         ASSERT_GE_VAR(b, a);
@@ -1674,7 +1674,7 @@ main(void) {
         void *a = &array[0];
         void *b = &array[1];
         ASSERT_NOT_EQUAL_VAR(a, b);
-        ASSERT_LESS_VAR(a, b);
+        ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
         ASSERT_GE_VAR(b, a);
@@ -1744,12 +1744,12 @@ main(void) {
         ASSERT_TRAPS(ASSERT_NOT_EQUAL(string_some, 4, "some"));
         ASSERT_TRAPS(ASSERT_NOT_EQUAL(string_some, 4, "some", 4));
         ASSERT_TRAPS(ASSERT_MORE_VAR(a, b));
-        ASSERT_TRAPS(ASSERT_LESS_VAR(b, a));
+        ASSERT_TRAPS(ASSERT_LT_VAR(b, a));
         ASSERT_TRAPS(ASSERT_GE_VAR(a, b));
         ASSERT_TRAPS(ASSERT_LE_VAR(b, a));
         ASSERT_TRAPS(ASSERT_POSITIVE(-0.5));
         ASSERT_TRAPS(ASSERT_NON_POSITIVE(0.5));
-        ASSERT_TRAPS(ASSERT_LESS_VAR((void *)&array[1], (void *)&array[0]));
+        ASSERT_TRAPS(ASSERT_LT_VAR((void *)&array[1], (void *)&array[0]));
         ASSERT_TRAPS(ASSERT_EQ(true, false));
         ASSERT_TRAPS(ASSERT_EQ(ULLONG_MAX, 0));
         ASSERT_TRAPS(ASSERT_EQ(0, ULLONG_MAX));

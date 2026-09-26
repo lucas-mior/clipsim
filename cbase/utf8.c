@@ -628,7 +628,7 @@ main(void) {
             int32 consumed = 0;
 
             ASSERT_MORE(gen_len, 10);
-            ASSERT_LESS(gen_len, 256);
+            ASSERT_LT(gen_len, 256);
             ASSERT_ZERO(test_buf[gen_len]);
 
             while (consumed < gen_len) {

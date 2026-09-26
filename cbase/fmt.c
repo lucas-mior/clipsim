@@ -614,7 +614,7 @@ fmt_sink_write(FormatSink *sink, char *data, int64 len) {
         }
         if (DEBUGGING) {
             ASSERT(sink->buffer != NULL);
-            ASSERT_LESS_VAR(sink->written + len, sink->capacity);
+            ASSERT_LT_VAR(sink->written + len, sink->capacity);
         }
         memcpy64(sink->buffer + sink->written, data, len);
         sink->written += (int32)len;
@@ -631,7 +631,7 @@ fmt_sink_write(FormatSink *sink, char *data, int64 len) {
     }
 
     ASSERT(sink->buffer != NULL);
-    ASSERT_LESS_VAR(sink->written, sink->capacity);
+    ASSERT_LT_VAR(sink->written, sink->capacity);
 
     available = sink->capacity - 1 - sink->written;
     if (available <= 0) {
@@ -681,7 +681,7 @@ fmt_sink_write_repeat(FormatSink *sink, char byte, int64 len) {
         }
         if (DEBUGGING) {
             ASSERT(sink->buffer != NULL);
-            ASSERT_LESS_VAR(sink->written + len, sink->capacity);
+            ASSERT_LT_VAR(sink->written + len, sink->capacity);
         }
         memset64(sink->buffer + sink->written, byte, len);
         sink->written += (int32)len;
@@ -698,7 +698,7 @@ fmt_sink_write_repeat(FormatSink *sink, char byte, int64 len) {
     }
 
     ASSERT(sink->buffer != NULL);
-    ASSERT_LESS_VAR(sink->written, sink->capacity);
+    ASSERT_LT_VAR(sink->written, sink->capacity);
 
     available = sink->capacity - 1 - sink->written;
     if (available <= 0) {
@@ -2353,7 +2353,7 @@ fmt_float_hex_should_round(char first_digit, char *digits, int32 precision) {
 
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(precision);
-    ASSERT_LESS(precision, FMT_DOUBLE_HEX_DIGITS);
+    ASSERT_LT(precision, FMT_DOUBLE_HEX_DIGITS);
 
     round_digit = fmt_hex_digit_value(digits[precision]);
     if (round_digit > 8) {
@@ -2380,7 +2380,7 @@ fmt_float_hex_round(char *first_digit, char *digits, int32 precision,
     ASSERT(first_digit != NULL);
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(precision);
-    ASSERT_LESS(precision, FMT_DOUBLE_HEX_DIGITS);
+    ASSERT_LT(precision, FMT_DOUBLE_HEX_DIGITS);
 
     if (!fmt_float_hex_should_round(*first_digit, digits, precision)) {
         return;
@@ -3299,7 +3299,7 @@ fmt_ldouble_hex_should_round(char first_digit,
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(digit_len);
     ASSERT_NON_NEGATIVE(precision);
-    ASSERT_LESS_VAR(precision, digit_len);
+    ASSERT_LT_VAR(precision, digit_len);
 
     round_digit = fmt_hex_digit_value(digits[precision]);
     if (round_digit > 8) {
@@ -3327,7 +3327,7 @@ fmt_ldouble_hex_round(char *first_digit, char *digits,
     ASSERT(digits != NULL);
     ASSERT_NON_NEGATIVE(digit_len);
     ASSERT_NON_NEGATIVE(precision);
-    ASSERT_LESS_VAR(precision, digit_len);
+    ASSERT_LT_VAR(precision, digit_len);
 
     if (!fmt_ldouble_hex_should_round(*first_digit,
                                       digits, digit_len, precision)) {
@@ -4026,7 +4026,7 @@ fmt_vsnprintf_estimate(char *format, va_list args) {
     if (format == NULL) {
         return -EINVAL;
     }
-    ASSERT_LESS(strlen32(format), FMT_MAX_FORMAT_LEN);
+    ASSERT_LT(strlen32(format), FMT_MAX_FORMAT_LEN);
 
     va_copy(fmt_args.args, args);
     total = 0;
@@ -4284,7 +4284,7 @@ fmt_vsnprintf_sink(FormatSink *sink, char *format, va_list args) {
     if (format == NULL) {
         return -EINVAL;
     }
-    ASSERT_LESS(strlen32(format), FMT_MAX_FORMAT_LEN);
+    ASSERT_LT(strlen32(format), FMT_MAX_FORMAT_LEN);
 
     va_copy(fmt_args.args, args);
     literal = format;
@@ -4620,7 +4620,7 @@ test_fmt_sink_cap(char *format, char *expected) {
     int32 expected_len;
 
     expected_len = strlen32(expected);
-    ASSERT_LESS(expected_len + 2, SIZEOF(buffer));
+    ASSERT_LT(expected_len + 2, SIZEOF(buffer));
 
     for (int32 capacity = 0; capacity <= expected_len + 2; capacity += 1) {
         int32 copied;
@@ -4650,7 +4650,7 @@ test_fmt_integer_cap(char *expected, char *format, ...) {
     int32 expected_len;
 
     expected_len = strlen32(expected);
-    ASSERT_LESS(expected_len + 2, SIZEOF(buffer));
+    ASSERT_LT(expected_len + 2, SIZEOF(buffer));
 
     for (int32 capacity = 0; capacity <= expected_len + 2; capacity += 1) {
         va_list args;
@@ -4682,7 +4682,7 @@ test_fmt_bytes_cap(char *expected, int32 expected_len, char *format, ...) {
     char buffer[256];
 
     ASSERT_NON_NEGATIVE(expected_len);
-    ASSERT_LESS(expected_len + 2, SIZEOF(buffer));
+    ASSERT_LT(expected_len + 2, SIZEOF(buffer));
 
     for (int32 capacity = 0; capacity <= expected_len + 2; capacity += 1) {
         va_list args;

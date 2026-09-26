@@ -1172,13 +1172,13 @@ main(int argc, char **argv) {
             int32 value = rand_int_range(7);
 
             ASSERT_NON_NEGATIVE(value);
-            ASSERT_LESS(value, 7);
+            ASSERT_LT(value, 7);
         }
 
         rand_shuffle(values, LENGTH(values), SIZEOF(*values));
         for (int32 i = 0; i < LENGTH(values); i += 1) {
             ASSERT_NON_NEGATIVE(values[i]);
-            ASSERT_LESS(values[i], LENGTH(values));
+            ASSERT_LT(values[i], LENGTH(values));
             ASSERT(!seen[values[i]]);
             seen[values[i]] = true;
         }

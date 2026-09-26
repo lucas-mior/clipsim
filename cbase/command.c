@@ -1784,7 +1784,7 @@ main(int argc, char **argv) {
             test_make_temp_dir(test_cwd, SIZEOF(test_cwd), "command_cwd");
             ASSERT(realpath(test_cwd, expected_cwd) != NULL);
             expected_cwd_len = strlen32(expected_cwd);
-            ASSERT_LESS(expected_cwd_len + 1, SIZEOF(expected_cwd));
+            ASSERT_LT(expected_cwd_len + 1, SIZEOF(expected_cwd));
             expected_cwd[expected_cwd_len] = '\n';
             expected_cwd[expected_cwd_len + 1] = '\0';
 
