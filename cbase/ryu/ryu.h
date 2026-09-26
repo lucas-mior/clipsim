@@ -17,6 +17,8 @@
 #ifndef RYU_H
 #define RYU_H
 
+#include "cbase.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,13 +33,13 @@ int f2s_buffered_n(float f, char* result);
 void f2s_buffered(float f, char* result);
 char* f2s(float f);
 
-int d2fixed_buffered_n(double d, uint32_t precision, char* result);
-void d2fixed_buffered(double d, uint32_t precision, char* result);
-char* d2fixed(double d, uint32_t precision);
+int d2fixed_buffered_n(double d, uint32 precision, char* result);
+void d2fixed_buffered(double d, uint32 precision, char* result);
+char* d2fixed(double d, uint32 precision);
 
-int d2exp_buffered_n(double d, uint32_t precision, char* result);
-void d2exp_buffered(double d, uint32_t precision, char* result);
-char* d2exp(double d, uint32_t precision);
+int d2exp_buffered_n(double d, uint32 precision, char* result);
+void d2exp_buffered(double d, uint32 precision, char* result);
+char* d2exp(double d, uint32 precision);
 
 #ifdef __cplusplus
 }

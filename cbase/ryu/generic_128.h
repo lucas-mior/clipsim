@@ -17,10 +17,9 @@
 #ifndef RYU_GENERIC128_H
 #define RYU_GENERIC128_H
 
-#include <assert.h>
-#include <stdint.h>
+#include "cbase.h"
 
-typedef __uint128_t uint128_t;
+typedef __uint128 uint128;
 
 #define FLOAT_128_POW5_INV_BITCOUNT 249
 #define FLOAT_128_POW5_BITCOUNT 249
@@ -30,7 +29,7 @@ typedef __uint128_t uint128_t;
 
 // There's no way to define 128-bit constants in C, so we use little-endian
 // pairs of 64-bit constants.
-static const uint64_t GENERIC_POW5_TABLE[POW5_TABLE_SIZE][2] = {
+static const uint64 GENERIC_POW5_TABLE[POW5_TABLE_SIZE][2] = {
  {                    1u,                    0u },
  {                    5u,                    0u },
  {                   25u,                    0u },
@@ -89,7 +88,7 @@ static const uint64_t GENERIC_POW5_TABLE[POW5_TABLE_SIZE][2] = {
  { 18443565265187884909u, 15046327690525280101u }
 };
 
-static const uint64_t GENERIC_POW5_SPLIT[89][4] = {
+static const uint64 GENERIC_POW5_SPLIT[89][4] = {
  {                    0u,                    0u,                    0u,    72057594037927936u },
  {                    0u,  5206161169240293376u,  4575641699882439235u,    73468396926392969u },
  {  3360510775605221349u,  6983200512169538081u,  4325643253124434363u,    74906821675075173u },
@@ -183,7 +182,7 @@ static const uint64_t GENERIC_POW5_SPLIT[89][4] = {
 
 // Unfortunately, the results are sometimes off by one or two. We use an additional
 // lookup table to store those cases and adjust the result.
-static const uint64_t POW5_ERRORS[156] = {
+static const uint64 POW5_ERRORS[156] = {
  0x0000000000000000u, 0x0000000000000000u, 0x0000000000000000u, 0x9555596400000000u,
  0x65a6569525565555u, 0x4415551445449655u, 0x5105015504144541u, 0x65a69969a6965964u,
  0x5054955969959656u, 0x5105154515554145u, 0x4055511051591555u, 0x5500514455550115u,
@@ -225,7 +224,7 @@ static const uint64_t POW5_ERRORS[156] = {
  0x5044044040000000u, 0x1045040440010500u, 0x0000400000040000u, 0x0000000000000000u
 };
 
-static const uint64_t GENERIC_POW5_INV_SPLIT[89][4] = {
+static const uint64 GENERIC_POW5_INV_SPLIT[89][4] = {
  {                    0u,                    0u,                    0u,   144115188075855872u },
  {  1573859546583440065u,  2691002611772552616u,  6763753280790178510u,   141347765182270746u },
  { 12960290449513840412u, 12345512957918226762u, 18057899791198622765u,   138633484706040742u },
@@ -317,7 +316,7 @@ static const uint64_t GENERIC_POW5_INV_SPLIT[89][4] = {
  {  7184427196661305643u, 14332510582433188173u, 14230167953789677901u,   104649889046128358u }
 };
 
-static const uint64_t POW5_INV_ERRORS[154] = {
+static const uint64 POW5_INV_ERRORS[154] = {
  0x1144155514145504u, 0x0000541555401141u, 0x0000000000000000u, 0x0154454000000000u,
  0x4114105515544440u, 0x0001001111500415u, 0x4041411410011000u, 0x5550114515155014u,
  0x1404100041554551u, 0x0515000450404410u, 0x5054544401140004u, 0x5155501005555105u,
@@ -360,105 +359,105 @@ static const uint64_t POW5_INV_ERRORS[154] = {
 };
 
 // Returns e == 0 ? 1 : ceil(log_2(5^e)); requires 0 <= e <= 32768.
-static inline uint32_t pow5bits(const int32_t e) {
+static inline uint32 pow5bits(const int32 e) {
   assert(e >= 0);
   assert(e <= 1 << 15);
-  return (uint32_t) (((e * 163391164108059ull) >> 46) + 1);
+  return (uint32) (((e * 163391164108059ull) >> 46) + 1);
 }
 
 static inline void mul_128_256_shift(
-    const uint64_t* const a, const uint64_t* const b, const uint32_t shift, const uint32_t corr, uint64_t* const result) {
+    const uint64* const a, const uint64* const b, const uint32 shift, const uint32 corr, uint64* const result) {
   assert(shift > 0);
   assert(shift < 256);
-  const uint128_t b00 = ((uint128_t) a[0]) * b[0]; // 0
-  const uint128_t b01 = ((uint128_t) a[0]) * b[1]; // 64
-  const uint128_t b02 = ((uint128_t) a[0]) * b[2]; // 128
-  const uint128_t b03 = ((uint128_t) a[0]) * b[3]; // 196
-  const uint128_t b10 = ((uint128_t) a[1]) * b[0]; // 64
-  const uint128_t b11 = ((uint128_t) a[1]) * b[1]; // 128
-  const uint128_t b12 = ((uint128_t) a[1]) * b[2]; // 196
-  const uint128_t b13 = ((uint128_t) a[1]) * b[3]; // 256
+  const uint128 b00 = ((uint128) a[0]) * b[0]; // 0
+  const uint128 b01 = ((uint128) a[0]) * b[1]; // 64
+  const uint128 b02 = ((uint128) a[0]) * b[2]; // 128
+  const uint128 b03 = ((uint128) a[0]) * b[3]; // 196
+  const uint128 b10 = ((uint128) a[1]) * b[0]; // 64
+  const uint128 b11 = ((uint128) a[1]) * b[1]; // 128
+  const uint128 b12 = ((uint128) a[1]) * b[2]; // 196
+  const uint128 b13 = ((uint128) a[1]) * b[3]; // 256
 
-  const uint128_t s0 = b00;       // 0   x
-  const uint128_t s1 = b01 + b10; // 64  x
-  const uint128_t c1 = s1 < b01;  // 196 x
-  const uint128_t s2 = b02 + b11; // 128 x
-  const uint128_t c2 = s2 < b02;  // 256 x
-  const uint128_t s3 = b03 + b12; // 196 x
-  const uint128_t c3 = s3 < b03;  // 324 x
+  const uint128 s0 = b00;       // 0   x
+  const uint128 s1 = b01 + b10; // 64  x
+  const uint128 c1 = s1 < b01;  // 196 x
+  const uint128 s2 = b02 + b11; // 128 x
+  const uint128 c2 = s2 < b02;  // 256 x
+  const uint128 s3 = b03 + b12; // 196 x
+  const uint128 c3 = s3 < b03;  // 324 x
 
-  const uint128_t p0 = s0 + (s1 << 64);                                // 0
-  const uint128_t d0 = p0 < b00;                                       // 128
-  const uint128_t q1 = s2 + (s1 >> 64) + (s3 << 64);                   // 128
-  const uint128_t d1 = q1 < s2;                                        // 256
-  const uint128_t p1 = q1 + (c1 << 64) + d0;                           // 128
-  const uint128_t d2 = p1 < q1;                                        // 256
-  const uint128_t p2 = b13 + (s3 >> 64) + c2 + (c3 << 64) + d1 + d2;   // 256
+  const uint128 p0 = s0 + (s1 << 64);                                // 0
+  const uint128 d0 = p0 < b00;                                       // 128
+  const uint128 q1 = s2 + (s1 >> 64) + (s3 << 64);                   // 128
+  const uint128 d1 = q1 < s2;                                        // 256
+  const uint128 p1 = q1 + (c1 << 64) + d0;                           // 128
+  const uint128 d2 = p1 < q1;                                        // 256
+  const uint128 p2 = b13 + (s3 >> 64) + c2 + (c3 << 64) + d1 + d2;   // 256
 
   if (shift < 128) {
-    const uint128_t r0 = corr + ((p0 >> shift) | (p1 << (128 - shift)));
-    const uint128_t r1 = ((p1 >> shift) | (p2 << (128 - shift))) + (r0 < corr);
-    result[0] = (uint64_t) r0;
-    result[1] = (uint64_t) (r0 >> 64);
-    result[2] = (uint64_t) r1;
-    result[3] = (uint64_t) (r1 >> 64);
+    const uint128 r0 = corr + ((p0 >> shift) | (p1 << (128 - shift)));
+    const uint128 r1 = ((p1 >> shift) | (p2 << (128 - shift))) + (r0 < corr);
+    result[0] = (uint64) r0;
+    result[1] = (uint64) (r0 >> 64);
+    result[2] = (uint64) r1;
+    result[3] = (uint64) (r1 >> 64);
   } else if (shift == 128) {
-    const uint128_t r0 = corr + p1;
-    const uint128_t r1 = p2 + (r0 < corr);
-    result[0] = (uint64_t) r0;
-    result[1] = (uint64_t) (r0 >> 64);
-    result[2] = (uint64_t) r1;
-    result[3] = (uint64_t) (r1 >> 64);
+    const uint128 r0 = corr + p1;
+    const uint128 r1 = p2 + (r0 < corr);
+    result[0] = (uint64) r0;
+    result[1] = (uint64) (r0 >> 64);
+    result[2] = (uint64) r1;
+    result[3] = (uint64) (r1 >> 64);
   } else {
-    const uint128_t r0 = corr + ((p1 >> (shift - 128)) | (p2 << (256 - shift)));
-    const uint128_t r1 = (p2 >> (shift - 128)) + (r0 < corr);
-    result[0] = (uint64_t) r0;
-    result[1] = (uint64_t) (r0 >> 64);
-    result[2] = (uint64_t) r1;
-    result[3] = (uint64_t) (r1 >> 64);
+    const uint128 r0 = corr + ((p1 >> (shift - 128)) | (p2 << (256 - shift)));
+    const uint128 r1 = (p2 >> (shift - 128)) + (r0 < corr);
+    result[0] = (uint64) r0;
+    result[1] = (uint64) (r0 >> 64);
+    result[2] = (uint64) r1;
+    result[3] = (uint64) (r1 >> 64);
   }
 }
 
 // Computes 5^i in the form required by Ryu, and stores it in the given pointer.
-static inline void generic_computePow5(const uint32_t i, uint64_t* const result) {
-  const uint32_t base = i / POW5_TABLE_SIZE;
-  const uint32_t base2 = base * POW5_TABLE_SIZE;
-  const uint64_t* const mul = GENERIC_POW5_SPLIT[base];
+static inline void generic_computePow5(const uint32 i, uint64* const result) {
+  const uint32 base = i / POW5_TABLE_SIZE;
+  const uint32 base2 = base * POW5_TABLE_SIZE;
+  const uint64* const mul = GENERIC_POW5_SPLIT[base];
   if (i == base2) {
     result[0] = mul[0];
     result[1] = mul[1];
     result[2] = mul[2];
     result[3] = mul[3];
   } else {
-    const uint32_t offset = i - base2;
-    const uint64_t* const m = GENERIC_POW5_TABLE[offset];
-    const uint32_t delta = pow5bits(i) - pow5bits(base2);
-    const uint32_t corr = (uint32_t) ((POW5_ERRORS[i / 32] >> (2 * (i % 32))) & 3);
+    const uint32 offset = i - base2;
+    const uint64* const m = GENERIC_POW5_TABLE[offset];
+    const uint32 delta = pow5bits(i) - pow5bits(base2);
+    const uint32 corr = (uint32) ((POW5_ERRORS[i / 32] >> (2 * (i % 32))) & 3);
     mul_128_256_shift(m, mul, delta, corr, result);
   }
 }
 
 // Computes 5^-i in the form required by Ryu, and stores it in the given pointer.
-static inline void generic_computeInvPow5(const uint32_t i, uint64_t* const result) {
-  const uint32_t base = (i + POW5_TABLE_SIZE - 1) / POW5_TABLE_SIZE;
-  const uint32_t base2 = base * POW5_TABLE_SIZE;
-  const uint64_t* const mul = GENERIC_POW5_INV_SPLIT[base]; // 1/5^base2
+static inline void generic_computeInvPow5(const uint32 i, uint64* const result) {
+  const uint32 base = (i + POW5_TABLE_SIZE - 1) / POW5_TABLE_SIZE;
+  const uint32 base2 = base * POW5_TABLE_SIZE;
+  const uint64* const mul = GENERIC_POW5_INV_SPLIT[base]; // 1/5^base2
   if (i == base2) {
     result[0] = mul[0] + 1;
     result[1] = mul[1];
     result[2] = mul[2];
     result[3] = mul[3];
   } else {
-    const uint32_t offset = base2 - i;
-    const uint64_t* const m = GENERIC_POW5_TABLE[offset]; // 5^offset
-    const uint32_t delta = pow5bits(base2) - pow5bits(i);
-    const uint32_t corr = (uint32_t) ((POW5_INV_ERRORS[i / 32] >> (2 * (i % 32))) & 3) + 1;
+    const uint32 offset = base2 - i;
+    const uint64* const m = GENERIC_POW5_TABLE[offset]; // 5^offset
+    const uint32 delta = pow5bits(base2) - pow5bits(i);
+    const uint32 corr = (uint32) ((POW5_INV_ERRORS[i / 32] >> (2 * (i % 32))) & 3) + 1;
     mul_128_256_shift(m, mul, delta, corr, result);
   }
 }
 
-static inline uint32_t pow5Factor(uint128_t value) {
-  for (uint32_t count = 0; value > 0; ++count) {
+static inline uint32 pow5Factor(uint128 value) {
+  for (uint32 count = 0; value > 0; ++count) {
     if (value % 5 != 0) {
       return count;
     }
@@ -468,30 +467,30 @@ static inline uint32_t pow5Factor(uint128_t value) {
 }
 
 // Returns true if value is divisible by 5^p.
-static inline bool multipleOfPowerOf5(const uint128_t value, const uint32_t p) {
+static inline bool multipleOfPowerOf5(const uint128 value, const uint32 p) {
   // I tried a case distinction on p, but there was no performance difference.
   return pow5Factor(value) >= p;
 }
 
 // Returns true if value is divisible by 2^p.
-static inline bool multipleOfPowerOf2(const uint128_t value, const uint32_t p) {
-  return (value & ((((uint128_t) 1) << p) - 1)) == 0;
+static inline bool multipleOfPowerOf2(const uint128 value, const uint32 p) {
+  return (value & ((((uint128) 1) << p) - 1)) == 0;
 }
 
-static inline uint128_t mulShift(const uint128_t m, const uint64_t* const mul, const int32_t j) {
+static inline uint128 mulShift(const uint128 m, const uint64* const mul, const int32 j) {
   assert(j > 128);
-  uint64_t a[2];
-  a[0] = (uint64_t) m;
-  a[1] = (uint64_t) (m >> 64);
-  uint64_t result[4];
+  uint64 a[2];
+  a[0] = (uint64) m;
+  a[1] = (uint64) (m >> 64);
+  uint64 result[4];
   mul_128_256_shift(a, mul, j, 0, result);
-  return (((uint128_t) result[1]) << 64) | result[0];
+  return (((uint128) result[1]) << 64) | result[0];
 }
 
-static inline uint32_t decimalLength(const uint128_t v) {
-  static uint128_t LARGEST_POW10 = (((uint128_t) 5421010862427522170ull) << 64) | 687399551400673280ull;
-  uint128_t p10 = LARGEST_POW10;
-  for (uint32_t i = 39; i > 0; i--) {
+static inline uint32 decimalLength(const uint128 v) {
+  static uint128 LARGEST_POW10 = (((uint128) 5421010862427522170ull) << 64) | 687399551400673280ull;
+  uint128 p10 = LARGEST_POW10;
+  for (uint32 i = 39; i > 0; i--) {
     if (v >= p10) {
       return i;
     }
@@ -501,19 +500,19 @@ static inline uint32_t decimalLength(const uint128_t v) {
 }
 
 // Returns floor(log_10(2^e)).
-static inline uint32_t log10Pow2(const int32_t e) {
+static inline uint32 log10Pow2(const int32 e) {
   // The first value this approximation fails for is 2^1651 which is just greater than 10^297.
   assert(e >= 0);
   assert(e <= 1 << 15);
-  return (uint32_t) ((((uint64_t) e) * 169464822037455ull) >> 49);
+  return (uint32) ((((uint64) e) * 169464822037455ull) >> 49);
 }
 
 // Returns floor(log_10(5^e)).
-static inline uint32_t log10Pow5(const int32_t e) {
+static inline uint32 log10Pow5(const int32 e) {
   // The first value this approximation fails for is 5^2621 which is just greater than 10^1832.
   assert(e >= 0);
   assert(e <= 1 << 15);
-  return (uint32_t) ((((uint64_t) e) * 196742565691928ull) >> 48);
+  return (uint32) ((((uint64) e) * 196742565691928ull) >> 48);
 }
 
 #endif // RYU_GENERIC128_H

@@ -18,7 +18,7 @@
 // Runtime compiler options:
 // -DRYU_DEBUG Generate verbose debugging output to stdout.
 //
-// -DRYU_ONLY_64_BIT_OPS Avoid using uint128_t or 64-bit intrinsics. Slower,
+// -DRYU_ONLY_64_BIT_OPS Avoid using uint128 or 64-bit intrinsics. Slower,
 //     depending on your compiler.
 //
 // -DRYU_OPTIMIZE_SIZE Use smaller lookup tables. Instead of storing every
@@ -27,17 +27,11 @@
 //     size by about 10x (only one case, and only double) at the cost of some
 //     performance. Currently requires MSVC intrinsics.
 
+#include "cbase.h"
 #include "ryu/ryu.h"
-
-#include <assert.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
 
 #ifdef RYU_DEBUG
 #include <inttypes.h>
-#include <stdio.h>
 #endif
 
 #include "ryu/common.h"
@@ -55,7 +49,7 @@
 #define DOUBLE_EXPONENT_BITS 11
 #define DOUBLE_BIAS 1023
 
-static inline uint32_t decimalLength17(const uint64_t v) {
+static inline uint32 decimalLength17(const uint64 v) {
   // This is slightly faster than a loop.
   // The average output length is 16.38 digits, so we check high-to-low.
   // Function precondition: v is not an 18, 19, or 20-digit number.
@@ -82,47 +76,47 @@ static inline uint32_t decimalLength17(const uint64_t v) {
 
 // A floating decimal representing m * 10^e.
 typedef struct floating_decimal_64 {
-  uint64_t mantissa;
+  uint64 mantissa;
   // Decimal exponent's range is -324 to 308
   // inclusive, and can fit in a short if needed.
-  int32_t exponent;
+  int32 exponent;
 } floating_decimal_64;
 
-static inline floating_decimal_64 d2d(const uint64_t ieeeMantissa, const uint32_t ieeeExponent) {
-  int32_t e2;
-  uint64_t m2;
+static inline floating_decimal_64 d2d(const uint64 ieeeMantissa, const uint32 ieeeExponent) {
+  int32 e2;
+  uint64 m2;
   bool even;
   bool acceptBounds;
-  uint64_t mv;
-  uint32_t mmShift;
-  uint64_t vr;
-  uint64_t vp;
-  uint64_t vm;
-  int32_t e10;
+  uint64 mv;
+  uint32 mmShift;
+  uint64 vr;
+  uint64 vp;
+  uint64 vm;
+  int32 e10;
   bool vmIsTrailingZeros = false;
   bool vrIsTrailingZeros = false;
-  uint32_t q;
-  int32_t i;
-  int32_t j;
-  int32_t k;
-  uint32_t mvMod5;
-  int32_t removed = 0;
-  uint8_t lastRemovedDigit = 0;
-  uint64_t output;
-  uint64_t vpDiv10;
-  uint64_t vmDiv10;
-  uint32_t vmMod10;
-  uint64_t vrDiv10;
-  uint32_t vrMod10;
+  uint32 q;
+  int32 i;
+  int32 j;
+  int32 k;
+  uint32 mvMod5;
+  int32 removed = 0;
+  uint8 lastRemovedDigit = 0;
+  uint64 output;
+  uint64 vpDiv10;
+  uint64 vmDiv10;
+  uint32 vmMod10;
+  uint64 vrDiv10;
+  uint32 vrMod10;
   bool roundUp;
-  uint64_t vpDiv100;
-  uint64_t vmDiv100;
-  uint64_t vrDiv100;
-  uint32_t vrMod100;
-  int32_t exp;
+  uint64 vpDiv100;
+  uint64 vmDiv100;
+  uint64 vrDiv100;
+  uint32 vrMod100;
+  int32 exp;
   floating_decimal_64 fd;
 #if defined(RYU_OPTIMIZE_SIZE)
-  uint64_t pow5[2];
+  uint64 pow5[2];
 #endif
 
   if (ieeeExponent == 0) {
@@ -130,7 +124,7 @@ static inline floating_decimal_64 d2d(const uint64_t ieeeMantissa, const uint32_
     e2 = 1 - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS - 2;
     m2 = ieeeMantissa;
   } else {
-    e2 = (int32_t)ieeeExponent - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS - 2;
+    e2 = (int32)ieeeExponent - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS - 2;
     m2 = (1ull << DOUBLE_MANTISSA_BITS) | ieeeMantissa;
   }
 
@@ -146,17 +140,17 @@ static inline floating_decimal_64 d2d(const uint64_t ieeeMantissa, const uint32_
   // Implicit bool -> int conversion. True is 1, false is 0.
   mmShift = ieeeMantissa != 0 || ieeeExponent <= 1;
   // We would compute mp and mm like this:
-  // uint64_t mp = 4 * m2 + 2;
-  // uint64_t mm = mv - 1 - mmShift;
+  // uint64 mp = 4 * m2 + 2;
+  // uint64 mm = mv - 1 - mmShift;
 
   // Step 3: Convert to a decimal power base using 128-bit arithmetic.
   if (e2 >= 0) {
     // I tried special-casing q == 0, but there was no effect on performance.
     // This expression is slightly faster than max(0, log10Pow2(e2) - 1).
-    q = log10Pow2(e2) - (uint32_t)(e2 > 3);
-    e10 = (int32_t)q;
-    k = DOUBLE_POW5_INV_BITCOUNT + pow5bits((int32_t)q) - 1;
-    i = -e2 + (int32_t)q + k;
+    q = log10Pow2(e2) - (uint32)(e2 > 3);
+    e10 = (int32)q;
+    k = DOUBLE_POW5_INV_BITCOUNT + pow5bits((int32)q) - 1;
+    i = -e2 + (int32)q + k;
 #if defined(RYU_OPTIMIZE_SIZE)
     double_computeInvPow5(q, pow5);
     vr = mulShiftAll64(m2, pow5, i, &vp, &vm, mmShift);
@@ -171,7 +165,7 @@ static inline floating_decimal_64 d2d(const uint64_t ieeeMantissa, const uint32_
       // This should use q <= 22, but I think 21 is also safe. Smaller values
       // may still be safe, but it's more difficult to reason about them.
       // Only one of mp, mv, and mm can be a multiple of 5, if any.
-      mvMod5 = ((uint32_t)mv) - 5 * ((uint32_t)div5(mv));
+      mvMod5 = ((uint32)mv) - 5 * ((uint32)div5(mv));
       if (mvMod5 == 0) {
         vrIsTrailingZeros = multipleOfPowerOf5(mv, q);
       } else if (acceptBounds) {
@@ -186,11 +180,11 @@ static inline floating_decimal_64 d2d(const uint64_t ieeeMantissa, const uint32_
     }
   } else {
     // This expression is slightly faster than max(0, log10Pow5(-e2) - 1).
-    q = log10Pow5(-e2) - (uint32_t)(-e2 > 1);
-    e10 = (int32_t)q + e2;
-    i = -e2 - (int32_t)q;
+    q = log10Pow5(-e2) - (uint32)(-e2 > 1);
+    e10 = (int32)q + e2;
+    i = -e2 - (int32)q;
     k = pow5bits(i) - DOUBLE_POW5_BITCOUNT;
-    j = (int32_t)q - k;
+    j = (int32)q - k;
 #if defined(RYU_OPTIMIZE_SIZE)
     double_computePow5(i, pow5);
     vr = mulShiftAll64(m2, pow5, j, &vp, &vm, mmShift);
@@ -241,12 +235,12 @@ static inline floating_decimal_64 d2d(const uint64_t ieeeMantissa, const uint32_
       if (vpDiv10 <= vmDiv10) {
         break;
       }
-      vmMod10 = ((uint32_t)vm) - 10 * ((uint32_t)vmDiv10);
+      vmMod10 = ((uint32)vm) - 10 * ((uint32)vmDiv10);
       vrDiv10 = div10(vr);
-      vrMod10 = ((uint32_t)vr) - 10 * ((uint32_t)vrDiv10);
+      vrMod10 = ((uint32)vr) - 10 * ((uint32)vrDiv10);
       vmIsTrailingZeros &= vmMod10 == 0;
       vrIsTrailingZeros &= lastRemovedDigit == 0;
-      lastRemovedDigit = (uint8_t)vrMod10;
+      lastRemovedDigit = (uint8)vrMod10;
       vr = vrDiv10;
       vp = vpDiv10;
       vm = vmDiv10;
@@ -259,15 +253,15 @@ static inline floating_decimal_64 d2d(const uint64_t ieeeMantissa, const uint32_
     if (vmIsTrailingZeros) {
       for (;;) {
         vmDiv10 = div10(vm);
-        vmMod10 = ((uint32_t)vm) - 10 * ((uint32_t)vmDiv10);
+        vmMod10 = ((uint32)vm) - 10 * ((uint32)vmDiv10);
         if (vmMod10 != 0) {
           break;
         }
         vpDiv10 = div10(vp);
         vrDiv10 = div10(vr);
-        vrMod10 = ((uint32_t)vr) - 10 * ((uint32_t)vrDiv10);
+        vrMod10 = ((uint32)vr) - 10 * ((uint32)vrDiv10);
         vrIsTrailingZeros &= lastRemovedDigit == 0;
-        lastRemovedDigit = (uint8_t)vrMod10;
+        lastRemovedDigit = (uint8)vrMod10;
         vr = vrDiv10;
         vp = vpDiv10;
         vm = vmDiv10;
@@ -291,7 +285,7 @@ static inline floating_decimal_64 d2d(const uint64_t ieeeMantissa, const uint32_
     vmDiv100 = div100(vm);
     if (vpDiv100 > vmDiv100) { // Optimization: remove two digits at a time (~86.2%).
       vrDiv100 = div100(vr);
-      vrMod100 = ((uint32_t)vr) - 100 * ((uint32_t)vrDiv100);
+      vrMod100 = ((uint32)vr) - 100 * ((uint32)vrDiv100);
       roundUp = vrMod100 >= 50;
       vr = vrDiv100;
       vp = vpDiv100;
@@ -309,7 +303,7 @@ static inline floating_decimal_64 d2d(const uint64_t ieeeMantissa, const uint32_
         break;
       }
       vrDiv10 = div10(vr);
-      vrMod10 = ((uint32_t)vr) - 10 * ((uint32_t)vrDiv10);
+      vrMod10 = ((uint32)vr) - 10 * ((uint32)vrDiv10);
       roundUp = vrMod10 >= 5;
       vr = vrDiv10;
       vp = vpDiv10;
@@ -339,19 +333,19 @@ static inline floating_decimal_64 d2d(const uint64_t ieeeMantissa, const uint32_
 static inline int to_chars(const floating_decimal_64 v, const bool sign, char* const result) {
   // Step 5: Print the decimal representation.
   int index = 0;
-  uint64_t output;
-  int32_t olength;
-  int32_t i = 0;
-  uint64_t q;
-  uint32_t output2;
-  uint32_t c;
-  uint32_t d;
-  uint32_t c0;
-  uint32_t c1;
-  uint32_t d0;
-  uint32_t d1;
-  int32_t exp;
-  int32_t digit;
+  uint64 output;
+  int32 olength;
+  int32 i = 0;
+  uint64 q;
+  uint32 output2;
+  uint32 c;
+  uint32 d;
+  uint32 c0;
+  uint32 c1;
+  uint32 d0;
+  uint32 d1;
+  int32 exp;
+  int32 digit;
 
   if (sign) {
     result[index] = '-';
@@ -359,7 +353,7 @@ static inline int to_chars(const floating_decimal_64 v, const bool sign, char* c
   }
 
   output = v.mantissa;
-  olength = (int32_t)decimalLength17(output);
+  olength = (int32)decimalLength17(output);
 
 #ifdef RYU_DEBUG
   printf("DIGITS=%" PRIu64 "\n", v.mantissa);
@@ -369,20 +363,20 @@ static inline int to_chars(const floating_decimal_64 v, const bool sign, char* c
 
   // Print the decimal digits.
   // The following code is equivalent to:
-  // for (uint32_t i = 0; i < olength - 1; ++i) {
-  //   const uint32_t c = output % 10; output /= 10;
+  // for (uint32 i = 0; i < olength - 1; ++i) {
+  //   const uint32 c = output % 10; output /= 10;
   //   result[index + olength - i] = (char) ('0' + c);
   // }
   // result[index] = '0' + output % 10;
 
   // We prefer 32-bit operations, even on 64-bit platforms.
-  // We have at most 17 digits, and uint32_t can store 9 digits.
-  // If output doesn't fit into uint32_t, we cut off 8 digits,
-  // so the rest will fit into uint32_t.
+  // We have at most 17 digits, and uint32 can store 9 digits.
+  // If output doesn't fit into uint32, we cut off 8 digits,
+  // so the rest will fit into uint32.
   if ((output >> 32) != 0) {
     // Expensive 64-bit division.
     q = div1e8(output);
-    output2 = ((uint32_t)output) - 100000000 * ((uint32_t)q);
+    output2 = ((uint32)output) - 100000000 * ((uint32)q);
     output = q;
 
     c = output2 % 10000;
@@ -398,7 +392,7 @@ static inline int to_chars(const floating_decimal_64 v, const bool sign, char* c
     memcpy(result + index + olength - 7, DIGIT_TABLE + d1, 2);
     i += 8;
   }
-  output2 = (uint32_t)output;
+  output2 = (uint32)output;
   while (output2 >= 10000) {
 #ifdef __clang__ // https://bugs.llvm.org/show_bug.cgi?id=38217
     c = output2 - 10000 * (output2 / 10000);
@@ -461,12 +455,12 @@ static inline int to_chars(const floating_decimal_64 v, const bool sign, char* c
   return index;
 }
 
-static inline bool d2d_small_int(const uint64_t ieeeMantissa, const uint32_t ieeeExponent,
+static inline bool d2d_small_int(const uint64 ieeeMantissa, const uint32 ieeeExponent,
   floating_decimal_64* const v) {
-  uint64_t m2 = (1ull << DOUBLE_MANTISSA_BITS) | ieeeMantissa;
-  int32_t e2 = (int32_t)ieeeExponent - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS;
-  uint64_t mask;
-  uint64_t fraction;
+  uint64 m2 = (1ull << DOUBLE_MANTISSA_BITS) | ieeeMantissa;
+  int32 e2 = (int32)ieeeExponent - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS;
+  uint64 mask;
+  uint64 fraction;
 
   if (e2 > 0) {
     // f = m2 * 2^e2 >= 2^53 is an integer.
@@ -497,20 +491,20 @@ static inline bool d2d_small_int(const uint64_t ieeeMantissa, const uint32_t iee
 
 int d2s_buffered_n(double f, char* result) {
   // Step 1: Decode the floating-point number, and unify normalized and subnormal cases.
-  uint64_t bits;
+  uint64 bits;
   bool ieeeSign;
-  uint64_t ieeeMantissa;
-  uint32_t ieeeExponent;
+  uint64 ieeeMantissa;
+  uint32 ieeeExponent;
   floating_decimal_64 v;
   bool isSmallInt;
-  uint64_t q;
-  uint32_t r;
+  uint64 q;
+  uint32 r;
 
   bits = double_to_bits(f);
 
 #ifdef RYU_DEBUG
   printf("IN=");
-  for (int32_t bit = 63; bit >= 0; --bit) {
+  for (int32 bit = 63; bit >= 0; --bit) {
     printf("%d", (int)((bits >> bit) & 1));
   }
   printf("\n");
@@ -519,7 +513,7 @@ int d2s_buffered_n(double f, char* result) {
   // Decode bits into sign, mantissa, and exponent.
   ieeeSign = ((bits >> (DOUBLE_MANTISSA_BITS + DOUBLE_EXPONENT_BITS)) & 1) != 0;
   ieeeMantissa = bits & ((1ull << DOUBLE_MANTISSA_BITS) - 1);
-  ieeeExponent = (uint32_t)((bits >> DOUBLE_MANTISSA_BITS) & ((1u << DOUBLE_EXPONENT_BITS) - 1));
+  ieeeExponent = (uint32)((bits >> DOUBLE_MANTISSA_BITS) & ((1u << DOUBLE_EXPONENT_BITS) - 1));
   // Case distinction; exit early for the easy cases.
   if (ieeeExponent == ((1u << DOUBLE_EXPONENT_BITS) - 1u) || (ieeeExponent == 0 && ieeeMantissa == 0)) {
     return copy_special_str(result, ieeeSign, ieeeExponent, ieeeMantissa);
@@ -533,7 +527,7 @@ int d2s_buffered_n(double f, char* result) {
     // trailing zeros in to_chars only if needed - once fixed-point notation output is implemented.)
     for (;;) {
       q = div10(v.mantissa);
-      r = ((uint32_t)v.mantissa) - 10 * ((uint32_t)q);
+      r = ((uint32)v.mantissa) - 10 * ((uint32)q);
       if (r != 0) {
         break;
       }

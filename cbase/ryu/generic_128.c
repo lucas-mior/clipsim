@@ -20,22 +20,17 @@
 
 #include "ryu/ryu_generic_128.h"
 
-#include <assert.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
+#include "cbase.h"
 
 #include "ryu/generic_128.h"
 
 #ifdef RYU_DEBUG
 #include <inttypes.h>
-#include <stdio.h>
-static char* s(uint128_t v) {
+static char* ryu_s(uint128 v) {
   int len = decimalLength(v);
   char* b = (char*) malloc((len + 1) * sizeof(char));
   for (int i = 0; i < len; i++) {
-    const uint32_t c = (uint32_t) (v % 10);
+    const uint32 c = (uint32) (v % 10);
     v /= 10;
     b[len - 1 - i] = (char) ('0' + c);
   }
@@ -44,13 +39,13 @@ static char* s(uint128_t v) {
 }
 #endif
 
-#define ONE ((uint128_t) 1)
+#define ONE ((uint128) 1)
 
 #define FLOAT_MANTISSA_BITS 23
 #define FLOAT_EXPONENT_BITS 8
 
 struct floating_decimal_128 float_to_fd128(float f) {
-  uint32_t bits = 0;
+  uint32 bits = 0;
   memcpy(&bits, &f, sizeof(float));
   return generic_binary_to_decimal(bits, FLOAT_MANTISSA_BITS, FLOAT_EXPONENT_BITS, false);
 }
@@ -59,7 +54,7 @@ struct floating_decimal_128 float_to_fd128(float f) {
 #define DOUBLE_EXPONENT_BITS 11
 
 struct floating_decimal_128 double_to_fd128(double d) {
-  uint64_t bits = 0;
+  uint64 bits = 0;
   memcpy(&bits, &d, sizeof(double));
   return generic_binary_to_decimal(bits, DOUBLE_MANTISSA_BITS, DOUBLE_EXPONENT_BITS, false);
 }
@@ -68,7 +63,7 @@ struct floating_decimal_128 double_to_fd128(double d) {
 #define LONG_DOUBLE_EXPONENT_BITS 15
 
 struct floating_decimal_128 long_double_to_fd128(long double d) {
-  uint128_t bits = 0;
+  uint128 bits = 0;
   memcpy(&bits, &d, sizeof(long double));
 #ifdef RYU_DEBUG
   // For some odd reason, this ends up with noise in the top 48 bits. We can
@@ -81,19 +76,19 @@ struct floating_decimal_128 long_double_to_fd128(long double d) {
 }
 
 struct floating_decimal_128 generic_binary_to_decimal(
-    const uint128_t bits, const uint32_t mantissaBits, const uint32_t exponentBits, const bool explicitLeadingBit) {
+    const uint128 bits, const uint32 mantissaBits, const uint32 exponentBits, const bool explicitLeadingBit) {
 #ifdef RYU_DEBUG
   printf("IN=");
-  for (int32_t bit = 127; bit >= 0; --bit) {
-    printf("%u", (uint32_t) ((bits >> bit) & 1));
+  for (int32 bit = 127; bit >= 0; --bit) {
+    printf("%u", (uint32) ((bits >> bit) & 1));
   }
   printf("\n");
 #endif
 
-  const uint32_t bias = (1u << (exponentBits - 1)) - 1;
+  const uint32 bias = (1u << (exponentBits - 1)) - 1;
   const bool ieeeSign = ((bits >> (mantissaBits + exponentBits)) & 1) != 0;
-  const uint128_t ieeeMantissa = bits & ((ONE << mantissaBits) - 1);
-  const uint32_t ieeeExponent = (uint32_t) ((bits >> mantissaBits) & ((ONE << exponentBits) - 1u));
+  const uint128 ieeeMantissa = bits & ((ONE << mantissaBits) - 1);
+  const uint32 ieeeExponent = (uint32) ((bits >> mantissaBits) & ((ONE << exponentBits) - 1u));
 
   if (ieeeExponent == 0 && ieeeMantissa == 0) {
     struct floating_decimal_128 fd;
@@ -110,8 +105,8 @@ struct floating_decimal_128 generic_binary_to_decimal(
     return fd;
   }
 
-  int32_t e2;
-  uint128_t m2;
+  int32 e2;
+  uint128 m2;
   // We subtract 2 in all cases so that the bounds computation has 2 additional bits.
   if (explicitLeadingBit) {
     // mantissaBits includes the explicit leading bit, so we need to correct for that here.
@@ -134,36 +129,37 @@ struct floating_decimal_128 generic_binary_to_decimal(
   const bool acceptBounds = even;
 
 #ifdef RYU_DEBUG
-  printf("-> %s %s * 2^%d\n", ieeeSign ? "-" : "+", s(m2), e2 + 2);
+  printf("-> %s %s * 2^%d\n", ieeeSign ? "-" : "+", ryu_s(m2), e2 + 2);
 #endif
 
   // Step 2: Determine the interval of legal decimal representations.
-  const uint128_t mv = 4 * m2;
+  const uint128 mv = 4 * m2;
   // Implicit bool -> int conversion. True is 1, false is 0.
-  const uint32_t mmShift =
+  const uint32 mmShift =
       (ieeeMantissa != (explicitLeadingBit ? ONE << (mantissaBits - 1) : 0))
       || (ieeeExponent == 0);
 
   // Step 3: Convert to a decimal power base using 128-bit arithmetic.
-  uint128_t vr, vp, vm;
-  int32_t e10;
+  uint128 vr, vp, vm;
+  int32 e10;
   bool vmIsTrailingZeros = false;
   bool vrIsTrailingZeros = false;
   if (e2 >= 0) {
     // I tried special-casing q == 0, but there was no effect on performance.
     // This expression is slightly faster than max(0, log10Pow2(e2) - 1).
-    const uint32_t q = log10Pow2(e2) - (e2 > 3);
+    const uint32 q = log10Pow2(e2) - (e2 > 3);
     e10 = q;
-    const int32_t k = FLOAT_128_POW5_INV_BITCOUNT + pow5bits(q) - 1;
-    const int32_t i = -e2 + q + k;
-    uint64_t pow5[4];
+    const int32 k = FLOAT_128_POW5_INV_BITCOUNT + pow5bits(q) - 1;
+    const int32 i = -e2 + q + k;
+    uint64 pow5[4];
     generic_computeInvPow5(q, pow5);
     vr = mulShift(4 * m2, pow5, i);
     vp = mulShift(4 * m2 + 2, pow5, i);
     vm = mulShift(4 * m2 - 1 - mmShift, pow5, i);
 #ifdef RYU_DEBUG
-    printf("%s * 2^%d / 10^%d\n", s(mv), e2, q);
-    printf("V+=%s\nV =%s\nV-=%s\n", s(vp), s(vr), s(vm));
+    printf("%s * 2^%d / 10^%d\n", ryu_s(mv), e2, q);
+    printf("V+=%s\nV =%s\nV-=%s\n",
+        ryu_s(vp), ryu_s(vr), ryu_s(vm));
 #endif
     // floor(log_5(2^128)) = 55, this is very conservative
     if (q <= 55) {
@@ -182,20 +178,21 @@ struct floating_decimal_128 generic_binary_to_decimal(
     }
   } else {
     // This expression is slightly faster than max(0, log10Pow5(-e2) - 1).
-    const uint32_t q = log10Pow5(-e2) - (-e2 > 1);
+    const uint32 q = log10Pow5(-e2) - (-e2 > 1);
     e10 = q + e2;
-    const int32_t i = -e2 - q;
-    const int32_t k = pow5bits(i) - FLOAT_128_POW5_BITCOUNT;
-    const int32_t j = q - k;
-    uint64_t pow5[4];
+    const int32 i = -e2 - q;
+    const int32 k = pow5bits(i) - FLOAT_128_POW5_BITCOUNT;
+    const int32 j = q - k;
+    uint64 pow5[4];
     generic_computePow5(i, pow5);
     vr = mulShift(4 * m2, pow5, j);
     vp = mulShift(4 * m2 + 2, pow5, j);
     vm = mulShift(4 * m2 - 1 - mmShift, pow5, j);
 #ifdef RYU_DEBUG
-    printf("%s * 5^%d / 10^%d\n", s(mv), -e2, q);
+    printf("%s * 5^%d / 10^%d\n", ryu_s(mv), -e2, q);
     printf("%d %d %d %d\n", q, i, k, j);
-    printf("V+=%s\nV =%s\nV-=%s\n", s(vp), s(vr), s(vm));
+    printf("V+=%s\nV =%s\nV-=%s\n",
+        ryu_s(vp), ryu_s(vr), ryu_s(vm));
 #endif
     if (q <= 1) {
       // {vr,vp,vm} is trailing zeros if {mv,mp,mm} has at least q trailing 0 bits.
@@ -222,33 +219,35 @@ struct floating_decimal_128 generic_binary_to_decimal(
   }
 #ifdef RYU_DEBUG
   printf("e10=%d\n", e10);
-  printf("V+=%s\nV =%s\nV-=%s\n", s(vp), s(vr), s(vm));
+  printf("V+=%s\nV =%s\nV-=%s\n",
+      ryu_s(vp), ryu_s(vr), ryu_s(vm));
   printf("vm is trailing zeros=%s\n", vmIsTrailingZeros ? "true" : "false");
   printf("vr is trailing zeros=%s\n", vrIsTrailingZeros ? "true" : "false");
 #endif
 
   // Step 4: Find the shortest decimal representation in the interval of legal representations.
-  uint32_t removed = 0;
-  uint8_t lastRemovedDigit = 0;
-  uint128_t output;
+  uint32 removed = 0;
+  uint8 lastRemovedDigit = 0;
+  uint128 output;
 
   while (vp / 10 > vm / 10) {
     vmIsTrailingZeros &= vm % 10 == 0;
     vrIsTrailingZeros &= lastRemovedDigit == 0;
-    lastRemovedDigit = (uint8_t) (vr % 10);
+    lastRemovedDigit = (uint8) (vr % 10);
     vr /= 10;
     vp /= 10;
     vm /= 10;
     ++removed;
   }
 #ifdef RYU_DEBUG
-  printf("V+=%s\nV =%s\nV-=%s\n", s(vp), s(vr), s(vm));
+  printf("V+=%s\nV =%s\nV-=%s\n",
+      ryu_s(vp), ryu_s(vr), ryu_s(vm));
   printf("d-10=%s\n", vmIsTrailingZeros ? "true" : "false");
 #endif
   if (vmIsTrailingZeros) {
     while (vm % 10 == 0) {
       vrIsTrailingZeros &= lastRemovedDigit == 0;
-      lastRemovedDigit = (uint8_t) (vr % 10);
+      lastRemovedDigit = (uint8) (vr % 10);
       vr /= 10;
       vp /= 10;
       vm /= 10;
@@ -256,7 +255,7 @@ struct floating_decimal_128 generic_binary_to_decimal(
     }
   }
 #ifdef RYU_DEBUG
-  printf("%s %d\n", s(vr), lastRemovedDigit);
+  printf("%s %d\n", ryu_s(vr), lastRemovedDigit);
   printf("vr is trailing zeros=%s\n", vrIsTrailingZeros ? "true" : "false");
 #endif
   if (vrIsTrailingZeros && (lastRemovedDigit == 5) && (vr % 2 == 0)) {
@@ -266,11 +265,12 @@ struct floating_decimal_128 generic_binary_to_decimal(
   // We need to take vr+1 if vr is outside bounds or we need to round up.
   output = vr +
       ((vr == vm && (!acceptBounds || !vmIsTrailingZeros)) || (lastRemovedDigit >= 5));
-  const int32_t exp = e10 + removed;
+  const int32 exp = e10 + removed;
 
 #ifdef RYU_DEBUG
-  printf("V+=%s\nV =%s\nV-=%s\n", s(vp), s(vr), s(vm));
-  printf("O=%s\n", s(output));
+  printf("V+=%s\nV =%s\nV-=%s\n",
+      ryu_s(vp), ryu_s(vr), ryu_s(vm));
+  printf("O=%s\n", ryu_s(output));
   printf("EXP=%d\n", exp);
 #endif
 
@@ -304,21 +304,21 @@ int generic_to_chars(const struct floating_decimal_128 v, char* const result) {
     result[index++] = '-';
   }
 
-  uint128_t output = v.mantissa;
-  const uint32_t olength = decimalLength(output);
+  uint128 output = v.mantissa;
+  const uint32 olength = decimalLength(output);
 
 #ifdef RYU_DEBUG
-  printf("DIGITS=%s\n", s(v.mantissa));
+  printf("DIGITS=%s\n", ryu_s(v.mantissa));
   printf("OLEN=%u\n", olength);
   printf("EXP=%u\n", v.exponent + olength);
 #endif
 
-  for (uint32_t i = 0; i < olength - 1; ++i) {
-    const uint32_t c = (uint32_t) (output % 10);
+  for (uint32 i = 0; i < olength - 1; ++i) {
+    const uint32 c = (uint32) (output % 10);
     output /= 10;
     result[index + olength - i] = (char) ('0' + c);
   }
-  result[index] = '0' + (uint32_t) (output % 10); // output should be < 10 by now.
+  result[index] = '0' + (uint32) (output % 10); // output should be < 10 by now.
 
   // Print decimal point if needed.
   if (olength > 1) {
@@ -330,15 +330,15 @@ int generic_to_chars(const struct floating_decimal_128 v, char* const result) {
 
   // Print the exponent.
   result[index++] = 'E';
-  int32_t exp = v.exponent + olength - 1;
+  int32 exp = v.exponent + olength - 1;
   if (exp < 0) {
     result[index++] = '-';
     exp = -exp;
   }
 
-  uint32_t elength = decimalLength(exp);
-  for (uint32_t i = 0; i < elength; ++i) {
-    const uint32_t c = exp % 10;
+  uint32 elength = decimalLength(exp);
+  for (uint32 i = 0; i < elength; ++i) {
+    const uint32 c = exp % 10;
     exp /= 10;
     result[index + elength - 1 - i] = (char) ('0' + c);
   }

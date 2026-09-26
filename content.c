@@ -167,7 +167,7 @@ main(void) {
         content_trim_spaces(&trimmed, &trimmed_length, content, orig_length);
         PRINTLN(content + trimmed);
         ASSERT_EQUAL(trimmed_length, 12);
-        ASSERT_EQUAL(trimmed, orig_length + 1);
+        ASSERT_EQUAL_VAR(trimmed, orig_length + 1);
     }
 
     {

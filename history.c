@@ -874,12 +874,12 @@ main(void) {
 
         memcpy64(text1, testing12, len12 + 1);
         history_append(text1, len12, true);
-        ASSERT_EQUAL(clipsim_entries[0].content_length, len12);
+        ASSERT_EQUAL_VAR(clipsim_entries[0].content_length, len12);
         ASSERT_EQUAL(history_length, 1);
 
         memcpy64(text2, testing34, len34 + 1);
         history_append(text2, len34, true);
-        ASSERT_EQUAL(clipsim_entries[0].content_length, len34);
+        ASSERT_EQUAL_VAR(clipsim_entries[0].content_length, len34);
         ASSERT_EQUAL(history_length, 2);
     }
 

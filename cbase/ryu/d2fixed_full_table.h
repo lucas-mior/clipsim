@@ -17,11 +17,11 @@
 #ifndef RYU_D2FIXED_FULL_TABLE_H
 #define RYU_D2FIXED_FULL_TABLE_H
 
-#include <stdint.h>
+#include "cbase.h"
 
 #define TABLE_SIZE 64
 
-static const uint16_t POW10_OFFSET[TABLE_SIZE] = {
+static const uint16 POW10_OFFSET[TABLE_SIZE] = {
   0, 2, 5, 8, 12, 16, 21, 26, 32, 39,
   46, 54, 62, 71, 80, 90, 100, 111, 122, 134,
   146, 159, 173, 187, 202, 217, 233, 249, 266, 283,
@@ -31,7 +31,7 @@ static const uint16_t POW10_OFFSET[TABLE_SIZE] = {
   1084, 1118, 1153, 1188
 };
 
-static const uint64_t POW10_SPLIT[1224][3] = {
+static const uint64 POW10_SPLIT[1224][3] = {
   {                    1u,    72057594037927936u,                    0u },
   {   699646928636035157u,             72057594u,                    0u },
   {                    1u,                    0u,                  256u },
@@ -1261,7 +1261,7 @@ static const uint64_t POW10_SPLIT[1224][3] = {
 #define TABLE_SIZE_2 69
 #define ADDITIONAL_BITS_2 120
 
-static const uint16_t POW10_OFFSET_2[TABLE_SIZE_2] = {
+static const uint16 POW10_OFFSET_2[TABLE_SIZE_2] = {
      0,    2,    6,   12,   20,   29,   40,   52,   66,   80,
     95,  112,  130,  150,  170,  192,  215,  240,  265,  292,
    320,  350,  381,  413,  446,  480,  516,  552,  590,  629,
@@ -1271,7 +1271,7 @@ static const uint16_t POW10_OFFSET_2[TABLE_SIZE_2] = {
   2465, 2544, 2625, 2706, 2789, 2873, 2959, 3046, 3133
 };
 
-static const uint8_t MIN_BLOCK_2[TABLE_SIZE_2] = {
+static const uint8 MIN_BLOCK_2[TABLE_SIZE_2] = {
      0,    0,    0,    0,    0,    0,    1,    1,    2,    3,
      3,    4,    4,    5,    5,    6,    6,    7,    7,    8,
      8,    9,    9,   10,   11,   11,   12,   12,   13,   13,
@@ -1281,7 +1281,7 @@ static const uint8_t MIN_BLOCK_2[TABLE_SIZE_2] = {
     30,   30,   31,   31,   32,   32,   33,   34,    0
 };
 
-static const uint64_t POW10_SPLIT_2[3133][3] = {
+static const uint64 POW10_SPLIT_2[3133][3] = {
   {                    0u,                    0u,              3906250u },
   {                    0u,                    0u,         202000000000u },
   {                    0u, 11153727427136454656u,                   59u },

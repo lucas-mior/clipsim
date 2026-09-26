@@ -17,6 +17,8 @@
 #ifndef RYU_F2S_INTRINSICS_H
 #define RYU_F2S_INTRINSICS_H
 
+#include "cbase.h"
+
 // Defines RYU_32_BIT_PLATFORM if applicable.
 #include "ryu/common.h"
 
@@ -36,10 +38,10 @@
 
 #endif
 
-static inline uint32_t pow5factor_32(uint32_t value) {
-  uint32_t count = 0;
-  uint32_t q;
-  uint32_t r;
+static inline uint32 pow5factor_32(uint32 value) {
+  uint32 count = 0;
+  uint32 q;
+  uint32 r;
 
   for (;;) {
     assert(value != 0);
@@ -55,33 +57,33 @@ static inline uint32_t pow5factor_32(uint32_t value) {
 }
 
 // Returns true if value is divisible by 5^p.
-static inline bool multipleOfPowerOf5_32(const uint32_t value, const uint32_t p) {
+static inline bool multipleOfPowerOf5_32(const uint32 value, const uint32 p) {
   return pow5factor_32(value) >= p;
 }
 
 // Returns true if value is divisible by 2^p.
-static inline bool multipleOfPowerOf2_32(const uint32_t value, const uint32_t p) {
+static inline bool multipleOfPowerOf2_32(const uint32 value, const uint32 p) {
   // __builtin_ctz doesn't appear to be faster here.
   return (value & ((1u << p) - 1)) == 0;
 }
 
-// It seems to be slightly faster to avoid uint128_t here, although the
-// generated code for uint128_t looks slightly nicer.
-static inline uint32_t mulShift32(const uint32_t m, const uint64_t factor, const int32_t shift) {
+// It seems to be slightly faster to avoid uint128 here, although the
+// generated code for uint128 looks slightly nicer.
+static inline uint32 mulShift32(const uint32 m, const uint64 factor, const int32 shift) {
   // The casts here help MSVC to avoid calls to the __allmul library
   // function.
-  uint32_t factorLo = (uint32_t)(factor);
-  uint32_t factorHi = (uint32_t)(factor >> 32);
-  uint64_t bits0 = (uint64_t)m * factorLo;
-  uint64_t bits1 = (uint64_t)m * factorHi;
+  uint32 factorLo = (uint32)(factor);
+  uint32 factorHi = (uint32)(factor >> 32);
+  uint64 bits0 = (uint64)m * factorLo;
+  uint64 bits1 = (uint64)m * factorHi;
 #if defined(RYU_32_BIT_PLATFORM)
-  uint32_t bits0Hi;
-  uint32_t bits1Lo;
-  uint32_t bits1Hi;
-  int32_t s;
+  uint32 bits0Hi;
+  uint32 bits1Lo;
+  uint32 bits1Hi;
+  int32 s;
 #else
-  uint64_t sum;
-  uint64_t shiftedSum;
+  uint64 sum;
+  uint64 shiftedSum;
 #endif
 
   assert(shift > 32);
@@ -89,15 +91,15 @@ static inline uint32_t mulShift32(const uint32_t m, const uint64_t factor, const
 #if defined(RYU_32_BIT_PLATFORM)
   // On 32-bit platforms we can avoid a 64-bit shift-right since we only
   // need the upper 32 bits of the result and the shift value is > 32.
-  bits0Hi = (uint32_t)(bits0 >> 32);
-  bits1Lo = (uint32_t)(bits1);
-  bits1Hi = (uint32_t)(bits1 >> 32);
+  bits0Hi = (uint32)(bits0 >> 32);
+  bits1Lo = (uint32)(bits1);
+  bits1Hi = (uint32)(bits1 >> 32);
   bits1Lo += bits0Hi;
   bits1Hi += (bits1Lo < bits0Hi);
   if (shift >= 64) {
     // s2f can call this with a shift value >= 64, which we have to handle.
     // This could now be slower than the !defined(RYU_32_BIT_PLATFORM) case.
-    return (uint32_t)(bits1Hi >> (shift - 64));
+    return (uint32)(bits1Hi >> (shift - 64));
   } else {
     s = shift - 32;
     return (bits1Hi << (32 - s)) | (bits1Lo >> s);
@@ -106,18 +108,18 @@ static inline uint32_t mulShift32(const uint32_t m, const uint64_t factor, const
   sum = (bits0 >> 32) + bits1;
   shiftedSum = sum >> (shift - 32);
   assert(shiftedSum <= UINT32_MAX);
-  return (uint32_t) shiftedSum;
+  return (uint32) shiftedSum;
 #endif // RYU_32_BIT_PLATFORM
 }
 
-static inline uint32_t mulPow5InvDivPow2(const uint32_t m, const uint32_t q, const int32_t j) {
+static inline uint32 mulPow5InvDivPow2(const uint32 m, const uint32 q, const int32 j) {
 #if defined(RYU_FLOAT_FULL_TABLE)
   return mulShift32(m, FLOAT_POW5_INV_SPLIT[q], j);
 #elif defined(RYU_OPTIMIZE_SIZE)
   // The inverse multipliers are defined as [2^x / 5^y] + 1; the upper 64 bits from the double lookup
   // table are the correct bits for [2^x / 5^y], so we have to add 1 here. Note that we rely on the
   // fact that the added 1 that's already stored in the table never overflows into the upper 64 bits.
-  uint64_t pow5[2];
+  uint64 pow5[2];
   double_computeInvPow5(q, pow5);
   return mulShift32(m, pow5[1] + 1, j);
 #else
@@ -125,11 +127,11 @@ static inline uint32_t mulPow5InvDivPow2(const uint32_t m, const uint32_t q, con
 #endif
 }
 
-static inline uint32_t mulPow5divPow2(const uint32_t m, const uint32_t i, const int32_t j) {
+static inline uint32 mulPow5divPow2(const uint32 m, const uint32 i, const int32 j) {
 #if defined(RYU_FLOAT_FULL_TABLE)
   return mulShift32(m, FLOAT_POW5_SPLIT[i], j);
 #elif defined(RYU_OPTIMIZE_SIZE)
-  uint64_t pow5[2];
+  uint64 pow5[2];
   double_computePow5(i, pow5);
   return mulShift32(m, pow5[1], j);
 #else
