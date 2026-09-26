@@ -204,35 +204,35 @@ assert_compare_mode_symbol(enum AssertCompareMode mode) {
     }
 }
 
-#define ASSERT_COMPARE_MODE_SWITCH(VAR1, VAR2)                                 \
-    switch (mode) {                                                            \
-    case ASSERT_COMPARE_MODE_LESS:                                             \
-        return (VAR1) < (VAR2);                                                \
-    case ASSERT_COMPARE_MODE_LESS_EQUAL:                                       \
-        return (VAR1) <= (VAR2);                                               \
-    case ASSERT_COMPARE_MODE_EQUAL:                                            \
-        return (VAR1) == (VAR2);                                               \
-    case ASSERT_COMPARE_MODE_NOT_EQUAL:                                        \
-        return (VAR1) != (VAR2);                                               \
-    case ASSERT_COMPARE_MODE_GREATER:                                          \
-        return (VAR1) > (VAR2);                                                \
-    case ASSERT_COMPARE_MODE_GREATER_EQUAL:                                    \
-        return (VAR1) >= (VAR2);                                               \
-    default:                                                                   \
-        UNREACHABLE();                                                         \
-    }                                                                          \
+#define ASSERT_COMPARE_MODE_SWITCH(mode, VAR1, VAR2) \
+    switch (mode) {                                  \
+    case ASSERT_COMPARE_MODE_LESS:                   \
+        return (VAR1) < (VAR2);                      \
+    case ASSERT_COMPARE_MODE_LESS_EQUAL:             \
+        return (VAR1) <= (VAR2);                     \
+    case ASSERT_COMPARE_MODE_EQUAL:                  \
+        return (VAR1) == (VAR2);                     \
+    case ASSERT_COMPARE_MODE_NOT_EQUAL:              \
+        return (VAR1) != (VAR2);                     \
+    case ASSERT_COMPARE_MODE_GREATER:                \
+        return (VAR1) > (VAR2);                      \
+    case ASSERT_COMPARE_MODE_GREATER_EQUAL:          \
+        return (VAR1) >= (VAR2);                     \
+    default:                                         \
+        UNREACHABLE();                               \
+    }                                                \
     UNREACHABLE()
 
 static bool
 assert_compare_constant_integer(enum AssertCompareMode mode,
                                 llong var1, llong var2) {
-    ASSERT_COMPARE_MODE_SWITCH(var1, var2);
+    ASSERT_COMPARE_MODE_SWITCH(mode, var1, var2);
 }
 
 static bool
 assert_compare_constant_double(enum AssertCompareMode mode,
                                double var1, double var2) {
-    ASSERT_COMPARE_MODE_SWITCH(var1, var2);
+    ASSERT_COMPARE_MODE_SWITCH(mode, var1, var2);
 }
 
 static bool
@@ -241,7 +241,7 @@ assert_compare_constant_pointer(enum AssertCompareMode mode,
     uintptr pointer1 = (uintptr)var1;
     uintptr pointer2 = (uintptr)var2;
 
-    ASSERT_COMPARE_MODE_SWITCH(pointer1, pointer2);
+    ASSERT_COMPARE_MODE_SWITCH(mode, pointer1, pointer2);
 }
 
 static bool
@@ -255,7 +255,7 @@ assert_compare_constant_string(enum AssertCompareMode mode,
     }
 
     comparison = strcmp(var1, var2);
-    ASSERT_COMPARE_MODE_SWITCH(comparison, 0);
+    ASSERT_COMPARE_MODE_SWITCH(mode, comparison, 0);
 }
 
 static bool
