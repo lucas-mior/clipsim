@@ -426,7 +426,7 @@ main(void) {
                 XPutBackEvent(display, &mock_event);
 
                 tgt = clipboard_check_target(UTF8_STRING);
-                ASSERT_EQUAL(tgt, UTF8_STRING);
+                ASSERT_EQUAL_VAR(tgt, UTF8_STRING);
             }
 
             {
