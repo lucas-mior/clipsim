@@ -849,15 +849,15 @@ main(void) {
         length_counts[5] += 1;
 
         idx = history_repeated_index("beta", 4);
-        ASSERT_EQUAL(idx, 1);
+        ASSERT_EQ(idx, 1);
 
         idx = history_repeated_index("delta", 5);
-        ASSERT_EQUAL(idx, -1);
+        ASSERT_EQ(idx, -1);
 
         history_reorder(0);
-        ASSERT_EQUAL(clipsim_entries[0].content_length, 4);
-        ASSERT_EQUAL(clipsim_entries[1].content_length, 5);
-        ASSERT_EQUAL(clipsim_entries[2].content_length, 5);
+        ASSERT_EQ(clipsim_entries[0].content_length, 4);
+        ASSERT_EQ(clipsim_entries[1].content_length, 5);
+        ASSERT_EQ(clipsim_entries[2].content_length, 5);
 
         history_length = 0;
         length_counts[4] = 0;
@@ -874,19 +874,19 @@ main(void) {
 
         memcpy64(text1, testing12, len12 + 1);
         history_append(text1, len12, true);
-        ASSERT_EQUAL_VAR(clipsim_entries[0].content_length, len12);
-        ASSERT_EQUAL(history_length, 1);
+        ASSERT_EQ_VAR(clipsim_entries[0].content_length, len12);
+        ASSERT_EQ(history_length, 1);
 
         memcpy64(text2, testing34, len34 + 1);
         history_append(text2, len34, true);
-        ASSERT_EQUAL_VAR(clipsim_entries[0].content_length, len34);
-        ASSERT_EQUAL(history_length, 2);
+        ASSERT_EQ_VAR(clipsim_entries[0].content_length, len34);
+        ASSERT_EQ(history_length, 2);
     }
 
     {
         history_remove(0);
-        ASSERT_EQUAL(history_length, 1);
-        ASSERT_EQUAL(clipsim_entries[0].content_length, 9);
+        ASSERT_EQ(history_length, 1);
+        ASSERT_EQ(clipsim_entries[0].content_length, 9);
     }
 
     {
@@ -899,8 +899,8 @@ main(void) {
         memset64(length_counts, 0, sizeof(length_counts));
 
         history_read();
-        ASSERT_EQUAL(history_length, 1);
-        ASSERT_EQUAL(clipsim_entries[0].content_length, 9);
+        ASSERT_EQ(history_length, 1);
+        ASSERT_EQ(clipsim_entries[0].content_length, 9);
     }
 
     {
@@ -912,7 +912,7 @@ main(void) {
         memcpy64(img_content, "fake_image_data", 15);
 
         res = history_save_image(&img_content, &img_len);
-        ASSERT_EQUAL(res, 0);
+        ASSERT_EQ(res, 0);
 
         stat(img_content, &st);
         history_callback_delete(img_content, &st, FTW_F, NULL);
@@ -951,7 +951,7 @@ main(void) {
         } else {
             int32 status = 0;
             wait(&status);
-            ASSERT_EQUAL(WEXITSTATUS(status), EXIT_SUCCESS);
+            ASSERT_EQ(WEXITSTATUS(status), EXIT_SUCCESS);
         }
     }
 

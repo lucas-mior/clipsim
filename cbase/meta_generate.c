@@ -281,15 +281,15 @@ test_c_string_literal(void) {
     String literal;
 
     literal = c_string_literal("a\\b\"c", strlen32("a\\b\"c"));
-    ASSERT_EQUAL(literal.data, "\"a\\\\b\\\"c\"");
-    ASSERT_EQUAL_VAR(literal.len, strlen32("\"a\\\\b\\\"c\""));
-    ASSERT_EQUAL_VAR(literal.cap, literal.len + 1);
+    ASSERT_EQ(literal.data, "\"a\\\\b\\\"c\"");
+    ASSERT_EQ_VAR(literal.len, strlen32("\"a\\\\b\\\"c\""));
+    ASSERT_EQ_VAR(literal.cap, literal.len + 1);
     free2(literal.data, literal.cap);
 
     literal = c_string_literal(control_bytes, LENGTH(control_bytes));
-    ASSERT_EQUAL(literal.data,
+    ASSERT_EQ(literal.data,
                  "\"a\\n\\000\\0379\\t\\\\\\\"\\177\"");
-    ASSERT_EQUAL_VAR(literal.cap, literal.len + 1);
+    ASSERT_EQ_VAR(literal.cap, literal.len + 1);
     free2(literal.data, literal.cap);
     return;
 }
@@ -299,25 +299,25 @@ test_c_identifier(void) {
     String identifier;
 
     identifier = c_identifier("1 bad-name", strlen32("1 bad-name"));
-    ASSERT_EQUAL(identifier.data, "c_1_bad_name");
-    ASSERT_EQUAL_VAR(identifier.len, strlen32("c_1_bad_name"));
-    ASSERT_EQUAL_VAR(identifier.cap, identifier.len + 1);
+    ASSERT_EQ(identifier.data, "c_1_bad_name");
+    ASSERT_EQ_VAR(identifier.len, strlen32("c_1_bad_name"));
+    ASSERT_EQ_VAR(identifier.cap, identifier.len + 1);
     free2(identifier.data, identifier.cap);
 
     identifier = c_identifier("already_ok_2", strlen32("already_ok_2"));
-    ASSERT_EQUAL(identifier.data, "already_ok_2");
+    ASSERT_EQ(identifier.data, "already_ok_2");
     free2(identifier.data, identifier.cap);
 
     identifier = c_identifier("int", strlen32("int"));
-    ASSERT_EQUAL(identifier.data, "c_int");
+    ASSERT_EQ(identifier.data, "c_int");
     free2(identifier.data, identifier.cap);
 
     identifier = c_identifier("_private", strlen32("_private"));
-    ASSERT_EQUAL(identifier.data, "c__private");
+    ASSERT_EQ(identifier.data, "c__private");
     free2(identifier.data, identifier.cap);
 
     identifier = c_identifier("", 0);
-    ASSERT_EQUAL(identifier.data, "c_");
+    ASSERT_EQ(identifier.data, "c_");
     free2(identifier.data, identifier.cap);
     return;
 }
@@ -329,7 +329,7 @@ test_emit_string_and_lens_inits(void) {
     int32 lens[3] = {5, 0, 6};
 
     emit_string_array_init(&out, "names", values, lens, 3, "v");
-    ASSERT_EQUAL(out.data, "    .names = {\n"
+    ASSERT_EQ(out.data, "    .names = {\n"
                            "        \"alpha\",\n"
                            "        \"v1\",\n"
                            "        \"quo\\\"te\",\n"
@@ -337,7 +337,7 @@ test_emit_string_and_lens_inits(void) {
 
     str_free(&out);
     emit_lens_init(&out, "name_lens", values, lens, 3, "v");
-    ASSERT_EQUAL(out.data, "    .name_lens = { 5, 2, 6 },\n");
+    ASSERT_EQ(out.data, "    .name_lens = { 5, 2, 6 },\n");
     free2(out.data, out.cap);
     return;
 }
@@ -349,11 +349,11 @@ test_emit_number_inits(void) {
     uint64 u64s[2] = {UINT64_C(0x1234), UINT64_C(0)};
 
     emit_int_array_init(&out, "ints", ints, 3);
-    ASSERT_EQUAL(out.data, "    .ints = { -1, 0, 42 },\n");
+    ASSERT_EQ(out.data, "    .ints = { -1, 0, 42 },\n");
 
     str_free(&out);
     emit_u64_array_init(&out, "bits", u64s, 2);
-    ASSERT_EQUAL(out.data,
+    ASSERT_EQ(out.data,
                  "    .bits = { UINT64_C(0x1234), UINT64_C(0x0) },\n");
     free2(out.data, out.cap);
     return;
@@ -364,7 +364,7 @@ test_emit_wrapped_expr(void) {
     String out = {0};
 
     c_emit_wrapped_expr(&out, "  ", "return ", "f(a,b)", ";");
-    ASSERT_EQUAL(out.data, "  return f(\n"
+    ASSERT_EQ(out.data, "  return f(\n"
                            "         a,\n"
                            "         b);\n");
     free2(out.data, out.cap);

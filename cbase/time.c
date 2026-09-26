@@ -351,7 +351,7 @@ main(void) {
         fixed_time.tm_sec = 0;
 
         strftime2(buffer, SIZEOF(buffer), "%Y-%m-%d", &fixed_time);
-        ASSERT_EQUAL(buffer, "2026-03-25");
+        ASSERT_EQ(buffer, "2026-03-25");
     }
 
     ASSERT_CLOSE(timediff(td0, td1), 2.5);
@@ -363,8 +363,8 @@ main(void) {
     time_monotonic_precise(&t0);
     time_monotonic_coarse(&t1);
     ASSERT_NON_NEGATIVE(time_monotonic_now());
-    ASSERT_EQUAL(time_elapsed_ns(100, 250), 150);
-    ASSERT_EQUAL(time_elapsed_ms(1000000, 4000000), 3);
+    ASSERT_EQ(time_elapsed_ns(100, 250), 150);
+    ASSERT_EQ(time_elapsed_ms(1000000, 4000000), 3);
 #if OS_UNIX
     {
         struct tm local_time;

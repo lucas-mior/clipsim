@@ -144,15 +144,15 @@ test_parse_c_text_splits_lines_and_tokens(void) {
     Document *doc;
 
     doc = parse_c_text(text, strlen32(text));
-    ASSERT_EQUAL(doc->line_count, 2);
-    ASSERT_EQUAL(doc->lines[0].text, "int x;\n");
-    ASSERT_EQUAL_VAR(doc->lines[0].len, strlen32("int x;\n"));
-    ASSERT_EQUAL(doc->lines[0].token_count, 5);
+    ASSERT_EQ(doc->line_count, 2);
+    ASSERT_EQ(doc->lines[0].text, "int x;\n");
+    ASSERT_EQ_VAR(doc->lines[0].len, strlen32("int x;\n"));
+    ASSERT_EQ(doc->lines[0].token_count, 5);
     ASSERT(TOKEN_IS(&doc->lines[0].tokens[0], "int"));
     ASSERT(TOKEN_IS(&doc->lines[0].tokens[2], "x"));
     ASSERT(TOKEN_IS(&doc->lines[0].tokens[3], ";"));
-    ASSERT_EQUAL(doc->lines[1].text, "float y;");
-    ASSERT_EQUAL_VAR(doc->lines[1].len, strlen32("float y;"));
+    ASSERT_EQ(doc->lines[1].text, "float y;");
+    ASSERT_EQ_VAR(doc->lines[1].len, strlen32("float y;"));
     free_document(doc);
     return;
 }
@@ -163,10 +163,10 @@ test_parse_text_marks_preprocessor_lines(void) {
     Document *doc;
 
     doc = parse_text(text, strlen32(text));
-    ASSERT_EQUAL(doc->line_count, 2);
-    ASSERT_EQUAL(doc->lines[0].token_count, 1);
+    ASSERT_EQ(doc->line_count, 2);
+    ASSERT_EQ(doc->lines[0].token_count, 1);
     ASSERT(doc->lines[0].tokens[0].kind == TOKEN_PREPROC);
-    ASSERT_EQUAL(doc->lines[0].tokens[0].text, "#define VALUE 3\n");
+    ASSERT_EQ(doc->lines[0].tokens[0].text, "#define VALUE 3\n");
     ASSERT(doc->lines[1].tokens[0].kind == TOKEN_IDENT);
     free_document(doc);
     return;
@@ -178,8 +178,8 @@ test_parse_text_with_flags_skip_whitespace(void) {
     Document *doc;
 
     doc = parse_text_with_flags(text, strlen32(text), TOKENIZE_SKIP_WHITESPACE);
-    ASSERT_EQUAL(doc->line_count, 1);
-    ASSERT_EQUAL(doc->lines[0].token_count, 2);
+    ASSERT_EQ(doc->line_count, 1);
+    ASSERT_EQ(doc->lines[0].token_count, 2);
     ASSERT(TOKEN_IS(&doc->lines[0].tokens[0], "a"));
     ASSERT(TOKEN_IS(&doc->lines[0].tokens[1], "b"));
     free_document(doc);
@@ -198,10 +198,10 @@ test_document_add_line_grows_storage(void) {
                       TOKENIZE_DEFAULT);
     document_add_line(&doc, line, strlen32(line), &in_block_comment,
                       TOKENIZE_DEFAULT);
-    ASSERT_EQUAL(doc.line_count, 2);
+    ASSERT_EQ(doc.line_count, 2);
     ASSERT_MORE_EQUAL(doc.capacity, 2);
-    ASSERT_EQUAL(doc.lines[0].text, "value\n");
-    ASSERT_EQUAL(doc.lines[1].text, "value\n");
+    ASSERT_EQ(doc.lines[0].text, "value\n");
+    ASSERT_EQ(doc.lines[1].text, "value\n");
     free_line(&doc.lines[0]);
     ASSERT_NULL(doc.lines[0].text);
     ASSERT_ZERO(doc.lines[0].len);

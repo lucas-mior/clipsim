@@ -509,32 +509,32 @@ main(void) {
 
         /* Test 1-byte ASCII */
         len = utf8_encode(0x41, buf, SIZEOF(buf));
-        ASSERT_EQUAL(len, 1);
-        ASSERT_EQUAL(buf[0], 'A');
+        ASSERT_EQ(len, 1);
+        ASSERT_EQ(buf[0], 'A');
         len = utf8_decode(buf, 1, &u);
-        ASSERT_EQUAL(len, 1);
-        ASSERT_EQUAL(u, 0x41);
+        ASSERT_EQ(len, 1);
+        ASSERT_EQ(u, 0x41);
 
         /* Test 2-byte (e.g. U+00F1 n with tilde) */
         len = utf8_encode(0xF1, buf, SIZEOF(buf));
-        ASSERT_EQUAL(len, 2);
+        ASSERT_EQ(len, 2);
         len = utf8_decode(buf, 2, &u);
-        ASSERT_EQUAL(len, 2);
-        ASSERT_EQUAL(u, 0xF1);
+        ASSERT_EQ(len, 2);
+        ASSERT_EQ(u, 0xF1);
 
         /* Test 3-byte (e.g. U+20AC Euro sign) */
         len = utf8_encode(0x20AC, buf, SIZEOF(buf));
-        ASSERT_EQUAL(len, 3);
+        ASSERT_EQ(len, 3);
         len = utf8_decode(buf, 3, &u);
-        ASSERT_EQUAL(len, 3);
-        ASSERT_EQUAL(u, 0x20AC);
+        ASSERT_EQ(len, 3);
+        ASSERT_EQ(u, 0x20AC);
 
         /* Test 4-byte (e.g. U+1F60A Smiling Face) */
         len = utf8_encode(0x1F60A, buf, SIZEOF(buf));
-        ASSERT_EQUAL(len, 4);
+        ASSERT_EQ(len, 4);
         len = utf8_decode(buf, 4, &u);
-        ASSERT_EQUAL(len, 4);
-        ASSERT_EQUAL(u, 0x1F60A);
+        ASSERT_EQ(len, 4);
+        ASSERT_EQ(u, 0x1F60A);
     }
 
     /* String Traversal Test with Multi-codepoint Emoji */
@@ -567,14 +567,14 @@ main(void) {
             len = utf8_decode(test_str + consumed_total,
                               str_len - consumed_total, &u);
 
-            ASSERT_EQUAL_VAR(u, expected[expected_idx]);
+            ASSERT_EQ_VAR(u, expected[expected_idx]);
 
             consumed_total += len;
             expected_idx += 1;
         }
 
-        ASSERT_EQUAL(expected_idx, 6);
-        ASSERT_EQUAL_VAR(consumed_total, str_len);
+        ASSERT_EQ(expected_idx, 6);
+        ASSERT_EQ_VAR(consumed_total, str_len);
     }
 
     {
@@ -584,13 +584,13 @@ main(void) {
         /* Valid character */
         u = 0x41;
         len = utf8_validate(&u, 0);
-        ASSERT_EQUAL(len, 1);
-        ASSERT_EQUAL(u, 0x41);
+        ASSERT_EQ(len, 1);
+        ASSERT_EQ(u, 0x41);
 
         /* Invalid surrogate half */
         u = 0xD800;
         len = utf8_validate(&u, 3);
-        ASSERT_EQUAL(u, UTF_INVALID);
+        ASSERT_EQ(u, UTF_INVALID);
     }
 
     {
@@ -606,11 +606,11 @@ main(void) {
 
         bad_offset = -1;
         ASSERT(utf8_valid(STRLIT("Aé水"), &bad_offset));
-        ASSERT_EQUAL(bad_offset, -1);
+        ASSERT_EQ(bad_offset, -1);
 
         bad_offset = -1;
         ASSERT(!utf8_valid("A\xC0\xAF", 3, &bad_offset));
-        ASSERT_EQUAL(bad_offset, 1);
+        ASSERT_EQ(bad_offset, 1);
 
         ASSERT(utf8_has_bom("\xEF\xBB\xBFtext", 7));
         ASSERT(!utf8_has_bom("text", 4));
@@ -639,7 +639,7 @@ main(void) {
                 ASSERT(u != UTF_INVALID);
                 consumed += dec_len;
             }
-            ASSERT_EQUAL_VAR(consumed, gen_len);
+            ASSERT_EQ_VAR(consumed, gen_len);
             PRINTLN(test_buf);
         }
         printf("utf8_random_string validation successful.\n");

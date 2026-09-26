@@ -846,14 +846,14 @@ if (enum & ENUM_BITFLAG) {
   - `ASSERT_NEGATIVE(integer expression)`
   - `ASSERT_NON_POSITIVE(integer expression)`
   - `ASSERT_NON_NEGATIVE(integer expression)`
-  - `ASSERT_EQUAL(value, constant expression)`
+  - `ASSERT_EQ(value, constant expression)`
   - `ASSERT_NOT_EQUAL(value, constant expression)`
-  - `ASSERT_EQUAL(string, string_len, other_string)`
+  - `ASSERT_EQ(string, string_len, other_string)`
   - `ASSERT_LESS(value, constant expression)`
   - `ASSERT_MORE(value, constant expression)`
   - `ASSERT_LESS_EQUAL(value, constant expression)`
   - `ASSERT_MORE_EQUAL(value, constant expression)`
-  - `ASSERT_EQUAL_VAR(value1, value2)`
+  - `ASSERT_EQ_VAR(value1, value2)`
   - `ASSERT_NOT_EQUAL_VAR(value1, value2)`
   - `ASSERT_LESS_VAR(value1, value2)`
   - `ASSERT_MORE_VAR(value1, value2)`
@@ -867,7 +867,7 @@ if (enum & ENUM_BITFLAG) {
     debugging. Don't use them for non-debugging assertions.
     + Assertions that must happen in non-debugging builds, must be explicit code
       with a clear error message, not an assertion macro.
-- Do not use `ASSERT_EQUAL` for enums.
+- Do not use `ASSERT_EQ` for enums.
   * Use `ASSERT(enumvalue1 == enumvalue2)` instead, so that the compiler does
     not complain.
 - For asserting that a function did or didn't fail/return NULL:
@@ -904,7 +904,7 @@ if (enum & ENUM_BITFLAG) {
 - Two-argument comparison assertions are optimized for the common case where
   the right side is a compiler-known constant. Prefer:
   ```c
-  ASSERT_EQUAL(value, 3);
+  ASSERT_EQ(value, 3);
   ASSERT_NOT_EQUAL(value, -1);
   ASSERT_LESS(value, 100);
   ASSERT_LESS_EQUAL(value, 100);
@@ -915,7 +915,7 @@ if (enum & ENUM_BITFLAG) {
   enums). The right side of these forms must satisfy `__builtin_constant_p()`;
   passing a variable is a compile-time error.
 - If the right side is not a compiler-known constant, use the explicit variable
-  forms: `ASSERT_EQUAL_VAR`, `ASSERT_NOT_EQUAL_VAR`, `ASSERT_LESS_VAR`,
+  forms: `ASSERT_EQ_VAR`, `ASSERT_NOT_EQUAL_VAR`, `ASSERT_LESS_VAR`,
   `ASSERT_LESS_EQUAL_VAR`, `ASSERT_MORE_VAR`, or `ASSERT_MORE_EQUAL_VAR`.
   These use the heavier variable-vs-variable generic dispatch, so use them only
   when the constant-RHS forms cannot be used.
@@ -925,7 +925,7 @@ if (enum & ENUM_BITFLAG) {
   Unsigned integer values above `LLONG_MAX` are not supported by these forms.
   The three- and four-argument string comparison forms are unaffected by the
   constant-RHS rule.
-- Prefer `ASSERT_ZERO(value);` instead of `ASSERT_EQUAL(a, 0)`
+- Prefer `ASSERT_ZERO(value);` instead of `ASSERT_EQ(a, 0)`
 - Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT_MORE(a, 0)`
 - Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT_LESS(a, 0)`
 - Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT_LESS_EQUAL(a, 0)`

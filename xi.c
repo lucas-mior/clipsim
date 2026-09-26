@@ -140,7 +140,7 @@ main(void) {
         int32 create_result;
 
         create_result = pthread_create(&thread_identifier, NULL, xi_daemon_loop, NULL);
-        ASSERT_EQUAL(create_result, 0);
+        ASSERT_EQ(create_result, 0);
 
         sleep_ms(100);
 

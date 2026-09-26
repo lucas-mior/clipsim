@@ -368,7 +368,7 @@ int
 main(void) {
     {
         int32 num_events = LENGTH(event_names);
-        ASSERT_EQUAL(num_events, LASTEvent);
+        ASSERT_EQ(num_events, LASTEvent);
     }
 
     display = XOpenDisplay(NULL);
@@ -426,7 +426,7 @@ main(void) {
                 XPutBackEvent(display, &mock_event);
 
                 tgt = clipboard_check_target(UTF8_STRING);
-                ASSERT_EQUAL_VAR(tgt, UTF8_STRING);
+                ASSERT_EQ_VAR(tgt, UTF8_STRING);
             }
 
             {
@@ -440,7 +440,7 @@ main(void) {
                 XPutBackEvent(display, &mock_event2);
 
                 res_clip = clipboard_get_clipboard(&res_save, &len, &incr);
-                ASSERT_EQUAL(res_clip, CLIPBOARD_TEXT);
+                ASSERT_EQ(res_clip, CLIPBOARD_TEXT);
                 ASSERT_MORE(len, 0);
 
                 if (res_save != NULL) {
@@ -487,7 +487,7 @@ main(void) {
                 } else {
                     sleep_ms(100);
                     clipboard_incremental_case(&large_save, &large_len);
-                    ASSERT_EQUAL(large_len, 0);
+                    ASSERT_EQ(large_len, 0);
                     if (large_save != NULL) {
                         free2(large_save, ENTRY_MAX_LENGTH);
                     }
@@ -530,8 +530,8 @@ main(void) {
                 } else {
                     sleep_ms(100);
                     clipboard_incremental_case(&small_save, &small_len);
-                    ASSERT_EQUAL(small_len, 15);
-                    ASSERT_EQUAL(memcmp64(small_save, "small_incr_test", 15), 0);
+                    ASSERT_EQ(small_len, 15);
+                    ASSERT_EQ(memcmp64(small_save, "small_incr_test", 15), 0);
                     if (small_save != NULL) {
                         free2(small_save, ENTRY_MAX_LENGTH);
                     }

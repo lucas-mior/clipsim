@@ -1035,7 +1035,7 @@ util_test_qsort_cmp(void *a, void *b) {
         mem_literal_actual = MEM_LITERAL_SHORT(mem_literal_haystack,           \
                                                mem_literal_haystack_len,       \
                                                LITERAL);                       \
-        ASSERT_EQUAL_VAR(                                                     \
+        ASSERT_EQ_VAR(                                                     \
             (void *)mem_literal_actual, (void *)mem_literal_expected);        \
     } while (0)
 
@@ -1125,13 +1125,13 @@ main(int argc, char **argv) {
         int b = 20;
 
         SWAP(a, b);
-        ASSERT_EQUAL(a, 20);
-        ASSERT_EQUAL(b, 10);
+        ASSERT_EQ(a, 20);
+        ASSERT_EQ(b, 10);
 
-        ASSERT_EQUAL(ALIGN_POWER_OF_2(7, 16), 16);
-        ASSERT_EQUAL(ALIGN_POWER_OF_2(16, 16), 16);
-        ASSERT_EQUAL(ALIGN_POWER_OF_2(17, 16), 32);
-        ASSERT_EQUAL(ALIGN16(7), 16);
+        ASSERT_EQ(ALIGN_POWER_OF_2(7, 16), 16);
+        ASSERT_EQ(ALIGN_POWER_OF_2(16, 16), 16);
+        ASSERT_EQ(ALIGN_POWER_OF_2(17, 16), 32);
+        ASSERT_EQ(ALIGN16(7), 16);
     }
 
     for (enum WeekDay day = WEEK_DAY_MONDAY; day < WEEK_DAY_COUNT; day += 1) {
@@ -1188,31 +1188,31 @@ main(int argc, char **argv) {
     {
         int32 arr[] = {10, 5, 20, 1};
         qsort64(arr, 4, sizeof(int32), util_test_qsort_cmp);
-        ASSERT_EQUAL(arr[0], 1);
-        ASSERT_EQUAL(arr[1], 5);
-        ASSERT_EQUAL(arr[2], 10);
-        ASSERT_EQUAL(arr[3], 20);
+        ASSERT_EQ(arr[0], 1);
+        ASSERT_EQ(arr[1], 5);
+        ASSERT_EQ(arr[2], 10);
+        ASSERT_EQ(arr[3], 20);
     }
 
     {
         char *src = "memdup_test";
         char *dup = xmemdup(src, 12);
-        ASSERT_EQUAL_VAR(src, dup);
+        ASSERT_EQ_VAR(src, dup);
         ASSERT_NOT_EQUAL_VAR((void *)src, (void *)dup);
         free2(dup, 12);
     }
 
-    ASSERT_EQUAL(deg2rad(180.0), 3.141592653589793);
-    ASSERT_EQUAL(rad2deg(3.141592653589793), 180.0);
+    ASSERT_EQ(deg2rad(180.0), 3.141592653589793);
+    ASSERT_EQ(rad2deg(3.141592653589793), 180.0);
     ASSERT_POSITIVE(util_nthreads());
 
-    ASSERT_EQUAL(CLAMP(2.0, -2.1, 2.1),   2.0);
-    ASSERT_EQUAL(CLAMP(0.2, -0.1, 0.1),   0.1);
-    ASSERT_EQUAL(CLAMP(-0.2, -0.1, 0.1), -0.1);
+    ASSERT_EQ(CLAMP(2.0, -2.1, 2.1),   2.0);
+    ASSERT_EQ(CLAMP(0.2, -0.1, 0.1),   0.1);
+    ASSERT_EQ(CLAMP(-0.2, -0.1, 0.1), -0.1);
 
     ASSERT_ZERO(CLAMP(+0, -1, +1));
-    ASSERT_EQUAL(CLAMP(+2, -1, +1), +1);
-    ASSERT_EQUAL(CLAMP(-2, -1, +1), -1);
+    ASSERT_EQ(CLAMP(+2, -1, +1), +1);
+    ASSERT_EQ(CLAMP(-2, -1, +1), -1);
 
     NCALLS(1);
 

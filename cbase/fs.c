@@ -1519,7 +1519,7 @@ main(void) {
         SNPRINTF(template_path, "%s/stem_XXXXXX.txt", temp_dir);
         fd = cbase_mkstemps(template_path, STRLIT_LEN(".txt"));
         ASSERT_NON_NEGATIVE(fd);
-        ASSERT_EQUAL(write64(fd, "x", 1), 1);
+        ASSERT_EQ(write64(fd, "x", 1), 1);
         XCLOSE(&fd, template_path);
         ASSERT(util_file_exists(template_path));
         ASSERT_ZERO(cbase_remove_file(template_path));
@@ -1529,7 +1529,7 @@ main(void) {
                                   "fs_file",
                                   ".tmp");
         ASSERT_NON_NEGATIVE(fd);
-        ASSERT_EQUAL(write64(fd, "y", 1), 1);
+        ASSERT_EQ(write64(fd, "y", 1), 1);
         XCLOSE(&fd, temp_file_path);
         ASSERT(util_file_exists(temp_file_path));
         ASSERT_ZERO(cbase_remove_file(temp_file_path));
@@ -1565,7 +1565,7 @@ main(void) {
             char *path = xstrdup(paths[i]);
             char *base = bases[i];
             int32 path_len = strlen32(path);
-            ASSERT_EQUAL_VAR(basename2(path, &path_len, NULL), base);
+            ASSERT_EQ_VAR(basename2(path, &path_len, NULL), base);
             free2(path, path_len0 + 1);
         }
         for (int64 i = 0; i < LENGTH(paths); i += 1) {
@@ -1573,7 +1573,7 @@ main(void) {
             int len = strlen32(copy);
             int len0 = strlen32(copy);
             normalize(copy, &len);
-            ASSERT_EQUAL_VAR(copy, normalized[i]);
+            ASSERT_EQ_VAR(copy, normalized[i]);
             free2(copy, len0 + 1);
         }
 
@@ -1581,20 +1581,20 @@ main(void) {
             char dir_buffer[4096];
             int32 path_len = strlen32(paths[i]);
             dirname2(dir_buffer, paths[i], &path_len);
-            ASSERT_EQUAL_VAR(dir_buffer, dirs[i]);
+            ASSERT_EQ_VAR(dir_buffer, dirs[i]);
         }
         {
             char dir_buffer[128] = "a/b/c";
             int32 path_len = strlen32(dir_buffer);
             dirname2(dir_buffer, dir_buffer, &path_len);
-            ASSERT_EQUAL(dir_buffer, "a/b");
+            ASSERT_EQ(dir_buffer, "a/b");
         }
     }
 
     if (OS_WINDOWS) {
         char path2[] = "aa\\cc";
         int32 path_len = strlen32(path2);
-        ASSERT_EQUAL(basename2(path2, &path_len, NULL), "cc");
+        ASSERT_EQ(basename2(path2, &path_len, NULL), "cc");
     }
 
     {
@@ -1636,15 +1636,15 @@ main(void) {
         ASSERT(!util_file_exists(path));
 
         missing_contents = (char *)1;
-        ASSERT_EQUAL(read_entire_file(missing_path, &missing_contents),
+        ASSERT_EQ(read_entire_file(missing_path, &missing_contents),
                      -ENOENT);
-        ASSERT_EQUAL(missing_contents, NULL);
+        ASSERT_EQ(missing_contents, NULL);
 
-        ASSERT_EQUAL(write_entire_file(path, STRLIT("abcdef")), 6);
+        ASSERT_EQ(write_entire_file(path, STRLIT("abcdef")), 6);
         ASSERT(util_file_exists(path));
         ASSERT_NON_NEGATIVE((contents_len = read_entire_file(path, &contents)));
-        ASSERT_EQUAL(contents_len, 6);
-        ASSERT_EQUAL(contents, "abcdef");
+        ASSERT_EQ(contents_len, 6);
+        ASSERT_EQ(contents, "abcdef");
         free2(contents, contents_len + 1);
     }
 
@@ -1668,7 +1668,7 @@ main(void) {
         }
 
         ASSERT_POSITIVE(util_filename_from(buffer2, sizeof(buffer2), fd));
-        ASSERT_EQUAL_VAR(realpath(name, buffer3), buffer2);
+        ASSERT_EQ_VAR(realpath(name, buffer3), buffer2);
         XCLOSE(&fd);
         xunlink(name);
 
@@ -1692,7 +1692,7 @@ main(void) {
         }
 
         ASSERT_POSITIVE(util_filename_from(buffer4, sizeof(buffer4), fd));
-        ASSERT_EQUAL_VAR(realpath(buffer2, buffer3), buffer4);
+        ASSERT_EQ_VAR(realpath(buffer2, buffer3), buffer4);
         XCLOSE(&fd);
         xunlink(buffer2);
     }

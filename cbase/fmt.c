@@ -4505,11 +4505,11 @@ fmt_test_parse_one(char *format) {
     FormatSpec spec;
     char *next;
 
-    ASSERT_EQUAL(format[0], '%');
+    ASSERT_EQ(format[0], '%');
 
     next = NULL;
     ASSERT(!fmt_parse_spec(format + 1, &next, &spec));
-    ASSERT_EQUAL(*next, '\0');
+    ASSERT_EQ(*next, '\0');
     return spec;
 }
 
@@ -4518,27 +4518,27 @@ test_fmt_parser_valid_specs(void) {
     FormatSpec spec;
 
     spec = fmt_test_parse_one("%%");
-    ASSERT_EQUAL(spec.conversion, '%');
+    ASSERT_EQ(spec.conversion, '%');
     ASSERT_ZERO(spec.flags);
     ASSERT(spec.length == FMT_LENGTH_NONE);
 
     spec = fmt_test_parse_one("%08.3d");
-    ASSERT_EQUAL(spec.conversion, 'd');
+    ASSERT_EQ(spec.conversion, 'd');
     ASSERT(spec.flags == FMT_FLAG_ZERO);
     ASSERT(spec.width_kind == FMT_WIDTH_LITERAL);
-    ASSERT_EQUAL(spec.width, 8);
+    ASSERT_EQ(spec.width, 8);
     ASSERT(spec.precision_kind == FMT_PRECISION_LITERAL);
-    ASSERT_EQUAL(spec.precision, 3);
+    ASSERT_EQ(spec.precision, 3);
     ASSERT(spec.length == FMT_LENGTH_NONE);
 
     spec = fmt_test_parse_one("%*.*f");
-    ASSERT_EQUAL(spec.conversion, 'f');
+    ASSERT_EQ(spec.conversion, 'f');
     ASSERT(spec.width_kind == FMT_WIDTH_ARG);
     ASSERT(spec.precision_kind == FMT_PRECISION_ARG);
     ASSERT(spec.length == FMT_LENGTH_NONE);
 
     spec = fmt_test_parse_one("%-+ #0w32x");
-    ASSERT_EQUAL(spec.conversion, 'x');
+    ASSERT_EQ(spec.conversion, 'x');
     ASSERT(spec.flags == (FMT_FLAG_LEFT
                           |FMT_FLAG_SIGN
                           |FMT_FLAG_SPACE
@@ -4547,23 +4547,23 @@ test_fmt_parser_valid_specs(void) {
     ASSERT(spec.length == FMT_LENGTH_W32);
 
     spec = fmt_test_parse_one("%hhd");
-    ASSERT_EQUAL(spec.conversion, 'd');
+    ASSERT_EQ(spec.conversion, 'd');
     ASSERT(spec.length == FMT_LENGTH_HH);
 
     spec = fmt_test_parse_one("%llu");
-    ASSERT_EQUAL(spec.conversion, 'u');
+    ASSERT_EQ(spec.conversion, 'u');
     ASSERT(spec.length == FMT_LENGTH_LL);
 
     spec = fmt_test_parse_one("%w64B");
-    ASSERT_EQUAL(spec.conversion, 'B');
+    ASSERT_EQ(spec.conversion, 'B');
     ASSERT(spec.length == FMT_LENGTH_W64);
 
     spec = fmt_test_parse_one("%La");
-    ASSERT_EQUAL(spec.conversion, 'a');
+    ASSERT_EQ(spec.conversion, 'a');
     ASSERT(spec.length == FMT_LENGTH_BIG_L);
 
     spec = fmt_test_parse_one("%w16n");
-    ASSERT_EQUAL(spec.conversion, 'n');
+    ASSERT_EQ(spec.conversion, 'n');
     ASSERT(spec.length == FMT_LENGTH_W16);
 
     ASSERT(!fmt_test_validate("a %% b %08d %*.*s"));
@@ -4572,44 +4572,44 @@ test_fmt_parser_valid_specs(void) {
 
 static void
 test_fmt_parser_invalid_specs(void) {
-    ASSERT_EQUAL(fmt_test_validate("%"),      -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%2$d"),   -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%*2$d"),  -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.*2$s"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%m"),     -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%q"),     -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%i"),     -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%"),      -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%2$d"),   -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%*2$d"),  -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%.*2$s"), -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%m"),     -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%q"),     -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%i"),     -EINVAL);
 
-    ASSERT_EQUAL(fmt_test_validate("%ld"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%lc"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.5ls"),  -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%zd"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%td"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%jd"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%wfd"),   -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%wf32d"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%w24d"),  -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%wd"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%Lx"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%lf"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%ld"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%lc"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%.5ls"),  -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%zd"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%td"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%jd"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%wfd"),   -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%wf32d"), -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%w24d"),  -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%wd"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%Lx"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%lf"),    -EINVAL);
 
-    ASSERT_EQUAL(fmt_test_validate("%+s"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%05s"),   -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.2c"),   -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%#p"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%0p"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%+p"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.2p"),   -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%10n"),   -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%-n"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%+n"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.0n"),   -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%ln"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%5%"),    -EINVAL);
-    ASSERT_EQUAL(fmt_test_validate("%.0%"),   -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%+s"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%05s"),   -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%.2c"),   -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%#p"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%0p"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%+p"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%.2p"),   -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%10n"),   -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%-n"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%+n"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%.0n"),   -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%ln"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%5%"),    -EINVAL);
+    ASSERT_EQ(fmt_test_validate("%.0%"),   -EINVAL);
 
-    ASSERT_EQUAL(fmt_test_validate("%2147483648d"), -EOVERFLOW);
-    ASSERT_EQUAL(fmt_test_validate("%.2147483648d"), -EOVERFLOW);
+    ASSERT_EQ(fmt_test_validate("%2147483648d"), -EOVERFLOW);
+    ASSERT_EQ(fmt_test_validate("%.2147483648d"), -EOVERFLOW);
 
     return;
 }
@@ -4628,17 +4628,17 @@ test_fmt_sink_cap(char *format, char *expected) {
 
         memset64(buffer, 0x7f, SIZEOF(buffer));
         len = fmt_test_snprintf(buffer, capacity, format);
-        ASSERT_EQUAL_VAR(len, expected_len);
+        ASSERT_EQ_VAR(len, expected_len);
 
         if (capacity == 0) {
-            ASSERT_EQUAL(buffer[0], (char)0x7f);
+            ASSERT_EQ(buffer[0], (char)0x7f);
             continue;
         }
 
         copied = MIN(expected_len, capacity - 1);
-        ASSERT_EQUAL(buffer, copied, expected, copied);
-        ASSERT_EQUAL(buffer[copied], '\0');
-        ASSERT_EQUAL(buffer[capacity], (char)0x7f);
+        ASSERT_EQ(buffer, copied, expected, copied);
+        ASSERT_EQ(buffer[copied], '\0');
+        ASSERT_EQ(buffer[capacity], (char)0x7f);
     }
 
     return;
@@ -4661,17 +4661,17 @@ test_fmt_integer_cap(char *expected, char *format, ...) {
         va_start(args, format);
         len = fmt_vsnprintf(buffer, capacity, format, args);
         va_end(args);
-        ASSERT_EQUAL_VAR(len, expected_len);
+        ASSERT_EQ_VAR(len, expected_len);
 
         if (capacity == 0) {
-            ASSERT_EQUAL(buffer[0], (char)0x7f);
+            ASSERT_EQ(buffer[0], (char)0x7f);
             continue;
         }
 
         copied = MIN(expected_len, capacity - 1);
-        ASSERT_EQUAL(buffer, copied, expected, copied);
-        ASSERT_EQUAL(buffer[copied], '\0');
-        ASSERT_EQUAL(buffer[capacity], (char)0x7f);
+        ASSERT_EQ(buffer, copied, expected, copied);
+        ASSERT_EQ(buffer[copied], '\0');
+        ASSERT_EQ(buffer[capacity], (char)0x7f);
     }
 
     return;
@@ -4693,17 +4693,17 @@ test_fmt_bytes_cap(char *expected, int32 expected_len, char *format, ...) {
         va_start(args, format);
         len = fmt_vsnprintf(buffer, capacity, format, args);
         va_end(args);
-        ASSERT_EQUAL_VAR(len, expected_len);
+        ASSERT_EQ_VAR(len, expected_len);
 
         if (capacity == 0) {
-            ASSERT_EQUAL(buffer[0], (char)0x7f);
+            ASSERT_EQ(buffer[0], (char)0x7f);
             continue;
         }
 
         copied = MIN(expected_len, capacity - 1);
-        ASSERT_EQUAL(buffer, copied, expected, copied);
-        ASSERT_EQUAL(buffer[copied], '\0');
-        ASSERT_EQUAL(buffer[capacity], (char)0x7f);
+        ASSERT_EQ(buffer, copied, expected, copied);
+        ASSERT_EQ(buffer[copied], '\0');
+        ASSERT_EQ(buffer[capacity], (char)0x7f);
     }
 
     return;
@@ -4805,17 +4805,17 @@ test_fmt_char_string_outputs(void) {
     test_fmt_bytes_cap("x=abc n=7 c=Z", 13, "x=%s n=%d c=%c", "abc", 7, 'Z');
 
     memset64(buffer, 0x7f, SIZEOF(buffer));
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*s", -1, "abc"),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*s", -1, "abc"),
                  -EINVAL);
-    ASSERT_EQUAL(buffer[0], '\0');
-    ASSERT_EQUAL(buffer[1], (char)0x7f);
+    ASSERT_EQ(buffer[0], '\0');
+    ASSERT_EQ(buffer[1], (char)0x7f);
 
     memset64(buffer, 0x7f, SIZEOF(buffer));
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "%.*s", 1, (char *)NULL),
                                    -EINVAL);
-    ASSERT_EQUAL(buffer[0], '\0');
-    ASSERT_EQUAL(buffer[1], (char)0x7f);
+    ASSERT_EQ(buffer[0], '\0');
+    ASSERT_EQ(buffer[1], (char)0x7f);
 
     return;
 }
@@ -4841,62 +4841,62 @@ test_fmt_pointer_count_outputs(void) {
 
     count32 = -1;
     test_fmt_bytes_cap("abcd", 4, "ab%ncd", &count32);
-    ASSERT_EQUAL(count32, 2);
+    ASSERT_EQ(count32, 2);
 
     memset64(buffer, 0x7f, SIZEOF(buffer));
     count32 = -1;
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, 2, "abcd%n", &count32), 4);
-    ASSERT_EQUAL(count32, 4);
-    ASSERT_EQUAL(buffer[0], 'a');
-    ASSERT_EQUAL(buffer[1], '\0');
-    ASSERT_EQUAL(buffer[2], (char)0x7f);
+    ASSERT_EQ(fmt_test_snprintf(buffer, 2, "abcd%n", &count32), 4);
+    ASSERT_EQ(count32, 4);
+    ASSERT_EQ(buffer[0], 'a');
+    ASSERT_EQ(buffer[1], '\0');
+    ASSERT_EQ(buffer[2], (char)0x7f);
 
     count8 = -1;
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "abc%hhn", &count8), 3);
-    ASSERT_EQUAL(count8, 3);
+    ASSERT_EQ(count8, 3);
 
     count16 = -1;
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "abc%hn", &count16), 3);
-    ASSERT_EQUAL(count16, 3);
+    ASSERT_EQ(count16, 3);
 
     count64 = -1;
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "abc%lln", &count64), 3);
-    ASSERT_EQUAL(count64, 3);
+    ASSERT_EQ(count64, 3);
 
     count8 = -1;
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "abc%w8n", &count8), 3);
-    ASSERT_EQUAL(count8, 3);
+    ASSERT_EQ(count8, 3);
 
     count16 = -1;
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "abc%w16n", &count16), 3);
-    ASSERT_EQUAL(count16, 3);
+    ASSERT_EQ(count16, 3);
 
     count32 = -1;
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "abc%w32n", &count32), 3);
-    ASSERT_EQUAL(count32, 3);
+    ASSERT_EQ(count32, 3);
 
     count64 = -1;
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "abc%w64n", &count64), 3);
-    ASSERT_EQUAL(count64, 3);
+    ASSERT_EQ(count64, 3);
 
     count8 = -7;
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "%128d%hhn", 0, &count8), -EOVERFLOW);
-    ASSERT_EQUAL(count8, -7);
+    ASSERT_EQ(count8, -7);
 
     count16 = -7;
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "%32768d%hn", 0, &count16), -EOVERFLOW);
-    ASSERT_EQUAL(count16, -7);
+    ASSERT_EQ(count16, -7);
 
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "abc%n", (int32 *)NULL), -EINVAL);
 
     return;
@@ -4960,10 +4960,10 @@ test_fmt_printf_float_outputs(void) {
     test_fmt_bytes_cap("NAN", 3, "%F", pos_nan);
     test_fmt_bytes_cap("-NAN", 4, "%F", neg_nan);
 
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "%.*f", -1, 1.25), 8);
-    ASSERT_EQUAL(buffer, "1.250000");
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(buffer, "1.250000");
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "%.1048576f", 1.0), -EOVERFLOW);
 
     return;
@@ -5001,12 +5001,12 @@ test_fmt_printf_general_outputs(void) {
     test_fmt_bytes_cap("nan", 3, "%g", fmt_test_positive_nan());
     test_fmt_bytes_cap("-nan", 4, "%g", fmt_test_negative_nan());
 
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "%.*g", -1, 1.25), 4);
-    ASSERT_EQUAL(buffer, "1.25");
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer),
+    ASSERT_EQ(buffer, "1.25");
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
                                    "%.*g", 0, 123.0), 5);
-    ASSERT_EQUAL(buffer, "1e+02");
+    ASSERT_EQ(buffer, "1e+02");
 
     return;
 }
@@ -5060,9 +5060,9 @@ test_fmt_printf_hex_float_outputs(void) {
     test_fmt_bytes_cap("nan", 3, "%a", fmt_test_positive_nan());
     test_fmt_bytes_cap("-nan", 4, "%a", fmt_test_negative_nan());
 
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*a", -1, 1.5), 8);
-    ASSERT_EQUAL(buffer, "0x1.8p+0");
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.1048576a", 1.0),
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*a", -1, 1.5), 8);
+    ASSERT_EQ(buffer, "0x1.8p+0");
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.1048576a", 1.0),
                  -EOVERFLOW);
 
     return;
@@ -5090,9 +5090,9 @@ test_fmt_ldouble_parts(ldouble value, bool negative,
     ASSERT(!fmt_decompose_ldouble(value, &parts));
     ASSERT(parts.negative == negative);
     ASSERT(parts.zero == (bit_len == 0));
-    ASSERT_EQUAL(parts.precision_bits, LDBL_MANT_DIG);
-    ASSERT_EQUAL_VAR(fmt_big_uint_bit_len(&parts.significand), bit_len);
-    ASSERT_EQUAL_VAR(parts.binary_exponent, binary_exponent);
+    ASSERT_EQ(parts.precision_bits, LDBL_MANT_DIG);
+    ASSERT_EQ_VAR(fmt_big_uint_bit_len(&parts.significand), bit_len);
+    ASSERT_EQ_VAR(parts.binary_exponent, binary_exponent);
     return;
 }
 
@@ -5106,8 +5106,8 @@ test_fmt_ldouble_exact_integer(ldouble value, char *expected) {
     ASSERT(!fmt_decompose_ldouble(value, &parts));
     ASSERT(!fmt_binary_float_to_exact_integer(&parts, &integer));
     len = fmt_big_uint_to_decimal(&integer, buffer, SIZEOF(buffer));
-    ASSERT_EQUAL_VAR(len, strlen32(expected));
-    ASSERT_EQUAL_VAR(buffer, expected);
+    ASSERT_EQ_VAR(len, strlen32(expected));
+    ASSERT_EQ_VAR(buffer, expected);
     return;
 }
 
@@ -5125,8 +5125,8 @@ test_fmt_ldouble_scaled(ldouble value, int32 decimal_places,
                                             &integer, &remainder));
     ASSERT(remainder == expected_rem);
     len = fmt_big_uint_to_decimal(&integer, buffer, SIZEOF(buffer));
-    ASSERT_EQUAL_VAR(len, strlen32(expected));
-    ASSERT_EQUAL_VAR(buffer, expected);
+    ASSERT_EQ_VAR(len, strlen32(expected));
+    ASSERT_EQ_VAR(buffer, expected);
     return;
 }
 
@@ -5141,8 +5141,8 @@ test_fmt_ldouble_decomposition(void) {
         return;
     }
 
-    ASSERT_EQUAL(fmt_decompose_ldouble((ldouble)INFINITY, &parts), -EINVAL);
-    ASSERT_EQUAL(fmt_decompose_ldouble((ldouble)NAN, &parts), -EINVAL);
+    ASSERT_EQ(fmt_decompose_ldouble((ldouble)INFINITY, &parts), -EINVAL);
+    ASSERT_EQ(fmt_decompose_ldouble((ldouble)NAN, &parts), -EINVAL);
 
     test_fmt_ldouble_parts(0.0L, false, 0, 0);
     test_fmt_ldouble_parts(-0.0L, true, 0, 0);
@@ -5158,7 +5158,7 @@ test_fmt_ldouble_decomposition(void) {
     test_fmt_ldouble_parts(LDBL_MAX, false, LDBL_MANT_DIG, expected_exp);
     ASSERT(!fmt_decompose_ldouble(LDBL_MAX, &parts));
     ASSERT(!fmt_binary_float_to_exact_integer(&parts, &integer));
-    ASSERT_EQUAL(fmt_big_uint_bit_len(&integer), LDBL_MAX_EXP);
+    ASSERT_EQ(fmt_big_uint_bit_len(&integer), LDBL_MAX_EXP);
 
     true_min = ldexpl(1.0L, LDBL_MIN_EXP - LDBL_MANT_DIG);
     if (true_min != 0.0L) {
@@ -5184,7 +5184,7 @@ test_fmt_ldouble_decimal_helpers(void) {
     test_fmt_ldouble_exact_integer(ldexpl(1.0L, 64), "18446744073709551616");
 
     ASSERT(!fmt_decompose_ldouble(0.5L, &parts));
-    ASSERT_EQUAL(fmt_binary_float_to_exact_integer(&parts, &integer), -ERANGE);
+    ASSERT_EQ(fmt_binary_float_to_exact_integer(&parts, &integer), -ERANGE);
 
     test_fmt_ldouble_scaled(0.125L, 3, "125", FMT_REMAINDER_ZERO);
     test_fmt_ldouble_scaled(0.25L, 0, "0", FMT_REMAINDER_LESS_HALF);
@@ -5259,15 +5259,15 @@ test_fmt_printf_ldouble_outputs(void) {
     test_fmt_bytes_cap("INF", 3, "%LA", (ldouble)INFINITY);
     test_fmt_bytes_cap("inf", 3, "%La", (ldouble)INFINITY);
 
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*Lf",
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*Lf",
                                    -1, (ldouble)1.25), 8);
-    ASSERT_EQUAL(buffer, "1.250000");
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*Lg",
+    ASSERT_EQ(buffer, "1.250000");
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*Lg",
                                    -1, (ldouble)1.25), 4);
-    ASSERT_EQUAL(buffer, "1.25");
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*La",
+    ASSERT_EQ(buffer, "1.25");
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*La",
                                    -1, (ldouble)1.5), 8);
-    ASSERT_EQUAL(buffer, "0x1.8p+0");
+    ASSERT_EQ(buffer, "0x1.8p+0");
 
     return;
 }
@@ -5302,49 +5302,49 @@ test_fmt_public_api(void) {
     int32 count;
 
     len = fmt_snprintf(buffer, SIZEOF(buffer), "public:%d:%s", 42, "ok");
-    ASSERT_EQUAL(len, 12);
-    ASSERT_EQUAL(buffer, len + 1, "public:42:ok", 13);
+    ASSERT_EQ(len, 12);
+    ASSERT_EQ(buffer, len + 1, "public:42:ok", 13);
 
     ASSERT_LESS_EQUAL_VAR(SIZEOF(buffer), fmt_snprintf_estimate("%g", 1.0));
     len = fmt_sprintf(buffer, SIZEOF(buffer), "%g", 1.0);
-    ASSERT_EQUAL(len, 1);
-    ASSERT_EQUAL(buffer, "1");
+    ASSERT_EQ(len, 1);
+    ASSERT_EQ(buffer, "1");
 
     len = fmt_snprintf(tiny, SIZEOF(tiny), "abcdef");
-    ASSERT_EQUAL(len, 6);
-    ASSERT_EQUAL(tiny, SIZEOF(tiny), "abc", 4);
+    ASSERT_EQ(len, 6);
+    ASSERT_EQ(tiny, SIZEOF(tiny), "abc", 4);
 
     len = fmt_snprintf(NULL, 0, "abcdef");
-    ASSERT_EQUAL(len, 6);
+    ASSERT_EQ(len, 6);
 
     len = fmt_test_public_vsnprintf(buffer, SIZEOF(buffer),
                                     "%s:%.*s", NULL, 3, "a\0b");
-    ASSERT_EQUAL(len, 10);
-    ASSERT_EQUAL(buffer, len + 1, "(null):a\0b", 11);
+    ASSERT_EQ(len, 10);
+    ASSERT_EQ(buffer, len + 1, "(null):a\0b", 11);
 
     count = -1;
     len = fmt_snprintf(tiny, SIZEOF(tiny), "abcd%n", &count);
-    ASSERT_EQUAL(len, 4);
-    ASSERT_EQUAL(count, 4);
-    ASSERT_EQUAL(tiny, SIZEOF(tiny), "abc", 4);
+    ASSERT_EQ(len, 4);
+    ASSERT_EQ(count, 4);
+    ASSERT_EQ(tiny, SIZEOF(tiny), "abc", 4);
 
     len = fmt_sprintf(buffer, SIZEOF(buffer), "fast:%d:%s", 42, "ok");
-    ASSERT_EQUAL(len, 10);
-    ASSERT_EQUAL(buffer, len + 1, "fast:42:ok", 11);
+    ASSERT_EQ(len, 10);
+    ASSERT_EQ(buffer, len + 1, "fast:42:ok", 11);
 
     len = fmt_test_public_vsprintf(buffer, SIZEOF(buffer),
                                    "%s:%.*s", NULL, 3, "a\0b");
-    ASSERT_EQUAL(len, 10);
-    ASSERT_EQUAL(buffer, len + 1, "(null):a\0b", 11);
+    ASSERT_EQ(len, 10);
+    ASSERT_EQ(buffer, len + 1, "(null):a\0b", 11);
 
     count = -1;
     len = fmt_sprintf(buffer, SIZEOF(buffer), "abcd%n", &count);
-    ASSERT_EQUAL(len, 4);
-    ASSERT_EQUAL(count, 4);
-    ASSERT_EQUAL(buffer, "abcd");
+    ASSERT_EQ(len, 4);
+    ASSERT_EQ(count, 4);
+    ASSERT_EQ(buffer, "abcd");
 
-    ASSERT_EQUAL(fmt_sprintf(tiny, SIZEOF(tiny), "abcdef"), -ENOSPC);
-    ASSERT_EQUAL(fmt_test_public_vsprintf(tiny, SIZEOF(tiny), "abcdef"),
+    ASSERT_EQ(fmt_sprintf(tiny, SIZEOF(tiny), "abcdef"), -ENOSPC);
+    ASSERT_EQ(fmt_test_public_vsprintf(tiny, SIZEOF(tiny), "abcdef"),
                  -ENOSPC);
 
     return;
@@ -5358,31 +5358,31 @@ test_fmt_estimate(void) {
     int32 exact;
     int32 count;
 
-    ASSERT_EQUAL(fmt_snprintf_estimate("abc"), 3);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%d", 0), 11);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%lld", (int64)0), 20);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%#b", 0), 34);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%100d", 0), 100);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%p", (void *)NULL),
+    ASSERT_EQ(fmt_snprintf_estimate("abc"), 3);
+    ASSERT_EQ(fmt_snprintf_estimate("%d", 0), 11);
+    ASSERT_EQ(fmt_snprintf_estimate("%lld", (int64)0), 20);
+    ASSERT_EQ(fmt_snprintf_estimate("%#b", 0), 34);
+    ASSERT_EQ(fmt_snprintf_estimate("%100d", 0), 100);
+    ASSERT_EQ(fmt_snprintf_estimate("%p", (void *)NULL),
                  (2 + 2*SIZEOF(uintptr)));
 
-    ASSERT_EQUAL(fmt_snprintf_estimate("%s", "abc"), 3);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%s", (char *)NULL), 6);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%.10s", "abc"), 10);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%.*s", 4, span), 4);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%5.*s", 3, span), 5);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%.*s", -1, "abc"), -EINVAL);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%.*s", 1, (char *)NULL), -EINVAL);
+    ASSERT_EQ(fmt_snprintf_estimate("%s", "abc"), 3);
+    ASSERT_EQ(fmt_snprintf_estimate("%s", (char *)NULL), 6);
+    ASSERT_EQ(fmt_snprintf_estimate("%.10s", "abc"), 10);
+    ASSERT_EQ(fmt_snprintf_estimate("%.*s", 4, span), 4);
+    ASSERT_EQ(fmt_snprintf_estimate("%5.*s", 3, span), 5);
+    ASSERT_EQ(fmt_snprintf_estimate("%.*s", -1, "abc"), -EINVAL);
+    ASSERT_EQ(fmt_snprintf_estimate("%.*s", 1, (char *)NULL), -EINVAL);
 
-    ASSERT_EQUAL(fmt_snprintf_estimate("%f", 1.0),
+    ASSERT_EQ(fmt_snprintf_estimate("%f", 1.0),
                  FMT_FLOAT_MAX_FIXED_PREFIX + 6 + 8 + 1);
-    ASSERT_EQUAL(fmt_snprintf_estimate("%20.2f", 1.0),
+    ASSERT_EQ(fmt_snprintf_estimate("%20.2f", 1.0),
                  FMT_FLOAT_MAX_FIXED_PREFIX + 2 + 8 + 1);
 
     count = -1;
-    ASSERT_EQUAL(fmt_snprintf_estimate("ab%ncd", &count), 4);
-    ASSERT_EQUAL(count, -1);
-    ASSERT_EQUAL(fmt_snprintf_estimate("abc%n", (int32 *)NULL), -EINVAL);
+    ASSERT_EQ(fmt_snprintf_estimate("ab%ncd", &count), 4);
+    ASSERT_EQ(count, -1);
+    ASSERT_EQ(fmt_snprintf_estimate("abc%n", (int32 *)NULL), -EINVAL);
 
     estimate = fmt_snprintf_estimate("x=%d s=%.*s f=%g", 7, 4, span, 1.25);
     exact = fmt_test_snprintf(buffer, SIZEOF(buffer), "x=%d s=%.*s f=%g",
@@ -5397,26 +5397,26 @@ test_fmt_sink_validation(void) {
     char buffer[8];
     FormatSink sink;
 
-    ASSERT_EQUAL(fmt_test_snprintf(NULL, 0, "abc"), 3);
-    ASSERT_EQUAL(fmt_test_snprintf(NULL, 1, "abc"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, -1, "abc"), -EINVAL);
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, (int64)INT32_MAX + 1, "abc"),
+    ASSERT_EQ(fmt_test_snprintf(NULL, 0, "abc"), 3);
+    ASSERT_EQ(fmt_test_snprintf(NULL, 1, "abc"), -EINVAL);
+    ASSERT_EQ(fmt_test_snprintf(buffer, -1, "abc"), -EINVAL);
+    ASSERT_EQ(fmt_test_snprintf(buffer, (int64)INT32_MAX + 1, "abc"),
                  -EOVERFLOW);
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), NULL), -EINVAL);
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%*d",
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), NULL), -EINVAL);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%*d",
                                    INT32_MIN, 0), -EOVERFLOW);
 
     memset64(buffer, 0x7f, SIZEOF(buffer));
     memset64(buffer, 0x7f, SIZEOF(buffer));
-    ASSERT_EQUAL(fmt_test_snprintf(buffer, SIZEOF(buffer), "%"), -EINVAL);
-    ASSERT_EQUAL(buffer[0], '\0');
-    ASSERT_EQUAL(buffer[1], (char)0x7f);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%"), -EINVAL);
+    ASSERT_EQ(buffer[0], '\0');
+    ASSERT_EQ(buffer[1], (char)0x7f);
 
     ASSERT(!fmt_sink_init(&sink, buffer, SIZEOF(buffer)));
     fmt_sink_add_total(&sink, INT32_MAX);
     fmt_sink_add_total(&sink, 1);
-    ASSERT_EQUAL(fmt_sink_finish(&sink), -EOVERFLOW);
-    ASSERT_EQUAL(fmt_sink_init(&sink, buffer, (int64)INT32_MAX + 1),
+    ASSERT_EQ(fmt_sink_finish(&sink), -EOVERFLOW);
+    ASSERT_EQ(fmt_sink_init(&sink, buffer, (int64)INT32_MAX + 1),
                  -EOVERFLOW);
 
     return;
@@ -5426,7 +5426,7 @@ static void
 test_fmt_float32_shortest(float value, char *expected) {
     char buffer[FMT_FLOAT_RYU_BUFFER_SIZE];
     int32 len = fmt_float32_shortest(buffer, SIZEOF(buffer), value);
-    ASSERT_EQUAL(buffer, len, expected);
+    ASSERT_EQ(buffer, len, expected);
     return;
 }
 
@@ -5434,7 +5434,7 @@ static void
 test_fmt_float64_shortest(double value, char *expected) {
     char buffer[FMT_FLOAT_RYU_BUFFER_SIZE];
     int32 len = fmt_float64_shortest(buffer, SIZEOF(buffer), value);
-    ASSERT_EQUAL(buffer, len, expected);
+    ASSERT_EQ(buffer, len, expected);
     return;
 }
 
@@ -5443,7 +5443,7 @@ test_fmt_float64_fixed(double value, int32 precision, char *expected) {
     char buffer[FMT_FLOAT_RYU_BUFFER_SIZE];
     int32 len = fmt_float64_fixed(buffer, SIZEOF(buffer), value, precision);
 
-    ASSERT_EQUAL(buffer, len, expected);
+    ASSERT_EQ(buffer, len, expected);
 
     return;
 }
@@ -5454,7 +5454,7 @@ test_fmt_float64_scientific(double value, int32 precision, char *expected) {
     int32 len;
 
     len = fmt_float64_scientific(buffer, SIZEOF(buffer), value, precision);
-    ASSERT_EQUAL(buffer, len, expected);
+    ASSERT_EQ(buffer, len, expected);
 
     return;
 }
@@ -5486,7 +5486,7 @@ test_fmt_float32_round_trip(float value) {
     end = NULL;
     parsed = strtof(buffer, &end);
     ASSERT(end == buffer + len);
-    ASSERT_EQUAL_VAR(test_fmt_float32_bits(parsed),
+    ASSERT_EQ_VAR(test_fmt_float32_bits(parsed),
                      test_fmt_float32_bits(value));
 
     return;
@@ -5505,7 +5505,7 @@ test_fmt_float64_round_trip(double value) {
     end = NULL;
     parsed = strtod(buffer, &end);
     ASSERT(end == buffer + len);
-    ASSERT_EQUAL_VAR(test_fmt_float64_bits(parsed),
+    ASSERT_EQ_VAR(test_fmt_float64_bits(parsed),
                      test_fmt_float64_bits(value));
 
     return;
@@ -5562,15 +5562,15 @@ main(void) {
         str_float64(&builder, 0.1);
         STR_APPEND(&builder, " y=");
         str_float64_fixed(&builder, 1.25, 2);
-        ASSERT_EQUAL(builder.data, "x=1E-1 y=1.25");
+        ASSERT_EQ(builder.data, "x=1E-1 y=1.25");
         str_free(&builder);
     }
 
-    ASSERT_EQUAL(fmt_float64_shortest(NULL, 64, 1.0), -EINVAL);
-    ASSERT_EQUAL(fmt_float64_shortest(buffer, 0, 1.0), -EINVAL);
-    ASSERT_EQUAL(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0, -1), -EINVAL);
-    ASSERT_EQUAL(fmt_float64_fixed(buffer, 4, 1.25, 2), -ENOSPC);
-    ASSERT_EQUAL(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0,
+    ASSERT_EQ(fmt_float64_shortest(NULL, 64, 1.0), -EINVAL);
+    ASSERT_EQ(fmt_float64_shortest(buffer, 0, 1.0), -EINVAL);
+    ASSERT_EQ(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0, -1), -EINVAL);
+    ASSERT_EQ(fmt_float64_fixed(buffer, 4, 1.25, 2), -ENOSPC);
+    ASSERT_EQ(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0,
                                    FMT_FLOAT_MAX_PRECISION + 1), -ERANGE);
 
     test_fmt_float64_round_trip(0.1);

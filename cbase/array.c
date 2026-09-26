@@ -188,7 +188,7 @@ array_test_reserve_and_counts(void) {
     ASSERT(ARRAY_RESERVE(items, 3));
     ASSERT(items);
     ASSERT_ZERO(ARRAY_LEN(items));
-    ASSERT_EQUAL(ARRAY_CAPACITY(items), 3);
+    ASSERT_EQ(ARRAY_CAPACITY(items), 3);
 
     ARRAY_PUSH(items, 10);
     ARRAY_PUSH(items, 11);
@@ -196,19 +196,19 @@ array_test_reserve_and_counts(void) {
     old_cap = ARRAY_CAPACITY(items);
 
     ASSERT(ARRAY_RESERVE(items, old_cap + 1));
-    ASSERT_EQUAL(ARRAY_LEN(items), 3);
+    ASSERT_EQ(ARRAY_LEN(items), 3);
     ASSERT_MORE_EQUAL_VAR(ARRAY_CAPACITY(items), (old_cap + 1));
-    ASSERT_EQUAL(items[0], 10);
-    ASSERT_EQUAL(items[1], 11);
-    ASSERT_EQUAL(items[2], 12);
+    ASSERT_EQ(items[0], 10);
+    ASSERT_EQ(items[1], 11);
+    ASSERT_EQ(items[2], 12);
 
     ARRAY_SET_COUNT(items, 2);
-    ASSERT_EQUAL(ARRAY_LEN(items), 2);
+    ASSERT_EQ(ARRAY_LEN(items), 2);
 
     ARRAY_INIT_COUNT(other, 4);
     ASSERT(other);
-    ASSERT_EQUAL(ARRAY_LEN(other), 4);
-    ASSERT_EQUAL(ARRAY_CAPACITY(other), 4);
+    ASSERT_EQ(ARRAY_LEN(other), 4);
+    ASSERT_EQ(ARRAY_CAPACITY(other), 4);
 
     ARRAY_FREE(items);
     ARRAY_FREE(other);

@@ -243,13 +243,13 @@ test_numtostr_itoa(void) {
     int32 len;
 
     len = itoa2(buffer, SIZEOF(buffer), 0);
-    ASSERT_EQUAL(buffer, len, "0");
+    ASSERT_EQ(buffer, len, "0");
 
     len = itoa2(buffer, SIZEOF(buffer), -9223372036854775807LL - 1);
-    ASSERT_EQUAL(buffer, len, "-9223372036854775808");
+    ASSERT_EQ(buffer, len, "-9223372036854775808");
 
     len = itoa2(buffer, SIZEOF(buffer), 9223372036854775807LL);
-    ASSERT_EQUAL(buffer, len, "9223372036854775807");
+    ASSERT_EQ(buffer, len, "9223372036854775807");
     return;
 }
 
@@ -260,16 +260,16 @@ test_numtostr_bytes_pretty(void) {
 
     len = bytes_pretty(buffer, -1);
     ASSERT_ZERO(len);
-    ASSERT_EQUAL((char *)buffer, "");
+    ASSERT_EQ((char *)buffer, "");
 
     len = bytes_pretty(buffer, 512);
-    ASSERT_EQUAL(buffer, len, "512B");
+    ASSERT_EQ(buffer, len, "512B");
 
     len = bytes_pretty(buffer, 1024);
-    ASSERT_EQUAL(buffer, len, "1.0000kB");
+    ASSERT_EQ(buffer, len, "1.0000kB");
 
     len = bytes_pretty(buffer, SIZEMB(2));
-    ASSERT_EQUAL(buffer, len, "2.0000MB");
+    ASSERT_EQ(buffer, len, "2.0000MB");
     return;
 }
 
@@ -279,28 +279,28 @@ test_numtostr_float_buffers(void) {
     int32 len;
 
     len = fmt_float64_shortest(buffer, SIZEOF(buffer), 0.1);
-    ASSERT_EQUAL(len, 4);
-    ASSERT_EQUAL((char *)buffer, "1E-1");
+    ASSERT_EQ(len, 4);
+    ASSERT_EQ((char *)buffer, "1E-1");
 
     len = fmt_float32_shortest(buffer, SIZEOF(buffer), 0.1f);
-    ASSERT_EQUAL(len, 4);
-    ASSERT_EQUAL((char *)buffer, "1E-1");
+    ASSERT_EQ(len, 4);
+    ASSERT_EQ((char *)buffer, "1E-1");
 
     len = fmt_float64_fixed(buffer, SIZEOF(buffer), 1.25, 2);
-    ASSERT_EQUAL(len, 4);
-    ASSERT_EQUAL((char *)buffer, "1.25");
+    ASSERT_EQ(len, 4);
+    ASSERT_EQ((char *)buffer, "1.25");
 
     len = fmt_float64_scientific(buffer, SIZEOF(buffer), 1234.0, 2);
-    ASSERT_EQUAL(len, 8);
-    ASSERT_EQUAL((char *)buffer, "1.23e+03");
+    ASSERT_EQ(len, 8);
+    ASSERT_EQ((char *)buffer, "1.23e+03");
 
-    ASSERT_EQUAL(fmt_float64_shortest(NULL, 64, 1.0), -EINVAL);
-    ASSERT_EQUAL(fmt_float64_shortest(buffer, 0, 1.0), -EINVAL);
-    ASSERT_EQUAL(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0, -1),
+    ASSERT_EQ(fmt_float64_shortest(NULL, 64, 1.0), -EINVAL);
+    ASSERT_EQ(fmt_float64_shortest(buffer, 0, 1.0), -EINVAL);
+    ASSERT_EQ(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0, -1),
                  -EINVAL);
-    ASSERT_EQUAL(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0, 1025),
+    ASSERT_EQ(fmt_float64_fixed(buffer, SIZEOF(buffer), 1.0, 1025),
                  -ERANGE);
-    ASSERT_EQUAL(fmt_float64_fixed(buffer, 4, 1.25, 2), -ENOSPC);
+    ASSERT_EQ(fmt_float64_fixed(buffer, 4, 1.25, 2), -ENOSPC);
     return;
 }
 

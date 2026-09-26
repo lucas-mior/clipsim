@@ -803,7 +803,7 @@ hash_pow(double x, double n) {
     ASSERT_NON_NEGATIVE(n);
     ASSERT_LESS_EQUAL(n, (double)UINT32_MAX);
     exponent = (uint32)n;
-    ASSERT_EQUAL_VAR((double)exponent, n);
+    ASSERT_EQ_VAR((double)exponent, n);
 
     while (exponent > 0) {
         if (exponent & 1u) {
@@ -913,11 +913,11 @@ main(void) {
     initial_capacity = map->capacity;
 
 #if DEBUGGING
-    ASSERT_EQUAL(hash_pow(2.0, 10.0), 1024.0);
-    ASSERT_EQUAL(hash_pow(0.5, 3.0), 0.125);
-    ASSERT_EQUAL(hash_round(2.49), 2.0);
-    ASSERT_EQUAL(hash_round(1.50), 2.0);
-    ASSERT_EQUAL(hash_round(-1.50), -2.0);
+    ASSERT_EQ(hash_pow(2.0, 10.0), 1024.0);
+    ASSERT_EQ(hash_pow(0.5, 3.0), 0.125);
+    ASSERT_EQ(hash_round(2.49), 2.0);
+    ASSERT_EQ(hash_round(1.50), 2.0);
+    ASSERT_EQ(hash_round(-1.50), -2.0);
 #endif
 
     str1.len = strlen32(str1.s);
@@ -926,20 +926,20 @@ main(void) {
     ASSERT(hash_insert_map(map, str1.s, str1.len, str1.value));
     ASSERT(!hash_insert_map(map, str1.s, str1.len, 1));
     ASSERT(hash_insert_map(map, str2.s, str2.len, str2.value));
-    ASSERT_EQUAL(hash_length(map), 2u);
+    ASSERT_EQ(hash_length(map), 2u);
 
     ASSERT(hash_overwrite_map(map, str1.s, str1.len, 555));
-    ASSERT_EQUAL(hash_length(map), 2u);
+    ASSERT_EQ(hash_length(map), 2u);
     ASSERT(hash_lookup_map(map, str1.s, str1.len, &test));
-    ASSERT_EQUAL(test, 555);
+    ASSERT_EQ(test, 555);
 
     ASSERT(hash_overwrite_map(map, "new_key", 7, 777));
-    ASSERT_EQUAL(hash_length(map), 3u);
+    ASSERT_EQ(hash_length(map), 3u);
     ASSERT(hash_lookup_map(map, "new_key", 7, &test));
-    ASSERT_EQUAL(test, 777);
+    ASSERT_EQ(test, 777);
     arena_print(map->arena_keys);
     hash_print_summary_map(map);
-    ASSERT_EQUAL_VAR(map->arena_keys->npushed, map->length);
+    ASSERT_EQ_VAR(map->arena_keys->npushed, map->length);
 
     ASSERT(!hash_lookup_map(map, "does_not_exist", 14, &test));
 
@@ -961,11 +961,11 @@ main(void) {
     for (uint32 i = 0; i < NSTRINGS; i += 1) {
         int32 stored = 0;
         ASSERT(hash_lookup_map(map, strings[i].s, strings[i].len, &stored));
-        ASSERT_EQUAL_VAR(stored, strings[i].value);
+        ASSERT_EQ_VAR(stored, strings[i].value);
     }
 
     ASSERT(hash_remove_map(map, strings[0].s, strings[0].len));
-    ASSERT_EQUAL(hash_ndeleted_map(map), 1);
+    ASSERT_EQ(hash_ndeleted_map(map), 1);
 
     hash_zero_map(map);
     ASSERT_ZERO(hash_length(map));
@@ -976,7 +976,7 @@ main(void) {
         ASSERT(hash_insert_map(map,
                                strings[i].s, strings[i].len, strings[i].value));
     }
-    ASSERT_EQUAL(hash_length(map), 10);
+    ASSERT_EQ(hash_length(map), 10);
 
     {
         struct Hash_map map_value;
@@ -985,7 +985,7 @@ main(void) {
 
         ASSERT(hash_insert_map(&map_value, str1.s, str1.len, str1.value));
         ASSERT(hash_lookup_map(&map_value, str1.s, str1.len, &test));
-        ASSERT_EQUAL_VAR(test, str1.value);
+        ASSERT_EQ_VAR(test, str1.value);
 
         hash_deinit_map(&map_value);
     }
@@ -1008,25 +1008,25 @@ main(void) {
         ASSERT(!hash_insert_map_by_value(map2, &key1, 1));
         ASSERT(hash_insert_map_by_value(map2, &key2, value2));
 
-        ASSERT_EQUAL(hash_length(map2), 2u);
+        ASSERT_EQ(hash_length(map2), 2u);
 
         ASSERT(hash_overwrite_map_by_value(map2, &key1, 888));
-        ASSERT_EQUAL(hash_length(map2), 2u);
+        ASSERT_EQ(hash_length(map2), 2u);
         ASSERT(hash_lookup_map_by_value(map2, &key1, &test2));
-        ASSERT_EQUAL(test2, 888);
+        ASSERT_EQ(test2, 888);
 
         ASSERT(hash_overwrite_map_by_value(map2, &key3, 333));
-        ASSERT_EQUAL(hash_length(map2), 3u);
+        ASSERT_EQ(hash_length(map2), 3u);
         ASSERT(hash_lookup_map_by_value(map2, &key3, &test2));
-        ASSERT_EQUAL(test2, 333);
+        ASSERT_EQ(test2, 333);
 
         ASSERT(hash_lookup_map_by_value(map2, &key1, &test2));
-        ASSERT_EQUAL(test2, 888);
+        ASSERT_EQ(test2, 888);
 
         ASSERT(!hash_lookup_map_by_value(map2, &missing_key, &test2));
 
         ASSERT(hash_remove_map_by_value(map2, &key1));
-        ASSERT_EQUAL(hash_ndeleted_map_by_value(map2), 1);
+        ASSERT_EQ(hash_ndeleted_map_by_value(map2), 1);
 
         hash_destroy_map_by_value(map2);
     }

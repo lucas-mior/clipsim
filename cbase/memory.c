@@ -912,7 +912,7 @@ int main(void) {
 
         if (DEBUGGING_MEMORY && !RUNNING_ON_VALGRIND) {
             for (int32 i = 0; i < size; i += 1) {
-                ASSERT_EQUAL((uchar)p[i], 0xCD);
+                ASSERT_EQ((uchar)p[i], 0xCD);
             }
             printf("Memory correctly initialized with debug byte.\n");
         }

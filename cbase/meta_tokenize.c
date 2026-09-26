@@ -839,9 +839,9 @@ static void
 test_assert_token(Token *token, enum TokenKind kind, char *text, int32 column) {
     ASSERT(token->kind == kind);
     ASSERT(TOKEN_IS(token, text));
-    ASSERT_EQUAL_VAR(token->len, strlen32(text));
-    ASSERT_EQUAL_VAR(token->column, column);
-    ASSERT_EQUAL_VAR(token->offset, column);
+    ASSERT_EQ_VAR(token->len, strlen32(text));
+    ASSERT_EQ_VAR(token->column, column);
+    ASSERT_EQ_VAR(token->offset, column);
     return;
 }
 
@@ -903,11 +903,11 @@ test_character_classifiers(void) {
 
 static void
 test_scan_number_literal(void) {
-    ASSERT_EQUAL(scan_number_literal("123 ", strlen32("123 "), 0), 3);
-    ASSERT_EQUAL(scan_number_literal(".5f ", strlen32(".5f "), 0), 3);
-    ASSERT_EQUAL(scan_number_literal("3.14e+2;", strlen32("3.14e+2;"), 0), 7);
-    ASSERT_EQUAL(scan_number_literal("0x1.fp-2,", strlen32("0x1.fp-2,"), 0), 8);
-    ASSERT_EQUAL(scan_number_literal("1'000u", strlen32("1'000u"), 0), 6);
+    ASSERT_EQ(scan_number_literal("123 ", strlen32("123 "), 0), 3);
+    ASSERT_EQ(scan_number_literal(".5f ", strlen32(".5f "), 0), 3);
+    ASSERT_EQ(scan_number_literal("3.14e+2;", strlen32("3.14e+2;"), 0), 7);
+    ASSERT_EQ(scan_number_literal("0x1.fp-2,", strlen32("0x1.fp-2,"), 0), 8);
+    ASSERT_EQ(scan_number_literal("1'000u", strlen32("1'000u"), 0), 6);
     return;
 }
 
@@ -916,17 +916,17 @@ test_literal_scanners(void) {
     char *literal = "\"a\\\"b\" tail";
 
     ASSERT_ZERO(literal_quote_index("'x'", strlen32("'x'"), 0));
-    ASSERT_EQUAL(literal_quote_index("L\"abc\"", strlen32("L\"abc\""), 0), 1);
-    ASSERT_EQUAL(literal_quote_index("u8\"abc\"", strlen32("u8\"abc\""), 0), 2);
-    ASSERT_EQUAL(literal_quote_index("name", strlen32("name"), 0), -1);
-    ASSERT_EQUAL(scan_literal_token(literal, strlen32(literal), 0), 6);
-    ASSERT_EQUAL(scan_literal_token("u8\"xy\";", strlen32("u8\"xy\";"), 0), 6);
+    ASSERT_EQ(literal_quote_index("L\"abc\"", strlen32("L\"abc\""), 0), 1);
+    ASSERT_EQ(literal_quote_index("u8\"abc\"", strlen32("u8\"abc\""), 0), 2);
+    ASSERT_EQ(literal_quote_index("name", strlen32("name"), 0), -1);
+    ASSERT_EQ(scan_literal_token(literal, strlen32(literal), 0), 6);
+    ASSERT_EQ(scan_literal_token("u8\"xy\";", strlen32("u8\"xy\";"), 0), 6);
     ASSERT_ZERO(scan_literal_token("name", strlen32("name"), 0));
 
     {
         char trailing_escape[] = {'\"', 'a', '\\'};
 
-        ASSERT_EQUAL(scan_literal_token(trailing_escape,
+        ASSERT_EQ(scan_literal_token(trailing_escape,
                                         LENGTH(trailing_escape), 0),
                      LENGTH(trailing_escape));
     }
@@ -937,16 +937,16 @@ static void
 test_comment_scanners(void) {
     bool in_block_comment = false;
 
-    ASSERT_EQUAL(scan_line_comment("// abc\nx", strlen32("// abc\nx"), 0), 6);
-    ASSERT_EQUAL(scan_block_comment("/* abc */x", strlen32("/* abc */x"), 0,
+    ASSERT_EQ(scan_line_comment("// abc\nx", strlen32("// abc\nx"), 0), 6);
+    ASSERT_EQ(scan_block_comment("/* abc */x", strlen32("/* abc */x"), 0,
                                     &in_block_comment),
                  9);
     ASSERT(!in_block_comment);
-    ASSERT_EQUAL(scan_block_comment("/* abc\nx", strlen32("/* abc\nx"), 0,
+    ASSERT_EQ(scan_block_comment("/* abc\nx", strlen32("/* abc\nx"), 0,
                                     &in_block_comment),
                  6);
     ASSERT(in_block_comment);
-    ASSERT_EQUAL(scan_block_comment("continued */", strlen32("continued */"), 0,
+    ASSERT_EQ(scan_block_comment("continued */", strlen32("continued */"), 0,
                                     &in_block_comment),
                  12);
     ASSERT(!in_block_comment);
@@ -960,23 +960,23 @@ test_operator_or_punct_category(void) {
 
     kind = operator_or_punct_category(">>=", strlen32(">>="), 0, &len);
     ASSERT(kind == TOKEN_OPERATOR);
-    ASSERT_EQUAL(len, 3);
+    ASSERT_EQ(len, 3);
 
     kind = operator_or_punct_category("...", strlen32("..."), 0, &len);
     ASSERT(kind == TOKEN_PUNCT);
-    ASSERT_EQUAL(len, 3);
+    ASSERT_EQ(len, 3);
 
     kind = operator_or_punct_category("<:", strlen32("<:"), 0, &len);
     ASSERT(kind == TOKEN_PUNCT);
-    ASSERT_EQUAL(len, 2);
+    ASSERT_EQ(len, 2);
 
     kind = operator_or_punct_category("&&", strlen32("&&"), 0, &len);
     ASSERT(kind == TOKEN_OPERATOR);
-    ASSERT_EQUAL(len, 2);
+    ASSERT_EQ(len, 2);
 
     kind = operator_or_punct_category("(", strlen32("("), 0, &len);
     ASSERT(kind == TOKEN_PUNCT);
-    ASSERT_EQUAL(len, 1);
+    ASSERT_EQ(len, 1);
     return;
 }
 
@@ -997,7 +997,7 @@ test_tokenize_line_default(void) {
     line.text = text;
     line.len = strlen32(text);
     tokenize_line(&line, &in_block_comment);
-    ASSERT_EQUAL(line.token_count, 17);
+    ASSERT_EQ(line.token_count, 17);
     test_assert_token(&line.tokens[0], TOKEN_IDENT, "int", 0);
     test_assert_token(&line.tokens[1], TOKEN_SPACE, " ", 3);
     test_assert_token(&line.tokens[4], TOKEN_OPERATOR, "=", 6);
@@ -1053,13 +1053,13 @@ test_tokenize_preprocessor_and_skip_whitespace(void) {
     line.text = preproc_text;
     line.len = strlen32(preproc_text);
     tokenize_cstyle_line(&line, &in_block_comment);
-    ASSERT_EQUAL(line.token_count, 1);
+    ASSERT_EQ(line.token_count, 1);
     test_assert_token(&line.tokens[0], TOKEN_PREPROC, preproc_text, 0);
     free_line_tokens(&line);
 
     skipped = tokenize_text_with_flags(skip_text, strlen32(skip_text),
                                        TOKENIZE_SKIP_WHITESPACE);
-    ASSERT_EQUAL(skipped.token_count, 2);
+    ASSERT_EQ(skipped.token_count, 2);
     test_assert_token(&skipped.tokens[0], TOKEN_IDENT, "a", 0);
     test_assert_token(&skipped.tokens[1], TOKEN_IDENT, "b", 2);
     free_line_tokens(&skipped);
@@ -1076,7 +1076,7 @@ test_tokenize_block_comment_across_lines(void) {
     first.len = strlen32(first.text);
     tokenize_line_with_flags(&first, &in_block_comment, TOKENIZE_DEFAULT);
     ASSERT(in_block_comment);
-    ASSERT_EQUAL(first.token_count, 2);
+    ASSERT_EQ(first.token_count, 2);
     test_assert_token(&first.tokens[0], TOKEN_COMMENT, "/* hello", 0);
     test_assert_token(&first.tokens[1], TOKEN_NEWLINE, "\n", 8);
 
@@ -1084,7 +1084,7 @@ test_tokenize_block_comment_across_lines(void) {
     second.len = strlen32(second.text);
     tokenize_line_with_flags(&second, &in_block_comment, TOKENIZE_DEFAULT);
     ASSERT(!in_block_comment);
-    ASSERT_EQUAL(second.token_count, 6);
+    ASSERT_EQ(second.token_count, 6);
     test_assert_token(&second.tokens[0], TOKEN_COMMENT, "world */", 0);
     test_assert_token(&second.tokens[2], TOKEN_IDENT, "int", 9);
 
@@ -1104,7 +1104,7 @@ test_tokenize_block_comment_across_lines(void) {
     second.len = strlen32(second.text);
     tokenize_cstyle_line(&second, &in_block_comment);
     ASSERT(!in_block_comment);
-    ASSERT_EQUAL(second.token_count, 7);
+    ASSERT_EQ(second.token_count, 7);
     test_assert_token(&second.tokens[0], TOKEN_COMMENT,
                       "# still a comment */", 0);
     test_assert_token(&second.tokens[2], TOKEN_IDENT, "int", 21);
@@ -1120,12 +1120,12 @@ test_tokenization_navigation(void) {
     Tokenization tokenization;
 
     tokenization = tokenize(text, strlen32(text));
-    ASSERT_EQUAL(tokenization.token_count, 9);
-    ASSERT_EQUAL(tokenization_significant_at_or_after(&tokenization, 1), 4);
-    ASSERT_EQUAL(tokenization_next_significant(&tokenization, 0), 4);
-    ASSERT_EQUAL(tokenization_previous_significant(&tokenization, 8), 4);
-    ASSERT_EQUAL(tokenization_token_at_or_after_offset(&tokenization, 8), 4);
-    ASSERT_EQUAL_VAR(
+    ASSERT_EQ(tokenization.token_count, 9);
+    ASSERT_EQ(tokenization_significant_at_or_after(&tokenization, 1), 4);
+    ASSERT_EQ(tokenization_next_significant(&tokenization, 0), 4);
+    ASSERT_EQ(tokenization_previous_significant(&tokenization, 8), 4);
+    ASSERT_EQ(tokenization_token_at_or_after_offset(&tokenization, 8), 4);
+    ASSERT_EQ_VAR(
         tokenization_token_at_or_after_offset(&tokenization, strlen32(text)),
         tokenization.token_count);
     ASSERT(token_is_trivia(&tokenization.tokens[1]));
@@ -1168,11 +1168,11 @@ test_tokenization_find_matching(void) {
     paren = test_find_token(&tokenization, "(");
     bracket = test_find_token(&tokenization, "[");
     nested = 8;
-    ASSERT_EQUAL(tokenization_find_matching(&tokenization, paren), 11);
-    ASSERT_EQUAL(tokenization_find_matching(&tokenization, bracket), 4);
-    ASSERT_EQUAL(tokenization_find_matching(&tokenization, nested), 10);
-    ASSERT_EQUAL(tokenization_find_matching(&tokenization, 1), -1);
-    ASSERT_EQUAL(tokenization_find_matching(&tokenization, -1), -1);
+    ASSERT_EQ(tokenization_find_matching(&tokenization, paren), 11);
+    ASSERT_EQ(tokenization_find_matching(&tokenization, bracket), 4);
+    ASSERT_EQ(tokenization_find_matching(&tokenization, nested), 10);
+    ASSERT_EQ(tokenization_find_matching(&tokenization, 1), -1);
+    ASSERT_EQ(tokenization_find_matching(&tokenization, -1), -1);
     free_tokenization(&tokenization);
     return;
 }
@@ -1185,8 +1185,8 @@ test_tokenize_with_flags_returns_source_metadata(void) {
     tokenization
         = tokenize_with_flags(text, strlen32(text), TOKENIZE_SKIP_WHITESPACE);
     ASSERT(tokenization.text == text);
-    ASSERT_EQUAL_VAR(tokenization.text_len, strlen32(text));
-    ASSERT_EQUAL(tokenization.token_count, 3);
+    ASSERT_EQ_VAR(tokenization.text_len, strlen32(text));
+    ASSERT_EQ(tokenization.token_count, 3);
     test_assert_token(&tokenization.tokens[0], TOKEN_IDENT, "x", 0);
     test_assert_token(&tokenization.tokens[1], TOKEN_OPERATOR, "+", 2);
     test_assert_token(&tokenization.tokens[2], TOKEN_IDENT, "y", 4);

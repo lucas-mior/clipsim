@@ -376,37 +376,37 @@ main(void) {
     ASSERT(MAXOF(primitive.auint)   == UINT_MAX);
     ASSERT(MAXOF(primitive.aulong)  == ULONG_MAX);
     ASSERT(MAXOF(primitive.aullong) == ULLONG_MAX);
-    ASSERT_EQUAL(MAXOF(primitive.abool), 1);
+    ASSERT_EQ(MAXOF(primitive.abool), 1);
 
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.avoidp),
+    ASSERT_EQ_VAR(TYPENAME(primitive.avoidp),
                  typename(TYPEID(primitive.avoidp)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.acharp),
+    ASSERT_EQ_VAR(TYPENAME(primitive.acharp),
                  typename(TYPEID(primitive.acharp)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.abool),
+    ASSERT_EQ_VAR(TYPENAME(primitive.abool),
                  typename(TYPEID(primitive.abool)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.aschar),
+    ASSERT_EQ_VAR(TYPENAME(primitive.aschar),
                  typename(TYPEID(primitive.aschar)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.ashort),
+    ASSERT_EQ_VAR(TYPENAME(primitive.ashort),
                  typename(TYPEID(primitive.ashort)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.aint),
+    ASSERT_EQ_VAR(TYPENAME(primitive.aint),
                  typename(TYPEID(primitive.aint)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.along),
+    ASSERT_EQ_VAR(TYPENAME(primitive.along),
                  typename(TYPEID(primitive.along)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.allong),
+    ASSERT_EQ_VAR(TYPENAME(primitive.allong),
                  typename(TYPEID(primitive.allong)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.auchar),
+    ASSERT_EQ_VAR(TYPENAME(primitive.auchar),
                  typename(TYPEID(primitive.auchar)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.aushort),
+    ASSERT_EQ_VAR(TYPENAME(primitive.aushort),
                  typename(TYPEID(primitive.aushort)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.auint),
+    ASSERT_EQ_VAR(TYPENAME(primitive.auint),
                  typename(TYPEID(primitive.auint)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.aulong),
+    ASSERT_EQ_VAR(TYPENAME(primitive.aulong),
                  typename(TYPEID(primitive.aulong)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.aullong),
+    ASSERT_EQ_VAR(TYPENAME(primitive.aullong),
                  typename(TYPEID(primitive.aullong)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.afloat),
+    ASSERT_EQ_VAR(TYPENAME(primitive.afloat),
                  typename(TYPEID(primitive.afloat)));
-    ASSERT_EQUAL_VAR(TYPENAME(primitive.adouble),
+    ASSERT_EQ_VAR(TYPENAME(primitive.adouble),
                  typename(TYPEID(primitive.adouble)));
 #if CC_MSVC
     (void)primitive;
@@ -495,24 +495,24 @@ main(void) {
 
 
         s = S_(a);
-        ASSERT_EQUAL(s, "i");
+        ASSERT_EQ(s, "i");
         s = S_(b);
-        ASSERT_EQUAL(s, "able");
+        ASSERT_EQ(s, "able");
         s = S_(c);
-        ASSERT_EQUAL(s, "1");
+        ASSERT_EQ(s, "1");
 
         s = S_((uint)42);
-        ASSERT_EQUAL(s, "42");
+        ASSERT_EQ(s, "42");
         s = S_((long)-42);
-        ASSERT_EQUAL(s, "-42");
+        ASSERT_EQ(s, "-42");
         s = S_((ullong)42);
-        ASSERT_EQUAL(s, "42");
+        ASSERT_EQ(s, "42");
         s = S_(true);
-        ASSERT_EQUAL(s, "1");
+        ASSERT_EQ(s, "1");
         s = S_(false);
-        ASSERT_EQUAL(s, "0");
+        ASSERT_EQ(s, "0");
         s = SF("0x%02x", 10);
-        ASSERT_EQUAL(s, "0x0a");
+        ASSERT_EQ(s, "0x0a");
 
         n = snprint(buf, SIZEOF(buf),
                     "Now you can insert var" V(a) V(b) "s in situ:\n"
@@ -525,7 +525,7 @@ main(void) {
                  "c/d=" RED0 "%." QUOTE(DBL_DIG) "g" RESET " \n",
                  a, b, c, d, c/d);
         ASSERT(n == strlen32(expected));
-        ASSERT_EQUAL_VAR(buf, expected);
+        ASSERT_EQ_VAR(buf, expected);
 
         n = snprint(buf, SIZEOF(buf),
                     "This is " W(e) " It's " V(strlen32(e))
@@ -534,16 +534,16 @@ main(void) {
                  "This is %s It's strlen32(e)=" RED0 "%d" RESET
                  "  characters long\n", e, strlen32(e));
         ASSERT(n == strlen32(expected));
-        ASSERT_EQUAL_VAR(buf, expected);
+        ASSERT_EQ_VAR(buf, expected);
 
         n = snprint(buf, SIZEOF(buf),
                     "custom " VF("%04i", c) " " VF("%c", a) "\n");
         ASSERT(n == strlen32("custom 0001 i\n"));
-        ASSERT_EQUAL(buf, "custom 0001 i\n");
+        ASSERT_EQ(buf, "custom 0001 i\n");
 
         n = snprint(small2, SIZEOF(small2), "prefix-" W(e));
         ASSERT(n == (int)(strlen32("prefix-") + strlen32(e)));
-        ASSERT_EQUAL(small2, "prefix-");
+        ASSERT_EQ(small2, "prefix-");
 
         fp = tmpfile();
         ASSERT(fp);
@@ -553,7 +553,7 @@ main(void) {
         ASSERT(n == strlen32(expected));
         rewind(fp);
         ASSERT(fgets(buf, SIZEOF(buf), fp));
-        ASSERT_EQUAL_VAR(buf, expected);
+        ASSERT_EQ_VAR(buf, expected);
         fclose(fp);
 
         n = print0("print ", V(a), " ", W(b), "\n");

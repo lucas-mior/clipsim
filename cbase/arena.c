@@ -372,14 +372,14 @@ main(void) {
     ASSERT(arena->pos == arena->begin);
     arena_size = (uint32)arena_data_size(arena);
 
-    ASSERT_EQUAL(ALIGN_POWER_OF_2(1, 16), 16);
-    ASSERT_EQUAL(ALIGN_POWER_OF_2(2, 16), 16);
-    ASSERT_EQUAL(ALIGN_POWER_OF_2(10, 16), 16);
-    ASSERT_EQUAL(ALIGN_POWER_OF_2(16, 16), 16);
-    ASSERT_EQUAL(ALIGN_POWER_OF_2(17, 16), 32);
-    ASSERT_EQUAL(ALIGN_POWER_OF_2(18, 16), 32);
+    ASSERT_EQ(ALIGN_POWER_OF_2(1, 16), 16);
+    ASSERT_EQ(ALIGN_POWER_OF_2(2, 16), 16);
+    ASSERT_EQ(ALIGN_POWER_OF_2(10, 16), 16);
+    ASSERT_EQ(ALIGN_POWER_OF_2(16, 16), 16);
+    ASSERT_EQ(ALIGN_POWER_OF_2(17, 16), 32);
+    ASSERT_EQ(ALIGN_POWER_OF_2(18, 16), 32);
 
-    ASSERT_EQUAL(arena_nlinked(arena), 1);
+    ASSERT_EQ(arena_nlinked(arena), 1);
 
     {
         char *p;
@@ -389,10 +389,10 @@ main(void) {
         pos = arena->pos;
         arena_back(arena, 2*ALIGNMENT);
         ASSERT(arena->pos == p + 2*ALIGNMENT);
-        ASSERT_EQUAL(arena->npushed, 1);
+        ASSERT_EQ(arena->npushed, 1);
         ASSERT(arena_push(arena, 2*ALIGNMENT) == p + 2*ALIGNMENT);
         ASSERT(arena->pos == pos);
-        ASSERT_EQUAL(arena->npushed, 2);
+        ASSERT_EQ(arena->npushed, 2);
         arena_reset(arena);
     }
 
@@ -408,7 +408,7 @@ main(void) {
             memset64(objs[i], 0xCD, size);
 
             if (total_size < arena_data_size(arena)) {
-                ASSERT_EQUAL(arena_nlinked(arena), 1);
+                ASSERT_EQ(arena_nlinked(arena), 1);
                 ASSERT_MORE_EQUAL_VAR((void *)objs[i], (void *)arena->begin);
                 ASSERT_MORE_EQUAL_VAR((void *)arena->pos, (void *)objs[i]);
             }
@@ -418,7 +418,7 @@ main(void) {
             ASSERT_POSITIVE(a->npushed);
             total_pushed += a->npushed;
         }
-        ASSERT_EQUAL(total_pushed, LENGTH(objs));
+        ASSERT_EQ(total_pushed, LENGTH(objs));
     }
 
     {
@@ -451,10 +451,10 @@ main(void) {
         void *p2;
 
         ASSERT((p1 = arena_push(arena, arena_size)));
-        ASSERT_EQUAL(arena->npushed, 1);
+        ASSERT_EQ(arena->npushed, 1);
         ASSERT((p2 = arena_push(arena, arena_size)));
-        ASSERT_EQUAL(arena->npushed, 1);
-        ASSERT_EQUAL(arena_nlinked(arena), 2);
+        ASSERT_EQ(arena->npushed, 1);
+        ASSERT_EQ(arena_nlinked(arena), 2);
         ASSERT(arena->next);
         ASSERT(arena_of(arena, p1) != arena_of(arena, p2));
 
@@ -473,13 +473,13 @@ main(void) {
         void *p4;
 
         ASSERT((p3 = arena_push(arena, ALIGN(arena_size / 2))));
-        ASSERT_EQUAL(arena->npushed, 1);
+        ASSERT_EQ(arena->npushed, 1);
         ASSERT((p4 = arena_push(arena, ALIGN(arena_size / 3))));
-        ASSERT_EQUAL(arena->npushed, 2);
+        ASSERT_EQ(arena->npushed, 2);
         ASSERT(arena_of(arena, p3) == arena_of(arena, p4));
 
         ASSERT(arena_decr(arena, p3));
-        ASSERT_EQUAL(arena->npushed, 1);
+        ASSERT_EQ(arena->npushed, 1);
         ASSERT(arena_decr(arena, p4));
         ASSERT_ZERO(arena->npushed);
     }
@@ -533,7 +533,7 @@ main(void) {
         ASSERT_ZERO(arenas[1]->npushed);
 
         error_message = arena_strerror(EARENA_INVALID);
-        ASSERT_EQUAL(error_message, "Invalid arena pointer");
+        ASSERT_EQ(error_message, "Invalid arena pointer");
 
         arenas_destroy(arenas, arena_count);
     }

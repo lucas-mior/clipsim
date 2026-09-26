@@ -613,7 +613,7 @@ _Generic((VAR),                                                               \
       ASSERT_DOUBLE_CLOSE_TOL(MODE, VAR1, VAR2, TOL);                          \
       ASSERT_DIAGNOSTIC_POP();                                                 \
   } while (0)
-  #define ASSERT_EQUAL_VAR(VAR1, VAR2)                                         \
+  #define ASSERT_EQ_VAR(VAR1, VAR2)                                         \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(equal, VAR1, VAR2)
   #define ASSERT_NOT_EQUAL_VAR(VAR1, VAR2)                                     \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(not_equal, VAR1, VAR2)
@@ -626,7 +626,7 @@ _Generic((VAR),                                                               \
   #define ASSERT_MORE_EQUAL_VAR(VAR1, VAR2)                                    \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(more_equal, VAR1, VAR2)
 #else
-  #define ASSERT_EQUAL_VAR(VAR1, VAR2) \
+  #define ASSERT_EQ_VAR(VAR1, VAR2) \
       ASSERT_COMPARE(equal, VAR1, VAR2)
   #define ASSERT_NOT_EQUAL_VAR(VAR1, VAR2) \
       ASSERT_COMPARE(not_equal, VAR1, VAR2)
@@ -640,7 +640,7 @@ _Generic((VAR),                                                               \
       ASSERT_COMPARE(more_equal, VAR1, VAR2)
 #endif
 
-#define ASSERT_EQUAL_2(VAR1, VAR2)                                             \
+#define ASSERT_EQ_2(VAR1, VAR2)                                             \
     ASSERT_COMPARE_CONSTANT(EQUAL, VAR1, VAR2)
 #define ASSERT_NOT_EQUAL_2(VAR1, VAR2)                                         \
     ASSERT_COMPARE_CONSTANT(NOT_EQUAL, VAR1, VAR2)
@@ -653,28 +653,28 @@ _Generic((VAR),                                                               \
 #define ASSERT_MORE_EQUAL(VAR1, VAR2)                                          \
     ASSERT_COMPARE_CONSTANT(MORE_EQUAL, VAR1, VAR2)
 
-#define ASSERT_EQUAL_CALL_2(VAR1, VAR2) ASSERT_EQUAL_2(VAR1, VAR2)
+#define ASSERT_EQ_CALL_2(VAR1, VAR2) ASSERT_EQ_2(VAR1, VAR2)
 
-#define ASSERT_EQUAL_CALL_3(VAR1, VAR1_LEN, VAR2) do {                         \
-    char *ASSERT_EQUAL_VAR1 = VAR1;                                            \
-    int32 ASSERT_EQUAL_VAR1_LEN = VAR1_LEN;                                    \
-    char *ASSERT_EQUAL_VAR2 = VAR2;                                            \
+#define ASSERT_EQ_CALL_3(VAR1, VAR1_LEN, VAR2) do {                         \
+    char *ASSERT_EQ_VAR1 = VAR1;                                            \
+    int32 ASSERT_EQ_VAR1_LEN = VAR1_LEN;                                    \
+    char *ASSERT_EQ_VAR2 = VAR2;                                            \
     assert_equal_3(__FILE__, __LINE__, FUNC__, #VAR1, #VAR2,                   \
-                   ASSERT_EQUAL_VAR1, ASSERT_EQUAL_VAR1_LEN,                   \
-                   ASSERT_EQUAL_VAR2);                                         \
+                   ASSERT_EQ_VAR1, ASSERT_EQ_VAR1_LEN,                   \
+                   ASSERT_EQ_VAR2);                                         \
 } while (0)
 
-#define ASSERT_EQUAL_CALL_4(VAR1, VAR1_LEN, VAR2, VAR2_LEN) do {               \
-    char *ASSERT_EQUAL_VAR1 = VAR1;                                            \
-    int32 ASSERT_EQUAL_VAR1_LEN = VAR1_LEN;                                    \
-    char *ASSERT_EQUAL_VAR2 = VAR2;                                            \
-    int32 ASSERT_EQUAL_VAR2_LEN = VAR2_LEN;                                    \
+#define ASSERT_EQ_CALL_4(VAR1, VAR1_LEN, VAR2, VAR2_LEN) do {               \
+    char *ASSERT_EQ_VAR1 = VAR1;                                            \
+    int32 ASSERT_EQ_VAR1_LEN = VAR1_LEN;                                    \
+    char *ASSERT_EQ_VAR2 = VAR2;                                            \
+    int32 ASSERT_EQ_VAR2_LEN = VAR2_LEN;                                    \
     assert_equal_4(__FILE__, __LINE__, FUNC__, #VAR1, #VAR2,                   \
-                   ASSERT_EQUAL_VAR1, ASSERT_EQUAL_VAR1_LEN,                   \
-                   ASSERT_EQUAL_VAR2, ASSERT_EQUAL_VAR2_LEN);                  \
+                   ASSERT_EQ_VAR1, ASSERT_EQ_VAR1_LEN,                   \
+                   ASSERT_EQ_VAR2, ASSERT_EQ_VAR2_LEN);                  \
 } while (0)
 
-#define ASSERT_EQUAL(...) SELECT_ON_NUM_ARGS(ASSERT_EQUAL_CALL_, __VA_ARGS__)
+#define ASSERT_EQ(...) SELECT_ON_NUM_ARGS(ASSERT_EQ_CALL_, __VA_ARGS__)
 
 #define ASSERT_NOT_EQUAL_CALL_2(VAR1, VAR2) ASSERT_NOT_EQUAL_2(VAR1, VAR2)
 

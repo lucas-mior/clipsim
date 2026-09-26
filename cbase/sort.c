@@ -265,7 +265,7 @@ test_partition_removal(void) {
                          SIZEOF(*array), compare_int);
 
     for (int32 i = 0; i < LENGTH(array); i += 1) {
-        ASSERT_EQUAL_VAR(array[i], expected[i]);
+        ASSERT_EQ_VAR(array[i], expected[i]);
     }
     return;
 }

@@ -786,7 +786,7 @@ main(void) {
         old_cap = builder.cap;
         str_append(&builder, builder.data + 1, builder.len - 1);
         ASSERT_MORE_VAR(builder.cap, old_cap);
-        ASSERT_EQUAL(builder.data,
+        ASSERT_EQ(builder.data,
                      "0123456789abcde123456789abcde");
         str_free(&builder);
     }
@@ -800,7 +800,7 @@ main(void) {
         str_itoa(&builder, -9223372036854775807LL - 1);
         STR_APPEND(&builder, " ");
         str_itoa(&builder, 9223372036854775807LL);
-        ASSERT_EQUAL(builder.data,
+        ASSERT_EQ(builder.data,
                      "x0 -9223372036854775808 9223372036854775807");
         str_free(&builder);
     }
@@ -809,9 +809,9 @@ main(void) {
         int32 count = 0;
 
         str_printf(&builder, "%s %.10s %d%n", "x", "abc", 7, &count);
-        ASSERT_EQUAL(builder.data, "x abc 7");
-        ASSERT_EQUAL(builder.len, 7);
-        ASSERT_EQUAL_VAR(count, builder.len);
+        ASSERT_EQ(builder.data, "x abc 7");
+        ASSERT_EQ(builder.len, 7);
+        ASSERT_EQ_VAR(count, builder.len);
         str_free(&builder);
     }
 
@@ -819,7 +819,7 @@ main(void) {
         String builder = {0};
         STR_APPEND(&builder, "x");
         str_bytes_pretty(&builder, UINT32_MAX);
-        ASSERT_EQUAL(builder.data, "x4.0000GB");
+        ASSERT_EQ(builder.data, "x4.0000GB");
         str_free(&builder);
     }
 
@@ -828,7 +828,7 @@ main(void) {
         char *strs[] = {"one", "two", "three"};
         double dbls[] = {1.1, 2.2};
         string_from_strings(b, sizeof(b), "|", strs, 3);
-        ASSERT_EQUAL(b, "one|two|three");
+        ASSERT_EQ(b, "one|two|three");
         string_from_doubles(b, sizeof(b), ",", dbls, 2);
         ASSERT_POSITIVE(strlen32(b));
     }
