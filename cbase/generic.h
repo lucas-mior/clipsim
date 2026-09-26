@@ -76,7 +76,7 @@ double double_from_ulong(ulong);
 double double_from_ullong(ullong);
 double double_from_float(float);
 double double_from_double(double);
-llong typebits(enum Type);
+int32 typebits(enum Type);
 char *typename(enum Type);
 double double_get(union Primitive, enum Type);
 void UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC(void);
@@ -138,86 +138,86 @@ _Generic((VAR),              \
     default: "unknown"       \
 )
 
-#define MINOF(VARIABLE)           \
-_Generic((VARIABLE),              \
-    schar:   SCHAR_MIN,           \
-    short:   SHRT_MIN,            \
-    int:     INT_MIN,             \
-    long:    LONG_MIN,            \
-    llong:   LLONG_MIN,           \
-    uchar:   0,                   \
-    ushort:  0,                   \
-    uint:    0u,                  \
-    ulong:   0ul,                 \
-    ullong:  0ull,                \
-    char:    CHAR_MIN,            \
-    bool:    0,                   \
-    float:   -FLT_MAX,            \
-    double:  -DBL_MAX,            \
-    default: 0                    \
+#define MINOF(VARIABLE)      \
+_Generic((VARIABLE),         \
+    schar:   SCHAR_MIN,      \
+    short:   SHRT_MIN,       \
+    int:     INT_MIN,        \
+    long:    LONG_MIN,       \
+    llong:   LLONG_MIN,      \
+    uchar:   0,              \
+    ushort:  0,              \
+    uint:    0u,             \
+    ulong:   0ul,            \
+    ullong:  0ull,           \
+    char:    CHAR_MIN,       \
+    bool:    0,              \
+    float:   -FLT_MAX,       \
+    double:  -DBL_MAX,       \
+    default: 0               \
 )
 
-#define MAXOF(VARIABLE)           \
-_Generic((VARIABLE),              \
-    schar:   SCHAR_MAX,           \
-    short:   SHRT_MAX,            \
-    int:     INT_MAX,             \
-    long:    LONG_MAX,            \
-    llong:   LLONG_MAX,           \
-    uchar:   UCHAR_MAX,           \
-    ushort:  USHRT_MAX,           \
-    uint:    UINT_MAX,            \
-    ulong:   ULONG_MAX,           \
-    ullong:  ULLONG_MAX,          \
-    char:    CHAR_MAX,            \
-    bool:    1,                   \
-    float:   FLT_MAX,             \
-    double:  DBL_MAX,             \
-    default: 1                    \
+#define MAXOF(VARIABLE)      \
+_Generic((VARIABLE),         \
+    schar:   SCHAR_MAX,      \
+    short:   SHRT_MAX,       \
+    int:     INT_MAX,        \
+    long:    LONG_MAX,       \
+    llong:   LLONG_MAX,      \
+    uchar:   UCHAR_MAX,      \
+    ushort:  USHRT_MAX,      \
+    uint:    UINT_MAX,       \
+    ulong:   ULONG_MAX,      \
+    ullong:  ULLONG_MAX,     \
+    char:    CHAR_MAX,       \
+    bool:    1,              \
+    float:   FLT_MAX,        \
+    double:  DBL_MAX,        \
+    default: 1               \
 )
 
-#define TYPEID(VAR)            \
-_Generic((VAR),                \
-    void*:   TYPE_VOIDP,       \
-    char*:   TYPE_CHARP,       \
-    bool:    TYPE_BOOL,        \
-    char:    TYPE_CHAR,        \
-    schar:   TYPE_SCHAR,       \
-    short:   TYPE_SHORT,       \
-    int:     TYPE_INT,         \
-    long:    TYPE_LONG,        \
-    llong:   TYPE_LLONG,       \
-    uchar:   TYPE_UCHAR,       \
-    ushort:  TYPE_USHORT,      \
-    uint:    TYPE_UINT,        \
-    ulong:   TYPE_ULONG,       \
-    ullong:  TYPE_ULLONG,      \
-    float:   TYPE_FLOAT,       \
-    double:  TYPE_DOUBLE,      \
-    default: TYPE_OTHER        \
+#define TYPEID(VAR)          \
+_Generic((VAR),              \
+    void*:   TYPE_VOIDP,     \
+    char*:   TYPE_CHARP,     \
+    bool:    TYPE_BOOL,      \
+    char:    TYPE_CHAR,      \
+    schar:   TYPE_SCHAR,     \
+    short:   TYPE_SHORT,     \
+    int:     TYPE_INT,       \
+    long:    TYPE_LONG,      \
+    llong:   TYPE_LLONG,     \
+    uchar:   TYPE_UCHAR,     \
+    ushort:  TYPE_USHORT,    \
+    uint:    TYPE_UINT,      \
+    ulong:   TYPE_ULONG,     \
+    ullong:  TYPE_ULLONG,    \
+    float:   TYPE_FLOAT,     \
+    double:  TYPE_DOUBLE,    \
+    default: TYPE_OTHER      \
 )
 
 #define TYPEBITS(VAR) (SIZEOF(VAR)*CHAR_BIT)
 
-#define DOUBLE_GET2(x)                                          \
-_Generic((x),                                                   \
-    void*:   double_from_voidp,                                 \
-    char*:   double_from_charp,                                 \
-    bool:    double_from_bool,                                  \
-    char:    double_from_char,                                  \
-    schar:   double_from_schar,                                 \
-    short:   double_from_short,                                 \
-    int:     double_from_int,                                   \
-    long:    double_from_long,                                  \
-    llong:   double_from_llong,                                 \
-    uchar:   double_from_uchar,                                 \
-    ushort:  double_from_ushort,                                \
-    uint:    double_from_uint,                                  \
-    ulong:   double_from_ulong,                                 \
-    ullong:  double_from_ullong,                                \
-    float:   double_from_float,                                 \
-    double:  double_from_double,                                \
-    default: UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC            \
+#define DOUBLE_GET2(x)                               \
+_Generic((x),                                        \
+    void*:   double_from_voidp,                      \
+    char*:   double_from_charp,                      \
+    bool:    double_from_bool,                       \
+    char:    double_from_char,                       \
+    schar:   double_from_schar,                      \
+    short:   double_from_short,                      \
+    int:     double_from_int,                        \
+    long:    double_from_long,                       \
+    llong:   double_from_llong,                      \
+    uchar:   double_from_uchar,                      \
+    ushort:  double_from_ushort,                     \
+    uint:    double_from_uint,                       \
+    ulong:   double_from_ulong,                      \
+    ullong:  double_from_ullong,                     \
+    float:   double_from_float,                      \
+    double:  double_from_double,                     \
+    default: UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC \
 )(x)
 
 #if CC_GCC || CC_CLANG
@@ -226,20 +226,20 @@ _Generic((x),                                                   \
 #define DOUBLE_GET(VAR, TYPE) DOUBLE_GET2(VAR)
 #endif
 
-#define PRINT_SIGNED(VAR, TYPE) \
-  fprintf(stderr, "["GREEN("%s%lld")"]%s = %lld ", \
+#define PRINT_SIGNED(VAR, TYPE)                      \
+  fprintf(stderr, "["GREEN("%s%d")"]%s = %lld ",     \
                   typename(TYPE), typebits(TYPE), #VAR, (llong)(VAR))
 
-#define PRINT_UNSIGNED(VAR, TYPE) \
-  fprintf(stderr, "["GREEN("%s%lld")"]%s = %llu ", \
+#define PRINT_UNSIGNED(VAR, TYPE)                    \
+  fprintf(stderr, "["GREEN("%s%d")"]%s = %llu ",     \
                   typename(TYPE), typebits(TYPE), #VAR, (ullong)(VAR))
 
-#define PRINT_DOUBLE(VAR, TYPE) \
-  fprintf(stderr, "["GREEN("%s%lld")"]%s = %f ", \
+#define PRINT_DOUBLE(VAR, TYPE)                      \
+  fprintf(stderr, "["GREEN("%s%d")"]%s = %f ",       \
                   typename(TYPE), typebits(TYPE), #VAR, DOUBLE_GET(VAR, TYPE))
 
-#define PRINT_OTHER(VAR, TYPE, FORMAT, CAST) \
-  fprintf(stderr, "["GREEN("%s%lld")"]%s = "FORMAT" ", \
+#define PRINT_OTHER(VAR, TYPE, FORMAT, CAST)         \
+  fprintf(stderr, "["GREEN("%s%d")"]%s = "FORMAT" ", \
                   typename(TYPE), typebits(TYPE), #VAR, (CAST)(uintptr)(VAR))
 
 #define PRINT_(VAR) \

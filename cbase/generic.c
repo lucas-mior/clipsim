@@ -222,20 +222,20 @@ double_from_double(double x)  {
     return (double)x;
 }
 
-llong
+int32
 typebits(enum Type type) {
-    llong size = 0;
+    int32 size = 0;
     union Primitive primitive;
     void **pointer;
 
     switch (type) {
     case TYPE_VOIDP:
         pointer = &(primitive.avoidp);
-        size = ((char*)(pointer + 1)) - (char*)pointer;
+        size = (int32)(((char*)(pointer + 1)) - (char*)pointer);
         break;
     case TYPE_CHARP:
         pointer = (void*)&(primitive.acharp);
-        size = ((char*)(pointer + 1)) - (char*)pointer;
+        size = (int32)(((char*)(pointer + 1)) - (char*)pointer);
         break;
     case TYPE_BOOL:    size = SIZEOF(bool);    break;
     case TYPE_CHAR:    size = SIZEOF(char);    break;
