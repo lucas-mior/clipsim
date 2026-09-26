@@ -1636,7 +1636,7 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.argv[128], "d");
         ASSERT_EQ(cmd.argv[129], "/destination");
         ASSERT_EQ(cmd.argv[130], "/source");
-        ASSERT_MORE_VAR(cmd.cap, cmd.argc);
+        ASSERT_GT_VAR(cmd.cap, cmd.argc);
         ASSERT(cmd.argv[cmd.argc] == NULL);
 
         command_text = command_str(&cmd, &len);

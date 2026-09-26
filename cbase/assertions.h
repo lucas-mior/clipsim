@@ -621,7 +621,7 @@ _Generic((VAR),                                                               \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(less, VAR1, VAR2)
   #define ASSERT_LE_VAR(VAR1, VAR2)                                    \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(less_equal, VAR1, VAR2)
-  #define ASSERT_MORE_VAR(VAR1, VAR2)                                          \
+  #define ASSERT_GT_VAR(VAR1, VAR2)                                          \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(more, VAR1, VAR2)
   #define ASSERT_GE_VAR(VAR1, VAR2)                                    \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(more_equal, VAR1, VAR2)
@@ -634,7 +634,7 @@ _Generic((VAR),                                                               \
       ASSERT_COMPARE(less, VAR1, VAR2)
   #define ASSERT_LE_VAR(VAR1, VAR2) \
       ASSERT_COMPARE(less_equal, VAR1, VAR2)
-  #define ASSERT_MORE_VAR(VAR1, VAR2) \
+  #define ASSERT_GT_VAR(VAR1, VAR2) \
       ASSERT_COMPARE(more, VAR1, VAR2)
   #define ASSERT_GE_VAR(VAR1, VAR2) \
       ASSERT_COMPARE(more_equal, VAR1, VAR2)
@@ -648,7 +648,7 @@ _Generic((VAR),                                                               \
     ASSERT_COMPARE_CONSTANT(LESS, VAR1, VAR2)
 #define ASSERT_LE(VAR1, VAR2)                                          \
     ASSERT_COMPARE_CONSTANT(LESS_EQUAL, VAR1, VAR2)
-#define ASSERT_MORE(VAR1, VAR2)                                                \
+#define ASSERT_GT(VAR1, VAR2)                                                \
     ASSERT_COMPARE_CONSTANT(MORE, VAR1, VAR2)
 #define ASSERT_GE(VAR1, VAR2)                                          \
     ASSERT_COMPARE_CONSTANT(MORE_EQUAL, VAR1, VAR2)

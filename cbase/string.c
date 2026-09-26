@@ -785,7 +785,7 @@ main(void) {
         STR_APPEND(&builder, "0123456789abcde");
         old_cap = builder.cap;
         str_append(&builder, builder.data + 1, builder.len - 1);
-        ASSERT_MORE_VAR(builder.cap, old_cap);
+        ASSERT_GT_VAR(builder.cap, old_cap);
         ASSERT_EQ(builder.data,
                      "0123456789abcde123456789abcde");
         str_free(&builder);

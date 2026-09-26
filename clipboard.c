@@ -441,7 +441,7 @@ main(void) {
 
                 res_clip = clipboard_get_clipboard(&res_save, &len, &incr);
                 ASSERT_EQ(res_clip, CLIPBOARD_TEXT);
-                ASSERT_MORE(len, 0);
+                ASSERT_GT(len, 0);
 
                 if (res_save != NULL) {
                     XFree(res_save);

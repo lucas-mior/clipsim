@@ -364,7 +364,7 @@ main(void) {
         Arena *small_arena;
 
         ASSERT((small_arena = arena_create(1, "small_arena")));
-        ASSERT_MORE(small_arena->size, ALIGN(sizeof(*small_arena)));
+        ASSERT_GT(small_arena->size, ALIGN(sizeof(*small_arena)));
         arena_destroy(small_arena);
     }
 

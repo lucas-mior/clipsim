@@ -898,7 +898,7 @@ int main(void) {
         char *mapping;
 
         mapping = xmmap_commit(&size);
-        ASSERT_MORE(size, 1);
+        ASSERT_GT(size, 1);
         ASSERT_ZERO(size % memory_page_size);
         ASSERT_ZERO(mapping[0]);
         xmunmap(mapping, size);

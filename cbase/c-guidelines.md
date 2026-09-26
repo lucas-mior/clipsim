@@ -850,13 +850,13 @@ if (enum & ENUM_BITFLAG) {
   - `ASSERT_NOT_EQUAL(value, constant expression)`
   - `ASSERT_EQ(string, string_len, other_string)`
   - `ASSERT_LT(value, constant expression)`
-  - `ASSERT_MORE(value, constant expression)`
+  - `ASSERT_GT(value, constant expression)`
   - `ASSERT_LE(value, constant expression)`
   - `ASSERT_GE(value, constant expression)`
   - `ASSERT_EQ_VAR(value1, value2)`
   - `ASSERT_NOT_EQUAL_VAR(value1, value2)`
   - `ASSERT_LT_VAR(value1, value2)`
-  - `ASSERT_MORE_VAR(value1, value2)`
+  - `ASSERT_GT_VAR(value1, value2)`
   - `ASSERT_LE_VAR(value1, value2)`
   - `ASSERT_GE_VAR(value1, value2)`
   - `ASSERT_BETWEEN(number, min_inclusive, max_inclusive)`
@@ -908,7 +908,7 @@ if (enum & ENUM_BITFLAG) {
   ASSERT_NOT_EQUAL(value, -1);
   ASSERT_LT(value, 100);
   ASSERT_LE(value, 100);
-  ASSERT_MORE(value, 3);
+  ASSERT_GT(value, 3);
   ASSERT_GE(value, 3);
   ```
   instead of writing the equivalent expressions with `ASSERT(...)` (except for
@@ -916,7 +916,7 @@ if (enum & ENUM_BITFLAG) {
   passing a variable is a compile-time error.
 - If the right side is not a compiler-known constant, use the explicit variable
   forms: `ASSERT_EQ_VAR`, `ASSERT_NOT_EQUAL_VAR`, `ASSERT_LT_VAR`,
-  `ASSERT_LE_VAR`, `ASSERT_MORE_VAR`, or `ASSERT_GE_VAR`.
+  `ASSERT_LE_VAR`, `ASSERT_GT_VAR`, or `ASSERT_GE_VAR`.
   These use the heavier variable-vs-variable generic dispatch, so use them only
   when the constant-RHS forms cannot be used.
 - Keep the constant on the right side. If necessary, reverse the comparison so
@@ -926,7 +926,7 @@ if (enum & ENUM_BITFLAG) {
   The three- and four-argument string comparison forms are unaffected by the
   constant-RHS rule.
 - Prefer `ASSERT_ZERO(value);` instead of `ASSERT_EQ(a, 0)`
-- Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT_MORE(a, 0)`
+- Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT_GT(a, 0)`
 - Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT_LT(a, 0)`
 - Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT_LE(a, 0)`
 - Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT_GE(a, 0)`

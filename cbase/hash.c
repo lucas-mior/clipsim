@@ -956,7 +956,7 @@ main(void) {
     time_monotonic_precise(&t1);
     PRINT_TIMINGS(NSTRINGS, t0, t1, "insertion with resizes");
 
-    ASSERT_MORE_VAR(map->capacity, initial_capacity);
+    ASSERT_GT_VAR(map->capacity, initial_capacity);
 
     for (uint32 i = 0; i < NSTRINGS; i += 1) {
         int32 stored = 0;
