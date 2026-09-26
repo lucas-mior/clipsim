@@ -1565,7 +1565,7 @@ main(void) {
             char *path = xstrdup(paths[i]);
             char *base = bases[i];
             int32 path_len = strlen32(path);
-            ASSERT_EQ_VAR(basename2(path, &path_len, NULL), base);
+            ASSERT_EQ(basename2(path, &path_len, NULL), base);
             free2(path, path_len0 + 1);
         }
         for (int64 i = 0; i < LENGTH(paths); i += 1) {
@@ -1573,7 +1573,7 @@ main(void) {
             int len = strlen32(copy);
             int len0 = strlen32(copy);
             normalize(copy, &len);
-            ASSERT_EQ_VAR(copy, normalized[i]);
+            ASSERT_EQ(copy, normalized[i]);
             free2(copy, len0 + 1);
         }
 
@@ -1581,7 +1581,7 @@ main(void) {
             char dir_buffer[4096];
             int32 path_len = strlen32(paths[i]);
             dirname2(dir_buffer, paths[i], &path_len);
-            ASSERT_EQ_VAR(dir_buffer, dirs[i]);
+            ASSERT_EQ(dir_buffer, dirs[i]);
         }
         {
             char dir_buffer[128] = "a/b/c";
@@ -1668,7 +1668,7 @@ main(void) {
         }
 
         ASSERT_POSITIVE(util_filename_from(buffer2, sizeof(buffer2), fd));
-        ASSERT_EQ_VAR(realpath(name, buffer3), buffer2);
+        ASSERT_EQ(realpath(name, buffer3), buffer2);
         XCLOSE(&fd);
         xunlink(name);
 
@@ -1692,7 +1692,7 @@ main(void) {
         }
 
         ASSERT_POSITIVE(util_filename_from(buffer4, sizeof(buffer4), fd));
-        ASSERT_EQ_VAR(realpath(buffer2, buffer3), buffer4);
+        ASSERT_EQ(realpath(buffer2, buffer3), buffer4);
         XCLOSE(&fd);
         xunlink(buffer2);
     }

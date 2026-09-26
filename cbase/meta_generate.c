@@ -282,14 +282,14 @@ test_c_string_literal(void) {
 
     literal = c_string_literal("a\\b\"c", strlen32("a\\b\"c"));
     ASSERT_EQ(literal.data, "\"a\\\\b\\\"c\"");
-    ASSERT_EQ_VAR(literal.len, strlen32("\"a\\\\b\\\"c\""));
-    ASSERT_EQ_VAR(literal.cap, literal.len + 1);
+    ASSERT_EQ(literal.len, strlen32("\"a\\\\b\\\"c\""));
+    ASSERT_EQ(literal.cap, literal.len + 1);
     free2(literal.data, literal.cap);
 
     literal = c_string_literal(control_bytes, LENGTH(control_bytes));
     ASSERT_EQ(literal.data,
                  "\"a\\n\\000\\0379\\t\\\\\\\"\\177\"");
-    ASSERT_EQ_VAR(literal.cap, literal.len + 1);
+    ASSERT_EQ(literal.cap, literal.len + 1);
     free2(literal.data, literal.cap);
     return;
 }
@@ -300,8 +300,8 @@ test_c_identifier(void) {
 
     identifier = c_identifier("1 bad-name", strlen32("1 bad-name"));
     ASSERT_EQ(identifier.data, "c_1_bad_name");
-    ASSERT_EQ_VAR(identifier.len, strlen32("c_1_bad_name"));
-    ASSERT_EQ_VAR(identifier.cap, identifier.len + 1);
+    ASSERT_EQ(identifier.len, strlen32("c_1_bad_name"));
+    ASSERT_EQ(identifier.cap, identifier.len + 1);
     free2(identifier.data, identifier.cap);
 
     identifier = c_identifier("already_ok_2", strlen32("already_ok_2"));

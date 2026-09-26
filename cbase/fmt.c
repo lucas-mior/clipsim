@@ -4628,7 +4628,7 @@ test_fmt_sink_cap(char *format, char *expected) {
 
         memset64(buffer, 0x7f, SIZEOF(buffer));
         len = fmt_test_snprintf(buffer, capacity, format);
-        ASSERT_EQ_VAR(len, expected_len);
+        ASSERT_EQ(len, expected_len);
 
         if (capacity == 0) {
             ASSERT_EQ(buffer[0], (char)0x7f);
@@ -4661,7 +4661,7 @@ test_fmt_integer_cap(char *expected, char *format, ...) {
         va_start(args, format);
         len = fmt_vsnprintf(buffer, capacity, format, args);
         va_end(args);
-        ASSERT_EQ_VAR(len, expected_len);
+        ASSERT_EQ(len, expected_len);
 
         if (capacity == 0) {
             ASSERT_EQ(buffer[0], (char)0x7f);
@@ -4693,7 +4693,7 @@ test_fmt_bytes_cap(char *expected, int32 expected_len, char *format, ...) {
         va_start(args, format);
         len = fmt_vsnprintf(buffer, capacity, format, args);
         va_end(args);
-        ASSERT_EQ_VAR(len, expected_len);
+        ASSERT_EQ(len, expected_len);
 
         if (capacity == 0) {
             ASSERT_EQ(buffer[0], (char)0x7f);
@@ -5091,8 +5091,8 @@ test_fmt_ldouble_parts(ldouble value, bool negative,
     ASSERT(parts.negative == negative);
     ASSERT(parts.zero == (bit_len == 0));
     ASSERT_EQ(parts.precision_bits, LDBL_MANT_DIG);
-    ASSERT_EQ_VAR(fmt_big_uint_bit_len(&parts.significand), bit_len);
-    ASSERT_EQ_VAR(parts.binary_exponent, binary_exponent);
+    ASSERT_EQ(fmt_big_uint_bit_len(&parts.significand), bit_len);
+    ASSERT_EQ(parts.binary_exponent, binary_exponent);
     return;
 }
 
@@ -5106,8 +5106,8 @@ test_fmt_ldouble_exact_integer(ldouble value, char *expected) {
     ASSERT(!fmt_decompose_ldouble(value, &parts));
     ASSERT(!fmt_binary_float_to_exact_integer(&parts, &integer));
     len = fmt_big_uint_to_decimal(&integer, buffer, SIZEOF(buffer));
-    ASSERT_EQ_VAR(len, strlen32(expected));
-    ASSERT_EQ_VAR(buffer, expected);
+    ASSERT_EQ(len, strlen32(expected));
+    ASSERT_EQ(buffer, expected);
     return;
 }
 
@@ -5125,8 +5125,8 @@ test_fmt_ldouble_scaled(ldouble value, int32 decimal_places,
                                             &integer, &remainder));
     ASSERT(remainder == expected_rem);
     len = fmt_big_uint_to_decimal(&integer, buffer, SIZEOF(buffer));
-    ASSERT_EQ_VAR(len, strlen32(expected));
-    ASSERT_EQ_VAR(buffer, expected);
+    ASSERT_EQ(len, strlen32(expected));
+    ASSERT_EQ(buffer, expected);
     return;
 }
 
@@ -5486,7 +5486,7 @@ test_fmt_float32_round_trip(float value) {
     end = NULL;
     parsed = strtof(buffer, &end);
     ASSERT(end == buffer + len);
-    ASSERT_EQ_VAR(test_fmt_float32_bits(parsed),
+    ASSERT_EQ(test_fmt_float32_bits(parsed),
                      test_fmt_float32_bits(value));
 
     return;
@@ -5505,7 +5505,7 @@ test_fmt_float64_round_trip(double value) {
     end = NULL;
     parsed = strtod(buffer, &end);
     ASSERT(end == buffer + len);
-    ASSERT_EQ_VAR(test_fmt_float64_bits(parsed),
+    ASSERT_EQ(test_fmt_float64_bits(parsed),
                      test_fmt_float64_bits(value));
 
     return;

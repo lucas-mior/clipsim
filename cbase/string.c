@@ -811,7 +811,7 @@ main(void) {
         str_printf(&builder, "%s %.10s %d%n", "x", "abc", 7, &count);
         ASSERT_EQ(builder.data, "x abc 7");
         ASSERT_EQ(builder.len, 7);
-        ASSERT_EQ_VAR(count, builder.len);
+        ASSERT_EQ(count, builder.len);
         str_free(&builder);
     }
 

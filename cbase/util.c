@@ -1035,7 +1035,7 @@ util_test_qsort_cmp(void *a, void *b) {
         mem_literal_actual = MEM_LITERAL_SHORT(mem_literal_haystack,           \
                                                mem_literal_haystack_len,       \
                                                LITERAL);                       \
-        ASSERT_EQ_VAR(                                                     \
+        ASSERT_EQ(                                                     \
             (void *)mem_literal_actual, (void *)mem_literal_expected);        \
     } while (0)
 
@@ -1197,8 +1197,8 @@ main(int argc, char **argv) {
     {
         char *src = "memdup_test";
         char *dup = xmemdup(src, 12);
-        ASSERT_EQ_VAR(src, dup);
-        ASSERT_NOT_EQUAL_VAR((void *)src, (void *)dup);
+        ASSERT_EQ(src, dup);
+        ASSERT_NOT_EQUAL((void *)src, (void *)dup);
         free2(dup, 12);
     }
 

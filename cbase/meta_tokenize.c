@@ -839,9 +839,9 @@ static void
 test_assert_token(Token *token, enum TokenKind kind, char *text, int32 column) {
     ASSERT(token->kind == kind);
     ASSERT(TOKEN_IS(token, text));
-    ASSERT_EQ_VAR(token->len, strlen32(text));
-    ASSERT_EQ_VAR(token->column, column);
-    ASSERT_EQ_VAR(token->offset, column);
+    ASSERT_EQ(token->len, strlen32(text));
+    ASSERT_EQ(token->column, column);
+    ASSERT_EQ(token->offset, column);
     return;
 }
 
@@ -1125,7 +1125,7 @@ test_tokenization_navigation(void) {
     ASSERT_EQ(tokenization_next_significant(&tokenization, 0), 4);
     ASSERT_EQ(tokenization_previous_significant(&tokenization, 8), 4);
     ASSERT_EQ(tokenization_token_at_or_after_offset(&tokenization, 8), 4);
-    ASSERT_EQ_VAR(
+    ASSERT_EQ(
         tokenization_token_at_or_after_offset(&tokenization, strlen32(text)),
         tokenization.token_count);
     ASSERT(token_is_trivia(&tokenization.tokens[1]));
@@ -1185,7 +1185,7 @@ test_tokenize_with_flags_returns_source_metadata(void) {
     tokenization
         = tokenize_with_flags(text, strlen32(text), TOKENIZE_SKIP_WHITESPACE);
     ASSERT(tokenization.text == text);
-    ASSERT_EQ_VAR(tokenization.text_len, strlen32(text));
+    ASSERT_EQ(tokenization.text_len, strlen32(text));
     ASSERT_EQ(tokenization.token_count, 3);
     test_assert_token(&tokenization.tokens[0], TOKEN_IDENT, "x", 0);
     test_assert_token(&tokenization.tokens[1], TOKEN_OPERATOR, "+", 2);

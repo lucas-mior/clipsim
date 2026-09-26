@@ -1661,7 +1661,7 @@ main(int argc, char **argv) {
 
             command_text = command_str(&cmd, &len);
             ASSERT_EQ(len, SIZEOF(long_argument) - 1);
-            ASSERT_EQ_VAR(command_text, long_argument_string);
+            ASSERT_EQ(command_text, long_argument_string);
             free2(command_text, len + 1);
         }
 
@@ -1791,7 +1791,7 @@ main(int argc, char **argv) {
             command_cwd_set(&cmd, test_cwd);
             COMMAND_PUSH(&cmd, "pwd", "-P");
             ASSERT_ZERO((command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT)));
-            ASSERT_EQ_VAR(cmd.result.stdout_output, expected_cwd);
+            ASSERT_EQ(cmd.result.stdout_output, expected_cwd);
             command_cwd_clear(&cmd);
             test_remove_tree(test_cwd);
         }

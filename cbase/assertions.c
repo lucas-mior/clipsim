@@ -157,6 +157,20 @@ assert_compare_value_unsigned(char *file, int32 line, char *func,
 }
 
 AssertCompareValue
+assert_compare_value_float(char *file, int32 line, char *func,
+                           char *name, float value) {
+    AssertCompareValue result = {0};
+
+    (void)file;
+    (void)line;
+    (void)func;
+    (void)name;
+    result.kind = ASSERT_COMPARE_VALUE_DOUBLE;
+    result.adouble = (double)value;
+    return result;
+}
+
+AssertCompareValue
 assert_compare_value_double(char *file, int32 line, char *func,
                             char *name, double value) {
     AssertCompareValue result = {0};
@@ -1521,25 +1535,32 @@ main(void) {
     {
         char *string = NULL;
         void *pointer = NULL;
-        ASSERT_EQ_VAR(string, pointer);
+        ASSERT_EQ(string, pointer);
         ASSERT_NULL(string);
     }
     {
+        ullong a = (ullong)LLONG_MAX;
+        ullong b = (ullong)LLONG_MAX;
+        ullong c = (ullong)LLONG_MAX - 1;
+
+        ASSERT_EQ(a, b);
+        ASSERT_NOT_EQUAL(a, c);
+    } {
         int a = 1;
         int b = 1;
-        ASSERT_EQ_VAR(a, b);
+        ASSERT_EQ(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GE_VAR(a, b);
     } {
         int a = 1;
         uint b = 1;
-        ASSERT_EQ_VAR(a, b);
+        ASSERT_EQ(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GE_VAR(a, b);
     } {
         int a = 1;
         uint b = 2;
-        ASSERT_NOT_EQUAL_VAR(a, b);
+        ASSERT_NOT_EQUAL(a, b);
         ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GT_VAR(b, a);
@@ -1547,15 +1568,15 @@ main(void) {
     } {
         long a = -1;
         ulong b = 0;
-        ASSERT_NOT_EQUAL_VAR(a, b);
+        ASSERT_NOT_EQUAL(a, b);
         ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GT_VAR(b, a);
         ASSERT_GE_VAR(b, a);
     } {
         long a = MINOF(a);
-        ulong b = MAXOF(b);
-        ASSERT_NOT_EQUAL_VAR(a, b);
+        ullong b = (ullong)LLONG_MAX;
+        ASSERT_NOT_EQUAL(a, b);
         ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GT_VAR(b, a);
@@ -1563,7 +1584,7 @@ main(void) {
     } {
         ulong a = MINOF(a);
         long b = MAXOF(b);
-        ASSERT_NOT_EQUAL_VAR(a, b);
+        ASSERT_NOT_EQUAL(a, b);
         ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GT_VAR(b, a);
@@ -1571,7 +1592,7 @@ main(void) {
     } {
         char *a = "aaa";
         char *b = "aaa";
-        ASSERT_EQ_VAR(a, b);
+        ASSERT_EQ(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GE_VAR(b, a);
     } {
@@ -1586,7 +1607,7 @@ main(void) {
     } {
         char *a = "aaa";
         char *b = "bbb";
-        ASSERT_NOT_EQUAL_VAR(a, b);
+        ASSERT_NOT_EQUAL(a, b);
         ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GT_VAR(b, a);
@@ -1611,7 +1632,7 @@ main(void) {
         double c = -1.0e-16;
         ASSERT_CLOSE(a, b);
         ASSERT_CLOSE(b, a);
-        ASSERT_NOT_EQUAL_VAR(a, b + 1.0e-9);
+        ASSERT_NOT_EQUAL(a, b + 1.0e-9);
         ASSERT_LT_VAR(b, a);
         ASSERT_GT_VAR(a, b);
         ASSERT_CLOSE(a, b, 0.01);
@@ -1632,21 +1653,21 @@ main(void) {
     } {
         long a = -1;
         double b = -1;
-        ASSERT_EQ_VAR(a, b);
-        ASSERT_EQ_VAR(b, b);
+        ASSERT_EQ(a, b);
+        ASSERT_EQ(b, b);
         ASSERT_GE_VAR(a, b);
         ASSERT_LE_VAR(a, b);
     } {
         double a = -1;
         long b = -1;
-        ASSERT_EQ_VAR(a, b);
-        ASSERT_EQ_VAR(b, b);
+        ASSERT_EQ(a, b);
+        ASSERT_EQ(b, b);
         ASSERT_GE_VAR(a, b);
         ASSERT_LE_VAR(a, b);
     } {
         double a = -1;
         double b = 0;
-        ASSERT_NOT_EQUAL_VAR(a, b);
+        ASSERT_NOT_EQUAL(a, b);
         ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GT_VAR(b, a);
@@ -1654,7 +1675,7 @@ main(void) {
     } {
         float a = -1;
         double b = 1;
-        ASSERT_NOT_EQUAL_VAR(a, b);
+        ASSERT_NOT_EQUAL(a, b);
         ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GT_VAR(b, a);
@@ -1662,18 +1683,18 @@ main(void) {
     } {
         llong a = 1;
         double b = 1;
-        ASSERT_EQ_VAR(a, b);
+        ASSERT_EQ(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GE_VAR(b, a);
     } {
         void *a = NULL;
         void *b = &a;
-        ASSERT_NOT_EQUAL_VAR(a, b);
+        ASSERT_NOT_EQUAL(a, b);
     } {
         int array[100];
         void *a = &array[0];
         void *b = &array[1];
-        ASSERT_NOT_EQUAL_VAR(a, b);
+        ASSERT_NOT_EQUAL(a, b);
         ASSERT_LT_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GT_VAR(b, a);
@@ -1681,11 +1702,11 @@ main(void) {
     } {
         bool a = true;
         bool b = true;
-        ASSERT_EQ_VAR(a, b);
+        ASSERT_EQ(a, b);
     } {
         bool a = true;
         bool b = false;
-        ASSERT_NOT_EQUAL_VAR(a, b);
+        ASSERT_NOT_EQUAL(a, b);
     } {
         char haystack[] = "alpha beta gamma";
         char binary_haystack[] = { 'a', 'b', '\0', 'c', 'd' };
@@ -1718,12 +1739,10 @@ main(void) {
         /* void *a = NULL; */
         /* ASSERT_GE_VAR(x, a); */
         /* ASSERT_GE_VAR(a, x); */
-        /* bool b = true; */
-        /* ASSERT_EQ_VAR(b, 1); */
 
         // uncomment to trigger a non-constant RHS compile error
         /* int y = 1; */
-        /* ASSERT_EQ(1, y); */
+        /* ASSERT_LT(1, y); */
     }
 
 #if OS_UNIX
@@ -1735,11 +1754,12 @@ main(void) {
         float array[10] = {0};
         char *string_null = NULL;
         char *string_some = "some";
+        ullong too_large = ULLONG_MAX;
 
         fprintf(stderr, "\nThe following assertions are supposed to fail\n");
 
-        ASSERT_TRAPS(ASSERT_EQ_VAR(a, b));
-        ASSERT_TRAPS(ASSERT_EQ_VAR(string_null, string_some));
+        ASSERT_TRAPS(ASSERT_EQ(a, b));
+        ASSERT_TRAPS(ASSERT_EQ(string_null, string_some));
         ASSERT_TRAPS(ASSERT_EQ(string_some, 3, "none"));
         ASSERT_TRAPS(ASSERT_NOT_EQUAL(string_some, 4, "some"));
         ASSERT_TRAPS(ASSERT_NOT_EQUAL(string_some, 4, "some", 4));
@@ -1751,8 +1771,10 @@ main(void) {
         ASSERT_TRAPS(ASSERT_NON_POSITIVE(0.5));
         ASSERT_TRAPS(ASSERT_LT_VAR((void *)&array[1], (void *)&array[0]));
         ASSERT_TRAPS(ASSERT_EQ(true, false));
-        ASSERT_TRAPS(ASSERT_EQ(ULLONG_MAX, 0));
-        ASSERT_TRAPS(ASSERT_EQ(0, ULLONG_MAX));
+        ASSERT_TRAPS(ASSERT_EQ(too_large, 0));
+        ASSERT_TRAPS(ASSERT_EQ(0, too_large));
+        ASSERT_TRAPS(ASSERT_NOT_EQUAL(too_large, 0));
+        ASSERT_TRAPS(ASSERT_NOT_EQUAL(0, too_large));
         ASSERT_TRAPS(ASSERT_NOT_CLOSE(close_a, close_b));
         ASSERT_TRAPS(ASSERT_NOT_CLOSE(close_a, close_b, 0.01));
         ASSERT_TRAPS(ASSERT_CONTAINS("alpha beta gamma\n", 17, "delta\n"));

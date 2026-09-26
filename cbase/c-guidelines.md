@@ -846,15 +846,13 @@ if (enum & ENUM_BITFLAG) {
   - `ASSERT_NEGATIVE(integer expression)`
   - `ASSERT_NON_POSITIVE(integer expression)`
   - `ASSERT_NON_NEGATIVE(integer expression)`
-  - `ASSERT_EQ(value, constant expression)`
-  - `ASSERT_NOT_EQUAL(value, constant expression)`
+  - `ASSERT_EQ(value1, value2)`
+  - `ASSERT_NOT_EQUAL(value1, value2)`
   - `ASSERT_EQ(string, string_len, other_string)`
   - `ASSERT_LT(value, constant expression)`
   - `ASSERT_GT(value, constant expression)`
   - `ASSERT_LE(value, constant expression)`
   - `ASSERT_GE(value, constant expression)`
-  - `ASSERT_EQ_VAR(value1, value2)`
-  - `ASSERT_NOT_EQUAL_VAR(value1, value2)`
   - `ASSERT_LT_VAR(value1, value2)`
   - `ASSERT_GT_VAR(value1, value2)`
   - `ASSERT_LE_VAR(value1, value2)`
@@ -901,30 +899,31 @@ if (enum & ENUM_BITFLAG) {
 - Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT(value < 0)`.
 - Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT(value <= 0)`.
 - Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT(value >= 0)`.
-- Two-argument comparison assertions are optimized for the common case where
-  the right side is a compiler-known constant. Prefer:
+- `ASSERT_EQ` and `ASSERT_NOT_EQUAL` accept either constant or variable
+  operands. For integer comparisons, both operands are normalized to `llong`.
+  Unsigned integer values above `LLONG_MAX` are not supported and trigger an
+  assertion failure. There are no `_VAR` equality forms.
+- For ordered comparisons, prefer the constant-RHS forms when the right side is
+  a compiler-known constant:
   ```c
-  ASSERT_EQ(value, 3);
-  ASSERT_NOT_EQUAL(value, -1);
   ASSERT_LT(value, 100);
   ASSERT_LE(value, 100);
   ASSERT_GT(value, 3);
   ASSERT_GE(value, 3);
   ```
-  instead of writing the equivalent expressions with `ASSERT(...)` (except for
-  enums). The right side of these forms must satisfy `__builtin_constant_p()`;
-  passing a variable is a compile-time error.
-- If the right side is not a compiler-known constant, use the explicit variable
-  forms: `ASSERT_EQ_VAR`, `ASSERT_NOT_EQUAL_VAR`, `ASSERT_LT_VAR`,
-  `ASSERT_LE_VAR`, `ASSERT_GT_VAR`, or `ASSERT_GE_VAR`.
+  instead of writing the equivalent expressions with `ASSERT(...)`. The right
+  side of these forms must satisfy `__builtin_constant_p()`; passing a variable
+  is a compile-time error.
+- If the right side of an ordered comparison is not a compiler-known constant,
+  use `ASSERT_LT_VAR`, `ASSERT_LE_VAR`, `ASSERT_GT_VAR`, or `ASSERT_GE_VAR`.
   These use the heavier variable-vs-variable generic dispatch, so use them only
   when the constant-RHS forms cannot be used.
-- Keep the constant on the right side. If necessary, reverse the comparison so
-  the variable remains on the left and the constant remains on the right.
-- Constant-RHS integer comparisons normalize integer operands to `llong`.
-  Unsigned integer values above `LLONG_MAX` are not supported by these forms.
-  The three- and four-argument string comparison forms are unaffected by the
-  constant-RHS rule.
+- Keep ordered-comparison constants on the right side. If necessary, reverse
+  the comparison so the variable remains on the left and the constant remains
+  on the right.
+- Constant-RHS ordered integer comparisons also normalize integer operands to
+  `llong`. Unsigned integer values above `LLONG_MAX` are not supported. The
+  three- and four-argument string equality forms are unaffected.
 - Prefer `ASSERT_ZERO(value);` instead of `ASSERT_EQ(a, 0)`
 - Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT_GT(a, 0)`
 - Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT_LT(a, 0)`
