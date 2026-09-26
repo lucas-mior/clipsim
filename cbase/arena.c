@@ -409,8 +409,8 @@ main(void) {
 
             if (total_size < arena_data_size(arena)) {
                 ASSERT_EQ(arena_nlinked(arena), 1);
-                ASSERT_MORE_EQUAL_VAR((void *)objs[i], (void *)arena->begin);
-                ASSERT_MORE_EQUAL_VAR((void *)arena->pos, (void *)objs[i]);
+                ASSERT_GE_VAR((void *)objs[i], (void *)arena->begin);
+                ASSERT_GE_VAR((void *)arena->pos, (void *)objs[i]);
             }
         }
 

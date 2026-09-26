@@ -29,7 +29,7 @@ itoa2(char *buffer, int32 size, llong num) {
     int i = 0;
     bool negative = false;
 
-    ASSERT_MORE_EQUAL(size, 22);
+    ASSERT_GE(size, 22);
 
     if (num < 0) {
         negative = true;

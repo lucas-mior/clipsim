@@ -1496,7 +1496,7 @@ main(void) {
     ASSERT_LESS(1, 2);
     ASSERT_LE(1, 1);
     ASSERT_MORE(2, 1);
-    ASSERT_MORE_EQUAL(1, 1);
+    ASSERT_GE(1, 1);
     ASSERT_EQ("constant", "constant");
     {
         void *pointer = NULL;
@@ -1529,13 +1529,13 @@ main(void) {
         int b = 1;
         ASSERT_EQ_VAR(a, b);
         ASSERT_LE_VAR(a, b);
-        ASSERT_MORE_EQUAL_VAR(a, b);
+        ASSERT_GE_VAR(a, b);
     } {
         int a = 1;
         uint b = 1;
         ASSERT_EQ_VAR(a, b);
         ASSERT_LE_VAR(a, b);
-        ASSERT_MORE_EQUAL_VAR(a, b);
+        ASSERT_GE_VAR(a, b);
     } {
         int a = 1;
         uint b = 2;
@@ -1543,7 +1543,7 @@ main(void) {
         ASSERT_LESS_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
-        ASSERT_MORE_EQUAL_VAR(b, a);
+        ASSERT_GE_VAR(b, a);
     } {
         long a = -1;
         ulong b = 0;
@@ -1551,7 +1551,7 @@ main(void) {
         ASSERT_LESS_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
-        ASSERT_MORE_EQUAL_VAR(b, a);
+        ASSERT_GE_VAR(b, a);
     } {
         long a = MINOF(a);
         ulong b = MAXOF(b);
@@ -1559,7 +1559,7 @@ main(void) {
         ASSERT_LESS_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
-        ASSERT_MORE_EQUAL_VAR(b, a);
+        ASSERT_GE_VAR(b, a);
     } {
         ulong a = MINOF(a);
         long b = MAXOF(b);
@@ -1567,13 +1567,13 @@ main(void) {
         ASSERT_LESS_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
-        ASSERT_MORE_EQUAL_VAR(b, a);
+        ASSERT_GE_VAR(b, a);
     } {
         char *a = "aaa";
         char *b = "aaa";
         ASSERT_EQ_VAR(a, b);
         ASSERT_LE_VAR(a, b);
-        ASSERT_MORE_EQUAL_VAR(b, a);
+        ASSERT_GE_VAR(b, a);
     } {
         char *a = "aaabbb";
         ASSERT_EQ(a, 3, "aaa");
@@ -1590,7 +1590,7 @@ main(void) {
         ASSERT_LESS_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
-        ASSERT_MORE_EQUAL_VAR(b, a);
+        ASSERT_GE_VAR(b, a);
     } {
         long a = -1;
         ASSERT_NEGATIVE(a);
@@ -1604,7 +1604,7 @@ main(void) {
         ASSERT_LESS(a, 0.123000001);
         ASSERT_LE(a, 0.123000001);
         ASSERT_MORE_VAR(0.123000001, a);
-        ASSERT_MORE_EQUAL_VAR(0.123000001, a);
+        ASSERT_GE_VAR(0.123000001, a);
     } {
         double a = 0.1 + 0.2;
         double b = 0.3;
@@ -1634,14 +1634,14 @@ main(void) {
         double b = -1;
         ASSERT_EQ_VAR(a, b);
         ASSERT_EQ_VAR(b, b);
-        ASSERT_MORE_EQUAL_VAR(a, b);
+        ASSERT_GE_VAR(a, b);
         ASSERT_LE_VAR(a, b);
     } {
         double a = -1;
         long b = -1;
         ASSERT_EQ_VAR(a, b);
         ASSERT_EQ_VAR(b, b);
-        ASSERT_MORE_EQUAL_VAR(a, b);
+        ASSERT_GE_VAR(a, b);
         ASSERT_LE_VAR(a, b);
     } {
         double a = -1;
@@ -1650,7 +1650,7 @@ main(void) {
         ASSERT_LESS_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
-        ASSERT_MORE_EQUAL_VAR(b, a);
+        ASSERT_GE_VAR(b, a);
     } {
         float a = -1;
         double b = 1;
@@ -1658,13 +1658,13 @@ main(void) {
         ASSERT_LESS_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
-        ASSERT_MORE_EQUAL_VAR(b, a);
+        ASSERT_GE_VAR(b, a);
     } {
         llong a = 1;
         double b = 1;
         ASSERT_EQ_VAR(a, b);
         ASSERT_LE_VAR(a, b);
-        ASSERT_MORE_EQUAL_VAR(b, a);
+        ASSERT_GE_VAR(b, a);
     } {
         void *a = NULL;
         void *b = &a;
@@ -1677,7 +1677,7 @@ main(void) {
         ASSERT_LESS_VAR(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_MORE_VAR(b, a);
-        ASSERT_MORE_EQUAL_VAR(b, a);
+        ASSERT_GE_VAR(b, a);
     } {
         bool a = true;
         bool b = true;
@@ -1716,8 +1716,8 @@ main(void) {
         // uncomment to trigger linking error in the variable path
         /* double x = 0.1; */
         /* void *a = NULL; */
-        /* ASSERT_MORE_EQUAL_VAR(x, a); */
-        /* ASSERT_MORE_EQUAL_VAR(a, x); */
+        /* ASSERT_GE_VAR(x, a); */
+        /* ASSERT_GE_VAR(a, x); */
         /* bool b = true; */
         /* ASSERT_EQ_VAR(b, 1); */
 
@@ -1745,7 +1745,7 @@ main(void) {
         ASSERT_TRAPS(ASSERT_NOT_EQUAL(string_some, 4, "some", 4));
         ASSERT_TRAPS(ASSERT_MORE_VAR(a, b));
         ASSERT_TRAPS(ASSERT_LESS_VAR(b, a));
-        ASSERT_TRAPS(ASSERT_MORE_EQUAL_VAR(a, b));
+        ASSERT_TRAPS(ASSERT_GE_VAR(a, b));
         ASSERT_TRAPS(ASSERT_LE_VAR(b, a));
         ASSERT_TRAPS(ASSERT_POSITIVE(-0.5));
         ASSERT_TRAPS(ASSERT_NON_POSITIVE(0.5));

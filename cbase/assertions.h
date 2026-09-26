@@ -623,7 +623,7 @@ _Generic((VAR),                                                               \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(less_equal, VAR1, VAR2)
   #define ASSERT_MORE_VAR(VAR1, VAR2)                                          \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(more, VAR1, VAR2)
-  #define ASSERT_MORE_EQUAL_VAR(VAR1, VAR2)                                    \
+  #define ASSERT_GE_VAR(VAR1, VAR2)                                    \
       ASSERT_COMPARE_VAR_DIAGNOSTIC(more_equal, VAR1, VAR2)
 #else
   #define ASSERT_EQ_VAR(VAR1, VAR2) \
@@ -636,7 +636,7 @@ _Generic((VAR),                                                               \
       ASSERT_COMPARE(less_equal, VAR1, VAR2)
   #define ASSERT_MORE_VAR(VAR1, VAR2) \
       ASSERT_COMPARE(more, VAR1, VAR2)
-  #define ASSERT_MORE_EQUAL_VAR(VAR1, VAR2) \
+  #define ASSERT_GE_VAR(VAR1, VAR2) \
       ASSERT_COMPARE(more_equal, VAR1, VAR2)
 #endif
 
@@ -650,7 +650,7 @@ _Generic((VAR),                                                               \
     ASSERT_COMPARE_CONSTANT(LESS_EQUAL, VAR1, VAR2)
 #define ASSERT_MORE(VAR1, VAR2)                                                \
     ASSERT_COMPARE_CONSTANT(MORE, VAR1, VAR2)
-#define ASSERT_MORE_EQUAL(VAR1, VAR2)                                          \
+#define ASSERT_GE(VAR1, VAR2)                                          \
     ASSERT_COMPARE_CONSTANT(MORE_EQUAL, VAR1, VAR2)
 
 #define ASSERT_EQ_CALL_2(VAR1, VAR2) ASSERT_EQ_2(VAR1, VAR2)

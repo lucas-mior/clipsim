@@ -5387,7 +5387,7 @@ test_fmt_estimate(void) {
     estimate = fmt_snprintf_estimate("x=%d s=%.*s f=%g", 7, 4, span, 1.25);
     exact = fmt_test_snprintf(buffer, SIZEOF(buffer), "x=%d s=%.*s f=%g",
                               7, 4, span, 1.25);
-    ASSERT_MORE_EQUAL_VAR(estimate, exact);
+    ASSERT_GE_VAR(estimate, exact);
 
     return;
 }

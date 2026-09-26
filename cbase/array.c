@@ -197,7 +197,7 @@ array_test_reserve_and_counts(void) {
 
     ASSERT(ARRAY_RESERVE(items, old_cap + 1));
     ASSERT_EQ(ARRAY_LEN(items), 3);
-    ASSERT_MORE_EQUAL_VAR(ARRAY_CAPACITY(items), (old_cap + 1));
+    ASSERT_GE_VAR(ARRAY_CAPACITY(items), (old_cap + 1));
     ASSERT_EQ(items[0], 10);
     ASSERT_EQ(items[1], 11);
     ASSERT_EQ(items[2], 12);

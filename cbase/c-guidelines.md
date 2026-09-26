@@ -852,13 +852,13 @@ if (enum & ENUM_BITFLAG) {
   - `ASSERT_LESS(value, constant expression)`
   - `ASSERT_MORE(value, constant expression)`
   - `ASSERT_LE(value, constant expression)`
-  - `ASSERT_MORE_EQUAL(value, constant expression)`
+  - `ASSERT_GE(value, constant expression)`
   - `ASSERT_EQ_VAR(value1, value2)`
   - `ASSERT_NOT_EQUAL_VAR(value1, value2)`
   - `ASSERT_LESS_VAR(value1, value2)`
   - `ASSERT_MORE_VAR(value1, value2)`
   - `ASSERT_LE_VAR(value1, value2)`
-  - `ASSERT_MORE_EQUAL_VAR(value1, value2)`
+  - `ASSERT_GE_VAR(value1, value2)`
   - `ASSERT_BETWEEN(number, min_inclusive, max_inclusive)`
   - `ASSERT_CONTAINS(haystack, haystack_len, needle)`
   - `ASSERT_NOT_CONTAINS(haystack, haystack_len, needle)`
@@ -909,14 +909,14 @@ if (enum & ENUM_BITFLAG) {
   ASSERT_LESS(value, 100);
   ASSERT_LE(value, 100);
   ASSERT_MORE(value, 3);
-  ASSERT_MORE_EQUAL(value, 3);
+  ASSERT_GE(value, 3);
   ```
   instead of writing the equivalent expressions with `ASSERT(...)` (except for
   enums). The right side of these forms must satisfy `__builtin_constant_p()`;
   passing a variable is a compile-time error.
 - If the right side is not a compiler-known constant, use the explicit variable
   forms: `ASSERT_EQ_VAR`, `ASSERT_NOT_EQUAL_VAR`, `ASSERT_LESS_VAR`,
-  `ASSERT_LE_VAR`, `ASSERT_MORE_VAR`, or `ASSERT_MORE_EQUAL_VAR`.
+  `ASSERT_LE_VAR`, `ASSERT_MORE_VAR`, or `ASSERT_GE_VAR`.
   These use the heavier variable-vs-variable generic dispatch, so use them only
   when the constant-RHS forms cannot be used.
 - Keep the constant on the right side. If necessary, reverse the comparison so
@@ -929,9 +929,9 @@ if (enum & ENUM_BITFLAG) {
 - Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT_MORE(a, 0)`
 - Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT_LESS(a, 0)`
 - Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT_LE(a, 0)`
-- Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT_MORE_EQUAL(a, 0)`
+- Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT_GE(a, 0)`
 - Prefer `ASSERT_BETWEEN(value, 0, max);`
-  instead of `ASSERT_MORE_EQUAL(value, 0); ASSERT_LE(value, max);`
+  instead of `ASSERT_GE(value, 0); ASSERT_LE(value, max);`
 - Prefer `ASSERT_BETWEEN(value, 0, SIZE - 1);`
   instead of `ASSERT_NON_NEGATIVE(value); ASSERT_LESS(value, SIZE):`
 
