@@ -67,6 +67,15 @@ signal_name(int32 signum) {
     return NULL;
 }
 
+char *
+bool_str(bool x) {
+    if (x) {
+        return "true";
+    } else {
+        return "false";
+    }
+}
+
 void
 here_impl(char *file, int32 line, char *func) {
     static llong here_counter = 0;
@@ -537,12 +546,10 @@ qsort64(void *base, int64 n, int64 size, int (*compar)(void *, void *)) {
 void ATTR_PRINTF(4, 5)
 error_impl(char *file, int32 line, char *func, char *format, ...) {
     char buffer[BUFSIZ];
-    FmtPlan plan;
     char *big_buffer = NULL;
     char *pbuffer = buffer;
     va_list args;
     va_list args_copy;
-    int32 estimate;
     int32 n;
     int64 capacity = SIZEOF(buffer);
     int32 p;
@@ -561,29 +568,32 @@ error_impl(char *file, int32 line, char *func, char *format, ...) {
 
     va_start(args, format);
     va_copy(args_copy, args);
-    estimate = fmt_vsnprintf_estimate_cached(&plan, format, args);
+    n = fmt_vsnprintf(buffer, capacity, format, args);
     va_end(args);
 
-    if (estimate < 0) {
+    if (n < 0) {
         va_end(args_copy);
-        error2("%s:%d:%s(): Error estimating format \"%s\" (n = %d).\n",
-               file, line, func, format, estimate);
-        fatal(EXIT_FAILURE);
-    }
-
-    if (estimate >= capacity) {
-        capacity = (int64)estimate + 1;
-        big_buffer = xmalloc(capacity, false);
-        pbuffer = big_buffer;
-    }
-
-    n = fmt_vsprintf_cached(&plan, pbuffer, capacity, args_copy);
-    va_end(args_copy);
-
-    if ((n < 0) || (n > estimate)) {
         error2("%s:%d:%s(): Error formatting \"%s\" (n = %d).\n",
                file, line, func, format, n);
         fatal(EXIT_FAILURE);
+    }
+
+    if (n >= capacity) {
+        int32 retry_n;
+
+        capacity = (int64)n + 1;
+        big_buffer = xmalloc(capacity, false);
+        pbuffer = big_buffer;
+        retry_n = fmt_vsnprintf(pbuffer, capacity, format, args_copy);
+        va_end(args_copy);
+        if ((retry_n < 0) || (retry_n != n)) {
+            error2("%s:%d:%s(): Error formatting \"%s\" (n = %d).\n",
+                   file, line, func, format, retry_n);
+            fatal(EXIT_FAILURE);
+        }
+        n = retry_n;
+    } else {
+        va_end(args_copy);
     }
 
     if (DEBUGGING) {

@@ -71,10 +71,15 @@ precisions are resolved into local `FormatSpec` copies, so a valid plan may be
 reused with different arguments and may be read concurrently by multiple
 threads. A failed cached estimate leaves the plan invalid.
 
-`str_printf`, `command_printf`, and `error_impl` use this cached pair for their
+`str_printf` and `command_printf` use this cached pair for their
 estimate-then-format paths. Compiler printf checking remains on those public
 wrappers and on `fmt_vsnprintf_estimate_cached`; the cached output call has no
 format argument and therefore has no printf-format attribute.
+
+`error_impl` instead first formats directly into a fixed stack buffer with
+`fmt_vsnprintf`. If that call reports a larger required size, it allocates that
+size and repeats the formatting once. This avoids the estimate pass for the
+common case where an error message fits in the stack buffer.
 
 The formatter intentionally uses cbase semantics instead of libc locale or libc
 extension semantics:

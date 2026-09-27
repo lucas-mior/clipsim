@@ -35,8 +35,9 @@ void *memmem64(void *haystack, int64 haystack_len, void *needle,
                int64 needle_len);
 void *memchr64(void *pointer, int32 value, int64 size);
 void *memrchr64(void *pointer, int32 value, int64 size);
-bool util_glob_match(char *string, int32 string_len, char *glob,
-                     int32 glob_len);
+bool util_glob_match(char *string, int32 string_len,
+                     char *glob, int32 glob_len);
+char *bool_str(bool x);
 
 typedef struct rapidhash128_t {
     uint64 lo;
