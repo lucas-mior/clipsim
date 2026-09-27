@@ -37,10 +37,6 @@ However, when testing files like assertion.c, it is ok and necessary to `#define
 CBASE_IMPLEMENT 1` and `#include "cbase.h"` so that the test compilation unit
 works. But this must be done inside `#if TESTING_` block.
 
-## Sadness
-Code compiling utf8.c depends on `-D_XOPEN_SOURCE=700` because of `wcwidth`.
-cbase in general depends on `-D_DEFAULT_SOURCE`.
-
 ## Formatter
 `fmt_snprintf` and `fmt_vsnprintf` are cbase's deterministic printf-style
 formatters. They return the number of bytes that would have been written,
