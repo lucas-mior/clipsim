@@ -61,20 +61,28 @@ upper bound for the formatted byte count, excluding the terminating `'\0'`.
 They consume and validate the same format grammar, but `%n` is only checked and
 does not write the count.
 
+Normal formatter and estimator format strings are limited to 255 bytes plus the
+terminating `\0`. Cached plans use a smaller limit of 127 bytes plus the
+terminating `\0`.
+
 For estimate-then-allocate wrappers, `fmt_vsnprintf_estimate_cached` takes a
-`FmtPlan *` as its first argument. It copies and parses the format into the
-plan while estimating. On success the plan is self-contained and immutable:
-the original format string may be modified or go out of scope.
-`fmt_vsprintf_cached` takes the plan as its first argument and formats without
-receiving, scanning, or parsing the format string again. Dynamic `*` widths and
-precisions are resolved into local `FormatSpec` copies, so a valid plan may be
-reused with different arguments and may be read concurrently by multiple
-threads. A failed cached estimate leaves the plan invalid.
+`FmtPlan *` as its first argument. It stores the format pointer and parses the
+format into the plan while estimating. The caller must keep that format string
+alive and unmodified until the plan is no longer used. `fmt_vsprintf_cached`
+takes the plan as its first argument and formats without scanning or parsing
+the format string again. Dynamic `*` widths and precisions are resolved into
+local `FormatSpec` copies, so a valid plan may be reused with different
+arguments and may be read concurrently by multiple threads as long as its
+format string is also left unmodified. A failed cached estimate leaves the plan
+invalid.
 
 `str_printf` and `command_printf` use this cached pair for their
-estimate-then-format paths. Compiler printf checking remains on those public
-wrappers and on `fmt_vsnprintf_estimate_cached`; the cached output call has no
-format argument and therefore has no printf-format attribute.
+estimate-then-format paths and require their format strings to fit the cached
+127-byte limit; they do not fall back to the normal formatter for longer
+formats. Debug builds assert this requirement. Compiler printf checking remains
+on those public wrappers and on `fmt_vsnprintf_estimate_cached`; the cached
+output call has no format argument and therefore has no printf-format
+attribute.
 
 `error_impl` instead first formats directly into a fixed stack buffer with
 `fmt_vsnprintf`. If that call reports a larger required size, it allocates that

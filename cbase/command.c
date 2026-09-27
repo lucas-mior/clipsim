@@ -1476,6 +1476,10 @@ command_printf(Command *command, char *fmt, ...) {
     int32 len;
     char *argument;
 
+    if (DEBUGGING) {
+        ASSERT_LT(strlen32(fmt), FMT_PLAN_MAX_FORMAT_LEN);
+    }
+
     va_start(ap, fmt);
     va_copy(ap2, ap);
     estimate = fmt_vsnprintf_estimate_cached(&plan, fmt, ap);

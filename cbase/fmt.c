@@ -62,6 +62,8 @@ enum {
 
 _Static_assert(FMT_PLAN_MAX_FORMAT_LEN - 1 <= UINT8_MAX,
                "format plan offsets do not fit in uint8");
+_Static_assert(FMT_PLAN_MAX_FORMAT_LEN < FMT_MAX_FORMAT_LEN,
+               "cached format limit must be smaller than normal limit");
 _Static_assert(FMT_PLAN_MAX_SPECS <= UINT8_MAX,
                "format plan spec count does not fit in uint8");
 
@@ -564,6 +566,7 @@ fmt_plan_load_spec(FormatSpec *spec, const FmtPlanSpec *plan_spec) {
     spec->precision_kind = (enum FormatPrecisionKind)plan_spec->precision_kind;
     spec->length = (enum FormatLength)plan_spec->length;
     spec->conversion = plan_spec->conversion;
+
     return;
 }
 
@@ -1199,7 +1202,7 @@ fmt_handle_string(FormatSink *sink, FormatSpec *spec, FormatArgs *args) {
         }
     } else {
         if (string == NULL) {
-            string = "(null)";
+            string = "null";
         }
         if (fmt_has_precision(spec)) {
             len = strnlen32(string, spec->precision);
@@ -4298,17 +4301,21 @@ fmt_vsnprintf_estimate_cached(FmtPlan *plan, char *format, va_list args) {
     int32 result;
     int32 status;
 
-    if (plan == NULL || format == NULL) {
+    if (plan == NULL) {
+        return -EINVAL;
+    }
+    plan->valid = false;
+    if (format == NULL) {
         return -EINVAL;
     }
 
-    memset64(plan, 0, SIZEOF(*plan));
     format_len = strlen32(format);
     if (format_len >= FMT_PLAN_MAX_FORMAT_LEN) {
         return -EOVERFLOW;
     }
-    memcpy64(plan->format, format, format_len + 1);
 
+    plan->format = format;
+    plan->spec_count = 0;
     literal = plan->format;
     cursor = plan->format;
     while (*cursor != '\0') {
@@ -4398,7 +4405,7 @@ fmt_vsnprintf_estimate(char *format, va_list args) {
     if (format == NULL) {
         return -EINVAL;
     }
-    ASSERT_LT(strlen32(format), FMT_PLAN_MAX_FORMAT_LEN);
+    ASSERT_LT(strlen32(format), FMT_MAX_FORMAT_LEN);
 
     va_copy(fmt_args.args, args);
     total = 0;
@@ -4498,7 +4505,7 @@ fmt_vsnprintf_sink(FormatSink *sink, char *format, va_list args) {
     if (format == NULL) {
         return -EINVAL;
     }
-    ASSERT_LT(strlen32(format), FMT_PLAN_MAX_FORMAT_LEN);
+    ASSERT_LT(strlen32(format), FMT_MAX_FORMAT_LEN);
 
     va_copy(fmt_args.args, args);
     literal = format;
@@ -4638,8 +4645,7 @@ fmt_vsprintf(char *buffer, int64 capacity, char *format, va_list args) {
 }
 
 int32
-fmt_vsprintf_cached(const FmtPlan *plan, char *buffer, int64 capacity,
-                    va_list args) {
+fmt_vsprintf_cached(FmtPlan *plan, char *buffer, int64 capacity, va_list args) {
     FormatSink sink;
     int32 status;
 
@@ -5054,9 +5060,9 @@ test_fmt_char_string_outputs(void) {
     test_fmt_bytes_cap("abc  ", 5, "%-5s", "abc");
     test_fmt_bytes_cap("ab", 2, "%.2s", "abc");
     test_fmt_bytes_cap("   ab", 5, "%5.2s", "abc");
-    test_fmt_bytes_cap("(null)", 6, "%s", (char *)NULL);
-    test_fmt_bytes_cap("(nu", 3, "%.3s", (char *)NULL);
-    test_fmt_bytes_cap("     (nu", 8, "%8.3s", (char *)NULL);
+    test_fmt_bytes_cap("null", 4, "%s", (char *)NULL);
+    test_fmt_bytes_cap("nu", 2, "%.2s", (char *)NULL);
+    test_fmt_bytes_cap("     nul", 8, "%8.3s", (char *)NULL);
 
     test_fmt_bytes_cap(span_expected, 4, "%.*s", 4, span);
     test_fmt_bytes_cap(span_width_expected, 5, "%5.*s", 3, span);
@@ -5548,14 +5554,18 @@ test_fmt_printf_ldouble_outputs(void) {
     test_fmt_bytes_cap("INF", 3, "%LA", (ldouble)INFINITY);
     test_fmt_bytes_cap("inf", 3, "%La", (ldouble)INFINITY);
 
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*Lf",
-                                   -1, (ldouble)1.25), 8);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
+                                "%.*Lf", -1, (ldouble)1.25),
+                                8);
     ASSERT_EQ(buffer, "1.250000");
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*Lg",
-                                   -1, (ldouble)1.25), 4);
+
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
+                                "%.*Lg", -1, (ldouble)1.25),
+                                4);
     ASSERT_EQ(buffer, "1.25");
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*La",
-                                -1, (ldouble)1.5), 8);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
+                                "%.*La", -1, (ldouble)1.5),
+                                8);
     ASSERT_EQ(buffer, "0x1.8p+0");
 
     if (fmt_test_ldouble_supported()) {
@@ -5585,21 +5595,18 @@ test_fmt_printf_ldouble_outputs(void) {
                       NULL, 0, "%.*La",
                       FMT_LDOUBLE_MAX_DECIMAL_PRECISION, (ldouble)0.0L),
                   FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 7);
-        ASSERT_EQ(fmt_test_snprintf(
-                      NULL, 0, "%.*Lf",
-                      FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 1,
-                      (ldouble)1.0L),
-                  -ERANGE);
-        ASSERT_EQ(fmt_test_snprintf(
-                      NULL, 0, "%.*Le",
-                      FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 1,
-                      (ldouble)1.0L),
-                  -ERANGE);
-        ASSERT_EQ(fmt_test_snprintf(
-                      NULL, 0, "%.*Lg",
-                      FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 1,
-                      (ldouble)1.0L),
-                  -ERANGE);
+        ASSERT_EQ(fmt_test_snprintf(NULL, 0, "%.*Lf",
+                                    FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 1,
+                                    (ldouble)1.0L),
+                                    -ERANGE);
+        ASSERT_EQ(fmt_test_snprintf(NULL, 0, "%.*Le",
+                                    FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 1,
+                                    (ldouble)1.0L),
+                                    -ERANGE);
+        ASSERT_EQ(fmt_test_snprintf(NULL, 0, "%.*Lg",
+                                    FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 1,
+                                    (ldouble)1.0L),
+                                    -ERANGE);
         ASSERT_EQ(fmt_test_snprintf(
                       NULL, 0, "%.*La",
                       FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 1,
@@ -5622,6 +5629,18 @@ fmt_test_public_vsnprintf(char *buffer, int64 capacity, char *format, ...) {
 }
 
 static int32
+fmt_test_public_estimate(char *format, ...) {
+    va_list args;
+    int32 estimate;
+
+    va_start(args, format);
+    estimate = fmt_vsnprintf_estimate(format, args);
+    va_end(args);
+
+    return estimate;
+}
+
+static int32
 fmt_test_public_vsprintf(char *buffer, int64 capacity, char *format, ...) {
     va_list args;
     int32 len;
@@ -5629,6 +5648,7 @@ fmt_test_public_vsprintf(char *buffer, int64 capacity, char *format, ...) {
     va_start(args, format);
     len = fmt_vsprintf(buffer, capacity, format, args);
     va_end(args);
+
     return len;
 }
 
@@ -5640,12 +5660,12 @@ fmt_test_cached_estimate(FmtPlan *plan, char *format, ...) {
     va_start(args, format);
     estimate = fmt_vsnprintf_estimate_cached(plan, format, args);
     va_end(args);
+
     return estimate;
 }
 
 static int32
-fmt_test_cached_sprintf(const FmtPlan *plan, char *buffer, int64 capacity,
-                        ...) {
+fmt_test_cached_sprintf(FmtPlan *plan, char *buffer, int64 capacity, ...) {
     va_list args;
     int32 len;
 
@@ -5668,9 +5688,8 @@ test_fmt_cached_plan(void) {
     estimate = fmt_test_cached_estimate(&plan, format, 7, 4, span, 1.25);
     ASSERT_POSITIVE(estimate);
     ASSERT(plan.valid);
-    ASSERT_EQ(plan.format, format);
+    ASSERT(plan.format == format);
 
-    format[0] = 'y';
     len = fmt_test_cached_sprintf(&plan, buffer, SIZEOF(buffer),
                                   7, 4, span, 1.25);
     ASSERT_EQ(len, 17);
@@ -5703,6 +5722,35 @@ test_fmt_cached_plan(void) {
     ASSERT_EQ(fmt_test_cached_sprintf(&plan, buffer, SIZEOF(buffer)), -EINVAL);
     ASSERT_EQ(fmt_test_cached_estimate(NULL, "%d", 1), -EINVAL);
 
+    {
+        char max_format[FMT_PLAN_MAX_FORMAT_LEN];
+
+        for (int32 i = 0; i < FMT_PLAN_MAX_SPECS; i += 1) {
+            max_format[2*i] = '%';
+            max_format[2*i + 1] = '%';
+        }
+        max_format[2*FMT_PLAN_MAX_SPECS] = 'x';
+        max_format[2*FMT_PLAN_MAX_SPECS + 1] = '\0';
+
+        estimate = fmt_test_cached_estimate(&plan, max_format);
+        ASSERT_EQ(estimate, FMT_PLAN_MAX_SPECS + 1);
+        ASSERT(plan.valid);
+        ASSERT(plan.format == max_format);
+        ASSERT_EQ(plan.spec_count, FMT_PLAN_MAX_SPECS);
+    }
+
+    {
+        char too_long[FMT_PLAN_MAX_FORMAT_LEN + 1];
+
+        for (int32 i = 0; i < FMT_PLAN_MAX_FORMAT_LEN; i += 1) {
+            too_long[i] = 'x';
+        }
+        too_long[FMT_PLAN_MAX_FORMAT_LEN] = '\0';
+
+        ASSERT_EQ(fmt_test_cached_estimate(&plan, too_long), -EOVERFLOW);
+        ASSERT(!plan.valid);
+    }
+
     return;
 }
 
@@ -5731,8 +5779,8 @@ test_fmt_public_api(void) {
 
     len = fmt_test_public_vsnprintf(buffer, SIZEOF(buffer),
                                     "%s:%.*s", NULL, 3, "a\0b");
-    ASSERT_EQ(len, 10);
-    ASSERT_EQ(buffer, len + 1, "(null):a\0b", 11);
+    ASSERT_EQ(len, 8);
+    ASSERT_EQ(buffer, len + 1, "null:a\0b", 9);
 
     count = -1;
     len = fmt_snprintf(tiny, SIZEOF(tiny), "abcd%n", &count);
@@ -5746,8 +5794,8 @@ test_fmt_public_api(void) {
 
     len = fmt_test_public_vsprintf(buffer, SIZEOF(buffer),
                                    "%s:%.*s", NULL, 3, "a\0b");
-    ASSERT_EQ(len, 10);
-    ASSERT_EQ(buffer, len + 1, "(null):a\0b", 11);
+    ASSERT_EQ(len, 8);
+    ASSERT_EQ(buffer, len + 1, "null:a\0b", 9);
 
     count = -1;
     len = fmt_sprintf(buffer, SIZEOF(buffer), "abcd%n", &count);
@@ -5756,8 +5804,23 @@ test_fmt_public_api(void) {
     ASSERT_EQ(buffer, "abcd");
 
     ASSERT_EQ(fmt_sprintf(tiny, SIZEOF(tiny), "abcdef"), -ENOSPC);
-    ASSERT_EQ(fmt_test_public_vsprintf(tiny, SIZEOF(tiny), "abcdef"),
-                 -ENOSPC);
+    ASSERT_EQ(fmt_test_public_vsprintf(tiny, SIZEOF(tiny), "abcdef"), -ENOSPC);
+
+    {
+        char max_format[FMT_MAX_FORMAT_LEN];
+        char max_output[FMT_MAX_FORMAT_LEN];
+
+        for (int32 i = 0; i < FMT_MAX_FORMAT_LEN - 1; i += 1) {
+            max_format[i] = 'x';
+        }
+        max_format[FMT_MAX_FORMAT_LEN - 1] = '\0';
+
+        len = fmt_test_public_vsnprintf(max_output, SIZEOF(max_output),
+                                        max_format);
+        ASSERT_EQ(len, FMT_MAX_FORMAT_LEN - 1);
+        ASSERT_EQ(max_output, len + 1, max_format, FMT_MAX_FORMAT_LEN);
+        ASSERT_EQ(fmt_test_public_estimate(max_format), FMT_MAX_FORMAT_LEN - 1);
+    }
 
     return;
 }
@@ -5770,7 +5833,7 @@ test_fmt_estimate(void) {
     int32 exact;
     int32 count;
 
-    ASSERT_EQ(fmt_snprintf_estimate("abc"), 3);
+    ASSERT_EQ(fmt_test_public_estimate("abc"), 3);
     ASSERT_EQ(fmt_snprintf_estimate("%d", 0), 11);
     ASSERT_EQ(fmt_snprintf_estimate("%lld", (int64)0), 20);
     ASSERT_EQ(fmt_snprintf_estimate("%#b", 0), 34);
@@ -5816,10 +5879,10 @@ test_fmt_sink_validation(void) {
     ASSERT_EQ(fmt_test_snprintf(NULL, 1, "abc"), -EINVAL);
     ASSERT_EQ(fmt_test_snprintf(buffer, -1, "abc"), -EINVAL);
     ASSERT_EQ(fmt_test_snprintf(buffer, (int64)INT32_MAX + 1, "abc"),
-                 -EOVERFLOW);
+              -EOVERFLOW);
     ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), NULL), -EINVAL);
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%*d",
-                                   INT32_MIN, 0), -EOVERFLOW);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%*d", INT32_MIN, 0),
+              -EOVERFLOW);
 
     memset64(buffer, 0x7f, SIZEOF(buffer));
     memset64(buffer, 0x7f, SIZEOF(buffer));
@@ -5831,8 +5894,7 @@ test_fmt_sink_validation(void) {
     fmt_sink_add_total(&sink, INT32_MAX);
     fmt_sink_add_total(&sink, 1);
     ASSERT_EQ(fmt_sink_finish(&sink), -EOVERFLOW);
-    ASSERT_EQ(fmt_sink_init(&sink, buffer, (int64)INT32_MAX + 1),
-                 -EOVERFLOW);
+    ASSERT_EQ(fmt_sink_init(&sink, buffer, (int64)INT32_MAX + 1), -EOVERFLOW);
 
     return;
 }
@@ -5857,20 +5919,15 @@ static void
 test_fmt_float64_fixed(double value, int32 precision, char *expected) {
     char buffer[FMT_FLOAT_RYU_BUFFER_SIZE];
     int32 len = fmt_float64_fixed(buffer, SIZEOF(buffer), value, precision);
-
     ASSERT_EQ(buffer, len, expected);
-
     return;
 }
 
 static void
-test_fmt_float64_scientific(double value, int32 precision, char *expected) {
+test_fmt_float64_scientific(double val, int32 precision, char *expected) {
     char buffer[FMT_FLOAT_RYU_BUFFER_SIZE];
-    int32 len;
-
-    len = fmt_float64_scientific(buffer, SIZEOF(buffer), value, precision);
+    int32 len = fmt_float64_scientific(buffer, SIZEOF(buffer), val, precision);
     ASSERT_EQ(buffer, len, expected);
-
     return;
 }
 

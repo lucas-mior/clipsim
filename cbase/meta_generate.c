@@ -120,8 +120,8 @@ c_identifier(char *value, int32 value_len) {
     }
 
     if (out.cap != out.len + 1) {
-        out.data
-            = realloc2(out.data, out.cap, out.len + 1, SIZEOF(out.data[0]));
+        out.data = realloc2(out.data,
+                            out.cap, out.len + 1, SIZEOF(out.data[0]));
         out.cap = out.len + 1;
     }
 

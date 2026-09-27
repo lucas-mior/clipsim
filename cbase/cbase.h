@@ -260,11 +260,14 @@ char *signal_name(int32 signum);
 void send_signal(char *executable, int32 signal_number);
 
 // Caller-owned parsed-format storage. Treat all fields as implementation
-// details. A successful fmt_vsnprintf_estimate_cached() makes the plan
-// self-contained and read-only for fmt_vsprintf_cached().
+// details. Normal format strings include at most 255 bytes plus the null
+// terminator. Cached plans keep a pointer to at most 127 format bytes plus the
+// null terminator; the caller must keep that string alive and unmodified while
+// the plan is in use.
 enum {
-    FMT_PLAN_MAX_FORMAT_LEN = 200,
-    FMT_PLAN_MAX_SPECS = FMT_PLAN_MAX_FORMAT_LEN/2,
+    FMT_MAX_FORMAT_LEN = 256,
+    FMT_PLAN_MAX_FORMAT_LEN = 128,
+    FMT_PLAN_MAX_SPECS = (FMT_PLAN_MAX_FORMAT_LEN - 1)/2,
 };
 
 typedef struct FmtPlanSpec {
@@ -280,7 +283,7 @@ typedef struct FmtPlanSpec {
 } FmtPlanSpec;
 
 typedef struct FmtPlan {
-    char format[FMT_PLAN_MAX_FORMAT_LEN];
+    char *format;
     FmtPlanSpec specs[FMT_PLAN_MAX_SPECS];
     uint8 spec_count;
     uint8 tail_offset;
@@ -303,12 +306,13 @@ int32 fmt_vsprintf(char *buffer, int64 capacity, char *format, va_list args)
     ATTR_PRINTF(3, 0);
 int32 fmt_sprintf(char *buffer, int64 capacity, char *format, ...)
     ATTR_PRINTF(3, 4);
-int32 fmt_vsnprintf_estimate(char *format, va_list args) ATTR_PRINTF(1, 0);
-int32 fmt_snprintf_estimate(char *format, ...) ATTR_PRINTF(1, 2);
+int32 fmt_vsnprintf_estimate(char *format, va_list args)
+    ATTR_PRINTF(1, 0);
+int32 fmt_snprintf_estimate(char *format, ...)
+    ATTR_PRINTF(1, 2);
 int32 fmt_vsnprintf_estimate_cached(FmtPlan *plan, char *format, va_list args)
     ATTR_PRINTF(2, 0);
-int32 fmt_vsprintf_cached(const FmtPlan *plan, char *buffer, int64 capacity,
-                          va_list args);
+int32 fmt_vsprintf_cached(FmtPlan *plan, char *buffer, int64 cap, va_list args);
 
 String *string_array_append(StringArray *);
 int32 string_array_append_copy(StringArray *array, String *item);

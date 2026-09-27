@@ -490,6 +490,10 @@ str_printf(String *str, char *fmt, ...) {
     int32 estimate;
     int32 len;
 
+    if (DEBUGGING) {
+        ASSERT_LT(strlen32(fmt), FMT_PLAN_MAX_FORMAT_LEN);
+    }
+
     va_start(ap, fmt);
     va_copy(ap2, ap);
     estimate = fmt_vsnprintf_estimate_cached(&plan, fmt, ap);
