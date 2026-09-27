@@ -98,7 +98,7 @@ strnlen32(char *string, int32 limit) {
 }
 
 INLINE int32
-optional_strlen32(char *string) {
+opt_strlen32(char *string) {
     if (string == NULL) {
         return 0;
     }
@@ -457,7 +457,6 @@ bool util_equal_files(char *filename_a, char *filename_b);
 bool util_file_exists(char *filename);
 int32 util_filename_from(char *buffer, int64 size, int fd);
 int32 util_nthreads(void);
-void warn(char *fmt, ...);
 int64 read64(int32 fd, void *buffer, int64 len);
 int64 write64(int32 fd, void *buffer, int64 len);
 int64 fread64(void *data, int64 item_size, int64 nitems, FILE *file);

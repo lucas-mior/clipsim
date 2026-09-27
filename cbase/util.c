@@ -857,19 +857,6 @@ is_ident_char(char c) {
     return isalnum((uint8)c) || c == '_';
 }
 
-void
-warn(char *fmt, ...) {
-    va_list ap;
-
-    error2("%s: "RED ("warning:"), program);
-    va_start(ap, fmt);
-    vfprintf(stderr, fmt, ap);
-    va_end(ap);
-    error2( "\n");
-
-    return;
-}
-
 #if 0 == TESTING_util
 static inline void
 util_functions_sink(void) {
@@ -881,7 +868,6 @@ util_functions_sink(void) {
     (void)random_filename_inplace;
     (void)util_glob_match;
     (void)is_ident_start_char;
-    (void)warn;
     (void)here_impl;
     (void)command_result_free;
     (void)command_argv0_set;
