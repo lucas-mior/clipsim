@@ -4292,7 +4292,7 @@ fmt_estimate_spec(FormatSpec *spec, FormatArgs *fmt_args, int64 *estimate) {
 }
 
 int32 ATTR_PRINTF(2, 0)
-fmt_vsnprintf_estimate_cached(FmtPlan *plan, char *format, va_list args) {
+fmt_vsnprintf_estimate_plan(FmtPlan *plan, char *format, va_list args) {
     FormatArgs fmt_args;
     char *literal;
     char *cursor;
@@ -5658,7 +5658,7 @@ fmt_test_cached_estimate(FmtPlan *plan, char *format, ...) {
     int32 estimate;
 
     va_start(args, format);
-    estimate = fmt_vsnprintf_estimate_cached(plan, format, args);
+    estimate = fmt_vsnprintf_estimate_plan(plan, format, args);
     va_end(args);
 
     return estimate;

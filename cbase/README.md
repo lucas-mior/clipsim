@@ -65,7 +65,7 @@ Normal formatter and estimator format strings are limited to 255 bytes plus the
 terminating `\0`. Cached plans use a smaller limit of 127 bytes plus the
 terminating `\0`.
 
-For estimate-then-allocate wrappers, `fmt_vsnprintf_estimate_cached` takes a
+For estimate-then-allocate wrappers, `fmt_vsnprintf_estimate_plan` takes a
 `FmtPlan *` as its first argument. It stores the format pointer and parses the
 format into the plan while estimating. The caller must keep that format string
 alive and unmodified until the plan is no longer used. `fmt_vsprintf_cached`
@@ -80,7 +80,7 @@ invalid.
 estimate-then-format paths and require their format strings to fit the cached
 127-byte limit; they do not fall back to the normal formatter for longer
 formats. Debug builds assert this requirement. Compiler printf checking remains
-on those public wrappers and on `fmt_vsnprintf_estimate_cached`; the cached
+on those public wrappers and on `fmt_vsnprintf_estimate_plan`; the cached
 output call has no format argument and therefore has no printf-format
 attribute.
 

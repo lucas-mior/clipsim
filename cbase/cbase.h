@@ -298,21 +298,14 @@ typedef struct FmtPlan {
 // bounded by the exact fixed-decimal limit of the argument type; larger
 // explicit precisions return -ERANGE. See cbase/README.md for the exact
 // supported grammar and deliberate differences from libc printf.
-int32 fmt_vsnprintf(char *buffer, int64 capacity, char *format, va_list args)
-    ATTR_PRINTF(3, 0);
-int32 fmt_snprintf(char *buffer, int64 capacity, char *format, ...)
-    ATTR_PRINTF(3, 4);
-int32 fmt_vsprintf(char *buffer, int64 capacity, char *format, va_list args)
-    ATTR_PRINTF(3, 0);
-int32 fmt_sprintf(char *buffer, int64 capacity, char *format, ...)
-    ATTR_PRINTF(3, 4);
-int32 fmt_vsnprintf_estimate(char *format, va_list args)
-    ATTR_PRINTF(1, 0);
-int32 fmt_snprintf_estimate(char *format, ...)
-    ATTR_PRINTF(1, 2);
-int32 fmt_vsnprintf_estimate_cached(FmtPlan *plan, char *format, va_list args)
-    ATTR_PRINTF(2, 0);
-int32 fmt_vsprintf_cached(FmtPlan *plan, char *buffer, int64 cap, va_list args);
+int32 fmt_vsnprintf(char *, int64, char *, va_list) ATTR_PRINTF(3, 0);
+int32 fmt_snprintf(char *, int64, char *, ...)      ATTR_PRINTF(3, 4);
+int32 fmt_vsprintf(char *, int64, char *, va_list)  ATTR_PRINTF(3, 0);
+int32 fmt_sprintf(char *, int64, char *, ...)       ATTR_PRINTF(3, 4);
+int32 fmt_vsnprintf_estimate(char *, va_list)       ATTR_PRINTF(1, 0);
+int32 fmt_snprintf_estimate(char *, ...)            ATTR_PRINTF(1, 2);
+int32 fmt_vsnprintf_estimate_plan(FmtPlan *, char *, va_list) ATTR_PRINTF(2, 0);
+int32 fmt_vsprintf_cached(FmtPlan *, char *, int64, va_list);
 
 String *string_array_append(StringArray *);
 int32 string_array_append_copy(StringArray *array, String *item);
@@ -322,7 +315,7 @@ void string_array_destroy(StringArray *);
 void string_array_move(StringArray *dest, StringArray *source);
 int32 string_array_reserve(StringArray *array, int32 extra);
 void string_array_swap(StringArray *left, StringArray *right);
-void strflex_list_push(StrFlexList *, char *, int32);
+StrFlex *strflex_list_push(StrFlexList *, char *, int32);
 void strflex_list_destroy(StrFlexList *);
 void strflex_list_clear(StrFlexList *);
 int32 strflex_list_len(StrFlexList *);

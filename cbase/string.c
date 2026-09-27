@@ -199,7 +199,7 @@ random_ascii_string(char *buffer, int32 capacity, int32 min_len) {
     return len;
 }
 
-void
+StrFlex *
 strflex_list_push(StrFlexList *list, char *value, int32 value_len) {
     StrFlex *string;
 
@@ -212,7 +212,7 @@ strflex_list_push(StrFlexList *list, char *value, int32 value_len) {
     memcpy64(string->data, value, value_len);
     string->data[value_len] = '\0';
     ARRAY_PUSH(list->items, string);
-    return;
+    return string;
 }
 
 void
@@ -485,8 +485,8 @@ str_bytes_pretty(String *str, llong size) {
 void
 str_printf(String *str, char *fmt, ...) {
     FmtPlan plan;
-    va_list ap;
-    va_list ap2;
+    va_list args;
+    va_list args2;
     int32 estimate;
     int32 len;
 
@@ -494,22 +494,21 @@ str_printf(String *str, char *fmt, ...) {
         ASSERT_LT(strlen32(fmt), FMT_PLAN_MAX_FORMAT_LEN);
     }
 
-    va_start(ap, fmt);
-    va_copy(ap2, ap);
-    estimate = fmt_vsnprintf_estimate_cached(&plan, fmt, ap);
-    va_end(ap);
+    va_start(args, fmt);
+    va_copy(args2, args);
+    estimate = fmt_vsnprintf_estimate_plan(&plan, fmt, args);
+    va_end(args);
 
     if (estimate < 0) {
-        va_end(ap2);
+        va_end(args2);
         error("Error formatting \"%s\".", fmt);
         fatal(EXIT_FAILURE);
     }
 
     str_reserve(str, estimate);
 
-    len = fmt_vsprintf_cached(&plan, str->data + str->len, estimate + 1,
-                               ap2);
-    va_end(ap2);
+    len = fmt_vsprintf_cached(&plan, str->data + str->len, estimate + 1, args2);
+    va_end(args2);
 
     if (len < 0) {
         error("Error formatting \"%s\".", fmt);

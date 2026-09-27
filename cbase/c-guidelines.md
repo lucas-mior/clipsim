@@ -438,11 +438,19 @@ but NEVER create helper like those.
 
 ## String representations
 - `String`: for dynamic, appendable strings. Avoid it if the string is not
-  expected to grow
+  expected to grow. For passing it as read-only data for functions, don't pass
+  it directly, use:
+  ```c
+  function(string.data, string.len);
+  ```
 - `StrFlex`: use for groups of strings that never grow within a specific
   lifetime of the application. Use StrFlexList or use StrFlex as the last member
   of a struct definition. They can be useful for low memory usage and good cache
-  locality.
+  locality. For passing it as read-only data for functions, don't pass
+  it directly, use:
+  ```c
+  function(string.data, string.len);
+  ```
 - `char *string` + `int32 string_len`:
   * For read-only strings: this is most functions API:
     They do not change strings, only read them.

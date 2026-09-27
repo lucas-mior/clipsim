@@ -1482,7 +1482,7 @@ command_printf(Command *command, char *fmt, ...) {
 
     va_start(ap, fmt);
     va_copy(ap2, ap);
-    estimate = fmt_vsnprintf_estimate_cached(&plan, fmt, ap);
+    estimate = fmt_vsnprintf_estimate_plan(&plan, fmt, ap);
     va_end(ap);
 
     if (estimate < 0) {
