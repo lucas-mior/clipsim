@@ -63,7 +63,7 @@ enum {
 _Static_assert(FMT_PLAN_MAX_FORMAT_LEN - 1 <= UINT8_MAX,
                "format plan offsets do not fit in uint8");
 _Static_assert(FMT_PLAN_MAX_FORMAT_LEN < FMT_MAX_FORMAT_LEN,
-               "cached format limit must be smaller than normal limit");
+               "plan format limit must be smaller than normal limit");
 _Static_assert(FMT_PLAN_MAX_SPECS <= UINT8_MAX,
                "format plan spec count does not fit in uint8");
 
@@ -555,7 +555,7 @@ fmt_parse_spec(char *cursor, char **next, FormatSpec *spec) {
 }
 
 static void
-fmt_plan_load_spec(FormatSpec *spec, const FmtPlanSpec *plan_spec) {
+fmt_plan_load_spec(FormatSpec *spec, FmtPlanSpec *plan_spec) {
     ASSERT(spec != NULL);
     ASSERT(plan_spec != NULL);
 
@@ -627,7 +627,7 @@ fmt_sink_add_total(FormatSink *sink, int64 len) {
 }
 
 static void
-fmt_sink_write(FormatSink *sink, const char *data, int64 len) {
+fmt_sink_write(FormatSink *sink, char *data, int64 len) {
     int32 available;
     int32 copy_len;
 
@@ -4361,7 +4361,7 @@ fmt_vsnprintf_estimate_plan(FmtPlan *plan, char *format, va_list args) {
     va_copy(fmt_args.args, args);
     total = 0;
     for (int32 i = 0; i < plan->spec_count; i += 1) {
-        const FmtPlanSpec *plan_spec = &plan->specs[i];
+        FmtPlanSpec *plan_spec = &plan->specs[i];
         FormatSpec spec;
         int64 estimate;
 
@@ -4545,7 +4545,7 @@ done:
 }
 
 static int32
-fmt_vsnprintf_plan_sink(FormatSink *sink, const FmtPlan *plan, va_list args) {
+fmt_vsnprintf_plan_sink(FormatSink *sink, FmtPlan *plan, va_list args) {
     FormatArgs fmt_args;
     int32 result;
     int32 status;
@@ -4558,7 +4558,7 @@ fmt_vsnprintf_plan_sink(FormatSink *sink, const FmtPlan *plan, va_list args) {
 
     va_copy(fmt_args.args, args);
     for (int32 i = 0; i < plan->spec_count; i += 1) {
-        const FmtPlanSpec *plan_spec = &plan->specs[i];
+        FmtPlanSpec *plan_spec = &plan->specs[i];
         FormatSpec spec;
 
         fmt_sink_write(sink, plan->format + plan_spec->literal_offset,
@@ -4645,7 +4645,7 @@ fmt_vsprintf(char *buffer, int64 capacity, char *format, va_list args) {
 }
 
 int32
-fmt_vsprintf_cached(FmtPlan *plan, char *buffer, int64 capacity, va_list args) {
+fmt_vsnprintf_planned(FmtPlan *plan, char *buffer, int64 capacity, va_list args) {
     FormatSink sink;
     int32 status;
 
@@ -5653,7 +5653,7 @@ fmt_test_public_vsprintf(char *buffer, int64 capacity, char *format, ...) {
 }
 
 static int32
-fmt_test_cached_estimate(FmtPlan *plan, char *format, ...) {
+fmt_test_planned_estimate(FmtPlan *plan, char *format, ...) {
     va_list args;
     int32 estimate;
 
@@ -5665,18 +5665,18 @@ fmt_test_cached_estimate(FmtPlan *plan, char *format, ...) {
 }
 
 static int32
-fmt_test_cached_sprintf(FmtPlan *plan, char *buffer, int64 capacity, ...) {
+fmt_test_planned_sprintf(FmtPlan *plan, char *buffer, int64 capacity, ...) {
     va_list args;
     int32 len;
 
     va_start(args, capacity);
-    len = fmt_vsprintf_cached(plan, buffer, capacity, args);
+    len = fmt_vsnprintf_planned(plan, buffer, capacity, args);
     va_end(args);
     return len;
 }
 
 static void
-test_fmt_cached_plan(void) {
+test_fmt_planned_plan(void) {
     char format[] = "x=%d s=%.*s f=%g";
     char span[] = {'a', '\0', 'b', 'c'};
     char buffer[128];
@@ -5685,42 +5685,42 @@ test_fmt_cached_plan(void) {
     int32 len;
     int32 count;
 
-    estimate = fmt_test_cached_estimate(&plan, format, 7, 4, span, 1.25);
+    estimate = fmt_test_planned_estimate(&plan, format, 7, 4, span, 1.25);
     ASSERT_POSITIVE(estimate);
     ASSERT(plan.valid);
     ASSERT(plan.format == format);
 
-    len = fmt_test_cached_sprintf(&plan, buffer, SIZEOF(buffer),
+    len = fmt_test_planned_sprintf(&plan, buffer, SIZEOF(buffer),
                                   7, 4, span, 1.25);
     ASSERT_EQ(len, 17);
     ASSERT_EQ(buffer, len + 1, "x=7 s=a\0bc f=1.25", 18);
 
-    estimate = fmt_test_cached_estimate(&plan, "%*.*f", 10, 2, 1.25);
+    estimate = fmt_test_planned_estimate(&plan, "%*.*f", 10, 2, 1.25);
     ASSERT_GE_VAR(estimate, 10);
-    len = fmt_test_cached_sprintf(&plan, buffer, SIZEOF(buffer), 8, 3, 1.25);
+    len = fmt_test_planned_sprintf(&plan, buffer, SIZEOF(buffer), 8, 3, 1.25);
     ASSERT_EQ(len, 8);
     ASSERT_EQ(buffer, "   1.250");
-    len = fmt_test_cached_sprintf(&plan, buffer, SIZEOF(buffer), 0, 1, 1.26);
+    len = fmt_test_planned_sprintf(&plan, buffer, SIZEOF(buffer), 0, 1, 1.26);
     ASSERT_EQ(len, 3);
     ASSERT_EQ(buffer, "1.3");
-    ASSERT_EQ(fmt_test_cached_sprintf(
+    ASSERT_EQ(fmt_test_planned_sprintf(
                   &plan, buffer, SIZEOF(buffer), 0,
                   FMT_DOUBLE_MAX_DECIMAL_PRECISION + 1, 1.0),
               -ERANGE);
 
     count = -1;
-    estimate = fmt_test_cached_estimate(&plan, "ab%ncd", &count);
+    estimate = fmt_test_planned_estimate(&plan, "ab%ncd", &count);
     ASSERT_EQ(estimate, 4);
     ASSERT_EQ(count, -1);
-    len = fmt_test_cached_sprintf(&plan, buffer, SIZEOF(buffer), &count);
+    len = fmt_test_planned_sprintf(&plan, buffer, SIZEOF(buffer), &count);
     ASSERT_EQ(len, 4);
     ASSERT_EQ(count, 2);
     ASSERT_EQ(buffer, "abcd");
 
-    ASSERT_EQ(fmt_test_cached_estimate(&plan, "%"), -EINVAL);
+    ASSERT_EQ(fmt_test_planned_estimate(&plan, "%"), -EINVAL);
     ASSERT(!plan.valid);
-    ASSERT_EQ(fmt_test_cached_sprintf(&plan, buffer, SIZEOF(buffer)), -EINVAL);
-    ASSERT_EQ(fmt_test_cached_estimate(NULL, "%d", 1), -EINVAL);
+    ASSERT_EQ(fmt_test_planned_sprintf(&plan, buffer, SIZEOF(buffer)), -EINVAL);
+    ASSERT_EQ(fmt_test_planned_estimate(NULL, "%d", 1), -EINVAL);
 
     {
         char max_format[FMT_PLAN_MAX_FORMAT_LEN];
@@ -5732,7 +5732,7 @@ test_fmt_cached_plan(void) {
         max_format[2*FMT_PLAN_MAX_SPECS] = 'x';
         max_format[2*FMT_PLAN_MAX_SPECS + 1] = '\0';
 
-        estimate = fmt_test_cached_estimate(&plan, max_format);
+        estimate = fmt_test_planned_estimate(&plan, max_format);
         ASSERT_EQ(estimate, FMT_PLAN_MAX_SPECS + 1);
         ASSERT(plan.valid);
         ASSERT(plan.format == max_format);
@@ -5747,7 +5747,7 @@ test_fmt_cached_plan(void) {
         }
         too_long[FMT_PLAN_MAX_FORMAT_LEN] = '\0';
 
-        ASSERT_EQ(fmt_test_cached_estimate(&plan, too_long), -EOVERFLOW);
+        ASSERT_EQ(fmt_test_planned_estimate(&plan, too_long), -EOVERFLOW);
         ASSERT(!plan.valid);
     }
 
@@ -6004,7 +6004,7 @@ main(void) {
     test_fmt_ldouble_decomposition();
     test_fmt_ldouble_decimal_helpers();
     test_fmt_public_api();
-    test_fmt_cached_plan();
+    test_fmt_planned_plan();
     test_fmt_estimate();
     test_fmt_sink_validation();
 

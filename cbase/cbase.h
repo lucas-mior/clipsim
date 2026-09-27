@@ -298,14 +298,14 @@ typedef struct FmtPlan {
 // bounded by the exact fixed-decimal limit of the argument type; larger
 // explicit precisions return -ERANGE. See cbase/README.md for the exact
 // supported grammar and deliberate differences from libc printf.
-int32 fmt_vsnprintf(char *, int64, char *, va_list) ATTR_PRINTF(3, 0);
-int32 fmt_snprintf(char *, int64, char *, ...)      ATTR_PRINTF(3, 4);
-int32 fmt_vsprintf(char *, int64, char *, va_list)  ATTR_PRINTF(3, 0);
-int32 fmt_sprintf(char *, int64, char *, ...)       ATTR_PRINTF(3, 4);
-int32 fmt_vsnprintf_estimate(char *, va_list)       ATTR_PRINTF(1, 0);
-int32 fmt_snprintf_estimate(char *, ...)            ATTR_PRINTF(1, 2);
+int32 fmt_vsnprintf(char *, int64, char *, va_list)           ATTR_PRINTF(3, 0);
+int32 fmt_snprintf(char *, int64, char *, ...)                ATTR_PRINTF(3, 4);
+int32 fmt_vsprintf(char *, int64, char *, va_list)            ATTR_PRINTF(3, 0);
+int32 fmt_sprintf(char *, int64, char *, ...)                 ATTR_PRINTF(3, 4);
+int32 fmt_vsnprintf_estimate(char *, va_list)                 ATTR_PRINTF(1, 0);
+int32 fmt_snprintf_estimate(char *, ...)                      ATTR_PRINTF(1, 2);
 int32 fmt_vsnprintf_estimate_plan(FmtPlan *, char *, va_list) ATTR_PRINTF(2, 0);
-int32 fmt_vsprintf_cached(FmtPlan *, char *, int64, va_list);
+int32 fmt_vsnprintf_planned(FmtPlan *, char *, int64, va_list);
 
 String *string_array_append(StringArray *);
 int32 string_array_append_copy(StringArray *array, String *item);
@@ -320,12 +320,13 @@ void strflex_list_destroy(StrFlexList *);
 void strflex_list_clear(StrFlexList *);
 int32 strflex_list_len(StrFlexList *);
 StrFlex *strflex_list_at(StrFlexList *, int32);
+
 // Float formatting functions return the formatted byte count, excluding the
 // terminating '\0'. Negative return values are errno-style failures:
 // -EINVAL for invalid input, -ENOSPC when capacity is insufficient, and
 // -ERANGE when the requested precision is unsupported. Fixed/scientific
 // double precision is capped at DBL_MANT_DIG - DBL_MIN_EXP.
-//
+
 // This layer exposes shortest round-trip, fixed precision, and scientific
 // precision formatting. It intentionally does not expose a %g/general format
 // helper: exact %g behavior needs a separate policy layer to choose between

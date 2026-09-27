@@ -1492,7 +1492,7 @@ command_printf(Command *command, char *fmt, ...) {
     }
 
     argument = command_argument_alloc(command, estimate + 1);
-    len = fmt_vsprintf_cached(&plan, argument, estimate + 1, ap2);
+    len = fmt_vsnprintf_planned(&plan, argument, estimate + 1, ap2);
     va_end(ap2);
 
     if (len < 0) {

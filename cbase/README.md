@@ -68,7 +68,7 @@ terminating `\0`.
 For estimate-then-allocate wrappers, `fmt_vsnprintf_estimate_plan` takes a
 `FmtPlan *` as its first argument. It stores the format pointer and parses the
 format into the plan while estimating. The caller must keep that format string
-alive and unmodified until the plan is no longer used. `fmt_vsprintf_cached`
+alive and unmodified until the plan is no longer used. `fmt_vsnprintf_planned`
 takes the plan as its first argument and formats without scanning or parsing
 the format string again. Dynamic `*` widths and precisions are resolved into
 local `FormatSpec` copies, so a valid plan may be reused with different

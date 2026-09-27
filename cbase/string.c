@@ -507,7 +507,7 @@ str_printf(String *str, char *fmt, ...) {
 
     str_reserve(str, estimate);
 
-    len = fmt_vsprintf_cached(&plan, str->data + str->len, estimate + 1, args2);
+    len = fmt_vsnprintf_planned(&plan, str->data + str->len, estimate + 1, args2);
     va_end(args2);
 
     if (len < 0) {
