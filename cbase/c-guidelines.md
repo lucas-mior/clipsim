@@ -299,6 +299,9 @@ In general, we must always know the lengths of our strings:
 - Pass string length around when we already know it (see below).
 - Use STRLIT("literal") to pass a string literal and its length to a
   function/struct without repeating the literal itself.
+- Use `STRPASS(<field>, "literal")`
+  to pass `.<field> = "literal"` and `.<field>_len = STRLIT_LEN("literal")
+  automatically to a struct constructor without manually repeating the literal.
 - Use `memchr64`, `memmem64`, or other function to parse whatever we are
   parsing. Example:
   ```c

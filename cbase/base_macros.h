@@ -20,6 +20,9 @@
 
 #define STRLIT_LEN(s) ((int32)(sizeof("" s) - 1))
 #define STRLIT(s) s, STRLIT_LEN(s)
+#define STRPASS(FIELD, s) .FIELD = s, .FIELD##_len = STRLIT_LEN(s)
+// I don't think there is any advantage of STRPASS2 over STRPASS. Don't use it.
+#define STRPASS2(FIELD, s) FIELD = s, FIELD##_len = STRLIT_LEN(s)
 
 #define CAT_(a, b) a ## b
 #define CAT_SELECT(a, b) CAT_(a, b)

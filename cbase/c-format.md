@@ -68,6 +68,19 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
   this_function_call_is_very_long_but(argument, other, many, arguments,
                                       x, y, width, height);
   ```
+- If the function is assigning to a varible, it may help to break after the `=`
+  to avoid having to break before the first argument:
+  ```c
+  // bad
+  int32 assignment = this_function_call_is_even_more_long_but(
+      argument_very_long, other, many, arguments, width, height);
+
+  // bad
+  int32 assignment =
+      this_function_call_is_even_more_long_but(argument_very_long, other, many,
+                                               arguments,
+                                               width, height);
+  ```
   * If the first argument would not fit in 80 columns, it is okay to break
     before it. But always try to fit it first.
 
@@ -472,9 +485,9 @@ first argument fits in the first line:
     array->items = realloc2(extremelly_long_argument_that_does_not_fit_in_this_line,
                             old_cap, new_cap, SIZEOF(*array->items));
 // good (2) (but ONLY IF good(1) style does not fit!!!)
-    array->items
-        = realloc2(extremelly_long_argument_that_does_not_fit_in_this_line,
-                   old_cap, new_cap, SIZEOF(*array->items));
+    array->items =
+        realloc2(extremelly_long_argument_that_does_not_fit_in_this_line,
+                 old_cap, new_cap, SIZEOF(*array->items));
 ```
 
 ## Preprocessor directives
