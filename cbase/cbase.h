@@ -316,6 +316,7 @@ void string_array_move(StringArray *dest, StringArray *source);
 int32 string_array_reserve(StringArray *array, int32 extra);
 void string_array_swap(StringArray *left, StringArray *right);
 StrFlex *strflex_list_push(StrFlexList *, char *, int32);
+StrFlex *strflex_list_printf(StrFlexList *, char *, ...);
 void strflex_list_destroy(StrFlexList *);
 void strflex_list_clear(StrFlexList *);
 int32 strflex_list_len(StrFlexList *);

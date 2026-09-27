@@ -392,42 +392,34 @@ That means to also avoid calling `strlen32`:
 ## Important pattern:
 - Macros `ENDS_WITH` and `BEGINS_WITH`: they use a macro trick to allow passing
   only the string, or also passing the string length. See `cbase.h`.
-- `String`: use this struct and its functions to build long, dynamic
-  strings. Do not use it where a single
-  `SNPRINTF(stack_array, "format_%s_string", args);` would be enough.
-  * Use `STR_APPEND` for appending literals or strings of known length, and
-    `str_printf` for formatting. `str_append` is internal code, not external
-    API.  Use `STR_APPEND` instead.
-  * `SNPRINTF` returns the number of bytes written (excluding the
-    terminating null byte). No need to call `strlen32` on the buffer:
-    ```c
-    // bad
-    static void
-    function(int32 x, int32 y) {
-        int32 n;
-        char buffer[256];
+* `SNPRINTF` returns the number of bytes written (excluding the terminating
+  null byte). No need to call `strlen32` on the buffer:
+  ```c
+  // bad
+  static int32
+  function(int32 x, int32 y) {
+      int32 n;
+      char buffer[256];
 
-        SNPRINTF(buffer, "%dx%d", x, y);
-        n = strlen32(buffer);
-        return;
-    }
+      SNPRINTF(buffer, "%dx%d", x, y);
+      n = strlen32(buffer);
+      return n;
+  }
 
-    // good
-    static void
-    function(int32 x, int32 y) {
-        int32 n;
-        char buffer[256];
+  // good
+  static int32
+  function(int32 x, int32 y) {
+      char buffer[256];
+      int32 n = SNPRINTF(buffer, "%dx%d", x, y);
+      return n;
+  }
+  ```
 
-        n = SNPRINTF(buffer, "%dx%d", x, y);
-        return;
-    }
-    ```
-
-Considering all that, most `string.h` functions from the C standard library are
-to be avoided. `strcpy`, `strcat`, `strstr`, and `strtok` are always the wrong
-choice once you have the habit of always knowing the length of your strings.
-Prefer `memcpy64`, `memmem64`, or specific struct APIs that operate on strings
-with known length.
+Considering all that, most `<string.h>` functions from the C standard library
+are to be avoided. `strcpy`, `strcat`, `strstr`, and `strtok` are always the
+wrong choice once you have the habit of always knowing the length of your
+strings.  Prefer `memcpy64`, `memmem64`, or specific struct APIs that operate
+on strings with known length.
 
 Also, never create stupid string helpers like
 `<module>_string_copy`,
@@ -437,26 +429,36 @@ Also, never create stupid string helpers like
 but NEVER create helper like those.
 
 ## String representations
-- `String`: for dynamic, appendable strings. Avoid it if the string is not
-  expected to grow. For passing it as read-only data for functions, don't pass
-  it directly, use:
+- `String`: owned type for dynamic, appendable strings. Avoid it if the string
+  is not expected to grow. For passing it as read-only data for functions,
+  don't pass it directly, use:
   ```c
   function(string.data, string.len);
   ```
-- `StrFlex`: use for groups of strings that never grow within a specific
-  lifetime of the application. Use StrFlexList or use StrFlex as the last member
-  of a struct definition. They can be useful for low memory usage and good cache
-  locality. For passing it as read-only data for functions, don't pass
-  it directly, use:
+  * `String` is the correct type if at the moment of the string creation, there
+    is complicated logic that demands multiple `STR_APPEND`, `str_printf`, or
+    other `String` API function calls, even if the string might not get
+    appended to later. This is uncommon. Most strings are simple.
+- `StrFlex`: owned compact type that uses flexible array member. Use for groups
+  of strings that never grow within a specific lifetime of the application. Use
+  StrFlexList or use StrFlex as the last member of a struct definition. They
+  can be useful for low memory usage and good cache locality. For passing it as
+  read-only data for functions, don't pass it directly, use:
   ```c
   function(string.data, string.len);
   ```
+  * StrFlex strings are always built as a single shot, not incrementally like
+    `String`. Possibilities are:
+    + To create a `StrFlex *` from literal: use `SFLIT("literal")`;
+    + Copy existing string to a list using `strflex_list_push()`;
+    + Push formatted string in a single shot using `strflex_list_printf()`.
 - `char *string` + `int32 string_len`:
   * For read-only strings: this is most functions API:
     They do not change strings, only read them.
   * Also useful for strings that are part of a larger struct and are not
     expected to grow, only be set and reset as the application runs. In this
-    case, allocation is ad-hoc: it can be part of arena, malloced, whatever.
+    case, allocation is ad-hoc: it can be a literal, part of arena, malloced,
+    whatever.
   * This representation can also be composed in parallel for a struct-of-arrays
     design:
     ```c
@@ -466,7 +468,32 @@ but NEVER create helper like those.
         Arena *arena;
     } StructOfArrays;
     ```
+  * This representation can also be used for strings inside a struct type:
+    ```c
+    typedef struct MyStructType {
+        char *name;
+        char *path;
+        char *other;
+
+        int32 name_len;
+        int32 path_len;
+        int32 other_len;
+    } MyStructType;
+    ```
+    This pattern naturally exposes the data and the length, and also offers
+    good struct layout without padding.
   * Note:  (`int16 string_len` is also valid depending on the application)
+  * Note: NEVER create a StrView type, like:
+    ```c
+    // bad
+    typedef struct StrView {
+        char *data;
+        int32 len;
+    } StrView;
+    ```
+    This is bad for 2 reaons: first, it has 4 bytes of padding. Second, it does
+    not offer any capability that explicit `char *string` + `int32 string_len`
+    didn't have, while adding unnecessary mental/type overhead to the program.
 - `char *string` without length: Avoid it at all costs:
   * literals can use `STRLIT("literal")` to pass themselves and their length
     cost-free;
@@ -483,6 +510,10 @@ but NEVER create helper like those.
        freed/copied around, then it is no longer a valid use of `char *string`
        without length, and it must be converted in its inception to one of the 3
        representations above.
+- `char **string` without length: sometimes, we have a trusted string which we
+  want to parse and advance without worrying about length. This is very very
+  very rare. In this case, we pass the string as double pointer. As of now, only
+  allowed in `cbase/fmt.c` and `cbase/xenums.c`.
 - Never create other string representations: those 4 above are all ever needed.
 
 ## Comparing strings:
@@ -493,6 +524,8 @@ In general, avoid `strcmp()`, use the alternatives below instead:
 - For strings that we know the length of the one (it might be null terminated
   but not necessarly), and the other is a literal:
   * use `STREQUAL(s1, s1_len, "literal")`
+    + Note: `STREQUAL` already uses `STRLIT_LEN("literal")` internally to
+      simplify the interface. Pass "literal" directly.
 - For strings that we know the length of both (they might be null terminated,
   but not necessarly):
   * use `STREQUAL(s1, s1_len, s2, s2_len)`
@@ -614,6 +647,34 @@ void function(void) {
     }
 
     // do something with result
+
+    return;
+}
+
+// bad
+void function(void) {
+    int32 len = function_that_returns_negative_on_error();
+
+    if (len < 0) {
+        // early return
+        return;
+    }
+
+    // do something with len
+
+    return;
+}
+
+// good
+void function(void) {
+    int32 len;
+
+    if ((len = function_that_returns_negative_on_error()) < 0) {
+        // early return
+        return;
+    }
+
+    // do something with len
 
     return;
 }

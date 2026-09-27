@@ -211,6 +211,49 @@ strflex_list_push(StrFlexList *list, char *value, int32 value_len) {
     string->len = value_len;
     memcpy64(string->data, value, value_len);
     string->data[value_len] = '\0';
+
+    ARRAY_PUSH(list->items, string);
+    return string;
+}
+
+StrFlex *
+strflex_list_printf(StrFlexList *list, char *fmt, ...) {
+    FmtPlan plan;
+    StrFlex *string;
+    va_list args;
+    va_list args2;
+    int32 estimate;
+    int32 len;
+
+    if (DEBUGGING) {
+        ASSERT_LT(strlen32(fmt), FMT_PLAN_MAX_FORMAT_LEN);
+    }
+
+    va_start(args, fmt);
+    va_copy(args2, args);
+    estimate = fmt_vsnprintf_estimate_plan(&plan, fmt, args);
+    va_end(args);
+
+    if (estimate < 0) {
+        va_end(args2);
+        error("Error formatting \"%s\".", fmt);
+        fatal(EXIT_FAILURE);
+    }
+
+    if (list->arena == NULL) {
+        list->arena = arena_create(SIZEMB(2), "strflex_list");
+    }
+
+    string = xarena_push(list->arena, SIZEOF(*string) + estimate + 1);
+    len = fmt_vsnprintf_planned(&plan, string->data, estimate + 1, args2);
+    va_end(args2);
+
+    if (len < 0) {
+        error("Error formatting \"%s\".", fmt);
+        fatal(EXIT_FAILURE);
+    }
+
+    string->len = len;
     ARRAY_PUSH(list->items, string);
     return string;
 }
@@ -746,6 +789,7 @@ string_functions_sink(void) {
     (void)strflex_list_clear;
     (void)strflex_list_destroy;
     (void)strflex_list_len;
+    (void)strflex_list_printf;
     (void)strflex_list_push;
     return;
 }
@@ -818,6 +862,22 @@ main(void) {
         ASSERT_EQ(builder.len, 7);
         ASSERT_EQ(count, builder.len);
         str_free(&builder);
+    }
+
+    {
+        StrFlexList list = {0};
+        StrFlex *formatted;
+        int32 count = 0;
+
+        formatted = strflex_list_printf(&list, "%s %.10s %d%n",
+                                        "x", "abc", 7, &count);
+        ASSERT_EQ(formatted->data, "x abc 7");
+        ASSERT_EQ(formatted->len, 7);
+        ASSERT_EQ(count, formatted->len);
+        ASSERT_ZERO(formatted->data[formatted->len]);
+        ASSERT_EQ(strflex_list_len(&list), 1);
+        ASSERT(strflex_list_at(&list, 0) == formatted);
+        strflex_list_destroy(&list);
     }
 
     {
