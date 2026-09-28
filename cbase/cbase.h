@@ -219,8 +219,6 @@ int32 dirname2(char *buffer, char *path, int32 *path_len);
 char *ends_with(char *string, int32 string_len, char *suffix,
                 int32 suffix_len);
 void error_async_safe(char *message, int32 message_len);
-bool is_ident_char(char c);
-bool is_ident_start_char(char c);
 void normalize(char *restrict path, int32 *restrict length);
 int32 parse_option(char **parsed, char *arg, char *option_name);
 char *path_basename(char *path, int32 path_len);
@@ -322,6 +320,16 @@ is_graph(int32 c) {
 INLINE bool32
 is_punct(int32 c) {
     return is_graph(c) && !is_alnum(c);
+}
+
+INLINE bool32
+is_ident_start(int32 c) {
+    return is_alpha(c) || c == '_';
+}
+
+INLINE bool32
+is_ident(int32 c) {
+    return is_alnum(c) || c == '_';
 }
 
 // Caller-owned parsed-format storage. Treat all fields as implementation

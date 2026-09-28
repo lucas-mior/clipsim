@@ -847,16 +847,6 @@ parse_option(char **parsed, char *arg, char *option_name) {
     return -1;
 }
 
-bool
-is_ident_start_char(char c) {
-    return is_alpha(c) || c == '_';
-}
-
-bool
-is_ident_char(char c) {
-    return is_alnum(c) || c == '_';
-}
-
 #if 0 == TESTING_util
 static inline void
 util_functions_sink(void) {
@@ -867,7 +857,6 @@ util_functions_sink(void) {
     (void)rand_shuffle;
     (void)random_filename_inplace;
     (void)util_glob_match;
-    (void)is_ident_start_char;
     (void)here_impl;
     (void)command_result_free;
     (void)command_argv0_set;
