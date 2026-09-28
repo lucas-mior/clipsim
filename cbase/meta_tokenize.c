@@ -903,11 +903,11 @@ test_character_classifiers(void) {
 
 static void
 test_scan_number_literal(void) {
-    ASSERT_EQ(scan_number_literal("123 ", strlen32("123 "), 0), 3);
-    ASSERT_EQ(scan_number_literal(".5f ", strlen32(".5f "), 0), 3);
-    ASSERT_EQ(scan_number_literal("3.14e+2;", strlen32("3.14e+2;"), 0), 7);
-    ASSERT_EQ(scan_number_literal("0x1.fp-2,", strlen32("0x1.fp-2,"), 0), 8);
-    ASSERT_EQ(scan_number_literal("1'000u", strlen32("1'000u"), 0), 6);
+    ASSERT_EQ(scan_number_literal(STRLIT("123 "), 0), 3);
+    ASSERT_EQ(scan_number_literal(STRLIT(".5f "), 0), 3);
+    ASSERT_EQ(scan_number_literal(STRLIT("3.14e+2;"), 0), 7);
+    ASSERT_EQ(scan_number_literal(STRLIT("0x1.fp-2,"), 0), 8);
+    ASSERT_EQ(scan_number_literal(STRLIT("1'000u"), 0), 6);
     return;
 }
 
@@ -915,20 +915,20 @@ static void
 test_literal_scanners(void) {
     char *literal = "\"a\\\"b\" tail";
 
-    ASSERT_ZERO(literal_quote_index("'x'", strlen32("'x'"), 0));
-    ASSERT_EQ(literal_quote_index("L\"abc\"", strlen32("L\"abc\""), 0), 1);
-    ASSERT_EQ(literal_quote_index("u8\"abc\"", strlen32("u8\"abc\""), 0), 2);
-    ASSERT_EQ(literal_quote_index("name", strlen32("name"), 0), -1);
+    ASSERT_ZERO(literal_quote_index(STRLIT("'x'"), 0));
+    ASSERT_EQ(literal_quote_index(STRLIT("L\"abc\""), 0), 1);
+    ASSERT_EQ(literal_quote_index(STRLIT("u8\"abc\""), 0), 2);
+    ASSERT_EQ(literal_quote_index(STRLIT("name"), 0), -1);
     ASSERT_EQ(scan_literal_token(literal, strlen32(literal), 0), 6);
-    ASSERT_EQ(scan_literal_token("u8\"xy\";", strlen32("u8\"xy\";"), 0), 6);
-    ASSERT_ZERO(scan_literal_token("name", strlen32("name"), 0));
+    ASSERT_EQ(scan_literal_token(STRLIT("u8\"xy\";"), 0), 6);
+    ASSERT_ZERO(scan_literal_token(STRLIT("name"), 0));
 
     {
         char trailing_escape[] = {'\"', 'a', '\\'};
 
         ASSERT_EQ(scan_literal_token(trailing_escape,
-                                        LENGTH(trailing_escape), 0),
-                     LENGTH(trailing_escape));
+                                     LENGTH(trailing_escape), 0),
+                  LENGTH(trailing_escape));
     }
     return;
 }
@@ -937,16 +937,16 @@ static void
 test_comment_scanners(void) {
     bool in_block_comment = false;
 
-    ASSERT_EQ(scan_line_comment("// abc\nx", strlen32("// abc\nx"), 0), 6);
-    ASSERT_EQ(scan_block_comment("/* abc */x", strlen32("/* abc */x"), 0,
+    ASSERT_EQ(scan_line_comment(STRLIT("// abc\nx"), 0), 6);
+    ASSERT_EQ(scan_block_comment(STRLIT("/* abc */x"), 0,
                                     &in_block_comment),
                  9);
     ASSERT(!in_block_comment);
-    ASSERT_EQ(scan_block_comment("/* abc\nx", strlen32("/* abc\nx"), 0,
+    ASSERT_EQ(scan_block_comment(STRLIT("/* abc\nx"), 0,
                                     &in_block_comment),
                  6);
     ASSERT(in_block_comment);
-    ASSERT_EQ(scan_block_comment("continued */", strlen32("continued */"), 0,
+    ASSERT_EQ(scan_block_comment(STRLIT("continued */"), 0,
                                     &in_block_comment),
                  12);
     ASSERT(!in_block_comment);
@@ -958,23 +958,23 @@ test_operator_or_punct_category(void) {
     enum TokenKind kind;
     int32 len;
 
-    kind = operator_or_punct_category(">>=", strlen32(">>="), 0, &len);
+    kind = operator_or_punct_category(STRLIT(">>="), 0, &len);
     ASSERT(kind == TOKEN_OPERATOR);
     ASSERT_EQ(len, 3);
 
-    kind = operator_or_punct_category("...", strlen32("..."), 0, &len);
+    kind = operator_or_punct_category(STRLIT("..."), 0, &len);
     ASSERT(kind == TOKEN_PUNCT);
     ASSERT_EQ(len, 3);
 
-    kind = operator_or_punct_category("<:", strlen32("<:"), 0, &len);
+    kind = operator_or_punct_category(STRLIT("<:"), 0, &len);
     ASSERT(kind == TOKEN_PUNCT);
     ASSERT_EQ(len, 2);
 
-    kind = operator_or_punct_category("&&", strlen32("&&"), 0, &len);
+    kind = operator_or_punct_category(STRLIT("&&"), 0, &len);
     ASSERT(kind == TOKEN_OPERATOR);
     ASSERT_EQ(len, 2);
 
-    kind = operator_or_punct_category("(", strlen32("("), 0, &len);
+    kind = operator_or_punct_category(STRLIT("("), 0, &len);
     ASSERT(kind == TOKEN_PUNCT);
     ASSERT_EQ(len, 1);
     return;

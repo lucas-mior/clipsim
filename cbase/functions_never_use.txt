@@ -17,3 +17,16 @@ strtok_r
 strxfrm
 strxfrm_l
 strsep
+isalnum
+isalpha
+isascii
+isblank
+iscntrl
+isdigit
+isgraph
+islower
+isprint
+ispunct
+isspace
+isupper
+isxdigit

@@ -1636,8 +1636,7 @@ main(void) {
         ASSERT(!util_file_exists(path));
 
         missing_contents = (char *)1;
-        ASSERT_EQ(read_entire_file(missing_path, &missing_contents),
-                     -ENOENT);
+        ASSERT_EQ(read_entire_file(missing_path, &missing_contents), -ENOENT);
         ASSERT_EQ(missing_contents, NULL);
 
         ASSERT_EQ(write_entire_file(path, STRLIT("abcdef")), 6);

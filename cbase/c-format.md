@@ -75,14 +75,15 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
   int32 assignment = this_function_call_is_even_more_long_but(
       argument_very_long, other, many, arguments, width, height);
 
-  // bad
+  // good
   int32 assignment =
       this_function_call_is_even_more_long_but(argument_very_long, other, many,
                                                arguments,
                                                width, height);
   ```
-  * If the first argument would not fit in 80 columns, it is okay to break
-    before it. But always try to fit it first.
+  * If the first argument would not fit in 80 columns, even after trying to
+    break after the `=` in case of assignment, then it is okay to break before
+    the first arg. But always try to fit it first.
 
 ## Identation
 When breaking long lines that are long expressions, try to make them readable
@@ -119,47 +120,47 @@ function(void) {
 
     // bad (unnecessarly breaking lines)
     str_printf(&str,
-            "this fits in one line: %d\n",
-            x);
+               "this fits in one line: %d\n",
+               x);
 
     // bad (format arguments are split across lines)
-    str_printf(&str, "this does not fit in a single line because of: %d, %d\n", x,
+    str_printf(&str, "this does not fit in single line because of: %d, %d\n", x,
                y);
 
-    // good (format arguments are on the same line)
+    // good (format arguments are on the same line and aligned with fmt string)
     str_printf(&str, "this does not fit in a single line because of: %d, %d\n",
-               x, y);
+                     x, y);
 
     // also good (format string is separate; format arguments stay together)
     str_printf(&str,
-            "this does not fit in a single line because of: %d, %d\n", x, y);
+               "this does not fit in a single line because of: %d, %d\n", x, y);
 
     // bad (passes the 80 column limit)
     str_printf(&str, "this is a format string for writing the numbers %d and %d.", x, y);
 
     // also bad (format string is with some format arguments, but not all)
-    str_printf(&str, "this is a format string for writing the numbers %d and %d.",
-               x, y);
+    str_printf(&str, "this is format string for writing numbers %d and %d.", x,
+                     y);
 
     // good (format string and all format arguments fit on the same line)
     str_printf(&str,
-            "this is a format string for writing the numbers %d and %d.", x, y);
+               "this is format string for writing numbers %d and %d.", x, y);
 
     // also good (format string is separate; format arguments stay together)
     str_printf(&str,
-            "this is a format string for writing the numbers %d and %d.",
-            x, y);
-
-    // also good (format arguments are aligned with the format string)
-    str_printf(&str, "this is a format string for writing the numbers %d and %d.",
+               "this is a format string for writing the numbers %d and %d.",
                x, y);
 
-    // bad (one format argument is left on the format-string line)
-    printf("%str = %g\n", states[i],
+    // also good (format arguments are aligned with the format string)
+    str_printf(&str, "this is a format string for writing numbers %d and %d.",
+                     x, y);
+
+    // bad (one format argument is separated from the others
+    printf("some format string says: %s = %g\n", states[i],
            X[final_step*nstates + i]);
 
-    // good (format string is separate; format arguments stay together)
-    printf("%s = %g\n",
+    // good (format arguments stay together; first arg is aligned with fmt str)
+    printf("some format string says: %s = %g\n",
            states[i], X[final_step*nstates + i]);
 
     return;
@@ -270,8 +271,6 @@ default:
   if (condition)
       do_only_one_thing();
   ```
-
-## Parenthesis
 
 ## If expressions
 when an operand of `&&` or `||` is itself a binary expression,
@@ -412,15 +411,14 @@ the same line of the object it refers to:
 ```c
 // bad
 static void
-function_with_long_name_and_multiple_arguments_x(MyStruct *handle, char *string,
-                                                 int32 string_len);
+function_with_long_name_and_multiple_arguments_x(MyStruct *, char *,
+                                                 int32);
 function_with_long_name_and_multiple_arguments_x(handle, string_name,
                                                  string_name_len);
 
 // good
 static void
-function_with_long_name_and_multiple_arguments(MyStruct *handle,
-                                               char *string, int32 string_len);
+function_with_long_name_and_multiple_arguments(MyStruct *, char *, int32);
 function_with_long_name_and_multiple_arguments(handle,
                                                string_name, string_name_len);
 

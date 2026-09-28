@@ -18,6 +18,10 @@
 #define EOVERFLOW ERANGE
 #endif
 
+#if !defined(FMT_NULL_STRING)
+#define FMT_NULL_STRING "null"
+#endif
+
 // For a binary floating type, MANT_DIG - MIN_EXP is the number of decimal
 // fractional places needed to represent its smallest subnormal exactly.
 enum {
@@ -73,6 +77,16 @@ _Static_assert(FMT_FLOAT_MAX_EXP_PREFIX
                + FMT_DOUBLE_MAX_DECIMAL_PRECISION
                < FMT_FLOAT_RYU_BUFFER_SIZE,
                "format scientific temporary buffer is too small");
+
+static char fmt_default_null_string[] = FMT_NULL_STRING;
+static char *fmt_null_string = fmt_default_null_string;
+
+void
+fmt_set_null_string(char *string) {
+    ASSERT(string != NULL);
+    fmt_null_string = string;
+    return;
+}
 
 #define ENUM_NAME FmtFlags
 #define ENUM_BITFLAGS 1
@@ -3742,7 +3756,7 @@ fmt_estimate_spec(FormatSpec *spec, FormatArgs *fmt_args, int64 *estimate) {
         } else if (fmt_has_precision(spec)) {
             *estimate = spec->precision;
         } else if (string == NULL) {
-            *estimate = 6;
+            *estimate = strlen32(fmt_null_string);
         } else {
             *estimate = strlen32(string);
         }
@@ -4083,7 +4097,7 @@ fmt_execute_spec(FormatSink *sink, FormatSpec *spec, FormatArgs *fmt_args) {
             }
         } else {
             if (string == NULL) {
-                string = "null";
+                string = fmt_null_string;
             }
             if (fmt_has_precision(spec)) {
                 len = strnlen32(string, spec->precision);
@@ -4744,6 +4758,14 @@ test_fmt_integer_outputs(void) {
 }
 
 static void
+test_fmt_null_string_configuration(void) {
+    ASSERT_EQ(fmt_null_string, FMT_NULL_STRING);
+    fmt_set_null_string("<nil>");
+    ASSERT_EQ(fmt_null_string, "<nil>");
+    return;
+}
+
+static void
 test_fmt_char_string_outputs(void) {
     char nul_char_expected[] = {'\0'};
     char span[] = {'a', '\0', 'b', 'c'};
@@ -4764,9 +4786,9 @@ test_fmt_char_string_outputs(void) {
     test_fmt_bytes_cap(STRLIT("abc  "), "%-5s", "abc");
     test_fmt_bytes_cap(STRLIT("ab"), "%.2s", "abc");
     test_fmt_bytes_cap(STRLIT("   ab"), "%5.2s", "abc");
-    test_fmt_bytes_cap(STRLIT("null"), "%s", (char *)NULL);
-    test_fmt_bytes_cap(STRLIT("nu"), "%.2s", (char *)NULL);
-    test_fmt_bytes_cap(STRLIT("     nul"), "%8.3s", (char *)NULL);
+    test_fmt_bytes_cap(STRLIT("<nil>"), "%s", (char *)NULL);
+    test_fmt_bytes_cap(STRLIT("<n"), "%.2s", (char *)NULL);
+    test_fmt_bytes_cap(STRLIT("     <ni"), "%8.3s", (char *)NULL);
 
     test_fmt_bytes_cap(span_expected, 4, "%.*s", 4, span);
     test_fmt_bytes_cap(span_width_expected, 5, "%5.*s", 3, span);
@@ -4825,52 +4847,54 @@ test_fmt_pointer_count_outputs(void) {
     ASSERT_EQ(buffer[2], (char)0x7f);
 
     count8 = -1;
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "abc%hhn", &count8), 3);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%hhn", &count8),
+              3);
     ASSERT_EQ(count8, 3);
 
     count16 = -1;
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "abc%hn", &count16), 3);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%hn", &count16),
+              3);
     ASSERT_EQ(count16, 3);
 
     count64 = -1;
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "abc%lln", &count64), 3);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%lln", &count64),
+              3);
     ASSERT_EQ(count64, 3);
 
     count8 = -1;
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "abc%w8n", &count8), 3);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%w8n", &count8),
+              3);
     ASSERT_EQ(count8, 3);
 
     count16 = -1;
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "abc%w16n", &count16), 3);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%w16n", &count16),
+              3);
     ASSERT_EQ(count16, 3);
 
     count32 = -1;
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "abc%w32n", &count32), 3);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%w32n", &count32),
+              3);
     ASSERT_EQ(count32, 3);
 
     count64 = -1;
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "abc%w64n", &count64), 3);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%w64n", &count64),
+              3);
     ASSERT_EQ(count64, 3);
 
     count8 = -7;
     ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "%128d%hhn", 0, &count8), -EOVERFLOW);
+                                "%128d%hhn", 0, &count8),
+              -EOVERFLOW);
     ASSERT_EQ(count8, -7);
 
     count16 = -7;
     ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "%32768d%hn", 0, &count16), -EOVERFLOW);
+                                "%32768d%hn", 0, &count16),
+              -EOVERFLOW);
     ASSERT_EQ(count16, -7);
 
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "abc%n", (int32 *)NULL), -EINVAL);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "abc%n", (int32 *)NULL),
+              -EINVAL);
 
     return;
 }
@@ -4986,11 +5010,9 @@ test_fmt_printf_general_outputs(void) {
     test_fmt_bytes_cap(STRLIT("nan"), "%g", fmt_test_positive_nan());
     test_fmt_bytes_cap(STRLIT("-nan"), "%g", fmt_test_negative_nan());
 
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                   "%.*g", -1, 1.25), 4);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*g", -1, 1.25), 4);
     ASSERT_EQ(buffer, "1.25");
-    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer),
-                                "%.*g", 0, 123.0), 5);
+    ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*g", 0, 123.0), 5);
     ASSERT_EQ(buffer, "1e+02");
     ASSERT_EQ(fmt_test_snprintf(NULL, 0, "%#.*g",
                                 FMT_DOUBLE_MAX_DECIMAL_PRECISION, 1.0),
@@ -5412,6 +5434,13 @@ test_fmt_planned_plan(void) {
                                        1.0),
               -ERANGE);
 
+    estimate = fmt_test_planned_estimate(&plan, "[%s]", (char *)NULL);
+    ASSERT_EQ(estimate, 7);
+    len = fmt_test_planned_sprintf(&plan, buffer, SIZEOF(buffer),
+                                   (char *)NULL);
+    ASSERT_EQ(len, 7);
+    ASSERT_EQ(buffer, "[<nil>]");
+
     count = -1;
     estimate = fmt_test_planned_estimate(&plan, "ab%ncd", &count);
     ASSERT_EQ(estimate, 4);
@@ -5483,8 +5512,8 @@ test_fmt_public_api(void) {
 
     len = fmt_test_public_vsnprintf(buffer, SIZEOF(buffer),
                                     "%s:%.*s", NULL, 3, "a\0b");
-    ASSERT_EQ(len, 8);
-    ASSERT_EQ(buffer, len + 1, "null:a\0b", 9);
+    ASSERT_EQ(len, 9);
+    ASSERT_EQ(buffer, len + 1, "<nil>:a\0b", 10);
 
     count = -1;
     len = fmt_snprintf(tiny, SIZEOF(tiny), "abcd%n", &count);
@@ -5498,8 +5527,8 @@ test_fmt_public_api(void) {
 
     len = fmt_test_public_vsprintf(buffer, SIZEOF(buffer),
                                    "%s:%.*s", NULL, 3, "a\0b");
-    ASSERT_EQ(len, 8);
-    ASSERT_EQ(buffer, len + 1, "null:a\0b", 9);
+    ASSERT_EQ(len, 9);
+    ASSERT_EQ(buffer, len + 1, "<nil>:a\0b", 10);
 
     count = -1;
     len = fmt_sprintf(buffer, SIZEOF(buffer), "abcd%n", &count);
@@ -5546,7 +5575,7 @@ test_fmt_estimate(void) {
               (2 + 2*SIZEOF(uintptr)));
 
     ASSERT_EQ(fmt_snprintf_estimate("%s", "abc"), 3);
-    ASSERT_EQ(fmt_snprintf_estimate("%s", (char *)NULL), 6);
+    ASSERT_EQ(fmt_snprintf_estimate("%s", (char *)NULL), 5);
     ASSERT_EQ(fmt_snprintf_estimate("%.10s", "abc"), 10);
     ASSERT_EQ(fmt_snprintf_estimate("%.*s", 4, span), 4);
     ASSERT_EQ(fmt_snprintf_estimate("%5.*s", 3, span), 5);
@@ -5689,6 +5718,7 @@ int
 main(void) {
     char buffer[16];
 
+    test_fmt_null_string_configuration();
     test_fmt_sink_cap("", "");
     test_fmt_sink_cap("abc", "abc");
     test_fmt_sink_cap("%%", "%");

@@ -86,7 +86,7 @@ c_identifier(char *value, int32 value_len) {
 
     for (int32 i = 0; i < value_len; i += 1) {
         char c;
-        if (isalnum((uint8)value[i]) || value[i] == '_') {
+        if (is_alnum(value[i]) || value[i] == '_') {
             c = value[i];
         } else {
             c = '_';
@@ -99,7 +99,7 @@ c_identifier(char *value, int32 value_len) {
 
         if (!out.len) {
             needs_prefix = true;
-        } else if (isdigit((uint8)out.data[0])) {
+        } else if (is_digit(out.data[0])) {
             needs_prefix = true;
         } else if (out.data[0] == '_') {
             needs_prefix = true;
@@ -287,8 +287,7 @@ test_c_string_literal(void) {
     free2(literal.data, literal.cap);
 
     literal = c_string_literal(control_bytes, LENGTH(control_bytes));
-    ASSERT_EQ(literal.data,
-                 "\"a\\n\\000\\0379\\t\\\\\\\"\\177\"");
+    ASSERT_EQ(literal.data, "\"a\\n\\000\\0379\\t\\\\\\\"\\177\"");
     ASSERT_EQ(literal.cap, literal.len + 1);
     free2(literal.data, literal.cap);
     return;
@@ -353,8 +352,7 @@ test_emit_number_inits(void) {
 
     str_free(&out);
     emit_u64_array_init(&out, "bits", u64s, 2);
-    ASSERT_EQ(out.data,
-                 "    .bits = { UINT64_C(0x1234), UINT64_C(0x0) },\n");
+    ASSERT_EQ(out.data, "    .bits = { UINT64_C(0x1234), UINT64_C(0x0) },\n");
     free2(out.data, out.cap);
     return;
 }
@@ -365,8 +363,8 @@ test_emit_wrapped_expr(void) {
 
     c_emit_wrapped_expr(&out, "  ", "return ", "f(a,b)", ";");
     ASSERT_EQ(out.data, "  return f(\n"
-                           "         a,\n"
-                           "         b);\n");
+                        "         a,\n"
+                        "         b);\n");
     free2(out.data, out.cap);
     return;
 }

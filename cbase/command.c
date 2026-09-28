@@ -1736,10 +1736,10 @@ main(int argc, char **argv) {
                          "sh",
                          "-c",
                          "cat >/dev/null; printf done");
-            ASSERT_ZERO((command_stdin_buffer_set(&cmd,
-                                                  stdin_data,
-                                                  COMMAND_STDIN_TEST_LEN)));
-            ASSERT_ZERO((command_run_capture_all(&cmd)));
+            ASSERT(!command_stdin_buffer_set(&cmd,
+                                             stdin_data,
+                                             COMMAND_STDIN_TEST_LEN));
+            ASSERT(!command_run_capture_all(&cmd));
             ASSERT_EQ(cmd.result.stdout_output, "done");
             ASSERT_ZERO(cmd.result.status);
             free2(stdin_data, COMMAND_STDIN_TEST_LEN);
@@ -1757,9 +1757,9 @@ main(int argc, char **argv) {
             stdin_data = malloc2(COMMAND_EPIPE_TEST_LEN);
             memset64(stdin_data, 'x', COMMAND_EPIPE_TEST_LEN);
             COMMAND_PUSH(&cmd, "sh", "-c", "exit 3");
-            ASSERT_ZERO((command_stdin_buffer_set(&cmd,
-                                                  stdin_data,
-                                                  COMMAND_EPIPE_TEST_LEN)));
+            ASSERT(!command_stdin_buffer_set(&cmd,
+                                             stdin_data,
+                                             COMMAND_EPIPE_TEST_LEN));
             ASSERT_ZERO((command_run_capture_all(&cmd)));
             ASSERT_EQ(cmd.result.status, 3);
             free2(stdin_data, COMMAND_EPIPE_TEST_LEN);
@@ -1867,8 +1867,7 @@ main(int argc, char **argv) {
             flags_str = COMMAND_str(COMMAND_CAPTURE_STDOUT
                                          |COMMAND_CAPTURE_STDERR);
             ASSERT_EQ(flags_str,
-                         "COMMAND_CAPTURE_STDOUT"
-                         "|COMMAND_CAPTURE_STDERR");
+                      "COMMAND_CAPTURE_STDOUT|COMMAND_CAPTURE_STDERR");
             COMMAND_str_free(flags_str);
             ASSERT(COMMAND_parse(STRLIT("CAPTURE_STDOUT|CAPTURE_STDERR"))
                    == (COMMAND_CAPTURE_STDOUT |COMMAND_CAPTURE_STDERR));
@@ -1888,9 +1887,9 @@ main(int argc, char **argv) {
                      "sh",
                      "-c",
                      "printf asyncout; printf asyncerr >&2");
-        ASSERT_ZERO((command_run_async(&cmd,
-                                       COMMAND_CAPTURE_STDOUT
-                                       |COMMAND_CAPTURE_STDERR)));
+        ASSERT(!command_run_async(&cmd,
+                                  COMMAND_CAPTURE_STDOUT
+                                  |COMMAND_CAPTURE_STDERR));
         ASSERT_POSITIVE(cmd.result.pid);
         command_result_read_captured(&cmd);
         ASSERT_ZERO(command_wait(&cmd));

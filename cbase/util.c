@@ -849,12 +849,12 @@ parse_option(char **parsed, char *arg, char *option_name) {
 
 bool
 is_ident_start_char(char c) {
-    return isalpha((uint8)c) || c == '_';
+    return is_alpha(c) || c == '_';
 }
 
 bool
 is_ident_char(char c) {
-    return isalnum((uint8)c) || c == '_';
+    return is_alnum(c) || c == '_';
 }
 
 #if 0 == TESTING_util

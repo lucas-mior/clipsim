@@ -378,36 +378,21 @@ main(void) {
     ASSERT(MAXOF(primitive.aullong) == ULLONG_MAX);
     ASSERT_EQ(MAXOF(primitive.abool), 1);
 
-    ASSERT_EQ(TYPENAME(primitive.avoidp),
-                 typename(TYPEID(primitive.avoidp)));
-    ASSERT_EQ(TYPENAME(primitive.acharp),
-                 typename(TYPEID(primitive.acharp)));
-    ASSERT_EQ(TYPENAME(primitive.abool),
-                 typename(TYPEID(primitive.abool)));
-    ASSERT_EQ(TYPENAME(primitive.aschar),
-                 typename(TYPEID(primitive.aschar)));
-    ASSERT_EQ(TYPENAME(primitive.ashort),
-                 typename(TYPEID(primitive.ashort)));
-    ASSERT_EQ(TYPENAME(primitive.aint),
-                 typename(TYPEID(primitive.aint)));
-    ASSERT_EQ(TYPENAME(primitive.along),
-                 typename(TYPEID(primitive.along)));
-    ASSERT_EQ(TYPENAME(primitive.allong),
-                 typename(TYPEID(primitive.allong)));
-    ASSERT_EQ(TYPENAME(primitive.auchar),
-                 typename(TYPEID(primitive.auchar)));
-    ASSERT_EQ(TYPENAME(primitive.aushort),
-                 typename(TYPEID(primitive.aushort)));
-    ASSERT_EQ(TYPENAME(primitive.auint),
-                 typename(TYPEID(primitive.auint)));
-    ASSERT_EQ(TYPENAME(primitive.aulong),
-                 typename(TYPEID(primitive.aulong)));
-    ASSERT_EQ(TYPENAME(primitive.aullong),
-                 typename(TYPEID(primitive.aullong)));
-    ASSERT_EQ(TYPENAME(primitive.afloat),
-                 typename(TYPEID(primitive.afloat)));
-    ASSERT_EQ(TYPENAME(primitive.adouble),
-                 typename(TYPEID(primitive.adouble)));
+    ASSERT_EQ(TYPENAME(primitive.avoidp),  typename(TYPEID(primitive.avoidp)));
+    ASSERT_EQ(TYPENAME(primitive.acharp),  typename(TYPEID(primitive.acharp)));
+    ASSERT_EQ(TYPENAME(primitive.abool),   typename(TYPEID(primitive.abool)));
+    ASSERT_EQ(TYPENAME(primitive.aschar),  typename(TYPEID(primitive.aschar)));
+    ASSERT_EQ(TYPENAME(primitive.ashort),  typename(TYPEID(primitive.ashort)));
+    ASSERT_EQ(TYPENAME(primitive.aint),    typename(TYPEID(primitive.aint)));
+    ASSERT_EQ(TYPENAME(primitive.along),   typename(TYPEID(primitive.along)));
+    ASSERT_EQ(TYPENAME(primitive.allong),  typename(TYPEID(primitive.allong)));
+    ASSERT_EQ(TYPENAME(primitive.auchar),  typename(TYPEID(primitive.auchar)));
+    ASSERT_EQ(TYPENAME(primitive.aushort), typename(TYPEID(primitive.aushort)));
+    ASSERT_EQ(TYPENAME(primitive.auint),   typename(TYPEID(primitive.auint)));
+    ASSERT_EQ(TYPENAME(primitive.aulong),  typename(TYPEID(primitive.aulong)));
+    ASSERT_EQ(TYPENAME(primitive.aullong), typename(TYPEID(primitive.aullong)));
+    ASSERT_EQ(TYPENAME(primitive.afloat),  typename(TYPEID(primitive.afloat)));
+    ASSERT_EQ(TYPENAME(primitive.adouble), typename(TYPEID(primitive.adouble)));
 #if CC_MSVC
     (void)primitive;
 #endif
