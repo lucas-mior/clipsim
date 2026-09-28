@@ -140,6 +140,7 @@ extension semantics:
 - positional arguments are not supported.
 - GNU, glibc, and compiler-specific extensions such as `%m` are not supported.
 - the integer conversions are `%d`, `%u`, `%o`, `%x`, `%X`, `%b`, and `%B`.
+  * We don't support `%i`. This is intentional to avoid confusion.
 - the supported integer length modifiers are no modifier, `hh`, `h`, `ll`,
   `w8`, `w16`, `w32`, and `w64`.
 - integer `l`, `j`, `z`, `t`, and `wfN` length modifiers are not supported.
