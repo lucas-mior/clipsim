@@ -543,24 +543,14 @@ int64 fwrite64(void *data, int64 item_size, int64 nitems, FILE *file);
 typedef void ParallelForFunction(int64 start, int64 end, int32 worker_id,
                                  void *user_data);
 
-int32 parallel_for(
-    int64 length,
-    ParallelForFunction *function,
-    void *user_data
-);
-int32 parallel_for_min_items(
-    int64 length,
-    int64 min_parallel_items,
-    ParallelForFunction *function,
-    void *user_data
-);
-int32 parallel_for_max_threads_min_items(
-    int64 length,
-    int32 max_threads,
-    int64 min_parallel_items,
-    ParallelForFunction *function,
-    void *user_data
-);
+int32 parallel_for(int64 length,
+                   ParallelForFunction *function, void *user_data);
+int32 parallel_for_min_items(int64 length, int64 min_parallel_items,
+                             ParallelForFunction *function, void *user_data);
+int32 parallel_for_max_threads_min_items(int64 length, int32 max_threads,
+                                         int64 min_parallel_items,
+                                         ParallelForFunction *function,
+                                         void *user_data);
 void write_all(int fd, char *buffer, int64 left);
 int64 write_entire_file(char *path, char *text, int64 text_len);
 int xclose(char *file, int line, int *fd, char *fd_var_name,
@@ -581,12 +571,8 @@ void xdup2(int fd1, int fd2);
 void xkill(pid_t pid, int signum);
 void xpipe(int array[2]);
 void xpthread_cond_destroy(pthread_cond_t *);
-void xpthread_create(
-    pthread_t *thread,
-    pthread_attr_t *attr,
-    void *(*function)(void *arg),
-    void *arg
-);
+void xpthread_create(pthread_t *thread, pthread_attr_t *attr,
+                     void *(*function)(void *arg), void *arg);
 void xpthread_join(pthread_t *thread, void **thread_return);
 void xpthread_mutex_destroy(pthread_mutex_t *);
 void xpthread_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *attr);
