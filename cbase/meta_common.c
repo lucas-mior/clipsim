@@ -509,15 +509,15 @@ test_c_keywords_and_type_words(void) {
     Token token;
 
     token = test_token(TOKEN_IDENT, "if");
-    ASSERT(c_keyword_from_text(STRLIT("return")) == C_KEYWORD_RETURN);
-    ASSERT(c_keyword_from_text(STRLIT("_Static_assert"))
+    ASSERT(C_KEYWORD_parse(STRLIT("return")) == C_KEYWORD_RETURN);
+    ASSERT(C_KEYWORD_parse(STRLIT("_Static_assert"))
            == C_KEYWORD_STATIC_ASSERT);
     ASSERT(c_token_keyword(&token) == C_KEYWORD_IF);
 
     token = test_token(TOKEN_OPERATOR, "if");
     ASSERT(c_token_keyword(&token) == C_KEYWORD_COUNT);
-    ASSERT(c_keyword_from_text(STRLIT("IF")) == C_KEYWORD_COUNT);
-    ASSERT(c_keyword_from_text(STRLIT("_static_assert")) == C_KEYWORD_COUNT);
+    ASSERT(C_KEYWORD_parse_strict(STRLIT("IF")) == C_KEYWORD_COUNT);
+    ASSERT(C_KEYWORD_parse_strict(STRLIT("_static_assert")) == C_KEYWORD_COUNT);
 
     token = test_token(TOKEN_IDENT, "int32");
     ASSERT(c_text_is_type_word(STRLIT("double")));
@@ -535,7 +535,7 @@ test_c_keywords_and_type_words(void) {
     ASSERT(c_token_is_type_qualifier(&token));
 
     token = test_token(TOKEN_IDENT, "x");
-    ASSERT(c_keyword_from_text(STRLIT("x")) == C_KEYWORD_COUNT);
+    ASSERT(C_KEYWORD_parse(STRLIT("x")) == C_KEYWORD_COUNT);
     ASSERT(!c_token_is_type_word(&token));
     ASSERT(!c_token_is_declaration_prefix(&token));
     return;
