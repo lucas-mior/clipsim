@@ -66,6 +66,43 @@
     XX(C_KEYWORD_VOLATILE,      volatile)         \
     XX(C_KEYWORD_WHILE,         while)
 
+#define C_ASSIGN_OP_FIELDS             \
+    XX(C_ASSIGN_OP_ASSIGN,    =)       \
+    XX(C_ASSIGN_OP_ADD,       +=)      \
+    XX(C_ASSIGN_OP_SUB,       -=)      \
+    XX(C_ASSIGN_OP_MUL,       *=)      \
+    XX(C_ASSIGN_OP_DIV,       /=)      \
+    XX(C_ASSIGN_OP_MOD,       %=)      \
+    XX(C_ASSIGN_OP_SHL,       <<=)     \
+    XX(C_ASSIGN_OP_SHR,       >>=)     \
+    XX(C_ASSIGN_OP_BIT_AND,   &=)      \
+    XX(C_ASSIGN_OP_BIT_XOR,   ^=)      \
+    XX(C_ASSIGN_OP_BIT_OR,    |=)
+
+#define C_BINARY_OP_FIELDS              \
+    XX(C_BINARY_OP_MUL,         *)      \
+    XX(C_BINARY_OP_DIV,         /)      \
+    XX(C_BINARY_OP_MOD,         %)      \
+    XX(C_BINARY_OP_ADD,         +)      \
+    XX(C_BINARY_OP_SUB,         -)      \
+    XX(C_BINARY_OP_SHL,         <<)     \
+    XX(C_BINARY_OP_SHR,         >>)     \
+    XX(C_BINARY_OP_LT,          <)      \
+    XX(C_BINARY_OP_LE,          <=)     \
+    XX(C_BINARY_OP_GT,          >)      \
+    XX(C_BINARY_OP_GE,          >=)     \
+    XX(C_BINARY_OP_EQ,          ==)     \
+    XX(C_BINARY_OP_NE,          !=)     \
+    XX(C_BINARY_OP_BIT_AND,     &)      \
+    XX(C_BINARY_OP_BIT_XOR,     ^)      \
+    XX(C_BINARY_OP_BIT_OR,      |)      \
+    XX(C_BINARY_OP_LOGICAL_AND, &&)     \
+    XX(C_BINARY_OP_LOGICAL_OR,  ||)
+
+#define C_MEMBER_OP_FIELDS      \
+    XX(C_MEMBER_OP_DOT,   .)    \
+    XX(C_MEMBER_OP_ARROW, ->)
+
 #if defined(CBASE_H)
   #define ENUM_NAME TokenKind
   #define ENUM_BITFLAGS 0
@@ -80,6 +117,33 @@
   #define ENUM_BITFLAGS 0
   #define ENUM_PREFIX_ C_KEYWORD_
   #define ENUM_FIELDS C_KEYWORD_FIELDS
+  #define XENUMS_DECLARE_ONLY 1
+  #define XENUMS_NO_TESTS 1
+  #include "xenums.c"
+  #undef XENUMS_NO_TESTS
+
+  #define ENUM_NAME CAssignOp
+  #define ENUM_BITFLAGS 0
+  #define ENUM_PREFIX_ C_ASSIGN_OP_
+  #define ENUM_FIELDS C_ASSIGN_OP_FIELDS
+  #define XENUMS_DECLARE_ONLY 1
+  #define XENUMS_NO_TESTS 1
+  #include "xenums.c"
+  #undef XENUMS_NO_TESTS
+
+  #define ENUM_NAME CBinaryOp
+  #define ENUM_BITFLAGS 0
+  #define ENUM_PREFIX_ C_BINARY_OP_
+  #define ENUM_FIELDS C_BINARY_OP_FIELDS
+  #define XENUMS_DECLARE_ONLY 1
+  #define XENUMS_NO_TESTS 1
+  #include "xenums.c"
+  #undef XENUMS_NO_TESTS
+
+  #define ENUM_NAME CMemberOp
+  #define ENUM_BITFLAGS 0
+  #define ENUM_PREFIX_ C_MEMBER_OP_
+  #define ENUM_FIELDS C_MEMBER_OP_FIELDS
   #define XENUMS_DECLARE_ONLY 1
   #define XENUMS_NO_TESTS 1
   #include "xenums.c"
@@ -101,6 +165,36 @@
       #undef XX_2
       C_KEYWORD_COUNT,
   };
+  enum CAssignOp {
+      #define XX_1(E) E,
+      #define XX_2(E, alias) E,
+      #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+      C_ASSIGN_OP_FIELDS
+      #undef XX
+      #undef XX_1
+      #undef XX_2
+      C_ASSIGN_OP_COUNT,
+  };
+  enum CBinaryOp {
+      #define XX_1(E) E,
+      #define XX_2(E, alias) E,
+      #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+      C_BINARY_OP_FIELDS
+      #undef XX
+      #undef XX_1
+      #undef XX_2
+      C_BINARY_OP_COUNT,
+  };
+  enum CMemberOp {
+      #define XX_1(E) E,
+      #define XX_2(E, alias) E,
+      #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+      C_MEMBER_OP_FIELDS
+      #undef XX
+      #undef XX_1
+      #undef XX_2
+      C_MEMBER_OP_COUNT,
+  };
   typedef struct String String;
 #endif
 
@@ -111,43 +205,6 @@ enum TokenizeFlags {
 };
 
 
-
-enum CAssignOp {
-    C_ASSIGN_OP_INVALID = 0,
-    C_ASSIGN_OP_ASSIGN,
-    C_ASSIGN_OP_ADD,
-    C_ASSIGN_OP_SUB,
-    C_ASSIGN_OP_MUL,
-    C_ASSIGN_OP_DIV,
-    C_ASSIGN_OP_MOD,
-    C_ASSIGN_OP_SHL,
-    C_ASSIGN_OP_SHR,
-    C_ASSIGN_OP_BIT_AND,
-    C_ASSIGN_OP_BIT_XOR,
-    C_ASSIGN_OP_BIT_OR,
-};
-
-enum CBinaryOp {
-    C_BINARY_OP_INVALID = 0,
-    C_BINARY_OP_MUL,
-    C_BINARY_OP_DIV,
-    C_BINARY_OP_MOD,
-    C_BINARY_OP_ADD,
-    C_BINARY_OP_SUB,
-    C_BINARY_OP_SHL,
-    C_BINARY_OP_SHR,
-    C_BINARY_OP_LT,
-    C_BINARY_OP_LE,
-    C_BINARY_OP_GT,
-    C_BINARY_OP_GE,
-    C_BINARY_OP_EQ,
-    C_BINARY_OP_NE,
-    C_BINARY_OP_BIT_AND,
-    C_BINARY_OP_BIT_XOR,
-    C_BINARY_OP_BIT_OR,
-    C_BINARY_OP_LOGICAL_AND,
-    C_BINARY_OP_LOGICAL_OR,
-};
 
 enum CUnaryOp {
     C_UNARY_OP_INVALID = 0,
@@ -161,12 +218,6 @@ enum CUnaryOp {
     C_UNARY_OP_PRE_DECREMENT,
     C_UNARY_OP_POST_INCREMENT,
     C_UNARY_OP_POST_DECREMENT,
-};
-
-enum CMemberOp {
-    C_MEMBER_OP_INVALID = 0,
-    C_MEMBER_OP_DOT,
-    C_MEMBER_OP_ARROW,
 };
 
 typedef struct Token {

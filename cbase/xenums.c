@@ -167,6 +167,7 @@ XENUMS_LINKAGE char *CAT(ENUM_PREFIX_, str)(enum ENUM_NAME);
 XENUMS_LINKAGE int32 CAT(ENUM_PREFIX_, alias_len)(enum ENUM_NAME, char **);
 XENUMS_LINKAGE char *CAT(ENUM_PREFIX_, alias)(enum ENUM_NAME);
 XENUMS_LINKAGE enum ENUM_NAME CAT(ENUM_PREFIX_, parse)(char *, int32);
+XENUMS_LINKAGE enum ENUM_NAME CAT(ENUM_PREFIX_, parse_strict)(char *, int32);
 
 #if ENUM_CHAR_REPR && ENUM_BITFLAGS
 XENUMS_LINKAGE enum ENUM_NAME CAT(ENUM_PREFIX_, parse_chars)(char **);
@@ -640,6 +641,76 @@ CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
 }
 #endif
 
+XENUMS_LINKAGE enum ENUM_NAME
+CAT(ENUM_PREFIX_, parse_strict)(char *string, int32 string_len) {
+#if ENUM_BITFLAGS == 0
+    if ((string == NULL) || (string_len < 0)) {
+        return XENUM_INVALID_PARSE_RESULT;
+    }
+
+#if ENUM_CHAR_REPR
+    if (string_len != 1) {
+        return XENUM_INVALID_PARSE_RESULT;
+    }
+
+    switch (string[0]) {
+        #define XX_1(e)
+        #define XX_2(e, alias) case alias: return e;
+        #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+
+        ENUM_FIELDS
+
+        #undef XX
+        #undef XX_1
+        #undef XX_2
+    default:
+        break;
+    }
+#else
+    #define XX_1(e)                                                    \
+        if (strequal2(string, string_len, #e, STRLIT_LEN(#e))) {        \
+            return e;                                                  \
+        }
+    #define XX_2(e, alias)                                             \
+        if (strequal2(string, string_len, #alias, STRLIT_LEN(#alias))) {\
+            return e;                                                  \
+        }
+    #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+
+    ENUM_FIELDS
+
+    #undef XX
+    #undef XX_1
+    #undef XX_2
+#endif
+
+    if (strequal2(string, string_len,
+                  QUOTE(ENUM_PREFIX_) "COUNT",
+                  STRLIT_LEN(QUOTE(ENUM_PREFIX_) "COUNT"))) {
+        return CAT(ENUM_PREFIX_, COUNT);
+    }
+    return XENUM_INVALID_PARSE_RESULT;
+#else
+    enum ENUM_NAME result;
+    char *alias;
+    int32 alias_len;
+    bool32 matched;
+
+    if ((string == NULL) || (string_len < 0)) {
+        return XENUM_INVALID_PARSE_RESULT;
+    }
+
+    result = CAT(ENUM_PREFIX_, parse)(string, string_len);
+    alias_len = CAT(ENUM_PREFIX_, alias_len)(result, &alias);
+    matched = STREQUAL(string, string_len, alias, alias_len);
+    CAT(ENUM_PREFIX_, alias_free)(alias);
+    if (!matched) {
+        return XENUM_INVALID_PARSE_RESULT;
+    }
+    return result;
+#endif
+}
+
 #if ENUM_CHAR_REPR == 0
 #undef XENUM_TOKEN_EQUALS
 #undef XENUM_TOKEN_EQUALS_N
@@ -658,6 +729,7 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
     (void)CAT(ENUM_PREFIX_, alias_free);
 #endif
     (void)CAT(ENUM_PREFIX_, parse);
+    (void)CAT(ENUM_PREFIX_, parse_strict);
 #if ENUM_CHAR_REPR && ENUM_BITFLAGS
     (void)CAT(ENUM_PREFIX_, parse_chars);
 #endif
@@ -770,6 +842,13 @@ main(void) {
     ASSERT(TEST_FLAGS_parse(STRLIT("unknown")) == TEST_FLAGS_NONE);
     ASSERT(TEST_FLAGS_parse(STRLIT("READ|unknown")) == TEST_FLAGS_NONE);
     ASSERT(TEST_FLAGS_parse(STRLIT("@")) == TEST_FLAGS_NONE);
+    ASSERT(TEST_FLAGS_parse_strict(STRLIT("TEST_FLAGS_READ"))
+           == TEST_FLAGS_READ);
+    ASSERT(TEST_FLAGS_parse_strict(STRLIT("TEST_FLAGS_READ|TEST_FLAGS_EXEC"))
+           == (TEST_FLAGS_READ | TEST_FLAGS_EXEC));
+    ASSERT(TEST_FLAGS_parse_strict(STRLIT("READ")) == TEST_FLAGS_NONE);
+    ASSERT(TEST_FLAGS_parse_strict(STRLIT("TEST_FLAGS_READ | TEST_FLAGS_EXEC"))
+           == TEST_FLAGS_NONE);
 
     {
         char counted[] = {'R', 'E', 'A', 'D'};
@@ -820,6 +899,14 @@ main(void) {
     ASSERT(TEST_NORMAL_parse(STRLIT("unknown")) == TEST_NORMAL_COUNT);
     ASSERT(TEST_NORMAL_parse(STRLIT("banana unknown")) == TEST_NORMAL_COUNT);
     ASSERT(TEST_NORMAL_parse(STRLIT("@")) == TEST_NORMAL_COUNT);
+    ASSERT(TEST_NORMAL_parse_strict(STRLIT("banana")) == TEST_NORMAL_BANANA);
+    ASSERT(TEST_NORMAL_parse_strict(STRLIT("BANANA")) == TEST_NORMAL_COUNT);
+    ASSERT(TEST_NORMAL_parse_strict(STRLIT("TEST_NORMAL_BANANA"))
+           == TEST_NORMAL_COUNT);
+    ASSERT(TEST_NORMAL_parse_strict(STRLIT("PeAnUt BuTtEr"))
+           == TEST_NORMAL_COUNT);
+    ASSERT(TEST_NORMAL_parse_strict(STRLIT("peanut butter"))
+           == TEST_NORMAL_PEANUT_BUTTER);
 
     {
         char counted[] = {'c', 'h', 'e', 'r', 'r', 'y'};
@@ -859,6 +946,9 @@ main(void) {
            == TEST_CHAR_REPR_COUNT);
     ASSERT(TEST_CHAR_REPR_parse(STRLIT("")) == TEST_CHAR_REPR_COUNT);
     ASSERT(TEST_CHAR_REPR_parse(STRLIT(" + ")) == TEST_CHAR_REPR_COUNT);
+    ASSERT(TEST_CHAR_REPR_parse_strict(STRLIT("+")) == TEST_CHAR_REPR_PLUS);
+    ASSERT(TEST_CHAR_REPR_parse_strict(STRLIT("TEST_CHAR_REPR_PLUS"))
+           == TEST_CHAR_REPR_COUNT);
 
     ASSERT_ZERO(TEST_CHAR_FLAGS_READ_BIT_INDEX);
     ASSERT_EQ(TEST_CHAR_FLAGS_BIT_COUNT, 3);
@@ -888,6 +978,10 @@ main(void) {
     ASSERT(TEST_CHAR_FLAGS_parse(STRLIT("r|x"))
            == TEST_CHAR_FLAGS_NONE);
     ASSERT(TEST_CHAR_FLAGS_parse(STRLIT("z"))
+           == TEST_CHAR_FLAGS_NONE);
+    ASSERT(TEST_CHAR_FLAGS_parse_strict(STRLIT("rx"))
+           == (TEST_CHAR_FLAGS_READ | TEST_CHAR_FLAGS_EXEC));
+    ASSERT(TEST_CHAR_FLAGS_parse_strict(STRLIT("r|x"))
            == TEST_CHAR_FLAGS_NONE);
 
     cursor = "rw-width";
