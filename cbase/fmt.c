@@ -1632,7 +1632,6 @@ fmt_big_uint_decimal_digit_count(FormatBigUInt *value) {
     }
 
     group_count = 0;
-    top_group = 0;
     do {
         top_group = fmt_big_uint_div_small(value, GROUP_BASE);
         group_count += 1;
