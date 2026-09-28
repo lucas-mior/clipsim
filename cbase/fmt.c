@@ -136,14 +136,9 @@ typedef struct FormatSpec {
     char conversion;
 } FormatSpec;
 
-static bool
-fmt_is_digit(char byte) {
-    return byte >= '0' && byte <= '9';
-}
-
 static int32
 fmt_digit_value(char byte) {
-    ASSERT(fmt_is_digit(byte));
+    ASSERT(is_digit(byte));
     return byte - '0';
 }
 
@@ -153,7 +148,7 @@ fmt_parse_uint(char **cursor, int32 *value) {
     int32 result = 0;
     bool found_digit = false;
 
-    while (fmt_is_digit(*scan)) {
+    while (is_digit(*scan)) {
         int32 digit = fmt_digit_value(*scan);
 
         if (result > (INT32_MAX - digit)/10) {
@@ -180,12 +175,12 @@ fmt_reject_star_positional(char *cursor) {
 
     ASSERT(cursor != NULL);
 
-    if (!fmt_is_digit(*cursor)) {
+    if (!is_digit(*cursor)) {
         return 0;
     }
 
     scan = cursor;
-    while (fmt_is_digit(*scan)) {
+    while (is_digit(*scan)) {
         scan += 1;
     }
     if (*scan == '$') {
@@ -273,9 +268,9 @@ fmt_parse_spec(char *cursor, char **next, FormatSpec *spec) {
         return -EINVAL;
     }
 
-    if (fmt_is_digit(*cursor)) {
+    if (is_digit(*cursor)) {
         scan = cursor;
-        while (fmt_is_digit(*scan)) {
+        while (is_digit(*scan)) {
             scan += 1;
         }
         if (*scan == '$') {
@@ -291,7 +286,7 @@ fmt_parse_spec(char *cursor, char **next, FormatSpec *spec) {
             return status;
         }
         spec->width_kind = FMT_WIDTH_ARG;
-    } else if (fmt_is_digit(*cursor)) {
+    } else if (is_digit(*cursor)) {
         int32 width;
 
         spec->width_kind = FMT_WIDTH_LITERAL;
@@ -311,11 +306,11 @@ fmt_parse_spec(char *cursor, char **next, FormatSpec *spec) {
             spec->precision_kind = FMT_PRECISION_ARG;
         } else {
             spec->precision_kind = FMT_PRECISION_LITERAL;
-            if (fmt_is_digit(*cursor)) {
+            if (is_digit(*cursor)) {
                 int32 precision;
 
                 scan = cursor;
-                while (fmt_is_digit(*scan)) {
+                while (is_digit(*scan)) {
                     scan += 1;
                 }
                 if (*scan == '$') {
@@ -351,7 +346,7 @@ fmt_parse_spec(char *cursor, char **next, FormatSpec *spec) {
         if (*cursor == 'f') {
             return -EINVAL;
         }
-        if (!fmt_is_digit(*cursor)) {
+        if (!is_digit(*cursor)) {
             return -EINVAL;
         }
 
@@ -2808,7 +2803,7 @@ fmt_ldouble_parse_decimal_exponent(char *body, int32 body_len,
     } else if (body[index] == '+') {
         index += 1;
     }
-    if (index >= body_len || !fmt_is_digit(body[index])) {
+    if (index >= body_len || !is_digit(body[index])) {
         return -EINVAL;
     }
 
@@ -2816,7 +2811,7 @@ fmt_ldouble_parse_decimal_exponent(char *body, int32 body_len,
     while (index < body_len) {
         int32 digit;
 
-        if (!fmt_is_digit(body[index])) {
+        if (!is_digit(body[index])) {
             return -EINVAL;
         }
         digit = fmt_digit_value(body[index]);
@@ -3428,7 +3423,7 @@ fmt_float_parse_exponent(char *body, int32 body_len, int32 *exponent) {
     } else if (body[index] == '+') {
         index += 1;
     }
-    if (index >= body_len || !fmt_is_digit(body[index])) {
+    if (index >= body_len || !is_digit(body[index])) {
         return -EINVAL;
     }
 
@@ -3436,7 +3431,7 @@ fmt_float_parse_exponent(char *body, int32 body_len, int32 *exponent) {
     while (index < body_len) {
         int32 digit;
 
-        if (!fmt_is_digit(body[index])) {
+        if (!is_digit(body[index])) {
             return -EINVAL;
         }
         digit = fmt_digit_value(body[index]);
