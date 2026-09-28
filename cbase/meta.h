@@ -149,15 +149,29 @@
   #include "xenums.c"
   #undef XENUMS_NO_TESTS
 #else
+  enum TokenKind_XenumIndices {
+      #define XX(E) CAT(E, _XENUM_INDEX),
+      TOKEN_KIND_FIELDS
+      #undef XX
+  };
   enum TokenKind {
-      #define XX(E) E,
+      #define XX(E) E = CAT(E, _XENUM_INDEX) + 1,
       TOKEN_KIND_FIELDS
       #undef XX
       TOKEN_COUNT,
   };
+  enum CKeyword_XenumIndices {
+      #define XX_1(E) CAT(E, _XENUM_INDEX),
+      #define XX_2(E, alias) CAT(E, _XENUM_INDEX),
+      #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+      C_KEYWORD_FIELDS
+      #undef XX
+      #undef XX_1
+      #undef XX_2
+  };
   enum CKeyword {
-      #define XX_1(E) E,
-      #define XX_2(E, alias) E,
+      #define XX_1(E) E = CAT(E, _XENUM_INDEX) + 1,
+      #define XX_2(E, alias) E = CAT(E, _XENUM_INDEX) + 1,
       #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
       C_KEYWORD_FIELDS
       #undef XX
@@ -165,9 +179,18 @@
       #undef XX_2
       C_KEYWORD_COUNT,
   };
+  enum CAssignOp_XenumIndices {
+      #define XX_1(E) CAT(E, _XENUM_INDEX),
+      #define XX_2(E, alias) CAT(E, _XENUM_INDEX),
+      #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+      C_ASSIGN_OP_FIELDS
+      #undef XX
+      #undef XX_1
+      #undef XX_2
+  };
   enum CAssignOp {
-      #define XX_1(E) E,
-      #define XX_2(E, alias) E,
+      #define XX_1(E) E = CAT(E, _XENUM_INDEX) + 1,
+      #define XX_2(E, alias) E = CAT(E, _XENUM_INDEX) + 1,
       #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
       C_ASSIGN_OP_FIELDS
       #undef XX
@@ -175,9 +198,18 @@
       #undef XX_2
       C_ASSIGN_OP_COUNT,
   };
+  enum CBinaryOp_XenumIndices {
+      #define XX_1(E) CAT(E, _XENUM_INDEX),
+      #define XX_2(E, alias) CAT(E, _XENUM_INDEX),
+      #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+      C_BINARY_OP_FIELDS
+      #undef XX
+      #undef XX_1
+      #undef XX_2
+  };
   enum CBinaryOp {
-      #define XX_1(E) E,
-      #define XX_2(E, alias) E,
+      #define XX_1(E) E = CAT(E, _XENUM_INDEX) + 1,
+      #define XX_2(E, alias) E = CAT(E, _XENUM_INDEX) + 1,
       #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
       C_BINARY_OP_FIELDS
       #undef XX
@@ -185,9 +217,18 @@
       #undef XX_2
       C_BINARY_OP_COUNT,
   };
+  enum CMemberOp_XenumIndices {
+      #define XX_1(E) CAT(E, _XENUM_INDEX),
+      #define XX_2(E, alias) CAT(E, _XENUM_INDEX),
+      #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+      C_MEMBER_OP_FIELDS
+      #undef XX
+      #undef XX_1
+      #undef XX_2
+  };
   enum CMemberOp {
-      #define XX_1(E) E,
-      #define XX_2(E, alias) E,
+      #define XX_1(E) E = CAT(E, _XENUM_INDEX) + 1,
+      #define XX_2(E, alias) E = CAT(E, _XENUM_INDEX) + 1,
       #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
       C_MEMBER_OP_FIELDS
       #undef XX

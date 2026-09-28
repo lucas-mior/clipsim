@@ -116,6 +116,20 @@ _Static_assert((ENUM_UNDERLYING_TYPE)-1 > 0,
 #pragma clang diagnostic ignored "-Wduplicate-enum"
 #endif
 
+#if ENUM_BITFLAGS == 0
+enum CAT(ENUM_NAME, _XenumIndices) {
+    #define XX_1(e)        CAT(e, _XENUM_INDEX),
+    #define XX_2(e, alias) CAT(e, _XENUM_INDEX),
+    #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
+
+    ENUM_FIELDS
+
+    #undef XX
+    #undef XX_1
+    #undef XX_2
+};
+#endif
+
 // For bit flag enums, the optional second X macro parameter is a value unless
 // ENUM_CHAR_REPR is 1. Only use compositions of previous enum values there, not
 // numeric values.
@@ -130,8 +144,8 @@ enum ENUM_NAME ENUM_UNDERLYING_TYPE_SPEC {
 #endif
 
 #if ENUM_BITFLAGS == 0
-    #define XX_1(e)        e,
-    #define XX_2(e, alias) e,
+    #define XX_1(e)        e = CAT(e, _XENUM_INDEX) + 1,
+    #define XX_2(e, alias) e = CAT(e, _XENUM_INDEX) + 1,
 #elif ENUM_CHAR_REPR
     #define XX_1(e)        e = (ENUM_UNDERLYING_TYPE)1 << CAT(e, _BIT_INDEX),
     #define XX_2(e, alias) e = (ENUM_UNDERLYING_TYPE)1 << CAT(e, _BIT_INDEX),
@@ -445,11 +459,7 @@ CAT(ENUM_PREFIX_, parse_name_equals)(char *string, int32 string_len,
                                  - STRLIT_LEN(QUOTE(ENUM_PREFIX_)))))
 #endif
 
-#if ENUM_BITFLAGS
-  #define XENUM_INVALID_PARSE_RESULT ((enum ENUM_NAME)0)
-#else
-  #define XENUM_INVALID_PARSE_RESULT ((enum ENUM_NAME)CAT(ENUM_PREFIX_, COUNT))
-#endif
+#define XENUM_INVALID_PARSE_RESULT ((enum ENUM_NAME)0)
 
 #if ENUM_CHAR_REPR
 #if ENUM_BITFLAGS
@@ -581,14 +591,6 @@ CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
         }
 #endif
 
-#if ENUM_BITFLAGS == 0
-        if (XENUM_TOKEN_EQUALS(token, token_len, QUOTE(ENUM_PREFIX_) "COUNT")
-            || XENUM_TOKEN_EQUALS(token, token_len, "COUNT")) {
-            result = (ENUM_UNDERLYING_TYPE)CAT(ENUM_PREFIX_, COUNT);
-            matched = 1;
-        }
-#endif
-
 #if ENUM_BITFLAGS
         #define XENUM_PARSE_ONE(e)                                        \
             if (!matched                                                  \
@@ -684,11 +686,6 @@ CAT(ENUM_PREFIX_, parse_strict)(char *string, int32 string_len) {
     #undef XX_2
 #endif
 
-    if (strequal2(string, string_len,
-                  QUOTE(ENUM_PREFIX_) "COUNT",
-                  STRLIT_LEN(QUOTE(ENUM_PREFIX_) "COUNT"))) {
-        return CAT(ENUM_PREFIX_, COUNT);
-    }
     return XENUM_INVALID_PARSE_RESULT;
 #else
     enum ENUM_NAME result;
@@ -857,10 +854,10 @@ main(void) {
                == TEST_FLAGS_READ);
     }
 
-    ASSERT_ZERO(TEST_NORMAL_APPLE);
-    ASSERT_EQ(TEST_NORMAL_BANANA, 1);
-    ASSERT_EQ(TEST_NORMAL_CHERRY, 2);
-    ASSERT_EQ(TEST_NORMAL_COUNT, 4);
+    ASSERT_EQ(TEST_NORMAL_APPLE, 1);
+    ASSERT_EQ(TEST_NORMAL_BANANA, 2);
+    ASSERT_EQ(TEST_NORMAL_CHERRY, 3);
+    ASSERT_EQ(TEST_NORMAL_COUNT, 5);
 
     s = TEST_NORMAL_str(TEST_NORMAL_APPLE);
     ASSERT_EQ(s, "TEST_NORMAL_APPLE");
@@ -892,19 +889,17 @@ main(void) {
            == TEST_NORMAL_PEANUT_BUTTER);
     ASSERT(TEST_NORMAL_parse(STRLIT("PEANUT-BUTTER"))
            == TEST_NORMAL_PEANUT_BUTTER);
-    ASSERT(TEST_NORMAL_parse(STRLIT("TEST_NORMAL_COUNT")) == TEST_NORMAL_COUNT);
-    ASSERT(TEST_NORMAL_parse(STRLIT("COUNT")) == TEST_NORMAL_COUNT);
-    ASSERT(TEST_NORMAL_parse(STRLIT("")) == TEST_NORMAL_COUNT);
-    ASSERT(TEST_NORMAL_parse(STRLIT("   ")) == TEST_NORMAL_COUNT);
-    ASSERT(TEST_NORMAL_parse(STRLIT("unknown")) == TEST_NORMAL_COUNT);
-    ASSERT(TEST_NORMAL_parse(STRLIT("banana unknown")) == TEST_NORMAL_COUNT);
-    ASSERT(TEST_NORMAL_parse(STRLIT("@")) == TEST_NORMAL_COUNT);
+    ASSERT_ZERO(TEST_NORMAL_parse(STRLIT("TEST_NORMAL_COUNT")));
+    ASSERT_ZERO(TEST_NORMAL_parse(STRLIT("COUNT")));
+    ASSERT_ZERO(TEST_NORMAL_parse(STRLIT("")));
+    ASSERT_ZERO(TEST_NORMAL_parse(STRLIT("   ")));
+    ASSERT_ZERO(TEST_NORMAL_parse(STRLIT("unknown")));
+    ASSERT_ZERO(TEST_NORMAL_parse(STRLIT("banana unknown")));
+    ASSERT_ZERO(TEST_NORMAL_parse(STRLIT("@")));
     ASSERT(TEST_NORMAL_parse_strict(STRLIT("banana")) == TEST_NORMAL_BANANA);
-    ASSERT(TEST_NORMAL_parse_strict(STRLIT("BANANA")) == TEST_NORMAL_COUNT);
-    ASSERT(TEST_NORMAL_parse_strict(STRLIT("TEST_NORMAL_BANANA"))
-           == TEST_NORMAL_COUNT);
-    ASSERT(TEST_NORMAL_parse_strict(STRLIT("PeAnUt BuTtEr"))
-           == TEST_NORMAL_COUNT);
+    ASSERT_ZERO(TEST_NORMAL_parse_strict(STRLIT("BANANA")));
+    ASSERT_ZERO(TEST_NORMAL_parse_strict(STRLIT("TEST_NORMAL_BANANA")));
+    ASSERT_ZERO(TEST_NORMAL_parse_strict(STRLIT("PeAnUt BuTtEr")));
     ASSERT(TEST_NORMAL_parse_strict(STRLIT("peanut butter"))
            == TEST_NORMAL_PEANUT_BUTTER);
 
@@ -918,18 +913,26 @@ main(void) {
                == TEST_NORMAL_BANANA);
     }
 
+    ASSERT_ZERO(TEST_NORMAL_parse_strict(STRLIT("TEST_NORMAL_COUNT")));
+
     s = TEST_NORMAL_str(TEST_NORMAL_COUNT);
     ASSERT_EQ(s, "TEST_NORMAL_COUNT");
 
     s = TEST_NORMAL_alias(TEST_NORMAL_COUNT);
     ASSERT_EQ(s, "TEST_NORMAL_COUNT");
 
+    s = TEST_NORMAL_str(0);
+    ASSERT_EQ(s, "Invalid enum value");
+
+    s = TEST_NORMAL_alias(0);
+    ASSERT_EQ(s, "Invalid enum value");
+
     s = TEST_NORMAL_str(999);
     ASSERT_EQ(s, "Invalid enum value");
 
-    ASSERT_ZERO(TEST_CHAR_REPR_IDENTIFIER);
-    ASSERT_EQ(TEST_CHAR_REPR_PLUS, 1);
-    ASSERT_EQ(TEST_CHAR_REPR_COUNT, 5);
+    ASSERT_EQ(TEST_CHAR_REPR_IDENTIFIER, 1);
+    ASSERT_EQ(TEST_CHAR_REPR_PLUS, 2);
+    ASSERT_EQ(TEST_CHAR_REPR_COUNT, 6);
 
     s = TEST_CHAR_REPR_alias(TEST_CHAR_REPR_PLUS);
     ASSERT_EQ(s, "+");
@@ -942,13 +945,12 @@ main(void) {
     ASSERT(TEST_CHAR_REPR_parse(STRLIT("|")) == TEST_CHAR_REPR_PIPE);
     ASSERT(TEST_CHAR_REPR_parse(STRLIT(")"))
            == TEST_CHAR_REPR_CLOSE_PAREN);
-    ASSERT(TEST_CHAR_REPR_parse(STRLIT("TEST_CHAR_REPR_PLUS"))
-           == TEST_CHAR_REPR_COUNT);
-    ASSERT(TEST_CHAR_REPR_parse(STRLIT("")) == TEST_CHAR_REPR_COUNT);
-    ASSERT(TEST_CHAR_REPR_parse(STRLIT(" + ")) == TEST_CHAR_REPR_COUNT);
+    ASSERT_ZERO(TEST_CHAR_REPR_parse(STRLIT("TEST_CHAR_REPR_PLUS")));
+    ASSERT_ZERO(TEST_CHAR_REPR_parse(STRLIT("")));
+    ASSERT_ZERO(TEST_CHAR_REPR_parse(STRLIT(" + ")));
     ASSERT(TEST_CHAR_REPR_parse_strict(STRLIT("+")) == TEST_CHAR_REPR_PLUS);
-    ASSERT(TEST_CHAR_REPR_parse_strict(STRLIT("TEST_CHAR_REPR_PLUS"))
-           == TEST_CHAR_REPR_COUNT);
+    ASSERT_ZERO(
+        TEST_CHAR_REPR_parse_strict(STRLIT("TEST_CHAR_REPR_PLUS")));
 
     ASSERT_ZERO(TEST_CHAR_FLAGS_READ_BIT_INDEX);
     ASSERT_EQ(TEST_CHAR_FLAGS_BIT_COUNT, 3);

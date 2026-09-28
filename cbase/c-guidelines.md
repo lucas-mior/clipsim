@@ -53,7 +53,7 @@ preconditions; assert those instead.
 
 ## for loops
 - Use the pattern `for (int32 i = 0; i < N; i += 1)` for loops.
-  * Use `for (uint32 i = 0; i < N; i += 1)` if N is an enum value.
+  * Use `for (uint32 i = 1; i < N; i += 1)` if N is an enum value.
 - Use the pattern `for (int64 i = 0; i < N; i += 1)` for loops that need the
   64-bit range.
 
@@ -189,24 +189,19 @@ typeof(var)  // good
 - Clean exit: use `exit(EXIT_SUCCESS)`
 
 ## Enums, structs, and unions
-- Enums that don't need the `_str` or `_parse` functions, and arent bit flags,
-  don't need xenums.c. Define the enum manually.
+- Enums that don't need to be parsed from strings or converted to strings and
+  arent bit flags, don't need xenums.c. Define the enum manually. Start at 1,
+  not at zero:
+  ```c
+  enum EnumType {
+      ENUM_FIRST = 1,
+      ENUM_SECOND,
+      ENUM_COUNT,
+  };
+  ```
 - But do use include-based `xenums.c` for creating enums if it is a bit flag
-  enum, or if we need the `_str` or the `_parse` functions.
-  * It will give automatic bit flags if needed with `#define ENUM_BITFLAGS 1`.
-  * It will give automatic `_str` and `_parse` functions.
-  * It will typedef the enum as `<ENUM_PREFIX_>`. This is the one of the few
-    exception to the `CamelCase` type casing rule and to the enum typedef rule.
-  * It will give automatic `_COUNT` value for non-bit flag enums. Use it for
-    iterating on the enum:
-    ```c
-    for (uint32 x = 0; x < MY_ENUM_COUNT; x += 1) {
-        printf("x = %s.\n", MY_ENUM_str(x));
-    }
-    ```
-  * Bit flag enums have the automatic `_LAST` value.
-- The moment that you find that an existing enum ends up needing `_str`, or
-  `_parse`, then it is time to define it using `xenums.c`.
+  enum, or if we need to parse it from strings or convert it to strings.
+  * See `cbase/README.md` for more details about `cbase/xenums.c`
 - Always typedef structs:
   ```c
   typedef struct MyStruct {

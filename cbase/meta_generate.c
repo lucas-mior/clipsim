@@ -74,7 +74,7 @@ c_identifier_is_keyword(char *identifier) {
     enum CKeyword keyword;
 
     keyword = C_KEYWORD_parse(identifier, strlen32(identifier));
-    if (keyword != C_KEYWORD_COUNT) {
+    if (keyword) {
         return true;
     }
     return false;
