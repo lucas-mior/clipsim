@@ -257,19 +257,72 @@ char *str_opt_cstr(String *);
 char *signal_name(int32 signum);
 void send_signal(char *executable, int32 signal_number);
 
-bool32 is_ascii(int32 c);
-bool32 is_cntrl(int32 c);
-bool32 is_blank(int32 c);
-bool32 is_space(int32 c);
-bool32 is_digit(int32 c);
-bool32 is_upper(int32 c);
-bool32 is_lower(int32 c);
-bool32 is_alpha(int32 c);
-bool32 is_alnum(int32 c);
-bool32 is_xdigit(int32 c);
-bool32 is_print(int32 c);
-bool32 is_graph(int32 c);
-bool32 is_punct(int32 c);
+INLINE bool32
+is_ascii(int32 c) {
+    return (c >= 0) && (c < 128);
+}
+
+INLINE bool32
+is_cntrl(int32 c) {
+    return (c <= 0x1f) || (c == 0x7f);
+}
+
+INLINE bool32
+is_blank(int32 c) {
+    return (c == ' ') || (c == '\t');
+}
+
+INLINE bool32
+is_space(int32 c) {
+    return ((c >= '\t') && (c <= '\r')) || (c == ' ');
+}
+
+INLINE bool32
+is_digit(int32 c) {
+    return (c >= '0') && (c <= '9');
+}
+
+INLINE bool32
+is_upper(int32 c) {
+    return (c >= 'A') && (c <= 'Z');
+}
+
+INLINE bool32
+is_lower(int32 c) {
+    return (c >= 'a') && (c <= 'z');
+}
+
+INLINE bool32
+is_alpha(int32 c) {
+    return is_upper(c) || is_lower(c);
+}
+
+INLINE bool32
+is_alnum(int32 c) {
+    return is_alpha(c) || is_digit(c);
+}
+
+INLINE bool32
+is_xdigit(int32 c) {
+    return is_digit(c)
+           || ((c >= 'A') && (c <= 'F'))
+           || ((c >= 'a') && (c <= 'f'));
+}
+
+INLINE bool32
+is_print(int32 c) {
+    return (c >= 0x20) && (c <= 0x7e);
+}
+
+INLINE bool32
+is_graph(int32 c) {
+    return (c >= 0x21) && (c <= 0x7e);
+}
+
+INLINE bool32
+is_punct(int32 c) {
+    return is_graph(c) && !is_alnum(c);
+}
 
 // Caller-owned parsed-format storage. Treat all fields as implementation
 // details. Normal format strings include at most 255 bytes plus the null
@@ -927,7 +980,6 @@ void throw_away_function();
 #include "assertions.c"
 #include "array.c"
 #include "utf8.c"
-#include "ascii.c"
 #include "ascii_normalization.c"
 #include "util.c"
 #include "strtonum.c"
