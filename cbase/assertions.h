@@ -106,10 +106,10 @@ AssertCompareValue assert_compare_value_float(char *, int32, char *,
                                               char *, float);
 AssertCompareValue assert_compare_value_double(char *, int32, char *,
                                                char *, double);
-void assert_compare_constant(char *, int32, char *,
-                             enum AssertCompareMode,
-                             char *, char *, AssertCompareValue,
-                             AssertCompareValue);
+void assert_compare_const(char *, int32, char *,
+                          enum AssertCompareMode,
+                          char *, char *,
+                          AssertCompareValue, AssertCompareValue);
 
 #define ASSERT_DECLARE_STRINGS(MODE)                      \
 void a_strings_##MODE(char *, int32, char *,              \
@@ -242,7 +242,7 @@ void UNSUPPORTED_TYPE_FOR_GENERIC_A_FIRST_BOOL(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CHARP(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_VOIDP(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE(void);
-void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CONSTANT(void);
+void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CONST(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_FIRST(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
 void UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_SIGN(void *, ...);
@@ -585,25 +585,25 @@ _Generic((VAR),                                                       \
     ullong: assert_compare_value_unsigned,                            \
     float:  assert_compare_value_float,                               \
     double: assert_compare_value_double,                              \
-    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CONSTANT     \
+    default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CONST        \
 )(__FILE__, __LINE__, FUNC__,                                         \
   #VAR, (VAR))
 
-#define ASSERT_COMPARE_NORMALIZED(MODE, VAR1, VAR2) do {                 \
-    assert_compare_constant(__FILE__, __LINE__, FUNC__,                  \
-                            ASSERT_COMPARE_MODE_##MODE, #VAR1, #VAR2,    \
-                            ASSERT_COMPARE_VALUE(VAR1),                  \
-                            ASSERT_COMPARE_VALUE(VAR2));                 \
+#define ASSERT_COMPARE_NORMALIZED(MODE, VAR1, VAR2) do {                       \
+  assert_compare_const(__FILE__, __LINE__, FUNC__,                             \
+                       ASSERT_COMPARE_MODE_##MODE,                             \
+                       #VAR1, #VAR2,                                           \
+                       ASSERT_COMPARE_VALUE(VAR1), ASSERT_COMPARE_VALUE(VAR2));\
 } while (0)
 
 #if CC_GCC || CC_CLANG || CC_TCC
-#define ASSERT_COMPARE_CONSTANT(MODE, VAR1, VAR2) do {                   \
+#define ASSERT_COMPARE_CONST(MODE, VAR1, VAR2) do {                      \
     _Static_assert(__builtin_constant_p(VAR2),                           \
                    "assertion RHS must be constant; use the _VAR form"); \
     ASSERT_COMPARE_NORMALIZED(MODE, VAR1, VAR2);                         \
 } while (0)
 #else
-#define ASSERT_COMPARE_CONSTANT(MODE, VAR1, VAR2)                        \
+#define ASSERT_COMPARE_CONST(MODE, VAR1, VAR2)                           \
     ASSERT_COMPARE_NORMALIZED(MODE, VAR1, VAR2)
 #endif
 
@@ -655,13 +655,13 @@ _Generic((VAR),                                                       \
 #define ASSERT_NE_2(VAR1, VAR2)                                          \
     ASSERT_COMPARE_NORMALIZED(NOT_EQUAL, VAR1, VAR2)
 #define ASSERT_LT(VAR1, VAR2)                                            \
-    ASSERT_COMPARE_CONSTANT(LESS, VAR1, VAR2)
+    ASSERT_COMPARE_CONST(LESS, VAR1, VAR2)
 #define ASSERT_LE(VAR1, VAR2)                                            \
-    ASSERT_COMPARE_CONSTANT(LESS_EQUAL, VAR1, VAR2)
+    ASSERT_COMPARE_CONST(LESS_EQUAL, VAR1, VAR2)
 #define ASSERT_GT(VAR1, VAR2)                                            \
-    ASSERT_COMPARE_CONSTANT(GREATER, VAR1, VAR2)
+    ASSERT_COMPARE_CONST(GREATER, VAR1, VAR2)
 #define ASSERT_GE(VAR1, VAR2)                                            \
-    ASSERT_COMPARE_CONSTANT(GREATER_EQUAL, VAR1, VAR2)
+    ASSERT_COMPARE_CONST(GREATER_EQUAL, VAR1, VAR2)
 
 #define ASSERT_EQ_CALL_2(VAR1, VAR2) ASSERT_EQ_2(VAR1, VAR2)
 

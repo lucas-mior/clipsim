@@ -225,20 +225,20 @@ assert_compare_mode_symbol(enum AssertCompareMode mode) {
     UNREACHABLE()
 
 static bool
-assert_compare_constant_integer(enum AssertCompareMode mode,
-                                llong var1, llong var2) {
+assert_compare_const_integer(enum AssertCompareMode mode,
+                             llong var1, llong var2) {
     ASSERT_COMPARE_MODE_SWITCH(mode, var1, var2);
 }
 
 static bool
-assert_compare_constant_double(enum AssertCompareMode mode,
-                               double var1, double var2) {
+assert_compare_const_double(enum AssertCompareMode mode,
+                            double var1, double var2) {
     ASSERT_COMPARE_MODE_SWITCH(mode, var1, var2);
 }
 
 static bool
-assert_compare_constant_pointer(enum AssertCompareMode mode,
-                                void *var1, void *var2) {
+assert_compare_const_pointer(enum AssertCompareMode mode,
+                             void *var1, void *var2) {
     uintptr pointer1 = (uintptr)var1;
     uintptr pointer2 = (uintptr)var2;
 
@@ -246,8 +246,8 @@ assert_compare_constant_pointer(enum AssertCompareMode mode,
 }
 
 static bool
-assert_compare_constant_string(enum AssertCompareMode mode,
-                               char *var1, char *var2) {
+assert_compare_const_string(enum AssertCompareMode mode,
+                            char *var1, char *var2) {
     int comparison;
 
     if ((var1 == NULL) || (var2 == NULL)) {
@@ -260,8 +260,8 @@ assert_compare_constant_string(enum AssertCompareMode mode,
 }
 
 static bool
-assert_compare_constant_bool(enum AssertCompareMode mode,
-                             bool var1, bool var2) {
+assert_compare_const_bool(enum AssertCompareMode mode,
+                          bool var1, bool var2) {
     switch (mode) {
     case ASSERT_COMPARE_MODE_EQUAL:
         return var1 == var2;
@@ -298,10 +298,10 @@ assert_compare_value_kind_name(enum AssertCompareValueKind kind) {
 }
 
 static noreturn void
-assert_compare_constant_unsupported(char *file, int32 line, char *func,
-                                    char *name1, char *name2,
-                                    AssertCompareValue var1,
-                                    AssertCompareValue var2) {
+assert_compare_const_unsupported(char *file, int32 line, char *func,
+                                 char *name1, char *name2,
+                                 AssertCompareValue var1,
+                                 AssertCompareValue var2) {
     if (DEBUGGING) {
         assert_error(file, line, func,
                      "Unsupported comparison: %s (%s), %s (%s)\n",
@@ -314,17 +314,17 @@ assert_compare_constant_unsupported(char *file, int32 line, char *func,
 }
 
 void
-assert_compare_constant(char *file, int32 line, char *func,
-                        enum AssertCompareMode mode,
-                        char *name1, char *name2,
-                        AssertCompareValue var1, AssertCompareValue var2) {
+assert_compare_const(char *file, int32 line, char *func,
+                     enum AssertCompareMode mode,
+                     char *name1, char *name2,
+                     AssertCompareValue var1, AssertCompareValue var2) {
     bool result;
     char *symbol = assert_compare_mode_symbol(mode);
 
     if ((var1.kind == ASSERT_COMPARE_VALUE_INTEGER)
         && (var2.kind == ASSERT_COMPARE_VALUE_INTEGER)) {
-        result = assert_compare_constant_integer(mode,
-                                                 var1.integer, var2.integer);
+        result = assert_compare_const_integer(mode,
+                                              var1.integer, var2.integer);
         if (!result && DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %lld %s %lld = %s\n",
@@ -347,7 +347,7 @@ assert_compare_constant(char *file, int32 line, char *func,
         } else {
             value2 = var2.adouble;
         }
-        result = assert_compare_constant_double(mode, value1, value2);
+        result = assert_compare_const_double(mode, value1, value2);
         if (!result && DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %f %s %f = %s\n",
@@ -355,7 +355,7 @@ assert_compare_constant(char *file, int32 line, char *func,
         }
     } else if ((var1.kind == ASSERT_COMPARE_VALUE_STRING)
                && (var2.kind == ASSERT_COMPARE_VALUE_STRING)) {
-        result = assert_compare_constant_string(mode, var1.string, var2.string);
+        result = assert_compare_const_string(mode, var1.string, var2.string);
         if (!result && DEBUGGING) {
             if ((var1.string == NULL) || (var2.string == NULL)) {
                 assert_error(file, line, func,
@@ -385,7 +385,7 @@ assert_compare_constant(char *file, int32 line, char *func,
         } else {
             pointer2 = var2.pointer;
         }
-        result = assert_compare_constant_pointer(mode, pointer1, pointer2);
+        result = assert_compare_const_pointer(mode, pointer1, pointer2);
         if (!result && DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %p %s %p = %s\n",
@@ -393,16 +393,16 @@ assert_compare_constant(char *file, int32 line, char *func,
         }
     } else if ((var1.kind == ASSERT_COMPARE_VALUE_BOOL)
                && (var2.kind == ASSERT_COMPARE_VALUE_BOOL)) {
-        result = assert_compare_constant_bool(mode, var1.boolean, var2.boolean);
+        result = assert_compare_const_bool(mode, var1.boolean, var2.boolean);
         if (!result && DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %d %s %d = %s\n",
                          name1, var1.boolean, symbol, var2.boolean, name2);
         }
     } else {
-        assert_compare_constant_unsupported(file, line, func,
-                                            name1, name2,
-                                            var1, var2);
+        assert_compare_const_unsupported(file, line, func,
+                                         name1, name2,
+                                         var1, var2);
     }
 
     if (!result) {
