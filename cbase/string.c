@@ -407,6 +407,7 @@ str_reserve(String *str, int64 extra) {
     if (UNLIKELY(extra <= 0)) {
         return;
     }
+    ASSERT(str != NULL);
 
     if (UNLIKELY(extra >= MAXOF(str->cap))) {
         error("String only supports strings shorter than 2GB.\n");
@@ -469,6 +470,7 @@ str_append(String *str, char *data, int64 data_len) {
     }
 
     str_reserve(str, data_len);
+    ASSERT(str->data != NULL);
     if (UNLIKELY(aliases)) {
         data = str->data + data_offset;
         memmove64(str->data + str->len, data, data_len);

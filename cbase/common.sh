@@ -4,6 +4,8 @@
 
 set -e
 
+find . -iname "*temp_delete_me*" -delete
+
 case ${RED:-} in
 ''|'\033[01;38;2;255;000;000'|'\033[01;38;2;255;000;000m')
     RED=$(printf '\033[01;38;2;255;000;000m')

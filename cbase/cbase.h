@@ -380,6 +380,7 @@ int32 fmt_vsnprintf(char *, int64, char *, va_list)           ATTR_PRINTF(3, 0);
 int32 fmt_snprintf(char *, int64, char *, ...)                ATTR_PRINTF(3, 4);
 int32 fmt_vsprintf(char *, int64, char *, va_list)            ATTR_PRINTF(3, 0);
 int32 fmt_sprintf(char *, int64, char *, ...)                 ATTR_PRINTF(3, 4);
+void fmt_printf(char *, ...)                                  ATTR_PRINTF(1, 2);
 int32 fmt_vsnprintf_estimate(char *, va_list)                 ATTR_PRINTF(1, 0);
 int32 fmt_snprintf_estimate(char *, ...)                      ATTR_PRINTF(1, 2);
 int32 fmt_vsnprintf_estimate_plan(FmtPlan *, char *, va_list) ATTR_PRINTF(2, 0);
@@ -403,19 +404,17 @@ StrFlex *strflex_list_at(StrFlexList *, int32);
 // Float formatting functions return the formatted byte count, excluding the
 // terminating '\0'. Negative return values are errno-style failures:
 // -EINVAL for invalid input, -ENOSPC when capacity is insufficient, and
-// -ERANGE when the requested precision is unsupported. Fixed/scientific
+// -ERANGE when the requested precision is unsupported. Fixed/exp
 // double precision is capped at DBL_MANT_DIG - DBL_MIN_EXP.
 
-// This layer exposes shortest round-trip, fixed precision, and scientific
+// This layer exposes shortest round-trip, fixed precision, and exp
 // precision formatting. It intentionally does not expose a %g/general format
 // helper: exact %g behavior needs a separate policy layer to choose between
-// fixed and scientific output and to handle trailing-zero rules.
+// fixed and exp output and to handle trailing-zero rules.
 int32 fmt_float32_shortest(char *buffer, int64 capacity, float value);
 int32 fmt_float64_shortest(char *buffer, int64 capacity, double value);
-int32 fmt_float64_fixed(char *buffer, int64 capacity, double value,
-                        int32 precision);
-int32 fmt_float64_scientific(char *buffer, int64 capacity, double value,
-                             int32 precision);
+int32 fmt_float64_fixed(char *, int64, double, int32);
+int32 fmt_float64_exp(char *, int64, double, int32);
 
 int32 string_from_strings(char *buffer, int32 size, char *separator,
                           char **array, int32 length);
@@ -506,8 +505,7 @@ optional_strequal(char *a, int32 a_len, char *b, int32 b_len) {
 
 bool32 striqual(char *s1, char *s2);
 bool32 striqual2(char *a, int32 a_len, char *b, int32 b_len);
-int64 strftime2(char *buffer, int64 size, char *format,
-                struct tm *time_info);
+int32 strftime2(char *buffer, int64 size, char *format, struct tm *time_info);
 void time_localtime(time_t unix_timestamp, struct tm *time_info);
 int strncmp32(char *left, char *right, int64 size);
 void sleep_ms(int64 milliseconds);

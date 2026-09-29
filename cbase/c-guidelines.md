@@ -460,12 +460,6 @@ functions.
     + Copy existing string to a list using `strflex_list_push()`;
     + Push formatted string in a single shot using `strflex_list_printf()`.
 - `char *string` + `int32 string_len`:
-  * `string != NULL` with `string_len == 0` is valid (string with zero length).
-  * `string == NULL` might mean invalid, or absent, or zero length string, but
-    it is completely case by case basis. Don't worry about generalizing this
-    concept.
-  * `string == NULL` with `string_len > 0` is probably an error, but don't check
-    for it. Don't worry about generalizing this concept either.
   * For read-only strings: this is most functions API:
     They do not change strings, only read them.
   * Also useful for strings that are part of a larger struct and are not
@@ -507,6 +501,19 @@ functions.
     This is bad for 2 reaons: first, it has 4 bytes of padding. Second, it does
     not offer any capability that explicit `char *string` + `int32 string_len`
     didn't have, while adding unnecessary mental/type overhead to the program.
+  * Notes about invariants (don't think about it too much; don't try to
+    generalize those concepts; use local reasoning instead):
+    + `string != NULL` with `string_len == 0` is valid (string with zero
+      length).
+    + `string == NULL` might mean invalid, or absent, or zero length string, but
+      it is completely case by case basis.
+    + `string == NULL` with `string_len > 0` is probably an error, but don't
+      check for it.
+    + Passing NULL for `%s` family of formatters in `fmt.c` functions is valid:
+      it will emit `"null"`, or something else if you configure. `"null"` is a
+      good default because it has the correct meaning in json. Other good
+      options, depending on the application, are `"NULL"` and `""` (empty
+      string).
 - `char *string` without length: Avoid it at all costs:
   * literals can use `STRLIT("literal")` to pass themselves and their length
     cost-free;
@@ -800,7 +807,7 @@ s = (StructType){0};
         // error condition
     }
     ```
-- Functions that can return negative integers (they are are), obviously can't
+- Functions that can return negative integers (they are rare), obviously can't
   use negative return values to encode errors. In this case, we have a few
   options:
   * If the function can never fail, no need to encode errors at all.

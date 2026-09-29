@@ -17,16 +17,15 @@
 static bool timezone_initialized = false;
 static time_t timezone_offset = 0;
 
-int64
+int32
 strftime2(char *buffer, int64 size, char *format, struct tm *time_info) {
-    int64 n;
-
-    n = (int64)strftime(buffer, (size_t)size, format, time_info);
-    if ((n <= 0) || (n >= size)) {
-        error("Error in strftime(\"%s\") (n = %lld).\n", format, n);
+    size_t n;
+    n = strftime(buffer, (size_t)size, format, time_info);
+    if (n == 0) {
+        error("Error in strftime(\"%s\").\n", format);
         fatal(EXIT_FAILURE);
     }
-    return n;
+    return (int32)n;
 }
 
 void

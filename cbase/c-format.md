@@ -75,6 +75,12 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
   int32 assignment = this_function_call_is_even_more_long_but(
       argument_very_long, other, many, arguments, width, height);
 
+  // bad
+  int32 assignment
+      = this_function_call_is_even_more_long_but(argument_very_long, other,
+                                                 many, arguments,
+                                                 width, height);
+
   // good
   int32 assignment =
       this_function_call_is_even_more_long_but(argument_very_long, other, many,
