@@ -1182,8 +1182,8 @@ test_tokenize_with_flags_returns_source_metadata(void) {
     char *text = "x + y";
     Tokenization tokenization;
 
-    tokenization
-        = tokenize_with_flags(text, strlen32(text), TOKENIZE_SKIP_WHITESPACE);
+    tokenization = tokenize_with_flags(text, strlen32(text),
+                                       TOKENIZE_SKIP_WHITESPACE);
     ASSERT(tokenization.text == text);
     ASSERT_EQ(tokenization.text_len, strlen32(text));
     ASSERT_EQ(tokenization.token_count, 3);

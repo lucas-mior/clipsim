@@ -51,8 +51,8 @@ mkstemp(char *template) {
         state ^= (uint32)(attempt*2654435761u);
         for (int32 i = 0; i < 6; i += 1) {
             state = state*1103515245u + 12345u;
-            template[len - 6 + i]
-                = characters[state % (SIZEOF(characters) - 1)];
+            template[len - 6 + i] =
+                characters[state % (SIZEOF(characters) - 1)];
         }
 
         {
@@ -99,8 +99,8 @@ cbase_mkdtemp(char *template) {
         state ^= (uint32)(attempt*2654435761u);
         for (int32 i = 0; i < 6; i += 1) {
             state = state*1103515245u + 12345u;
-            template[len - 6 + i]
-                = characters[state % (SIZEOF(characters) - 1)];
+            template[len - 6 + i] =
+                characters[state % (SIZEOF(characters) - 1)];
         }
 
         if (CreateDirectoryA(template, NULL)) {

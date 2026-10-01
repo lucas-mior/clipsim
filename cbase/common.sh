@@ -225,7 +225,10 @@ common_build_parse_args () {
     mode=${1:-debug}
     target=${2:-}
 
-    if [ -n "${1:-}" ] && [ -f "$1" ]; then
+    if [ "${1:-}" = "tags" ]; then
+        mode=tags
+        target=${2:-}
+    elif [ -n "${1:-}" ] && [ -f "$1" ]; then
         mode=debug
         target=$1
     fi
@@ -1168,6 +1171,7 @@ common_test () {
 }
 
 common_build_tags () {
+    echo "xxx"
     if [ "$#" -eq 0 ]; then
         set -- .
     fi

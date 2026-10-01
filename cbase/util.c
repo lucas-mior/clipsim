@@ -446,6 +446,12 @@ rand_int(void) {
     return (int32)(result >> 1);
 }
 
+double
+rand_float(void) {
+    int32 r = rand_int();
+    return (double)r/((double)INT32_MAX + 1.0);
+}
+
 int32
 rand_int_range(int32 upper_bound) {
     int64 limit;
@@ -853,6 +859,7 @@ util_functions_sink(void) {
     (void)util_functions_sink;
     (void)rand_int_seed;
     (void)rand_int;
+    (void)rand_float;
     (void)rand_int_range;
     (void)rand_shuffle;
     (void)random_filename_inplace;
@@ -1158,6 +1165,16 @@ main(int argc, char **argv) {
     rand_int_seed((uint64)time(NULL));
 
     {
+        rand_int_seed(1234);
+        for (int32 i = 0; i < 100; i += 1) {
+            double value = rand_float();
+
+            ASSERT_NON_NEGATIVE(value);
+            ASSERT_LT(value, 1.0);
+        }
+    }
+
+    {
         int32 values[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         bool seen[10] = {0};
 
@@ -1213,6 +1230,16 @@ main(int argc, char **argv) {
 #if OS_UNIX
     (void)util_segv_handler;
 #endif
+
+    {
+        String out = {0};
+        String *ptr = &out;
+        StrFlex *flex = SFLIT("a flexible one.");
+        str_printf(&out, "this is string is awesome: %d\n", 5);
+        str_printf(ptr, "this is string pointer is awesome: %d\n", 5);
+        printf("at the end, both are:\n %.*s == %.*s", SP(out), SP(ptr));
+        printf("str flex also is: %.*s\n", SP(flex));
+    }
 
     (void)malloc_debug;
     (void)realloc_debug;

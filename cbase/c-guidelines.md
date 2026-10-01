@@ -148,6 +148,9 @@ Use the `SIZEOF` macro like this:
 int64 alloc_size = len*SIZEOF(*pointer);
 ```
 
+Note: don't cast a `int32 len` to `int64`, when multiplying by a `SIZEOF`,
+because C auto promotes it.
+
 Avoid using `SIZEOF(TypePointedTo)`. Prefer to use `SIZEOF(*pointer)`.
 
 ## Memory allocation

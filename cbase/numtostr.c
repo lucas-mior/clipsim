@@ -220,6 +220,117 @@ bytes_pretty(char *buffer, int64 raw) {
     return n;
 }
 
+int32
+fmt_time_elapsed(char *buffer, double elapsed) {
+    bool negative = false;
+    char number[32];
+    char raw_seconds[32];
+    int64 total_milliseconds;
+    int64 total_seconds;
+    int64 milliseconds;
+    int64 days;
+    int64 hours;
+    int64 minutes;
+    int64 seconds;
+    int32 number_len;
+    int32 raw_len = 0;
+    int32 n = 0;
+
+    if (elapsed < 0) {
+        negative = true;
+        elapsed = -elapsed;
+    }
+
+    total_milliseconds = (int64)(elapsed*1000.0 + 0.5);
+    total_seconds = total_milliseconds/1000;
+    milliseconds = total_milliseconds%1000;
+
+    if (negative) {
+        raw_seconds[raw_len++] = '-';
+    }
+    number_len = itoa2(number, SIZEOF(number), total_seconds);
+    memcpy64(raw_seconds + raw_len, number, number_len);
+    raw_len += number_len;
+    raw_seconds[raw_len++] = '.';
+    raw_seconds[raw_len++] = (char)('0' + milliseconds/100);
+    raw_seconds[raw_len++] = (char)('0' + (milliseconds/10)%10);
+    raw_seconds[raw_len++] = (char)('0' + milliseconds%10);
+    raw_seconds[raw_len++] = 's';
+    raw_seconds[raw_len++] = '\0';
+
+    if (elapsed <= 60.0) {
+        memcpy64(buffer, raw_seconds, raw_len + 1);
+        return raw_len;
+    }
+
+    if (negative) {
+        buffer[n++] = '-';
+    }
+
+    if (elapsed <= 3600.0) {
+        minutes = total_seconds/60;
+        seconds = total_seconds%60;
+
+        number_len = itoa2(number, SIZEOF(number), minutes);
+        memcpy64(buffer + n, number, number_len);
+        n += number_len;
+        memcpy64(buffer + n, "min", 3);
+        n += 3;
+        number_len = itoa2(number, SIZEOF(number), seconds);
+        memcpy64(buffer + n, number, number_len);
+        n += number_len;
+
+        buffer[n++] = 's';
+    } else if (elapsed <= 3600.0*60.0) {
+        hours = total_seconds/3600;
+        minutes = (total_seconds%3600)/60;
+
+        number_len = itoa2(number, SIZEOF(number), hours);
+        memcpy64(buffer + n, number, number_len);
+        n += number_len;
+
+        buffer[n++] = 'h';
+
+        number_len = itoa2(number, SIZEOF(number), minutes);
+        memcpy64(buffer + n, number, number_len);
+        n += number_len;
+        memcpy64(buffer + n, "min", 3);
+        n += 3;
+    } else {
+        days = total_seconds/(24*3600);
+        hours = (total_seconds%(24*3600))/3600;
+        minutes = (total_seconds%3600)/60;
+
+        number_len = itoa2(number, SIZEOF(number), days);
+        memcpy64(buffer + n, number, number_len);
+        n += number_len;
+
+        buffer[n++] = 'd';
+
+        number_len = itoa2(number, SIZEOF(number), hours);
+        memcpy64(buffer + n, number, number_len);
+        n += number_len;
+
+        buffer[n++] = 'h';
+
+        number_len = itoa2(number, SIZEOF(number), minutes);
+        memcpy64(buffer + n, number, number_len);
+        n += number_len;
+        memcpy64(buffer + n, "min", 3);
+        n += 3;
+    }
+
+    memcpy64(buffer + n, " (", 2);
+    n += 2;
+    memcpy64(buffer + n, raw_seconds, raw_len);
+    n += raw_len;
+    buffer[n] = ')';
+    n += 1;
+
+    buffer[n] = '\0';
+    return n;
+}
+
 #if 0 == TESTING_numtostr
 static inline void
 numtostr_functions_sink(void) {

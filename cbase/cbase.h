@@ -187,6 +187,43 @@ typedef struct StrFlexList {
     char data[sizeof(literal)];                \
 }){ sizeof(literal) - 1, literal })
 
+// Macro trick to pass the int32 len and char *data for "%.*s" formatters.
+// Note: the single argument version is just for exploration purposes,
+// don't use it. The two argument version is allowed and useful for SOA design.
+#define SP_2(ARRAY, INDEX) ARRAY##_lens[INDEX], ARRAY[INDEX]
+#define SP_1(STR_REPR)                      \
+    _Generic((STR_REPR),                    \
+            String *:        string_ptr,    \
+            StrFlex *:       strflex_ptr,   \
+            String:          string_val     \
+            )(STR_REPR).len,                \
+    _Generic((STR_REPR),                    \
+            String *:        string_ptr,    \
+            StrFlex *:       strflex_ptr,   \
+            String:          string_val     \
+            )(STR_REPR).data
+
+#define SP(...) SELECT_ON_NUM_ARGS(SP_, __VA_ARGS__)
+
+static String UNUSED
+string_ptr(String *string) {
+    return *string;
+}
+
+static String UNUSED
+string_val(String string) {
+    return string;
+}
+
+static String UNUSED
+strflex_ptr(StrFlex *string) {
+    return (String){
+        .data = string->data,
+        .len = string->len,
+        .cap = string->len,
+    };
+}
+
 #if OS_UNIX
 typedef struct UtilCopyFilesAsync {
     struct pollfd pipes[MAX_FILES_COPY];
@@ -209,10 +246,11 @@ llong atoi2sat(char *str, int32 str_len);
 llong atoi_base_sat(char *str, int32 str_len);
 bool util_is_integer(char *string);
 char *basename2(char *path, int32 *full_length, int32 *base_len);
-char *begins_with(char *string, int32 string_len, char *prefix,
-                  int32 prefix_len);
+char *begins_with(char *string, int32 string_len,
+                  char *prefix, int32 prefix_len);
 bool byte_matches_any(char byte, void *memory, int64 memory_len);
 int32 bytes_pretty(char *buffer, int64 raw);
+int32 fmt_time_elapsed(char *buffer, double elapsed);
 void catfile(int where, char *file);
 double deg2rad(double degrees);
 int32 dirname2(char *buffer, char *path, int32 *path_len);
@@ -229,6 +267,7 @@ void qsort64(void *base, int64 n, int64 size,
 void random_filename_inplace(char *buffer, int32 buffer_len);
 void rand_int_seed(uint64 seed);
 int32 rand_int(void);
+double rand_float(void);
 int32 rand_int_range(int32 upper_bound);
 void rand_shuffle(void *items, int32 item_count, int32 item_size);
 double rad2deg(double radians);

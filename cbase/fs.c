@@ -138,8 +138,8 @@ cbase_mkstemps(char *template_path, int32 suffix_len) {
 
         for (int32 i = 0; i < 6; i += 1) {
             state = state*1103515245u + 12345u;
-            template_path[x_start + i]
-                = characters[state % (SIZEOF(characters) - 1)];
+            template_path[x_start + i] =
+                characters[state % (SIZEOF(characters) - 1)];
         }
 
         fd = open(template_path, flags, S_IRUSR |S_IWUSR);
@@ -562,9 +562,9 @@ fs_copy_file_sync(char *destination, char *source) {
         return -1;
     }
 
-    if ((destination_fd
-         = open(destination,
-                O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
+    if ((destination_fd = open(destination,
+                               O_WRONLY | O_CREAT | O_TRUNC,
+                               S_IRUSR | S_IWUSR)) < 0) {
         error("Error opening %s for writing: %s.\n",
               destination, strerror(errno));
         XCLOSE(&source_fd, source);
