@@ -80,21 +80,11 @@ token_is_ptr_len(Token *token, char *what, int32 what_len) {
 }
 
 enum CAssignOp
-c_assign_op_from_text(char *text, int32 text_len) {
-    return C_ASSIGN_OP_parse_strict(text, text_len);
-}
-
-enum CAssignOp
 c_token_assign_op(Token *token) {
     if (token->kind != TOKEN_OPERATOR) {
         return 0;
     }
-    return c_assign_op_from_text(token->text, token->len);
-}
-
-enum CBinaryOp
-c_binary_op_from_text(char *text, int32 text_len) {
-    return C_BINARY_OP_parse_strict(text, text_len);
+    return C_ASSIGN_OP_parse_strict(token->text, token->len);
 }
 
 enum CBinaryOp
@@ -102,7 +92,7 @@ c_token_binary_op(Token *token) {
     if (token->kind != TOKEN_OPERATOR) {
         return 0;
     }
-    return c_binary_op_from_text(token->text, token->len);
+    return C_BINARY_OP_parse_strict(token->text, token->len);
 }
 
 enum CUnaryOp
@@ -131,21 +121,18 @@ c_unary_op_from_text(char *text, int32 text_len) {
     if (STREQUAL(text, text_len, "--")) {
         return C_UNARY_OP_PRE_DECREMENT;
     }
-    return C_UNARY_OP_INVALID;
+    return 0;
 }
 
 enum CUnaryOp
 c_token_unary_op(Token *token) {
-    if (token->kind != TOKEN_OPERATOR) {
-        return C_UNARY_OP_INVALID;
-    }
     return c_unary_op_from_text(token->text, token->len);
 }
 
 enum CUnaryOp
 c_token_postfix_unary_op(Token *token) {
     if (token->kind != TOKEN_OPERATOR) {
-        return C_UNARY_OP_INVALID;
+        return 0;
     }
     if (STREQUAL(token->text, token->len, "++")) {
         return C_UNARY_OP_POST_INCREMENT;
@@ -153,7 +140,7 @@ c_token_postfix_unary_op(Token *token) {
     if (STREQUAL(token->text, token->len, "--")) {
         return C_UNARY_OP_POST_DECREMENT;
     }
-    return C_UNARY_OP_INVALID;
+    return 0;
 }
 
 enum CMemberOp
@@ -417,11 +404,6 @@ c_binary_op_precedence(enum CBinaryOp op) {
     }
 }
 
-int32
-precedence_of(char *op, int32 op_len) {
-    return c_binary_op_precedence(c_binary_op_from_text(op, op_len));
-}
-
 #if TESTING_meta_common
 #define CBASE_IMPLEMENT
 #include "cbase.h"
@@ -442,11 +424,11 @@ test_c_assignment_ops(void) {
     Token token;
 
     token = test_token(TOKEN_OPERATOR, "+=");
-    ASSERT(c_assign_op_from_text(STRLIT("=")) == C_ASSIGN_OP_ASSIGN);
-    ASSERT(c_assign_op_from_text(STRLIT("%=")) == C_ASSIGN_OP_MOD);
-    ASSERT(c_assign_op_from_text(STRLIT("<<=")) == C_ASSIGN_OP_SHL);
-    ASSERT(c_assign_op_from_text(STRLIT(">>=")) == C_ASSIGN_OP_SHR);
-    ASSERT_ZERO(c_assign_op_from_text(STRLIT("ADD")));
+    ASSERT(C_ASSIGN_OP_parse_strict(STRLIT("=")) == C_ASSIGN_OP_ASSIGN);
+    ASSERT(C_ASSIGN_OP_parse_strict(STRLIT("%=")) == C_ASSIGN_OP_MOD);
+    ASSERT(C_ASSIGN_OP_parse_strict(STRLIT("<<=")) == C_ASSIGN_OP_SHL);
+    ASSERT(C_ASSIGN_OP_parse_strict(STRLIT(">>=")) == C_ASSIGN_OP_SHR);
+    ASSERT_ZERO(C_ASSIGN_OP_parse_strict(STRLIT("ADD")));
     ASSERT(c_token_assign_op(&token) == C_ASSIGN_OP_ADD);
 
     token = test_token(TOKEN_IDENT, "+=");
@@ -459,15 +441,13 @@ test_c_binary_ops(void) {
     Token token;
 
     token = test_token(TOKEN_OPERATOR, "&&");
-    ASSERT(c_binary_op_from_text(STRLIT("*")) == C_BINARY_OP_MUL);
-    ASSERT(c_binary_op_from_text(STRLIT("<=")) == C_BINARY_OP_LE);
-    ASSERT(c_binary_op_from_text(STRLIT("|")) == C_BINARY_OP_BIT_OR);
-    ASSERT_ZERO(c_binary_op_from_text(STRLIT("BIT_OR")));
+    ASSERT(C_BINARY_OP_parse_strict(STRLIT("*")) == C_BINARY_OP_MUL);
+    ASSERT(C_BINARY_OP_parse_strict(STRLIT("<=")) == C_BINARY_OP_LE);
+    ASSERT(C_BINARY_OP_parse_strict(STRLIT("|")) == C_BINARY_OP_BIT_OR);
+    ASSERT_ZERO(C_BINARY_OP_parse_strict(STRLIT("BIT_OR")));
     ASSERT(c_token_binary_op(&token) == C_BINARY_OP_LOGICAL_AND);
     ASSERT_EQ(c_binary_op_precedence(C_BINARY_OP_LOGICAL_OR), 1);
     ASSERT_EQ(c_binary_op_precedence(C_BINARY_OP_MUL), 10);
-    ASSERT_EQ(precedence_of(STRLIT("||")), 1);
-    ASSERT_EQ(precedence_of(STRLIT("?")), 0);
 
     token = test_token(TOKEN_PUNCT, "+");
     ASSERT_ZERO(c_token_binary_op(&token));

@@ -529,6 +529,11 @@ _Generic((VAR2),                                                      \
                       (void *)(uintptr)(VAR1),                        \
                       (void *)(uintptr)(VAR2))
 
+#if GODBOLT
+#define ASSERT_COMPARE(MODE, VAR1, VAR2) \
+    (void)VAR1; \
+    (void)VAR2
+#else
 #define ASSERT_COMPARE(MODE, VAR1, VAR2)                              \
 _Generic((VAR1),                                                      \
     void *: _Generic((VAR2),                                          \
@@ -560,6 +565,7 @@ _Generic((VAR1),                                                      \
     bool:    A_FIRST_BOOL(MODE,   VAR1, VAR2, TYPE_BOOL),             \
     default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE()            \
 )
+#endif
 
 #if CHAR_MIN < 0
 #define ASSERT_COMPARE_VALUE_CHAR assert_compare_value_signed
@@ -596,6 +602,11 @@ _Generic((VAR),                                                       \
                        ASSERT_COMPARE_VALUE(VAR1), ASSERT_COMPARE_VALUE(VAR2));\
 } while (0)
 
+#if GODBOLT
+#define ASSERT_COMPARE_CONST(MODE, VAR1, VAR2) \
+    (void)VAR1; \
+    (void)VAR2
+#else
 #if CC_GCC || CC_CLANG || CC_TCC
 #define ASSERT_COMPARE_CONST(MODE, VAR1, VAR2) do {                      \
     _Static_assert(__builtin_constant_p(VAR2),                           \
@@ -605,6 +616,7 @@ _Generic((VAR),                                                       \
 #else
 #define ASSERT_COMPARE_CONST(MODE, VAR1, VAR2)                           \
     ASSERT_COMPARE_NORMALIZED(MODE, VAR1, VAR2)
+#endif
 #endif
 
 #if CC_GCC || CC_CLANG

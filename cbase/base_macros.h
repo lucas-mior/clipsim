@@ -133,6 +133,10 @@ _Generic((SIZE), \
 #define TESTING 0
 #endif
 
+#if !defined(GODBOLT)
+#define GODBOLT 0
+#endif
+
 #if DEBUGGING
   #define INLINE static
 #else

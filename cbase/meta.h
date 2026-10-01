@@ -245,10 +245,7 @@ enum TokenizeFlags {
     TOKENIZE_SKIP_WHITESPACE = 1 << 1,
 };
 
-
-
 enum CUnaryOp {
-    C_UNARY_OP_INVALID = 0,
     C_UNARY_OP_PLUS,
     C_UNARY_OP_MINUS,
     C_UNARY_OP_LOGICAL_NOT,
@@ -303,9 +300,7 @@ int32 token_is_val(Token, char *);
 int32 token_is_ptr(Token *, char *);
 int32 token_is_val_len(Token, char *, int32);
 int32 token_is_ptr_len(Token *, char *, int32);
-enum CAssignOp c_assign_op_from_text(char *, int32);
 enum CAssignOp c_token_assign_op(Token *);
-enum CBinaryOp c_binary_op_from_text(char *, int32);
 enum CBinaryOp c_token_binary_op(Token *);
 enum CUnaryOp c_unary_op_from_text(char *, int32);
 enum CUnaryOp c_token_unary_op(Token *);
@@ -321,7 +316,6 @@ bool c_token_is_type_qualifier(Token *);
 bool c_token_is_type_word(Token *);
 bool c_token_is_declaration_prefix(Token *);
 int32 c_binary_op_precedence(enum CBinaryOp);
-int32 precedence_of(char *, int32);
 
 bool char_is_alpha(char);
 bool char_is_digit(char);
@@ -368,22 +362,8 @@ String c_identifier(char *, int32);
 bool c_identifier_is_keyword(char *);
 String c_string_literal(char *, int32);
 void emit_int_array_init(String *, char *, int32 *, int32);
-void emit_lens_init(
-    String *,
-    char *,
-    char **,
-    int32 *,
-    int32,
-    char *
-);
-void emit_string_array_init(
-    String *,
-    char *,
-    char **,
-    int32 *,
-    int32,
-    char *
-);
+void emit_lens_init(String *, char *, char **, int32 *, int32, char *);
+void emit_string_array_init(String *, char *, char **, int32 *, int32, char *);
 void emit_u64_array_init(String *, char *, uint64 *, int32);
 
 #define token_is_2(TOKEN, WHAT)                \
