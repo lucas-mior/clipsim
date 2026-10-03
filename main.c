@@ -23,13 +23,13 @@ typedef struct ClipsimCommand {
 } ClipsimCommand;
 
 static ClipsimCommand commands[] = {
-    [COMMAND_PRINT]  = {"-p", "--print",  "print entire history, with trimmed whitespace"},
-    [COMMAND_INFO]   = {"-i", "--info",   "print entry number <n>, with original whitespace"},
-    [COMMAND_COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace"},
-    [COMMAND_REMOVE] = {"-r", "--remove", "remove entry number <n>"},
-    [COMMAND_SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history"},
-    [COMMAND_DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command socket)"},
-    [COMMAND_HELP]   = {"-h", "--help",   "print this help message"},
+    [CMD_PRINT]  = {"-p", "--print",  "print entire history, with trimmed whitespace"},
+    [CMD_INFO]   = {"-i", "--info",   "print entry number <n>, with original whitespace"},
+    [CMD_COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace"},
+    [CMD_REMOVE] = {"-r", "--remove", "remove entry number <n>"},
+    [CMD_SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history"},
+    [CMD_DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command socket)"},
+    [CMD_HELP]   = {"-h", "--help",   "print this help message"},
 };
 
 static void main_set_signal(int32, void (*)(int));
@@ -57,12 +57,12 @@ main(int32 argc, char *argv[]) {
             || strequal(argv[1], commands[i].longname)) {
             spell_error = false;
             switch (i) {
-            case COMMAND_PRINT:
-                ipc_client_speak(COMMAND_PRINT, 0);
+            case CMD_PRINT:
+                ipc_client_speak(CMD_PRINT, 0);
                 break;
-            case COMMAND_INFO:
-            case COMMAND_COPY:
-            case COMMAND_REMOVE:
+            case CMD_INFO:
+            case CMD_COPY:
+            case CMD_REMOVE:
                 if (argc != 3) {
                     main_usage(stderr);
                 }
@@ -74,12 +74,12 @@ main(int32 argc, char *argv[]) {
                 }
                 ipc_client_speak(i, (int32)id);
                 break;
-            case COMMAND_SAVE:
-                ipc_client_speak(COMMAND_SAVE, 0);
+            case CMD_SAVE:
+                ipc_client_speak(CMD_SAVE, 0);
                 break;
-            case COMMAND_DAEMON:
+            case CMD_DAEMON:
                 main_launch_daemon();
-            case COMMAND_HELP:
+            case CMD_HELP:
                 main_usage(stdout);
             default:
                 main_usage(stderr);

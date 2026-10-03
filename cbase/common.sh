@@ -104,79 +104,6 @@ if common_command_exists zig; then
 fi
 echo "cross_targets = $cross_targets" > /dev/null
 
-common_outdated_includes () {
-    source_file=$1
-
-    awk '
-        /^[[:space:]]*#[[:space:]]*include[[:space:]]*"/ {
-            line = $0
-            sub(/^[^"]*"/, "", line)
-            sub(/".*$/, "", line)
-
-            if (line ~ /\.[ch]$/) {
-                print line
-            }
-        }
-    ' "$source_file"
-}
-
-common_outdated_resolve_include () {
-    source_file=$1
-    include_file=$2
-    source_dir=$(dirname "$source_file")
-
-    if [ -f "$source_dir/$include_file" ]; then
-        printf '%s\n' "$source_dir/$include_file"
-        return 0
-    fi
-
-    if [ -f "$include_file" ]; then
-        printf '%s\n' "$include_file"
-        return 0
-    fi
-
-    return 1
-}
-
-common_outdated_source_is_newer () {
-    rebuild_target=$1
-    source_file=$2
-    seen_file=$3
-
-    if [ ! -e "$source_file" ]; then
-        return 1
-    fi
-
-    if grep -F -x -- "$source_file" "$seen_file" > /dev/null 2>&1; then
-        return 1
-    fi
-
-    printf '%s\n' "$source_file" >> "$seen_file"
-
-    if [ "$source_file" -nt "$rebuild_target" ]; then
-        return 0
-    fi
-
-    if [ ! -f "$source_file" ]; then
-        return 1
-    fi
-
-    for include_file in $(common_outdated_includes "$source_file"); do
-        resolved_file=$(
-            common_outdated_resolve_include "$source_file" "$include_file" \
-                || true
-        )
-
-        if [ -n "$resolved_file" ] \
-                && common_outdated_source_is_newer \
-                    "$rebuild_target" "$resolved_file" "$seen_file"; then
-            return 0
-        fi
-    done
-
-    return 1
-}
-
 common_outdated () {
     rebuild_target=$1
     shift
@@ -185,18 +112,22 @@ common_outdated () {
         return 0
     fi
 
-    seen_file=${TMPDIR:-/tmp}/common_outdated.$$.seen
-    : > "$seen_file"
-
     for source_file do
-        if common_outdated_source_is_newer \
-                "$rebuild_target" "$source_file" "$seen_file"; then
-            rm -f "$seen_file"
+        if [ -e "$source_file" ] \
+                && [ "$source_file" -nt "$rebuild_target" ]; then
             return 0
         fi
     done
 
-    rm -f "$seen_file"
+    outdated_sources=$(awk -f cbase/common_outdated.awk "$@")
+    while IFS= read -r source_file; do
+        if [ -n "$source_file" ] \
+                && [ "$source_file" -nt "$rebuild_target" ]; then
+            return 0
+        fi
+    done <<EOF_OUTDATED
+$outdated_sources
+EOF_OUTDATED
 
     if [ -d cbase ] \
             && find cbase -type f -newer "$rebuild_target" | grep -q .; then

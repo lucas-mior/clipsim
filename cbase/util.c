@@ -865,23 +865,23 @@ util_functions_sink(void) {
     (void)random_filename_inplace;
     (void)util_glob_match;
     (void)here_impl;
-    (void)command_result_free;
-    (void)command_argv0_set;
-    (void)command_free;
-    (void)command_printf;
-    (void)command_push_length;
-    (void)command_push_array;
-    (void)command_push_split;
-    (void)command_env_push;
-    (void)command_env_push_length;
-    (void)command_env_printf;
-    (void)command_env_clear;
-    (void)command_cwd_set;
-    (void)command_cwd_clear;
-    (void)command_run;
-    (void)command_run_async;
-    (void)command_run_capture_all;
-    (void)command_run_capture_combined;
+    (void)cmd_result_free;
+    (void)cmd_argv0_set;
+    (void)cmd_free;
+    (void)cmd_printf;
+    (void)cmd_push_length;
+    (void)cmd_push_array;
+    (void)cmd_push_split;
+    (void)cmd_env_push;
+    (void)cmd_env_push_length;
+    (void)cmd_env_printf;
+    (void)cmd_env_clear;
+    (void)cmd_cwd_set;
+    (void)cmd_cwd_clear;
+    (void)cmd_run;
+    (void)cmd_run_async;
+    (void)cmd_run_capture_all;
+    (void)cmd_run_capture_combined;
 #if OS_UNIX
     (void)util_segv_handler;
     (void)send_signal;
@@ -892,11 +892,11 @@ util_functions_sink(void) {
     (void)free_debug;
 
 #if OS_UNIX
-    (void)command_run_capture;
-    (void)command_run_sync;
-    (void)command_result_read_captured;
-    (void)command_signal;
-    (void)command_wait;
+    (void)cmd_run_capture;
+    (void)cmd_run_sync;
+    (void)cmd_result_read_captured;
+    (void)cmd_signal;
+    (void)cmd_wait;
 #endif
     (void)qsort64;
 
@@ -912,7 +912,7 @@ util_functions_sink(void) {
     (void)rad2deg;
     (void)deg2rad;
     (void)parse_option;
-    (void)command_print;
+    (void)cmd_print;
     return;
 }
 #endif
@@ -920,17 +920,17 @@ util_functions_sink(void) {
 #if TESTING
 #if OS_UNIX
 bool
-test_command_exists(char *command) {
+test_cmd_exists(char *command) {
     char *path;
-    int32 command_len;
+    int32 cmd_len;
     int32 path_len;
 
     if ((command == NULL) || (command[0] == '\0')) {
         return false;
     }
 
-    command_len = strlen32(command);
-    if (memchr64(command, '/', command_len) != NULL) {
+    cmd_len = strlen32(command);
+    if (memchr64(command, '/', cmd_len) != NULL) {
         return access(command, X_OK) == 0;
     }
 
@@ -1080,9 +1080,13 @@ util_test_mem_literal_short(void) {
 
     ASSERT_MEM_LITERAL("zzabcdefghijklmnopqq", "abcdefghijklmnop", 2);
     ASSERT_MEM_LITERAL("zzabcdefghijklmnoxqq", "abcdefghijklmnop", -1);
-    ASSERT_MEM_LITERAL_OFFSET("zzabcdefghijklmno",
-                              STRLIT_LEN("zzabcdefghijklmno"),
-                              "abcdefghijklmnop", -1);
+    {
+        char *haystack = "zzabcdefghijklmno";
+        int32 haystack_len = strlen32(haystack);
+
+        ASSERT_MEM_LITERAL_OFFSET(haystack, haystack_len,
+                                  "abcdefghijklmnop", -1);
+    }
 
     return;
 }

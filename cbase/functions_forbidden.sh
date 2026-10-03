@@ -3,6 +3,7 @@
 common_libc_never=
 common_libc_cbase_only=
 common_libc_cbase_dir=
+common_forbidden_patterns=
 
 common_test_source_matches_filter () {
     test_src=$1
@@ -42,16 +43,25 @@ elif [ -f functions_allowed_cbase_only.txt ]; then
     common_libc_cbase_dir=.
 fi
 
+if [ -f cbase/functions_forbidden_patterns.pl ]; then
+    common_forbidden_patterns=cbase/functions_forbidden_patterns.pl
+elif [ -f functions_forbidden_patterns.pl ]; then
+    common_forbidden_patterns=functions_forbidden_patterns.pl
+fi
+
 if [ -n "$common_libc_never" ] \
-        || [ -n "$common_libc_cbase_only" ]; then
+        || [ -n "$common_libc_cbase_only" ] \
+        || [ -n "$common_forbidden_patterns" ]; then
     common_libc_pattern=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_sources=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_matches=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_matches2=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
+    common_libc_matches3=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_cbase_abs=
 
     : > "$common_libc_matches"
     : > "$common_libc_matches2"
+    : > "$common_libc_matches3"
 
     if [ -n "$common_libc_cbase_dir" ]; then
         common_libc_cbase_abs=$(
@@ -87,7 +97,7 @@ if [ -n "$common_libc_never" ] \
             continue
         fi
         if ! common_test_source_matches_filter \
-                "$common_source" "$TEST_FILTER"; then
+                "$common_source" "${TEST_FILTER:-}"; then
             case "$common_source" in
             *.c)
                 continue
@@ -137,6 +147,11 @@ if [ -n "$common_libc_never" ] \
         done < "$common_libc_sources"
     fi
 
+    if [ -n "$common_forbidden_patterns" ]; then
+        perl "$common_forbidden_patterns" --file-list "$common_libc_sources" \
+            >> "$common_libc_matches3"
+    fi
+
     if [ -s "$common_libc_matches" ]; then
         error "\nError: functions that must never be used:\n"
         cat "$common_libc_matches" >&2
@@ -147,17 +162,27 @@ if [ -n "$common_libc_never" ] \
         cat "$common_libc_matches2" >&2
     fi
 
+    if [ -s "$common_libc_matches3" ]; then
+        error "\nError: forbidden code patterns:\n"
+        cat "$common_libc_matches3" >&2
+    fi
+
     common_libc_status=0
     if [ -s "$common_libc_matches" ] \
-            || [ -s "$common_libc_matches2" ]; then
+            || [ -s "$common_libc_matches2" ] \
+            || [ -s "$common_libc_matches3" ]; then
         common_libc_status=1
+        error "%s %s\n" \
+            "In order to understand and learn how to fix the problems above," \
+            "read cbase/c-guidelines.md"
     fi
 
     rm -f \
         "$common_libc_pattern" \
         "$common_libc_sources" \
         "$common_libc_matches" \
-        "$common_libc_matches2"
+        "$common_libc_matches2" \
+        "$common_libc_matches3"
 
     if [ "$common_libc_status" -ne 0 ]; then
         exit 1

@@ -422,14 +422,14 @@ main(void) {
     if (OS_LINUX) {
         Command command = {0};
 
-        COMMAND_PUSH(&command, "gcc", "-std=c11");
-        COMMAND_PUSH(&command, "-I./cbase");
-        COMMAND_PUSH(&command, "-Wconversion");
-        COMMAND_PUSH(&command, "-o", "/tmp/a.out");
-        command_printf(&command, "%s", __FILE__);
+        CMD_PUSH(&command, "gcc", "-std=c11");
+        CMD_PUSH(&command, "-I./cbase");
+        CMD_PUSH(&command, "-Wconversion");
+        CMD_PUSH(&command, "-o", "/tmp/a.out");
+        cmd_printf(&command, "%s", __FILE__);
 
-        if (command_run(&command,
-                         COMMAND_CAPTURE_STDOUT|COMMAND_CAPTURE_STDERR) < 0) {
+        if (cmd_run(&command,
+                         CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR) < 0) {
             exit(EXIT_SUCCESS);
         } else {
             ASSERT_GLOB_MATCH(command.result.stderr_output,
@@ -437,11 +437,11 @@ main(void) {
                               "*minmax.c:*: *conversion*");
         }
 
-        command_argv0_set(&command, "clang");
-        COMMAND_PUSH(&command, "-Wshorten-64-to-32");
+        cmd_argv0_set(&command, "clang");
+        CMD_PUSH(&command, "-Wshorten-64-to-32");
 
-        if (command_run(&command,
-                         COMMAND_CAPTURE_STDOUT|COMMAND_CAPTURE_STDERR) < 0) {
+        if (cmd_run(&command,
+                         CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR) < 0) {
             exit(EXIT_SUCCESS);
         } else {
             ASSERT_GLOB_MATCH(command.result.stderr_output,

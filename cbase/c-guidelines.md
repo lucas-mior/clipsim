@@ -303,9 +303,22 @@ In general, we must always know the lengths of our strings:
 - Pass string length around when we already know it (see below).
 - Use STRLIT("literal") to pass a string literal and its length to a
   function/struct without repeating the literal itself.
-- Use `STRPASS(<field>, "literal")`
-  to pass `.<field> = "literal"` and `.<field>_len = STRLIT_LEN("literal")
-  automatically to a struct constructor without manually repeating the literal.
+- Note: `STRLIT_LEN("literal")` is always a mistake. There is no reason to use
+  it. If you need to pass the length of a literal, we have other options,
+  depending on the use case:
+    + `STRLIT("literal")` passes the literal and its length;
+    + `STRPASS(field, "literal")` in struct literals to auto assign
+       `.field = "literal", .field_len = sizeof("literal") - 1`
+    + assign the literal to a variable and use `strlen32`. This is a good option
+      for long strings used in tests, and also for functions that return the
+          string length and assign to a `char **double_pointer` out parameter.
+      ```c
+      int32
+      function_returns_len(char **string_out) {
+          *string_out = "literal";
+          return strlen32(*string_out);
+      }
+      ```
 - Use `memchr64`, `memmem64`, or other function to parse whatever we are
   parsing. Example:
   ```c
@@ -747,9 +760,7 @@ if ((alias = function()) == NULL) {
 
 Never check against `-1` for functions that return -1 or negative integer on
 error. Check `< 0` instead, since it works for the case where the negative
-result encodes an error number. The only exception is the `switch (fork())`
-pattern, but using `fork()` directly should be avoided anyway (use the
-`cbase/command.c` API instead which wraps `fork()`.
+result encodes an error number.
 
 ### Control flow and error handling
 - Avoid `goto`. Use it only for common cleanup logic.

@@ -359,19 +359,19 @@ ipc_daemon_listen(void *unused) {
         xpthread_mutex_lock(&clipsim_lock);
 
         switch (request.command) {
-        case COMMAND_PRINT:
+        case CMD_PRINT:
             ipc_daemon_pipe_entries(client_fd);
             break;
-        case COMMAND_SAVE:
+        case CMD_SAVE:
             ipc_daemon_history_save(client_fd);
             break;
-        case COMMAND_COPY:
+        case CMD_COPY:
             history_recover(request.id);
             break;
-        case COMMAND_REMOVE:
+        case CMD_REMOVE:
             history_remove(request.id);
             break;
-        case COMMAND_INFO:
+        case CMD_INFO:
             ipc_daemon_pipe_id(client_fd, request.id);
             break;
         default:
@@ -406,16 +406,16 @@ ipc_client_speak(int32 command, int32 id) {
     }
 
     switch (command) {
-    case COMMAND_PRINT:
+    case CMD_PRINT:
         ipc_client_print_entries(&fd);
         break;
-    case COMMAND_SAVE:
+    case CMD_SAVE:
         ipc_client_check_save(&fd);
         break;
-    case COMMAND_COPY:
-    case COMMAND_REMOVE:
+    case CMD_COPY:
+    case CMD_REMOVE:
         break;
-    case COMMAND_INFO:
+    case CMD_INFO:
         ipc_client_print_entries(&fd);
         break;
     default:

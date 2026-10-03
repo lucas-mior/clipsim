@@ -632,7 +632,7 @@ void test_remove_tree(char *path);
 void test_join_path(char *buffer, int64 buffer_len, char *dir, char *name);
 
 #if OS_UNIX
-bool test_command_exists(char *command);
+bool test_cmd_exists(char *command);
 bool test_hardlink_supported(char *dir);
 bool test_symlink_supported(char *dir);
 #endif
@@ -784,17 +784,17 @@ _Generic((char (*)[STRLIT_LEN(LITERAL)])0,                             \
 
 #define ENUM_NAME CommandFlag
 #define ENUM_BITFLAGS 1
-#define ENUM_PREFIX_ COMMAND_
+#define ENUM_PREFIX_ CMD_
 #define ENUM_FIELDS                                                    \
-    XX(COMMAND_CAPTURE_STDOUT)                                         \
-    XX(COMMAND_CAPTURE_STDERR)                                         \
-    XX(COMMAND_MERGE_STDERR)                                           \
-    XX(COMMAND_ASYNC)                                                  \
-    XX(COMMAND_DETACHED)                                               \
-    XX(COMMAND_NEW_SESSION)                                            \
-    XX(COMMAND_NEW_PROCESS_GROUP)                                      \
-    XX(COMMAND_STDIN_TTY)                                              \
-    XX(COMMAND_CLOSE_STDIN)
+    XX(CMD_CAPTURE_STDOUT)                                         \
+    XX(CMD_CAPTURE_STDERR)                                         \
+    XX(CMD_MERGE_STDERR)                                           \
+    XX(CMD_ASYNC)                                                  \
+    XX(CMD_DETACHED)                                               \
+    XX(CMD_NEW_SESSION)                                            \
+    XX(CMD_NEW_PROCESS_GROUP)                                      \
+    XX(CMD_STDIN_TTY)                                              \
+    XX(CMD_CLOSE_STDIN)
 #define XENUMS_DECLARE_ONLY 1
 #define XENUMS_NO_TESTS 1
 #include "xenums.c"
@@ -846,9 +846,9 @@ typedef struct Command {
     CommandResult result;
 } Command;
 
-void command_argv0_set(Command *command, char *argument);
-void command_child_env_apply(Command *);
-noreturn void command_child_exec(
+void cmd_argv0_set(Command *command, char *argument);
+void cmd_child_env_apply(Command *);
+noreturn void cmd_child_exec(
     Command *command,
     enum CommandFlag flags,
     int stdin_pipe[2],
@@ -856,66 +856,66 @@ noreturn void command_child_exec(
     int stderr_pipe[2]
 );
 #if OS_WINDOWS
-void command_windows_command_line(Command *command, char *cmdline,
+void cmd_windows_cmd_line(Command *command, char *cmdline,
                                   int64 cmdline_len);
-char *command_windows_argv0(Command *command, char *argv0_windows,
+char *cmd_windows_argv0(Command *command, char *argv0_windows,
                             int32 *argv0_len);
-int32 command_windows_run_process(Command *command, enum CommandFlag flags);
+int32 cmd_windows_run_process(Command *command, enum CommandFlag flags);
 #endif
-void command_cwd_clear(Command *);
-void command_cwd_set(Command *command, char *cwd);
-void command_env_clear(Command *);
-void command_env_printf(Command *command, char *fmt, ...);
-void command_env_push(Command *command, char *assignment);
-void command_env_push_length(Command *command, char *assignment,
+void cmd_cwd_clear(Command *);
+void cmd_cwd_set(Command *command, char *cwd);
+void cmd_env_clear(Command *);
+void cmd_env_printf(Command *command, char *fmt, ...);
+void cmd_env_push(Command *command, char *assignment);
+void cmd_env_push_length(Command *command, char *assignment,
                              int32 assignment_len);
-void command_error_set(Command *command, int32 error_status);
-bool command_flags_capture(enum CommandFlag);
-enum CommandFlag command_flags_normalized(enum CommandFlag);
-void command_free(Command *);
-void command_print(Command *);
-void command_printf(Command *command, char *fmt, ...);
-void command_push_length(Command *command, char *argument, int32 argument_len);
-void command_push_array(Command *command, int32 argc, char **argv);
-void command_push_owned_length(Command *command,
+void cmd_error_set(Command *command, int32 error_status);
+bool cmd_flags_capture(enum CommandFlag);
+enum CommandFlag cmd_flags_normalized(enum CommandFlag);
+void cmd_free(Command *);
+void cmd_print(Command *);
+void cmd_printf(Command *command, char *fmt, ...);
+void cmd_push_length(Command *command, char *argument, int32 argument_len);
+void cmd_push_array(Command *command, int32 argc, char **argv);
+void cmd_push_owned_length(Command *command,
                                char *argument, int32 argument_len);
-void command_push_split(Command *command, char *arguments, char *delimiters);
-int32 command_stdin_buffer_set(Command *command, char *data, int64 data_len);
-void command_stdin_buffer_clear(Command *);
-void command_reset(Command *);
-void command_result_append(String *output,
+void cmd_push_split(Command *command, char *arguments, char *delimiters);
+int32 cmd_stdin_buffer_set(Command *command, char *data, int64 data_len);
+void cmd_stdin_buffer_clear(Command *);
+void cmd_reset(Command *);
+void cmd_result_append(String *output,
                            String *stdout_output, String *stderr_output,
                            bool is_stderr,
                            char *data, int32 data_len);
-void command_result_file_descriptors_close(CommandResult *);
-void command_result_free(CommandResult *);
-void command_result_init(CommandResult *);
-void command_result_read_captured(Command *);
-void command_result_process_io(Command *command, enum CommandFlag flags);
-int32 command_run(Command *command, enum CommandFlag flags);
-int32 command_run_async(Command *command, enum CommandFlag flags);
-int32 command_run_capture(Command *command, enum CommandFlag flags);
-int32 command_run_capture_all(Command *);
-int32 command_run_capture_combined(Command *);
-int32 command_run_sync(Command *command, int *exit_status);
-int32 command_signal(Command *command, int32 signal_number,
+void cmd_result_file_descriptors_close(CommandResult *);
+void cmd_result_free(CommandResult *);
+void cmd_result_init(CommandResult *);
+void cmd_result_read_captured(Command *);
+void cmd_result_process_io(Command *command, enum CommandFlag flags);
+int32 cmd_run(Command *command, enum CommandFlag flags);
+int32 cmd_run_async(Command *command, enum CommandFlag flags);
+int32 cmd_run_capture(Command *command, enum CommandFlag flags);
+int32 cmd_run_capture_all(Command *);
+int32 cmd_run_capture_combined(Command *);
+int32 cmd_run_sync(Command *command, int *exit_status);
+int32 cmd_signal(Command *command, int32 signal_number,
                      bool process_group);
-int32 command_start(Command *command, enum CommandFlag flags);
-int32 command_status_from_wait(int status, CommandResult *result);
-char *command_str(Command *command, int32 *len);
-int32 command_wait(Command *);
+int32 cmd_start(Command *command, enum CommandFlag flags);
+int32 cmd_status_from_wait(int status, CommandResult *result);
+char *cmd_str(Command *command, int32 *len);
+int32 cmd_wait(Command *);
 
-#define COMMAND_PUSH(CMD, ...)                                 \
-    command_push_array(CMD,                                    \
+#define CMD_PUSH(CMD, ...)                                 \
+    cmd_push_array(CMD,                                    \
                        (int32)(sizeof((char *[]){__VA_ARGS__}) \
                                /sizeof(char *)),               \
                        (char *[]){__VA_ARGS__})
 
-#define COMMAND_ENV_PUSH_2(A, B) command_env_push(A, B)
-#define COMMAND_ENV_PUSH_3(A, B, B_LEN)                        \
-    command_env_push_length(A, B, B_LEN)
-#define COMMAND_ENV_PUSH(...)                                  \
-    SELECT_ON_NUM_ARGS(COMMAND_ENV_PUSH_, __VA_ARGS__)
+#define CMD_ENV_PUSH_2(A, B) cmd_env_push(A, B)
+#define CMD_ENV_PUSH_3(A, B, B_LEN)                        \
+    cmd_env_push_length(A, B, B_LEN)
+#define CMD_ENV_PUSH(...)                                  \
+    SELECT_ON_NUM_ARGS(CMD_ENV_PUSH_, __VA_ARGS__)
 
 #if !defined(MAX_NTHREADS)
 #define MAX_NTHREADS 64

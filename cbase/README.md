@@ -339,7 +339,7 @@ arguments and may be read concurrently by multiple threads as long as its
 format string is also left unmodified. A failed cached estimate leaves the plan
 invalid.
 
-`str_printf` and `command_printf` use this cached pair for their
+`str_printf` and `cmd_printf` use this cached pair for their
 estimate-then-format paths and require their format strings to fit the cached
 127-byte limit; they do not fall back to the normal formatter for longer
 formats. Debug builds assert this requirement. Compiler printf checking remains

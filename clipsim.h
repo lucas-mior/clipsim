@@ -92,13 +92,13 @@ enum {
 };
 
 enum {
-    COMMAND_PRINT = 0,
-    COMMAND_INFO,
-    COMMAND_COPY,
-    COMMAND_REMOVE,
-    COMMAND_SAVE,
-    COMMAND_DAEMON,
-    COMMAND_HELP,
+    CMD_PRINT = 0,
+    CMD_INFO,
+    CMD_COPY,
+    CMD_REMOVE,
+    CMD_SAVE,
+    CMD_DAEMON,
+    CMD_HELP,
 };
 
 static Entry clipsim_entries[HISTORY_BUFFER_SIZE] = {0};

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL
 // Copyright (c) 2026 Lucas Mior
 
-#if !defined(COMMAND_C)
-#define COMMAND_C
+#if !defined(CMD_C)
+#define CMD_C
 
 #if !defined(TESTING_command)
 #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
@@ -16,25 +16,25 @@
 
 #define ENUM_NAME CommandFlag
 #define ENUM_BITFLAGS 1
-#define ENUM_PREFIX_ COMMAND_
+#define ENUM_PREFIX_ CMD_
 #define ENUM_UNDERLYING_TYPE uint32
 #define ENUM_FIELDS                   \
-    XX(COMMAND_CAPTURE_STDOUT)        \
-    XX(COMMAND_CAPTURE_STDERR)        \
-    XX(COMMAND_MERGE_STDERR)          \
-    XX(COMMAND_ASYNC)                 \
-    XX(COMMAND_DETACHED)              \
-    XX(COMMAND_NEW_SESSION)           \
-    XX(COMMAND_NEW_PROCESS_GROUP)     \
-    XX(COMMAND_STDIN_TTY)             \
-    XX(COMMAND_CLOSE_STDIN)
+    XX(CMD_CAPTURE_STDOUT)        \
+    XX(CMD_CAPTURE_STDERR)        \
+    XX(CMD_MERGE_STDERR)          \
+    XX(CMD_ASYNC)                 \
+    XX(CMD_DETACHED)              \
+    XX(CMD_NEW_SESSION)           \
+    XX(CMD_NEW_PROCESS_GROUP)     \
+    XX(CMD_STDIN_TTY)             \
+    XX(CMD_CLOSE_STDIN)
 #define XENUMS_FUNCTIONS_ONLY 1
 #define XENUMS_NO_TESTS 1
 #include "xenums.c"
 #undef XENUMS_NO_TESTS
 
 void
-command_result_init(CommandResult *result) {
+cmd_result_init(CommandResult *result) {
     *result = (CommandResult){0};
 
     result->pid = -1;
@@ -47,14 +47,14 @@ command_result_init(CommandResult *result) {
 }
 
 void
-command_error_set(Command *command, int32 error_status) {
+cmd_error_set(Command *command, int32 error_status) {
     command->error_status = error_status;
     command->result.error_status = error_status;
     return;
 }
 
 static int32
-command_error_return(Command *command) {
+cmd_error_return(Command *command) {
     int32 err;
 
     err = command->error_status;
@@ -65,23 +65,23 @@ command_error_return(Command *command) {
 }
 
 enum CommandFlag
-command_flags_normalized(enum CommandFlag flags) {
-    if (flags & COMMAND_MERGE_STDERR) {
-        if (flags & COMMAND_CAPTURE_STDERR) {
-            flags |= COMMAND_CAPTURE_STDOUT;
+cmd_flags_normalized(enum CommandFlag flags) {
+    if (flags & CMD_MERGE_STDERR) {
+        if (flags & CMD_CAPTURE_STDERR) {
+            flags |= CMD_CAPTURE_STDOUT;
         }
     }
     return flags;
 }
 
 bool
-command_flags_capture(enum CommandFlag flags) {
-    return flags & (COMMAND_CAPTURE_STDOUT | COMMAND_CAPTURE_STDERR);
+cmd_flags_capture(enum CommandFlag flags) {
+    return flags & (CMD_CAPTURE_STDOUT | CMD_CAPTURE_STDERR);
 }
 
 #if OS_UNIX
 int32
-command_status_from_wait(int status, CommandResult *result) {
+cmd_status_from_wait(int status, CommandResult *result) {
     result->exited = false;
     result->signaled = false;
     result->exit_status = -1;
@@ -105,7 +105,7 @@ command_status_from_wait(int status, CommandResult *result) {
 #endif
 
 void
-command_result_file_descriptors_close(CommandResult *result) {
+cmd_result_file_descriptors_close(CommandResult *result) {
     if (result->pid == 0) {
         result->stdin_fd = -1;
         result->stdout_fd = -1;
@@ -121,19 +121,19 @@ command_result_file_descriptors_close(CommandResult *result) {
 }
 
 void
-command_result_free(CommandResult *result) {
-    command_result_file_descriptors_close(result);
+cmd_result_free(CommandResult *result) {
+    cmd_result_file_descriptors_close(result);
 
     free2(result->output, result->output_len + 1);
     free2(result->stdout_output, result->stdout_len + 1);
     free2(result->stderr_output, result->stderr_len + 1);
 
-    command_result_init(result);
+    cmd_result_init(result);
     return;
 }
 
 void
-command_result_append(String *output,
+cmd_result_append(String *output,
                       String *stdout_output, String *stderr_output,
                       bool is_stderr,
                       char *data, int32 data_len) {
@@ -159,21 +159,21 @@ typedef struct CommandWindowsCaptureFile {
 } CommandWindowsCaptureFile;
 
 static void
-command_windows_capture_file_init(CommandWindowsCaptureFile *capture) {
+cmd_windows_capture_file_init(CommandWindowsCaptureFile *capture) {
     *capture = (CommandWindowsCaptureFile){0};
     capture->handle = INVALID_HANDLE_VALUE;
     return;
 }
 
 static void
-command_windows_error_set(Command *command, DWORD error_code) {
+cmd_windows_error_set(Command *command, DWORD error_code) {
     windows_set_errno(error_code);
-    command_error_set(command, (int32)error_code);
+    cmd_error_set(command, (int32)error_code);
     return;
 }
 
 static bool
-command_windows_capture_file_open(Command *command,
+cmd_windows_capture_file_open(Command *command,
                                   CommandWindowsCaptureFile *capture,
                                   char *prefix) {
     char temp_dir[PATH_MAX];
@@ -182,12 +182,12 @@ command_windows_capture_file_open(Command *command,
 
     temp_dir_len = GetTempPathA((DWORD)SIZEOF(temp_dir), temp_dir);
     if ((temp_dir_len == 0) || (temp_dir_len >= (DWORD)SIZEOF(temp_dir))) {
-        command_windows_error_set(command, GetLastError());
+        cmd_windows_error_set(command, GetLastError());
         return false;
     }
 
     if (GetTempFileNameA(temp_dir, prefix, 0, capture->path) == 0) {
-        command_windows_error_set(command, GetLastError());
+        cmd_windows_error_set(command, GetLastError());
         return false;
     }
 
@@ -203,7 +203,7 @@ command_windows_capture_file_open(Command *command,
                                   FILE_ATTRIBUTE_TEMPORARY,
                                   NULL);
     if (capture->handle == INVALID_HANDLE_VALUE) {
-        command_windows_error_set(command, GetLastError());
+        cmd_windows_error_set(command, GetLastError());
         DeleteFileA(capture->path);
         capture->path[0] = '\0';
         return false;
@@ -213,14 +213,14 @@ command_windows_capture_file_open(Command *command,
 }
 
 static bool
-command_windows_capture_file_close(Command *command,
+cmd_windows_capture_file_close(Command *command,
                                    CommandWindowsCaptureFile *capture) {
     if (capture->handle == INVALID_HANDLE_VALUE) {
         return true;
     }
 
     if (!CloseHandle(capture->handle)) {
-        command_windows_error_set(command, GetLastError());
+        cmd_windows_error_set(command, GetLastError());
         capture->handle = INVALID_HANDLE_VALUE;
         return false;
     }
@@ -230,30 +230,30 @@ command_windows_capture_file_close(Command *command,
 }
 
 static void
-command_windows_capture_file_cleanup(CommandWindowsCaptureFile *capture) {
+cmd_windows_capture_file_cleanup(CommandWindowsCaptureFile *capture) {
     if (capture->handle != INVALID_HANDLE_VALUE) {
         CloseHandle(capture->handle);
     }
     if (capture->path[0] != '\0') {
         DeleteFileA(capture->path);
     }
-    command_windows_capture_file_init(capture);
+    cmd_windows_capture_file_init(capture);
     return;
 }
 
 static bool
-command_windows_capture_file_read(Command *command,
+cmd_windows_capture_file_read(Command *command,
                                   CommandWindowsCaptureFile *capture,
                                   char **output,
                                   int32 *output_len) {
     int32 read_len;
 
-    if (!command_windows_capture_file_close(command, capture)) {
+    if (!cmd_windows_capture_file_close(command, capture)) {
         return false;
     }
 
     if ((read_len = read_entire_file(capture->path, output)) < 0) {
-        command_error_set(command, -read_len);
+        cmd_error_set(command, -read_len);
         return false;
     }
 
@@ -262,7 +262,7 @@ command_windows_capture_file_read(Command *command,
 }
 
 static bool
-command_windows_result_read_captured(Command *command,
+cmd_windows_result_read_captured(Command *command,
                                      enum CommandFlag flags,
                                      CommandWindowsCaptureFile *stdout_capture,
                                      CommandWindowsCaptureFile *stderr_capture) {
@@ -272,19 +272,19 @@ command_windows_result_read_captured(Command *command,
     int32 stdout_len = 0;
     int32 stderr_len = 0;
 
-    if ((flags & COMMAND_CAPTURE_STDOUT)
-        && !command_windows_capture_file_read(command,
+    if ((flags & CMD_CAPTURE_STDOUT)
+        && !cmd_windows_capture_file_read(command,
                                              stdout_capture,
                                              &stdout_output,
                                              &stdout_len)) {
         return false;
     }
 
-    if (flags & COMMAND_CAPTURE_STDERR) {
-        if (flags & COMMAND_MERGE_STDERR) {
+    if (flags & CMD_CAPTURE_STDERR) {
+        if (flags & CMD_MERGE_STDERR) {
             stderr_output = xstrndup(STRLIT(""));
             stderr_len = 0;
-        } else if (!command_windows_capture_file_read(command,
+        } else if (!cmd_windows_capture_file_read(command,
                                                       stderr_capture,
                                                       &stderr_output,
                                                       &stderr_len)) {
@@ -293,25 +293,25 @@ command_windows_result_read_captured(Command *command,
         }
     }
 
-    if (command_flags_capture(flags)) {
-        if (flags & COMMAND_CAPTURE_STDOUT) {
+    if (cmd_flags_capture(flags)) {
+        if (flags & CMD_CAPTURE_STDOUT) {
             str_append(&output, stdout_output, stdout_len);
         }
-        if ((flags & COMMAND_CAPTURE_STDERR)
-            && !(flags & COMMAND_MERGE_STDERR)) {
+        if ((flags & CMD_CAPTURE_STDERR)
+            && !(flags & CMD_MERGE_STDERR)) {
             str_append(&output, stderr_output, stderr_len);
         }
         command->result.output = str_steal(&output,
                                                 &command->result.output_len);
     }
 
-    if (flags & COMMAND_CAPTURE_STDOUT) {
+    if (flags & CMD_CAPTURE_STDOUT) {
         command->result.stdout_output = stdout_output;
         command->result.stdout_len = stdout_len;
         stdout_output = NULL;
         stdout_len = 0;
     }
-    if (flags & COMMAND_CAPTURE_STDERR) {
+    if (flags & CMD_CAPTURE_STDERR) {
         command->result.stderr_output = stderr_output;
         command->result.stderr_len = stderr_len;
         stderr_output = NULL;
@@ -324,7 +324,7 @@ command_windows_result_read_captured(Command *command,
 }
 
 char *
-command_windows_argv0(Command *command,
+cmd_windows_argv0(Command *command,
                       char *argv0_windows, int32 *argv0_len) {
     char *exe = ".exe";
     int64 exe_len = strlen32(exe);
@@ -351,7 +351,7 @@ command_windows_argv0(Command *command,
 }
 
 void
-command_windows_command_line(Command *command,
+cmd_windows_cmd_line(Command *command,
                              char *cmdline, int64 cmdline_len) {
     char argv0_windows[BUFSIZ];
     int64 j = 0;
@@ -362,7 +362,7 @@ command_windows_command_line(Command *command,
         bool needs_quotes;
 
         if (i == 0) {
-            argument = command_windows_argv0(command,
+            argument = cmd_windows_argv0(command,
                                              argv0_windows,
                                              &argument_len);
         } else {
@@ -407,7 +407,7 @@ command_windows_command_line(Command *command,
 }
 
 int32
-command_windows_run_process(Command *command, enum CommandFlag flags) {
+cmd_windows_run_process(Command *command, enum CommandFlag flags) {
     char cmdline[BUFSIZ] = {0};
     CommandWindowsCaptureFile stdout_capture;
     CommandWindowsCaptureFile stderr_capture;
@@ -417,35 +417,35 @@ command_windows_run_process(Command *command, enum CommandFlag flags) {
     BOOL inherit_handles = TRUE;
     BOOL success;
 
-    command_windows_capture_file_init(&stdout_capture);
-    command_windows_capture_file_init(&stderr_capture);
-    flags = command_flags_normalized(flags);
+    cmd_windows_capture_file_init(&stdout_capture);
+    cmd_windows_capture_file_init(&stderr_capture);
+    flags = cmd_flags_normalized(flags);
 
-    if ((flags & COMMAND_STDIN_TTY)
+    if ((flags & CMD_STDIN_TTY)
         && (freopen("CONIN$", "r", stdin) == NULL)) {
-        command_error_set(command, errno);
+        cmd_error_set(command, errno);
         return -1;
     }
 
-    if ((flags & COMMAND_CAPTURE_STDOUT)
-        && !command_windows_capture_file_open(command,
+    if ((flags & CMD_CAPTURE_STDOUT)
+        && !cmd_windows_capture_file_open(command,
                                              &stdout_capture,
                                              "cos")) {
         return -1;
     }
-    if ((flags & COMMAND_CAPTURE_STDERR)
-        && !(flags & COMMAND_MERGE_STDERR)
-        && !command_windows_capture_file_open(command,
+    if ((flags & CMD_CAPTURE_STDERR)
+        && !(flags & CMD_MERGE_STDERR)
+        && !cmd_windows_capture_file_open(command,
                                              &stderr_capture,
                                              "ces")) {
-        command_windows_capture_file_cleanup(&stdout_capture);
+        cmd_windows_capture_file_cleanup(&stdout_capture);
         return -1;
     }
 
-    command_windows_command_line(command, cmdline, SIZEOF(cmdline));
+    cmd_windows_cmd_line(command, cmdline, SIZEOF(cmdline));
 
     startup_info.cb = sizeof(startup_info);
-    if (command_flags_capture(flags) || (flags & COMMAND_STDIN_TTY)) {
+    if (cmd_flags_capture(flags) || (flags & CMD_STDIN_TTY)) {
         startup_info.dwFlags |= STARTF_USESTDHANDLES;
         startup_info.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
         startup_info.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -453,15 +453,15 @@ command_windows_run_process(Command *command, enum CommandFlag flags) {
         inherit_handles = TRUE;
 
 #if CBASE_CRT_MSVC
-        if (flags & COMMAND_STDIN_TTY) {
+        if (flags & CMD_STDIN_TTY) {
             startup_info.hStdInput = (HANDLE)_get_osfhandle(STDIN_FILENO);
         }
 #endif
-        if (flags & COMMAND_CAPTURE_STDOUT) {
+        if (flags & CMD_CAPTURE_STDOUT) {
             startup_info.hStdOutput = stdout_capture.handle;
         }
-        if (flags & COMMAND_CAPTURE_STDERR) {
-            if (flags & COMMAND_MERGE_STDERR) {
+        if (flags & CMD_CAPTURE_STDERR) {
+            if (flags & CMD_MERGE_STDERR) {
                 startup_info.hStdError = stdout_capture.handle;
             } else {
                 startup_info.hStdError = stderr_capture.handle;
@@ -482,9 +482,9 @@ command_windows_run_process(Command *command, enum CommandFlag flags) {
     if (!success) {
         DWORD err = GetLastError();
 
-        command_windows_capture_file_cleanup(&stdout_capture);
-        command_windows_capture_file_cleanup(&stderr_capture);
-        command_windows_error_set(command, err);
+        cmd_windows_capture_file_cleanup(&stdout_capture);
+        cmd_windows_capture_file_cleanup(&stderr_capture);
+        cmd_windows_error_set(command, err);
         error("Error running '%s': %llu.\n", cmdline, (ullong)err);
         if (err == ERROR_PATH_NOT_FOUND) {
             error("Path not found.\n");
@@ -495,57 +495,57 @@ command_windows_run_process(Command *command, enum CommandFlag flags) {
     command->result.pid = proc_info.dwProcessId;
 
     if (WaitForSingleObject(proc_info.hProcess, INFINITE) != WAIT_OBJECT_0) {
-        command_windows_error_set(command, GetLastError());
+        cmd_windows_error_set(command, GetLastError());
         CloseHandle(proc_info.hThread);
         CloseHandle(proc_info.hProcess);
-        command_windows_capture_file_cleanup(&stdout_capture);
-        command_windows_capture_file_cleanup(&stderr_capture);
+        cmd_windows_capture_file_cleanup(&stdout_capture);
+        cmd_windows_capture_file_cleanup(&stderr_capture);
         return -1;
     }
 
     if (!GetExitCodeProcess(proc_info.hProcess, &exit_code)) {
-        command_windows_error_set(command, GetLastError());
+        cmd_windows_error_set(command, GetLastError());
         CloseHandle(proc_info.hThread);
         CloseHandle(proc_info.hProcess);
-        command_windows_capture_file_cleanup(&stdout_capture);
-        command_windows_capture_file_cleanup(&stderr_capture);
+        cmd_windows_capture_file_cleanup(&stdout_capture);
+        cmd_windows_capture_file_cleanup(&stderr_capture);
         return -1;
     }
 
     if (!CloseHandle(proc_info.hThread)) {
-        command_windows_error_set(command, GetLastError());
+        cmd_windows_error_set(command, GetLastError());
         CloseHandle(proc_info.hProcess);
-        command_windows_capture_file_cleanup(&stdout_capture);
-        command_windows_capture_file_cleanup(&stderr_capture);
+        cmd_windows_capture_file_cleanup(&stdout_capture);
+        cmd_windows_capture_file_cleanup(&stderr_capture);
         return -1;
     }
 
     if (!CloseHandle(proc_info.hProcess)) {
-        command_windows_error_set(command, GetLastError());
-        command_windows_capture_file_cleanup(&stdout_capture);
-        command_windows_capture_file_cleanup(&stderr_capture);
+        cmd_windows_error_set(command, GetLastError());
+        cmd_windows_capture_file_cleanup(&stdout_capture);
+        cmd_windows_capture_file_cleanup(&stderr_capture);
         return -1;
     }
 
-    if (command_flags_capture(flags)
-        && !command_windows_result_read_captured(command,
+    if (cmd_flags_capture(flags)
+        && !cmd_windows_result_read_captured(command,
                                                 flags,
                                                 &stdout_capture,
                                                 &stderr_capture)) {
-        command_windows_capture_file_cleanup(&stdout_capture);
-        command_windows_capture_file_cleanup(&stderr_capture);
+        cmd_windows_capture_file_cleanup(&stdout_capture);
+        cmd_windows_capture_file_cleanup(&stderr_capture);
         return -1;
     }
 
-    command_windows_capture_file_cleanup(&stdout_capture);
-    command_windows_capture_file_cleanup(&stderr_capture);
+    cmd_windows_capture_file_cleanup(&stdout_capture);
+    cmd_windows_capture_file_cleanup(&stderr_capture);
     return (int32)exit_code;
 }
 #endif
 
 #if OS_UNIX
 static bool
-command_pipe_set_nonblock(int32 fd) {
+cmd_pipe_set_nonblock(int32 fd) {
     int flags;
 
     flags = fcntl(fd, F_GETFL, 0);
@@ -560,7 +560,7 @@ command_pipe_set_nonblock(int32 fd) {
 }
 
 static void
-command_result_close_poll_fd(struct pollfd *pipe, int32 *fd, int32 *left) {
+cmd_result_close_poll_fd(struct pollfd *pipe, int32 *fd, int32 *left) {
     if (*fd >= 0) {
         XCLOSE(fd);
     }
@@ -572,7 +572,7 @@ command_result_close_poll_fd(struct pollfd *pipe, int32 *fd, int32 *left) {
 }
 
 static void
-command_result_process_stdin_event(Command *command,
+cmd_result_process_stdin_event(Command *command,
                                    struct pollfd *pipe,
                                    int32 *left, int64 *stdin_offset) {
     int64 bytes_written;
@@ -580,7 +580,7 @@ command_result_process_stdin_event(Command *command,
     int64 left_to_write;
 
     if (pipe->revents & (POLLERR | POLLHUP | POLLNVAL)) {
-        command_result_close_poll_fd(pipe, &command->result.stdin_fd, left);
+        cmd_result_close_poll_fd(pipe, &command->result.stdin_fd, left);
         return;
     }
     if (!(pipe->revents & POLLOUT)) {
@@ -590,7 +590,7 @@ command_result_process_stdin_event(Command *command,
 
     left_to_write = command->stdin_buffer_len - *stdin_offset;
     if (left_to_write <= 0) {
-        command_result_close_poll_fd(pipe, &command->result.stdin_fd, left);
+        cmd_result_close_poll_fd(pipe, &command->result.stdin_fd, left);
         return;
     }
 
@@ -605,7 +605,7 @@ command_result_process_stdin_event(Command *command,
     if (bytes_written > 0) {
         *stdin_offset += bytes_written;
         if (*stdin_offset >= command->stdin_buffer_len) {
-            command_result_close_poll_fd(pipe,
+            cmd_result_close_poll_fd(pipe,
                                          &command->result.stdin_fd,
                                          left);
         } else {
@@ -620,12 +620,12 @@ command_result_process_stdin_event(Command *command,
             return;
         }
         if (errno == EPIPE) {
-            command_result_close_poll_fd(pipe,
+            cmd_result_close_poll_fd(pipe,
                                          &command->result.stdin_fd,
                                          left);
             return;
         }
-        command_error_set(command, errno);
+        cmd_error_set(command, errno);
         error("Error writing child stdin: %s.\n", strerror(errno));
         fatal(EXIT_FAILURE);
     }
@@ -635,7 +635,7 @@ command_result_process_stdin_event(Command *command,
 }
 
 static void
-command_result_process_output_event(Command *command,
+cmd_result_process_output_event(Command *command,
                                     struct pollfd *pipe,
                                     int32 *fd, int32 *left,
                                     String *output,
@@ -652,7 +652,7 @@ command_result_process_output_event(Command *command,
             error("Command output is too long.\n");
             fatal(EXIT_FAILURE);
         }
-        command_result_append(output,
+        cmd_result_append(output,
                               stdout_output,
                               stderr_output,
                               is_stderr,
@@ -666,24 +666,24 @@ command_result_process_output_event(Command *command,
             pipe->revents = 0;
             return;
         }
-        command_error_set(command, errno);
+        cmd_error_set(command, errno);
         error("Error reading child output: %s.\n", strerror(errno));
         fatal(EXIT_FAILURE);
     }
 
-    command_result_close_poll_fd(pipe, fd, left);
+    cmd_result_close_poll_fd(pipe, fd, left);
     return;
 }
 
 void
-command_result_process_io(Command *command, enum CommandFlag flags) {
+cmd_result_process_io(Command *command, enum CommandFlag flags) {
     enum {
-        COMMAND_STDOUT_PIPE_INDEX = 0,
-        COMMAND_STDERR_PIPE_INDEX = 1,
-        COMMAND_STDIN_PIPE_INDEX = 2,
-        COMMAND_PIPE_COUNT = 3,
+        CMD_STDOUT_PIPE_INDEX = 0,
+        CMD_STDERR_PIPE_INDEX = 1,
+        CMD_STDIN_PIPE_INDEX = 2,
+        CMD_PIPE_COUNT = 3,
     };
-    struct pollfd pipes[COMMAND_PIPE_COUNT] = {0};
+    struct pollfd pipes[CMD_PIPE_COUNT] = {0};
     String output = {0};
     String stdout_output = {0};
     String stderr_output = {0};
@@ -693,30 +693,30 @@ command_result_process_io(Command *command, enum CommandFlag flags) {
     void (*previous_sigpipe)(int) = NULL;
     bool sigpipe_changed = false;
 
-    flags = command_flags_normalized(flags);
-    for (int32 i = 0; i < COMMAND_PIPE_COUNT; i += 1) {
+    flags = cmd_flags_normalized(flags);
+    for (int32 i = 0; i < CMD_PIPE_COUNT; i += 1) {
         pipes[i].fd = -1;
     }
 
     if (command->result.stdout_fd >= 0) {
-        pipes[COMMAND_STDOUT_PIPE_INDEX].fd = command->result.stdout_fd;
-        pipes[COMMAND_STDOUT_PIPE_INDEX].events = POLLIN;
-        nfds = COMMAND_STDOUT_PIPE_INDEX + 1;
+        pipes[CMD_STDOUT_PIPE_INDEX].fd = command->result.stdout_fd;
+        pipes[CMD_STDOUT_PIPE_INDEX].events = POLLIN;
+        nfds = CMD_STDOUT_PIPE_INDEX + 1;
         left += 1;
     }
     if (command->result.stderr_fd >= 0) {
-        pipes[COMMAND_STDERR_PIPE_INDEX].fd = command->result.stderr_fd;
-        pipes[COMMAND_STDERR_PIPE_INDEX].events = POLLIN;
-        nfds = COMMAND_STDERR_PIPE_INDEX + 1;
+        pipes[CMD_STDERR_PIPE_INDEX].fd = command->result.stderr_fd;
+        pipes[CMD_STDERR_PIPE_INDEX].events = POLLIN;
+        nfds = CMD_STDERR_PIPE_INDEX + 1;
         left += 1;
     }
     if (command->result.stdin_fd >= 0) {
         if (command->stdin_buffer_len <= 0) {
             XCLOSE(&command->result.stdin_fd);
         } else {
-            pipes[COMMAND_STDIN_PIPE_INDEX].fd = command->result.stdin_fd;
-            pipes[COMMAND_STDIN_PIPE_INDEX].events = POLLOUT;
-            nfds = COMMAND_STDIN_PIPE_INDEX + 1;
+            pipes[CMD_STDIN_PIPE_INDEX].fd = command->result.stdin_fd;
+            pipes[CMD_STDIN_PIPE_INDEX].events = POLLOUT;
+            nfds = CMD_STDIN_PIPE_INDEX + 1;
             left += 1;
             previous_sigpipe = signal(SIGPIPE, SIG_IGN);
             sigpipe_changed = true;
@@ -731,7 +731,7 @@ command_result_process_io(Command *command, enum CommandFlag flags) {
             if (errno == EINTR) {
                 continue;
             }
-            command_error_set(command, errno);
+            cmd_error_set(command, errno);
             error("Error polling child IO: %s.\n", strerror(errno));
             fatal(EXIT_FAILURE);
         }
@@ -745,16 +745,16 @@ command_result_process_io(Command *command, enum CommandFlag flags) {
             }
 
             ready -= 1;
-            if (i == COMMAND_STDIN_PIPE_INDEX) {
-                command_result_process_stdin_event(command,
+            if (i == CMD_STDIN_PIPE_INDEX) {
+                cmd_result_process_stdin_event(command,
                                                    &pipes[i],
                                                    &left,
                                                    &stdin_offset);
                 continue;
             }
 
-            if (i == COMMAND_STDERR_PIPE_INDEX) {
-                command_result_process_output_event(command,
+            if (i == CMD_STDERR_PIPE_INDEX) {
+                cmd_result_process_output_event(command,
                                                     &pipes[i],
                                                     &command->result.stderr_fd,
                                                     &left,
@@ -763,7 +763,7 @@ command_result_process_io(Command *command, enum CommandFlag flags) {
                                                     &stderr_output,
                                                     true);
             } else {
-                command_result_process_output_event(command,
+                cmd_result_process_output_event(command,
                                                     &pipes[i],
                                                     &command->result.stdout_fd,
                                                     &left,
@@ -779,19 +779,19 @@ command_result_process_io(Command *command, enum CommandFlag flags) {
         signal(SIGPIPE, previous_sigpipe);
     }
 
-    if (command_flags_capture(flags)) {
+    if (cmd_flags_capture(flags)) {
         command->result.output = str_steal(&output,
                                                 &command->result.output_len);
     } else {
         str_free(&output);
     }
-    if (flags & COMMAND_CAPTURE_STDOUT) {
+    if (flags & CMD_CAPTURE_STDOUT) {
         command->result.stdout_output = str_steal(&stdout_output,
                                                   &command->result.stdout_len);
     } else {
         str_free(&stdout_output);
     }
-    if (flags & COMMAND_CAPTURE_STDERR) {
+    if (flags & CMD_CAPTURE_STDERR) {
         command->result.stderr_output = str_steal(&stderr_output,
                                                   &command->result.stderr_len);
     } else {
@@ -801,15 +801,15 @@ command_result_process_io(Command *command, enum CommandFlag flags) {
 }
 
 void
-command_result_read_captured(Command *command) {
-    command_result_process_io(command,
-                              COMMAND_CAPTURE_STDOUT
-                              |COMMAND_CAPTURE_STDERR);
+cmd_result_read_captured(Command *command) {
+    cmd_result_process_io(command,
+                              CMD_CAPTURE_STDOUT
+                              |CMD_CAPTURE_STDERR);
     return;
 }
 
 void
-command_child_env_apply(Command *command) {
+cmd_child_env_apply(Command *command) {
     for (int32 i = 0; i < command->env_len; i += 1) {
         putenv(command->env[i]);
     }
@@ -817,7 +817,7 @@ command_child_env_apply(Command *command) {
 }
 
 void
-command_child_exec(Command *command,
+cmd_child_exec(Command *command,
                    enum CommandFlag flags,
                    int stdin_pipe[2], int stdout_pipe[2], int stderr_pipe[2]) {
     if (command->cwd) {
@@ -828,12 +828,12 @@ command_child_exec(Command *command,
         }
     }
 
-    if (flags & COMMAND_NEW_SESSION) {
+    if (flags & CMD_NEW_SESSION) {
         if (setsid() < 0) {
             error("Error in setsid: %s.\n", strerror(errno));
             _exit(127);
         }
-    } else if (flags & COMMAND_NEW_PROCESS_GROUP) {
+    } else if (flags & CMD_NEW_PROCESS_GROUP) {
         if (setpgid(0, 0) < 0) {
             error("Error in setpgid: %s.\n", strerror(errno));
             _exit(127);
@@ -843,23 +843,23 @@ command_child_exec(Command *command,
     if (stdin_pipe) {
         XCLOSE(&stdin_pipe[1]);
         xdup2(stdin_pipe[0], STDIN_FILENO);
-    } else if (flags & COMMAND_STDIN_TTY) {
+    } else if (flags & CMD_STDIN_TTY) {
         if (!freopen("/dev/tty", "r", stdin)) {
             error("Error reopening stdin: %s.\n", strerror(errno));
         }
-    } else if (flags & COMMAND_CLOSE_STDIN) {
+    } else if (flags & CMD_CLOSE_STDIN) {
         int stdin_fd = STDIN_FILENO;
 
         XCLOSE(&stdin_fd);
     }
 
-    if (flags & COMMAND_CAPTURE_STDOUT) {
+    if (flags & CMD_CAPTURE_STDOUT) {
         XCLOSE(&stdout_pipe[0]);
         xdup2(stdout_pipe[1], STDOUT_FILENO);
     }
 
-    if (flags & COMMAND_CAPTURE_STDERR) {
-        if (flags & COMMAND_MERGE_STDERR) {
+    if (flags & CMD_CAPTURE_STDERR) {
+        if (flags & CMD_MERGE_STDERR) {
             xdup2(stdout_pipe[1], STDERR_FILENO);
         } else {
             XCLOSE(&stderr_pipe[0]);
@@ -870,62 +870,62 @@ command_child_exec(Command *command,
     if (stdin_pipe) {
         XCLOSE(&stdin_pipe[0]);
     }
-    if (flags & COMMAND_CAPTURE_STDOUT) {
+    if (flags & CMD_CAPTURE_STDOUT) {
         XCLOSE(&stdout_pipe[1]);
     }
-    if ((flags & COMMAND_CAPTURE_STDERR)
-        && !(flags & COMMAND_MERGE_STDERR)) {
+    if ((flags & CMD_CAPTURE_STDERR)
+        && !(flags & CMD_MERGE_STDERR)) {
         XCLOSE(&stderr_pipe[1]);
     }
 
-    command_child_env_apply(command);
+    cmd_child_env_apply(command);
     execvp(command->argv[0], command->argv);
     error("Error executing %s: %s.\n", command->argv[0], strerror(errno));
     _exit(127);
 }
 
 int32
-command_start(Command *command, enum CommandFlag flags) {
+cmd_start(Command *command, enum CommandFlag flags) {
     int stdin_pipe[2] = {-1, -1};
     int stdout_pipe[2] = {-1, -1};
     int stderr_pipe[2] = {-1, -1};
     pid_t pid;
 
-    flags = command_flags_normalized(flags);
-    command_result_free(&command->result);
+    flags = cmd_flags_normalized(flags);
+    cmd_result_free(&command->result);
     command->error_status = 0;
 
     if (command->argc <= 0) {
-        command_error_set(command, EINVAL);
-        return command_error_return(command);
+        cmd_error_set(command, EINVAL);
+        return cmd_error_return(command);
     }
-    if ((flags & COMMAND_DETACHED) && command_flags_capture(flags)) {
-        command_error_set(command, EINVAL);
-        return command_error_return(command);
+    if ((flags & CMD_DETACHED) && cmd_flags_capture(flags)) {
+        cmd_error_set(command, EINVAL);
+        return cmd_error_return(command);
     }
     if ((command->stdin_buffer != NULL)
-        && (flags & (COMMAND_ASYNC
-                     |COMMAND_DETACHED
-                     |COMMAND_STDIN_TTY
-                     |COMMAND_CLOSE_STDIN))) {
-        command_error_set(command, EINVAL);
-        return command_error_return(command);
+        && (flags & (CMD_ASYNC
+                     |CMD_DETACHED
+                     |CMD_STDIN_TTY
+                     |CMD_CLOSE_STDIN))) {
+        cmd_error_set(command, EINVAL);
+        return cmd_error_return(command);
     }
 
     if (command->stdin_buffer != NULL) {
         xpipe(stdin_pipe);
-        if (!command_pipe_set_nonblock(stdin_pipe[1])) {
-            command_error_set(command, errno);
+        if (!cmd_pipe_set_nonblock(stdin_pipe[1])) {
+            cmd_error_set(command, errno);
             XCLOSE(&stdin_pipe[0]);
             XCLOSE(&stdin_pipe[1]);
-            return command_error_return(command);
+            return cmd_error_return(command);
         }
     }
-    if (flags & COMMAND_CAPTURE_STDOUT) {
+    if (flags & CMD_CAPTURE_STDOUT) {
         xpipe(stdout_pipe);
     }
-    if ((flags & COMMAND_CAPTURE_STDERR)
-        && !(flags & COMMAND_MERGE_STDERR)) {
+    if ((flags & CMD_CAPTURE_STDERR)
+        && !(flags & CMD_MERGE_STDERR)) {
         xpipe(stderr_pipe);
     }
 
@@ -949,11 +949,11 @@ command_start(Command *command, enum CommandFlag flags) {
         if (stderr_pipe[1] >= 0) {
             XCLOSE(&stderr_pipe[1]);
         }
-        command_error_set(command, errno);
+        cmd_error_set(command, errno);
         error("Error forking: %s.\n", strerror(errno));
         fatal(EXIT_FAILURE);
     case 0:
-        if (flags & COMMAND_DETACHED) {
+        if (flags & CMD_DETACHED) {
             switch (fork()) {
             case -1:
                 error("Error forking detached child: %s.\n", strerror(errno));
@@ -965,13 +965,13 @@ command_start(Command *command, enum CommandFlag flags) {
             }
         }
         if (command->stdin_buffer != NULL) {
-            command_child_exec(command,
+            cmd_child_exec(command,
                                flags,
                                stdin_pipe,
                                stdout_pipe,
                                stderr_pipe);
         }
-        command_child_exec(command, flags, NULL, stdout_pipe, stderr_pipe);
+        cmd_child_exec(command, flags, NULL, stdout_pipe, stderr_pipe);
     default:
         break;
     }
@@ -982,12 +982,12 @@ command_start(Command *command, enum CommandFlag flags) {
         XCLOSE(&stdin_pipe[0]);
         command->result.stdin_fd = stdin_pipe[1];
     }
-    if (flags & COMMAND_CAPTURE_STDOUT) {
+    if (flags & CMD_CAPTURE_STDOUT) {
         XCLOSE(&stdout_pipe[1]);
         command->result.stdout_fd = stdout_pipe[0];
     }
-    if ((flags & COMMAND_CAPTURE_STDERR)
-        && !(flags & COMMAND_MERGE_STDERR)) {
+    if ((flags & CMD_CAPTURE_STDERR)
+        && !(flags & CMD_MERGE_STDERR)) {
         XCLOSE(&stderr_pipe[1]);
         command->result.stderr_fd = stderr_pipe[0];
     }
@@ -996,34 +996,34 @@ command_start(Command *command, enum CommandFlag flags) {
 }
 
 int32
-command_wait(Command *command) {
+cmd_wait(Command *command) {
     int status;
 
     if (command->result.pid <= 0) {
-        command_error_set(command, EINVAL);
-        return command_error_return(command);
+        cmd_error_set(command, EINVAL);
+        return cmd_error_return(command);
     }
 
     while (waitpid((pid_t)command->result.pid, &status, 0) < 0) {
         if (errno == EINTR) {
             continue;
         }
-        command_error_set(command, errno);
+        cmd_error_set(command, errno);
         error("Error waiting for child: %s.\n", strerror(errno));
-        return command_error_return(command);
+        return cmd_error_return(command);
     }
 
-    command_status_from_wait(status, &command->result);
+    cmd_status_from_wait(status, &command->result);
     return 0;
 }
 
 int32
-command_signal(Command *command, int32 signal_number, bool process_group) {
+cmd_signal(Command *command, int32 signal_number, bool process_group) {
     pid_t pid;
 
     if (command->result.pid <= 0) {
-        command_error_set(command, EINVAL);
-        return command_error_return(command);
+        cmd_error_set(command, EINVAL);
+        return cmd_error_return(command);
     }
 
     pid = (pid_t)command->result.pid;
@@ -1032,10 +1032,10 @@ command_signal(Command *command, int32 signal_number, bool process_group) {
     }
 
     if (kill(pid, signal_number) < 0) {
-        command_error_set(command, errno);
+        cmd_error_set(command, errno);
         error("Error sending signal %d to child: %s.\n",
               signal_number, strerror(errno));
-        return command_error_return(command);
+        return cmd_error_return(command);
     }
 
     return 0;
@@ -1043,7 +1043,7 @@ command_signal(Command *command, int32 signal_number, bool process_group) {
 #endif
 
 static int32
-command_run_finish(Command *command, int64 start_ns, int32 result) {
+cmd_run_finish(Command *command, int64 start_ns, int32 result) {
     int64 end_ns = time_monotonic_now();
 
     command->run_elapsed_ns = time_elapsed_ns(start_ns, end_ns);
@@ -1051,83 +1051,83 @@ command_run_finish(Command *command, int64 start_ns, int32 result) {
 }
 
 int32
-command_run(Command *command, enum CommandFlag flags) {
+cmd_run(Command *command, enum CommandFlag flags) {
     int64 start_ns = time_monotonic_now();
 #if OS_UNIX
     int32 err;
 #endif
 #if OS_UNIX && DEBUGGING && !TESTING_command
-    char *command_text;
-    int32 command_text_len;
+    char *cmd_text;
+    int32 cmd_text_len;
 #endif
 
     command->run_elapsed_ns = 0;
-    flags = command_flags_normalized(flags);
+    flags = cmd_flags_normalized(flags);
 
 #if OS_UNIX
 #if DEBUGGING && !TESTING_command
-    if (!command_flags_capture(flags)) {
-        command_text = command_str(command, &command_text_len);
-        error2("Running %s \n", command_text);
-        free2(command_text, command_text_len + 1);
+    if (!cmd_flags_capture(flags)) {
+        cmd_text = cmd_str(command, &cmd_text_len);
+        error2("Running %s \n", cmd_text);
+        free2(cmd_text, cmd_text_len + 1);
     }
 #endif
 
-    if ((err = command_start(command, flags)) < 0) {
-        return command_run_finish(command, start_ns, err);
+    if ((err = cmd_start(command, flags)) < 0) {
+        return cmd_run_finish(command, start_ns, err);
     }
-    if (flags & COMMAND_DETACHED) {
-        if ((err = command_wait(command)) < 0) {
-            return command_run_finish(command, start_ns, err);
+    if (flags & CMD_DETACHED) {
+        if ((err = cmd_wait(command)) < 0) {
+            return cmd_run_finish(command, start_ns, err);
         }
-        return command_run_finish(command, start_ns, 0);
+        return cmd_run_finish(command, start_ns, 0);
     }
-    if (flags & COMMAND_ASYNC) {
-        return command_run_finish(command, start_ns, 0);
+    if (flags & CMD_ASYNC) {
+        return cmd_run_finish(command, start_ns, 0);
     }
-    if (command_flags_capture(flags) || (command->stdin_buffer != NULL)) {
-        command_result_process_io(command, flags);
+    if (cmd_flags_capture(flags) || (command->stdin_buffer != NULL)) {
+        cmd_result_process_io(command, flags);
         if (command->error_status) {
-            return command_run_finish(command, start_ns,
-                                      command_error_return(command));
+            return cmd_run_finish(command, start_ns,
+                                      cmd_error_return(command));
         }
     }
-    if ((err = command_wait(command)) < 0) {
-        return command_run_finish(command, start_ns, err);
+    if ((err = cmd_wait(command)) < 0) {
+        return cmd_run_finish(command, start_ns, err);
     }
-    return command_run_finish(command, start_ns, 0);
+    return cmd_run_finish(command, start_ns, 0);
 #elif OS_WINDOWS
-    command_result_free(&command->result);
+    cmd_result_free(&command->result);
     command->error_status = 0;
     if (command->argc <= 0) {
-        command_error_set(command, EINVAL);
-        return command_run_finish(command, start_ns, -EINVAL);
+        cmd_error_set(command, EINVAL);
+        return cmd_run_finish(command, start_ns, -EINVAL);
     }
-    if ((flags & COMMAND_ASYNC) || (command->stdin_buffer != NULL)) {
-        command_error_set(command, ENOSYS);
-        return command_run_finish(command, start_ns, -ENOSYS);
+    if ((flags & CMD_ASYNC) || (command->stdin_buffer != NULL)) {
+        cmd_error_set(command, ENOSYS);
+        return cmd_run_finish(command, start_ns, -ENOSYS);
     }
-    command->result.status = command_windows_run_process(command, flags);
+    command->result.status = cmd_windows_run_process(command, flags);
     if (command->error_status) {
-        return command_run_finish(command, start_ns,
-                                  command_error_return(command));
+        return cmd_run_finish(command, start_ns,
+                                  cmd_error_return(command));
     }
     command->result.exit_status = command->result.status;
     command->result.exited = true;
-    return command_run_finish(command, start_ns, 0);
+    return cmd_run_finish(command, start_ns, 0);
 #else
     (void)flags;
-    command_result_free(&command->result);
-    command_error_set(command, ENOSYS);
-    return command_run_finish(command, start_ns, -ENOSYS);
+    cmd_result_free(&command->result);
+    cmd_error_set(command, ENOSYS);
+    return cmd_run_finish(command, start_ns, -ENOSYS);
 #endif
 }
 
 int32
-command_run_sync(Command *command, int *exit_status) {
+cmd_run_sync(Command *command, int *exit_status) {
     int32 err;
 
-    err = command_run(command, COMMAND_NONE);
+    err = cmd_run(command, CMD_NONE);
     if ((err == 0) && exit_status) {
         *exit_status = command->result.status;
     }
@@ -1135,34 +1135,34 @@ command_run_sync(Command *command, int *exit_status) {
 }
 
 int32
-command_run_async(Command *command, enum CommandFlag flags) {
-    flags |= COMMAND_ASYNC;
-    return command_run(command, flags);
+cmd_run_async(Command *command, enum CommandFlag flags) {
+    flags |= CMD_ASYNC;
+    return cmd_run(command, flags);
 }
 
 int32
-command_run_capture(Command *command, enum CommandFlag flags) {
-    flags |= COMMAND_CAPTURE_STDOUT;
-    return command_run(command, flags);
+cmd_run_capture(Command *command, enum CommandFlag flags) {
+    flags |= CMD_CAPTURE_STDOUT;
+    return cmd_run(command, flags);
 }
 
 int32
-command_run_capture_all(Command *command) {
-    return command_run(command,
-                       COMMAND_CAPTURE_STDOUT
-                       |COMMAND_CAPTURE_STDERR);
+cmd_run_capture_all(Command *command) {
+    return cmd_run(command,
+                       CMD_CAPTURE_STDOUT
+                       |CMD_CAPTURE_STDERR);
 }
 
 int32
-command_run_capture_combined(Command *command) {
-    return command_run(command,
-                       COMMAND_CAPTURE_STDOUT
-                       |COMMAND_CAPTURE_STDERR
-                       |COMMAND_MERGE_STDERR);
+cmd_run_capture_combined(Command *command) {
+    return cmd_run(command,
+                       CMD_CAPTURE_STDOUT
+                       |CMD_CAPTURE_STDERR
+                       |CMD_MERGE_STDERR);
 }
 
 void
-command_print(Command *command) {
+cmd_print(Command *command) {
     printf(RED("%s"), command->argv[0]);
     for (int32 i = 1; i < command->argc; i += 1) {
         printf(" %s", command->argv[i]);
@@ -1172,7 +1172,7 @@ command_print(Command *command) {
 }
 
 char *
-command_str(Command *command, int32 *len) {
+cmd_str(Command *command, int32 *len) {
     String string = {0};
 
     for (int32 i = 0; i < command->argc; i += 1) {
@@ -1185,7 +1185,7 @@ command_str(Command *command, int32 *len) {
 }
 
 static void
-command_array_reserve(Command *command, bool environment, int32 extra) {
+cmd_array_reserve(Command *command, bool environment, int32 extra) {
     int32 *capacity;
     int32 len;
     int32 needed;
@@ -1232,16 +1232,16 @@ command_array_reserve(Command *command, bool environment, int32 extra) {
 }
 
 static char *
-command_argument_alloc(Command *command, int32 size) {
+cmd_argument_alloc(Command *command, int32 size) {
     if (command->argv_arena == NULL) {
-        command->argv_arena = arena_create(SIZEKB(4), "command_argv");
+        command->argv_arena = arena_create(SIZEKB(4), "cmd_argv");
     }
     return xarena_push(command->argv_arena, size);
 }
 
 static void
-command_argument_append(Command *command, char *argument, int32 argument_len) {
-    command_array_reserve(command, false, 1);
+cmd_argument_append(Command *command, char *argument, int32 argument_len) {
+    cmd_array_reserve(command, false, 1);
     command->argv[command->argc] = argument;
     command->argvs_lens[command->argc] = argument_len;
     command->argc += 1;
@@ -1251,47 +1251,47 @@ command_argument_append(Command *command, char *argument, int32 argument_len) {
 }
 
 void
-command_push_length(Command *command, char *argument, int32 argument_len) {
+cmd_push_length(Command *command, char *argument, int32 argument_len) {
     char *copy;
 
     ASSERT_BETWEEN(argument_len, 0, 4000);
 
-    copy = command_argument_alloc(command, argument_len + 1);
+    copy = cmd_argument_alloc(command, argument_len + 1);
     memcpy64(copy, argument, argument_len);
     copy[argument_len] = '\0';
-    command_argument_append(command, copy, argument_len);
+    cmd_argument_append(command, copy, argument_len);
     return;
 }
 
 static void
-command_push(Command *command, char *argument) {
-    command_push_length(command, argument, strlen32(argument));
+cmd_push(Command *command, char *argument) {
+    cmd_push_length(command, argument, strlen32(argument));
     return;
 }
 
 void
-command_push_array(Command *command, int32 argc, char **argv) {
+cmd_push_array(Command *command, int32 argc, char **argv) {
     if (argv == NULL) {
         return;
     }
     for (int32 i = 0; (i < argc) && argv[i]; i += 1) {
-        command_push(command, argv[i]);
+        cmd_push(command, argv[i]);
     }
     return;
 }
 
 int32
-command_stdin_buffer_set(Command *command, char *data, int64 data_len) {
+cmd_stdin_buffer_set(Command *command, char *data, int64 data_len) {
     if (command == NULL) {
         return -EINVAL;
     }
     if (data_len < 0) {
-        command_error_set(command, EINVAL);
-        return command_error_return(command);
+        cmd_error_set(command, EINVAL);
+        return cmd_error_return(command);
     }
     if (data == NULL) {
-        command_error_set(command, EINVAL);
-        return command_error_return(command);
+        cmd_error_set(command, EINVAL);
+        return cmd_error_return(command);
     }
 
     command->stdin_buffer = data;
@@ -1300,7 +1300,7 @@ command_stdin_buffer_set(Command *command, char *data, int64 data_len) {
 }
 
 void
-command_stdin_buffer_clear(Command *command) {
+cmd_stdin_buffer_clear(Command *command) {
     if (command == NULL) {
         return;
     }
@@ -1311,7 +1311,7 @@ command_stdin_buffer_clear(Command *command) {
 }
 
 void
-command_env_push_length(Command *command,
+cmd_env_push_length(Command *command,
                         char *assignment, int32 assignment_len) {
     char *copy;
 
@@ -1320,7 +1320,7 @@ command_env_push_length(Command *command,
         fatal(EXIT_FAILURE);
     }
 
-    command_array_reserve(command, true, 1);
+    cmd_array_reserve(command, true, 1);
     copy = malloc2(assignment_len + 1);
     memcpy64(copy, assignment, assignment_len);
     copy[assignment_len] = '\0';
@@ -1334,13 +1334,13 @@ command_env_push_length(Command *command,
 }
 
 void
-command_env_push(Command *command, char *assignment) {
-    command_env_push_length(command, assignment, strlen32(assignment));
+cmd_env_push(Command *command, char *assignment) {
+    cmd_env_push_length(command, assignment, strlen32(assignment));
     return;
 }
 
 void
-command_push_split(Command *command, char *arguments, char *delimiters) {
+cmd_push_split(Command *command, char *arguments, char *delimiters) {
     char *argument = arguments;
     int32 delimiters_len = strlen32(delimiters);
 
@@ -1369,18 +1369,18 @@ command_push_split(Command *command, char *arguments, char *delimiters) {
             fatal(EXIT_FAILURE);
         }
         argument_len32 = (int32)argument_len;
-        command_push_length(command, argument_start, argument_len32);
+        cmd_push_length(command, argument_start, argument_len32);
     }
     return;
 }
 
 void
-command_argv0_set(Command *command, char *argument) {
+cmd_argv0_set(Command *command, char *argument) {
     int32 argument_len = strlen32(argument);
     char *copy;
 
     ASSERT_POSITIVE(command->argc);
-    copy = command_argument_alloc(command, argument_len + 1);
+    copy = cmd_argument_alloc(command, argument_len + 1);
     memcpy64(copy, argument, argument_len + 1);
     command->argv[0] = copy;
     command->argvs_lens[0] = argument_len;
@@ -1388,7 +1388,7 @@ command_argv0_set(Command *command, char *argument) {
 }
 
 void
-command_cwd_clear(Command *command) {
+cmd_cwd_clear(Command *command) {
     free2(command->cwd, command->cwd_len + 1);
     command->cwd = NULL;
     command->cwd_len = 0;
@@ -1396,8 +1396,8 @@ command_cwd_clear(Command *command) {
 }
 
 void
-command_cwd_set(Command *command, char *cwd) {
-    command_cwd_clear(command);
+cmd_cwd_set(Command *command, char *cwd) {
+    cmd_cwd_clear(command);
     if (cwd) {
         command->cwd_len = strlen32(cwd);
         command->cwd = xstrdup(cwd);
@@ -1406,7 +1406,7 @@ command_cwd_set(Command *command, char *cwd) {
 }
 
 void
-command_reset(Command *command) {
+cmd_reset(Command *command) {
     arena_reset(command->argv_arena);
     command->argc = 0;
     if (command->argv) {
@@ -1415,15 +1415,15 @@ command_reset(Command *command) {
     if (command->argvs_lens) {
         command->argvs_lens[0] = 0;
     }
-    command_error_set(command, 0);
+    cmd_error_set(command, 0);
     command->run_elapsed_ns = 0;
-    command_stdin_buffer_clear(command);
-    command_result_free(&command->result);
+    cmd_stdin_buffer_clear(command);
+    cmd_result_free(&command->result);
     return;
 }
 
 void
-command_env_clear(Command *command) {
+cmd_env_clear(Command *command) {
     for (int32 i = 0; i < command->env_len; i += 1) {
         free2(command->env[i], command->env_lens[i] + 1);
         command->env[i] = NULL;
@@ -1440,10 +1440,10 @@ command_env_clear(Command *command) {
 }
 
 void
-command_free(Command *command) {
-    command_reset(command);
-    command_env_clear(command);
-    command_cwd_clear(command);
+cmd_free(Command *command) {
+    cmd_reset(command);
+    cmd_env_clear(command);
+    cmd_cwd_clear(command);
 
     free2(command->argv, command->cap*SIZEOF(*command->argv));
     free2(command->argvs_lens,
@@ -1466,7 +1466,7 @@ command_free(Command *command) {
 }
 
 void
-command_printf(Command *command, char *fmt, ...) {
+cmd_printf(Command *command, char *fmt, ...) {
     FmtPlan plan;
     va_list ap;
     va_list ap2;
@@ -1491,7 +1491,7 @@ command_printf(Command *command, char *fmt, ...) {
         fatal(EXIT_FAILURE);
     }
 
-    argument = command_argument_alloc(command, estimate + 1);
+    argument = cmd_argument_alloc(command, estimate + 1);
     len = fmt_vsnprintf_planned(&plan, argument, estimate + 1, ap2);
     va_end(ap2);
 
@@ -1508,12 +1508,12 @@ command_printf(Command *command, char *fmt, ...) {
     waste = ALIGN(estimate + 1) - ALIGN(len + 1);
     arena_back(argument_arena, waste);
 
-    command_argument_append(command, argument, len);
+    cmd_argument_append(command, argument, len);
     return;
 }
 
 void
-command_env_printf(Command *command, char *fmt, ...) {
+cmd_env_printf(Command *command, char *fmt, ...) {
     va_list ap;
     va_list ap2;
     int32 n;
@@ -1534,7 +1534,7 @@ command_env_printf(Command *command, char *fmt, ...) {
     n = vsnprintf(argument, (size_t)n + 1, fmt, ap2);
     va_end(ap2);
 
-    command_env_push_length(command, argument, n);
+    cmd_env_push_length(command, argument, n);
 
     free2(argument, n + 1);
     return;
@@ -1555,12 +1555,12 @@ main(int argc, char **argv) {
     time_monotonic_precise(&t0);
     {
         Command cmd = {0};
-        char *command_text;
+        char *cmd_text;
         int32 len;
 
-        COMMAND_PUSH(&cmd, "echo");
-        command_printf(&cmd, "--val=%d", 123);
-        COMMAND_PUSH(&cmd, "test");
+        CMD_PUSH(&cmd, "echo");
+        cmd_printf(&cmd, "--val=%d", 123);
+        CMD_PUSH(&cmd, "test");
 
         ASSERT_EQ(cmd.argc, 3);
         ASSERT_EQ(cmd.argv[0], "echo");
@@ -1571,38 +1571,38 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.argvs_lens[2], 4);
         ASSERT(cmd.argv_arena != NULL);
 
-        command_argv0_set(&cmd, "printf");
+        cmd_argv0_set(&cmd, "printf");
         ASSERT_EQ(cmd.argv[0], "printf");
         ASSERT_EQ(cmd.argvs_lens[0], 6);
-        command_argv0_set(&cmd, "echo");
+        cmd_argv0_set(&cmd, "echo");
 
-        command_text = command_str(&cmd, &len);
-        ASSERT_EQ(command_text, "echo --val=123 test");
-        free2(command_text, len + 1);
-        command_print(&cmd);
+        cmd_text = cmd_str(&cmd, &len);
+        ASSERT_EQ(cmd_text, "echo --val=123 test");
+        free2(cmd_text, len + 1);
+        cmd_print(&cmd);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
         ASSERT_ZERO(cmd.argv_arena->npushed);
         ASSERT(cmd.argv[0] == NULL);
 
-        command_printf(&cmd, "%f", 1.0);
+        cmd_printf(&cmd, "%f", 1.0);
         ASSERT_EQ(cmd.argv[0], "1.000000");
         ASSERT(cmd.argv_arena->pos
                == cmd.argv_arena->begin + ALIGN(cmd.argvs_lens[0] + 1));
-        command_reset(&cmd);
+        cmd_reset(&cmd);
 
-        command_push_split(&cmd, "  alpha beta  gamma ", " ");
+        cmd_push_split(&cmd, "  alpha beta  gamma ", " ");
         ASSERT_EQ(cmd.argc, 3);
         ASSERT_EQ(cmd.argv[0], "alpha");
         ASSERT_EQ(cmd.argv[1], "beta");
         ASSERT_EQ(cmd.argv[2], "gamma");
         ASSERT(cmd.argv[cmd.argc] == NULL);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
-        COMMAND_PUSH(&cmd, "first", "second");
+        CMD_PUSH(&cmd, "first", "second");
         ASSERT_EQ(cmd.argc, 2);
         ASSERT_EQ(cmd.argv[0], "first");
         ASSERT_EQ(cmd.argv[1], "second");
@@ -1610,17 +1610,17 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.argvs_lens[1], 6);
         ASSERT_NULL(cmd.argv[cmd.argc]);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
         {
             enum {
-                COMMAND_PART_ARGUMENT_COUNT = 64,
+                CMD_PART_ARGUMENT_COUNT = 64,
             };
-            char terminal_arguments[COMMAND_PART_ARGUMENT_COUNT*2];
-            char diff_arguments[COMMAND_PART_ARGUMENT_COUNT*2];
+            char terminal_arguments[CMD_PART_ARGUMENT_COUNT*2];
+            char diff_arguments[CMD_PART_ARGUMENT_COUNT*2];
 
-            for (int32 i = 0; i < COMMAND_PART_ARGUMENT_COUNT; i += 1) {
+            for (int32 i = 0; i < CMD_PART_ARGUMENT_COUNT; i += 1) {
                 terminal_arguments[i*2] = 't';
                 terminal_arguments[i*2 + 1] = ' ';
                 diff_arguments[i*2] = 'd';
@@ -1629,10 +1629,10 @@ main(int argc, char **argv) {
             terminal_arguments[SIZEOF(terminal_arguments) - 1] = '\0';
             diff_arguments[SIZEOF(diff_arguments) - 1] = '\0';
 
-            command_push_split(&cmd, terminal_arguments, " ");
-            COMMAND_PUSH(&cmd, "-e");
-            command_push_split(&cmd, diff_arguments, " ");
-            COMMAND_PUSH(&cmd, "/destination", "/source");
+            cmd_push_split(&cmd, terminal_arguments, " ");
+            CMD_PUSH(&cmd, "-e");
+            cmd_push_split(&cmd, diff_arguments, " ");
+            CMD_PUSH(&cmd, "/destination", "/source");
 
             ASSERT_EQ(cmd.argc, 131);
             ASSERT_EQ(cmd.argv[63], "t");
@@ -1644,141 +1644,141 @@ main(int argc, char **argv) {
         ASSERT_GT_VAR(cmd.cap, cmd.argc);
         ASSERT(cmd.argv[cmd.argc] == NULL);
 
-        command_text = command_str(&cmd, &len);
+        cmd_text = cmd_str(&cmd, &len);
         ASSERT_EQ(len, 279);
-        free2(command_text, len + 1);
+        free2(cmd_text, len + 1);
         }
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
         {
             enum {
-                LONG_COMMAND_ARGUMENT_SIZE = 4000,
+                LONG_CMD_ARGUMENT_SIZE = 4000,
             };
-            char long_argument[LONG_COMMAND_ARGUMENT_SIZE];
+            char long_argument[LONG_CMD_ARGUMENT_SIZE];
             char *long_argument_string;
 
             memset64(long_argument, 'x', SIZEOF(long_argument) - 1);
             long_argument[SIZEOF(long_argument) - 1] = '\0';
             long_argument_string = long_argument;
-            COMMAND_PUSH(&cmd, long_argument_string);
+            CMD_PUSH(&cmd, long_argument_string);
 
-            command_text = command_str(&cmd, &len);
+            cmd_text = cmd_str(&cmd, &len);
             ASSERT_EQ(len, SIZEOF(long_argument) - 1);
-            ASSERT_EQ(command_text, long_argument_string);
-            free2(command_text, len + 1);
+            ASSERT_EQ(cmd_text, long_argument_string);
+            free2(cmd_text, len + 1);
         }
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
 #if OS_UNIX
-        COMMAND_PUSH(&cmd, "sh", "-c", "exit 7");
-        ASSERT_ZERO((command_run_sync(&cmd, NULL)));
+        CMD_PUSH(&cmd, "sh", "-c", "exit 7");
+        ASSERT_ZERO((cmd_run_sync(&cmd, NULL)));
         ASSERT_EQ(cmd.result.status, 7);
         ASSERT(cmd.result.exited);
         ASSERT_EQ(cmd.result.exit_status, 7);
         ASSERT_POSITIVE(cmd.run_elapsed_ns);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
         ASSERT_ZERO(cmd.run_elapsed_ns);
 
-        COMMAND_PUSH(&cmd,
+        CMD_PUSH(&cmd,
                      "sh",
                      "-c",
                      "printf stdout; printf stderr >&2; exit 7");
-        ASSERT_ZERO((command_run_capture_combined(&cmd)));
+        ASSERT_ZERO((cmd_run_capture_combined(&cmd)));
         ASSERT_EQ(cmd.result.output, "stdoutstderr");
         ASSERT_EQ(cmd.result.stdout_output, "stdoutstderr");
         ASSERT_EQ(cmd.result.stderr_output, "");
         ASSERT_EQ(cmd.result.output_len, 12);
         ASSERT_EQ(cmd.result.status, 7);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
-        COMMAND_PUSH(&cmd,
+        CMD_PUSH(&cmd,
                      "sh",
                      "-c",
                      "printf stdout; printf stderr >&2; exit 6");
-        ASSERT_ZERO((command_run_capture_all(&cmd)));
+        ASSERT_ZERO((cmd_run_capture_all(&cmd)));
         ASSERT_EQ(cmd.result.stdout_output, "stdout");
         ASSERT_EQ(cmd.result.stderr_output, "stderr");
         ASSERT_EQ(cmd.result.stdout_len, 6);
         ASSERT_EQ(cmd.result.stderr_len, 6);
         ASSERT_EQ(cmd.result.status, 6);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
-        COMMAND_PUSH(&cmd, "cat");
-        ASSERT_ZERO((command_stdin_buffer_set(&cmd, STRLIT("stdin-buffer"))));
-        ASSERT_ZERO((command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT)));
+        CMD_PUSH(&cmd, "cat");
+        ASSERT_ZERO((cmd_stdin_buffer_set(&cmd, STRLIT("stdin-buffer"))));
+        ASSERT_ZERO((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)));
         ASSERT_EQ(cmd.result.stdout_output, "stdin-buffer");
         ASSERT_ZERO(cmd.result.status);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
         ASSERT(cmd.stdin_buffer == NULL);
-        ASSERT_NEGATIVE((command_stdin_buffer_set(&cmd, NULL, 0)));
+        ASSERT_NEGATIVE((cmd_stdin_buffer_set(&cmd, NULL, 0)));
 
         {
             enum {
-                COMMAND_STDIN_TEST_LEN = 100000,
+                CMD_STDIN_TEST_LEN = 100000,
             };
             char *stdin_data;
 
-            stdin_data = malloc2(COMMAND_STDIN_TEST_LEN);
-            memset64(stdin_data, 'x', COMMAND_STDIN_TEST_LEN);
-            COMMAND_PUSH(&cmd,
+            stdin_data = malloc2(CMD_STDIN_TEST_LEN);
+            memset64(stdin_data, 'x', CMD_STDIN_TEST_LEN);
+            CMD_PUSH(&cmd,
                          "sh",
                          "-c",
                          "cat >/dev/null; printf done");
-            ASSERT(!command_stdin_buffer_set(&cmd,
+            ASSERT(!cmd_stdin_buffer_set(&cmd,
                                              stdin_data,
-                                             COMMAND_STDIN_TEST_LEN));
-            ASSERT(!command_run_capture_all(&cmd));
+                                             CMD_STDIN_TEST_LEN));
+            ASSERT(!cmd_run_capture_all(&cmd));
             ASSERT_EQ(cmd.result.stdout_output, "done");
             ASSERT_ZERO(cmd.result.status);
-            free2(stdin_data, COMMAND_STDIN_TEST_LEN);
+            free2(stdin_data, CMD_STDIN_TEST_LEN);
         }
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
         {
             enum {
-                COMMAND_EPIPE_TEST_LEN = 100000,
+                CMD_EPIPE_TEST_LEN = 100000,
             };
             char *stdin_data;
 
-            stdin_data = malloc2(COMMAND_EPIPE_TEST_LEN);
-            memset64(stdin_data, 'x', COMMAND_EPIPE_TEST_LEN);
-            COMMAND_PUSH(&cmd, "sh", "-c", "exit 3");
-            ASSERT(!command_stdin_buffer_set(&cmd,
+            stdin_data = malloc2(CMD_EPIPE_TEST_LEN);
+            memset64(stdin_data, 'x', CMD_EPIPE_TEST_LEN);
+            CMD_PUSH(&cmd, "sh", "-c", "exit 3");
+            ASSERT(!cmd_stdin_buffer_set(&cmd,
                                              stdin_data,
-                                             COMMAND_EPIPE_TEST_LEN));
-            ASSERT_ZERO((command_run_capture_all(&cmd)));
+                                             CMD_EPIPE_TEST_LEN));
+            ASSERT_ZERO((cmd_run_capture_all(&cmd)));
             ASSERT_EQ(cmd.result.status, 3);
-            free2(stdin_data, COMMAND_EPIPE_TEST_LEN);
+            free2(stdin_data, CMD_EPIPE_TEST_LEN);
         }
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
         {
             char *empty_input = "";
 
-            COMMAND_PUSH(&cmd, "cat");
-            ASSERT_ZERO((command_stdin_buffer_set(&cmd, empty_input, 0)));
-            ASSERT_ZERO((command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT)));
+            CMD_PUSH(&cmd, "cat");
+            ASSERT_ZERO((cmd_stdin_buffer_set(&cmd, empty_input, 0)));
+            ASSERT_ZERO((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)));
             ASSERT_EQ(cmd.result.stdout_output, "");
             ASSERT_ZERO(cmd.result.status);
         }
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
         {
@@ -1786,128 +1786,128 @@ main(int argc, char **argv) {
             char test_cwd[PATH_MAX];
             int32 expected_cwd_len;
 
-            test_make_temp_dir(test_cwd, SIZEOF(test_cwd), "command_cwd");
+            test_make_temp_dir(test_cwd, SIZEOF(test_cwd), "cmd_cwd");
             ASSERT(realpath(test_cwd, expected_cwd) != NULL);
             expected_cwd_len = strlen32(expected_cwd);
             ASSERT_LT(expected_cwd_len + 1, SIZEOF(expected_cwd));
             expected_cwd[expected_cwd_len] = '\n';
             expected_cwd[expected_cwd_len + 1] = '\0';
 
-            command_cwd_set(&cmd, test_cwd);
-            COMMAND_PUSH(&cmd, "pwd", "-P");
-            ASSERT_ZERO((command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT)));
+            cmd_cwd_set(&cmd, test_cwd);
+            CMD_PUSH(&cmd, "pwd", "-P");
+            ASSERT_ZERO((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)));
             ASSERT_EQ(cmd.result.stdout_output, expected_cwd);
-            command_cwd_clear(&cmd);
+            cmd_cwd_clear(&cmd);
             test_remove_tree(test_cwd);
         }
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
-        command_env_push(&cmd, "COMMAND_TEST_VALUE=works");
-        command_env_printf(&cmd, "COMMAND_TEST_NUMBER=%d", 42);
-        COMMAND_PUSH(&cmd,
+        cmd_env_push(&cmd, "CMD_TEST_VALUE=works");
+        cmd_env_printf(&cmd, "CMD_TEST_NUMBER=%d", 42);
+        CMD_PUSH(&cmd,
                      "sh",
                      "-c",
                      "printf %s:%s "
-                     "$COMMAND_TEST_VALUE "
-                     "$COMMAND_TEST_NUMBER");
-        ASSERT_ZERO((command_run_capture(&cmd, COMMAND_CAPTURE_STDOUT)));
+                     "$CMD_TEST_VALUE "
+                     "$CMD_TEST_NUMBER");
+        ASSERT_ZERO((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)));
         ASSERT_EQ(cmd.result.stdout_output, "works:42");
-        command_env_clear(&cmd);
+        cmd_env_clear(&cmd);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 #endif
 
 #if OS_WINDOWS
-        COMMAND_PUSH(&cmd, "cmd", "/C", "exit /B 7");
-        ASSERT_ZERO((command_run_sync(&cmd, NULL)));
+        CMD_PUSH(&cmd, "cmd", "/C", "exit /B 7");
+        ASSERT_ZERO((cmd_run_sync(&cmd, NULL)));
         ASSERT_EQ(cmd.result.status, 7);
         ASSERT(cmd.result.exited);
         ASSERT_EQ(cmd.result.exit_status, 7);
         ASSERT_POSITIVE(cmd.run_elapsed_ns);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
         ASSERT_ZERO(cmd.run_elapsed_ns);
 
-        COMMAND_PUSH(&cmd,
+        CMD_PUSH(&cmd,
                      "cmd",
                      "/C",
                      "echo stdout&echo stderr>&2&exit /B 7");
-        ASSERT_ZERO((command_run_capture_combined(&cmd)));
+        ASSERT_ZERO((cmd_run_capture_combined(&cmd)));
         ASSERT_EQ(cmd.result.output, "stdout\r\nstderr\r\n");
         ASSERT_EQ(cmd.result.stdout_output, "stdout\r\nstderr\r\n");
         ASSERT_EQ(cmd.result.stderr_output, "");
         ASSERT_EQ(cmd.result.output_len, 16);
         ASSERT_EQ(cmd.result.status, 7);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
-        COMMAND_PUSH(&cmd,
+        CMD_PUSH(&cmd,
                      "cmd",
                      "/C",
                      "echo stdout&echo stderr>&2&exit /B 6");
-        ASSERT_ZERO((command_run_capture_all(&cmd)));
+        ASSERT_ZERO((cmd_run_capture_all(&cmd)));
         ASSERT_EQ(cmd.result.stdout_output, "stdout\r\n");
         ASSERT_EQ(cmd.result.stderr_output, "stderr\r\n");
         ASSERT_EQ(cmd.result.stdout_len, 8);
         ASSERT_EQ(cmd.result.stderr_len, 8);
         ASSERT_EQ(cmd.result.status, 6);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 #endif
 
         {
             char *flags_str;
 
-            flags_str = COMMAND_str(COMMAND_CAPTURE_STDOUT
-                                         |COMMAND_CAPTURE_STDERR);
+            flags_str = CMD_str(CMD_CAPTURE_STDOUT
+                                         |CMD_CAPTURE_STDERR);
             ASSERT_EQ(flags_str,
-                      "COMMAND_CAPTURE_STDOUT|COMMAND_CAPTURE_STDERR");
-            COMMAND_str_free(flags_str);
-            ASSERT(COMMAND_parse(STRLIT("CAPTURE_STDOUT|CAPTURE_STDERR"))
-                   == (COMMAND_CAPTURE_STDOUT |COMMAND_CAPTURE_STDERR));
+                      "CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR");
+            CMD_str_free(flags_str);
+            ASSERT(CMD_parse(STRLIT("CAPTURE_STDOUT|CAPTURE_STDERR"))
+                   == (CMD_CAPTURE_STDOUT |CMD_CAPTURE_STDERR));
         }
 
 #if OS_UNIX
-        COMMAND_PUSH(&cmd, "sh", "-c", "exit 9");
-        ASSERT_ZERO((command_run_async(&cmd, COMMAND_NEW_PROCESS_GROUP)));
+        CMD_PUSH(&cmd, "sh", "-c", "exit 9");
+        ASSERT_ZERO((cmd_run_async(&cmd, CMD_NEW_PROCESS_GROUP)));
         ASSERT_POSITIVE(cmd.result.pid);
-        ASSERT_ZERO(command_wait(&cmd));
+        ASSERT_ZERO(cmd_wait(&cmd));
         ASSERT_EQ(cmd.result.status, 9);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
-        COMMAND_PUSH(&cmd,
+        CMD_PUSH(&cmd,
                      "sh",
                      "-c",
                      "printf asyncout; printf asyncerr >&2");
-        ASSERT(!command_run_async(&cmd,
-                                  COMMAND_CAPTURE_STDOUT
-                                  |COMMAND_CAPTURE_STDERR));
+        ASSERT(!cmd_run_async(&cmd,
+                                  CMD_CAPTURE_STDOUT
+                                  |CMD_CAPTURE_STDERR));
         ASSERT_POSITIVE(cmd.result.pid);
-        command_result_read_captured(&cmd);
-        ASSERT_ZERO(command_wait(&cmd));
+        cmd_result_read_captured(&cmd);
+        ASSERT_ZERO(cmd_wait(&cmd));
         ASSERT_EQ(cmd.result.stdout_output, "asyncout");
         ASSERT_EQ(cmd.result.stderr_output, "asyncerr");
         ASSERT_ZERO(cmd.result.status);
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
 
-        COMMAND_PUSH(&cmd, "sh", "-c", "exit 0");
-        ASSERT_ZERO(command_run(&cmd, COMMAND_DETACHED));
+        CMD_PUSH(&cmd, "sh", "-c", "exit 0");
+        ASSERT_ZERO(cmd_run(&cmd, CMD_DETACHED));
         ASSERT_ZERO(cmd.result.status);
 #endif
 
-        command_reset(&cmd);
+        cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
-        command_free(&cmd);
+        cmd_free(&cmd);
         ASSERT(cmd.argv == NULL);
         ASSERT(cmd.argvs_lens == NULL);
         ASSERT(cmd.env == NULL);
@@ -1926,4 +1926,4 @@ main(int argc, char **argv) {
 
 #endif /* TESTING_command */
 
-#endif /* COMMAND_C */
+#endif /* CMD_C */

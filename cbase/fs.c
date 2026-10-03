@@ -1499,6 +1499,8 @@ main(void) {
         char file_path[PATH_MAX];
         char template_path[PATH_MAX];
         char temp_file_path[PATH_MAX];
+        char *suffix = ".txt";
+        int32 suffix_len = strlen32(suffix);
         int32 fd;
 
         SNPRINTF(dir_path, "%s/wrapped_dir", temp_dir);
@@ -1516,8 +1518,8 @@ main(void) {
         ASSERT_ZERO(cbase_remove_file(file_path));
         ASSERT(!util_file_exists(file_path));
 
-        SNPRINTF(template_path, "%s/stem_XXXXXX.txt", temp_dir);
-        fd = cbase_mkstemps(template_path, STRLIT_LEN(".txt"));
+        SNPRINTF(template_path, "%s/stem_XXXXXX%s", temp_dir, suffix);
+        fd = cbase_mkstemps(template_path, suffix_len);
         ASSERT_NON_NEGATIVE(fd);
         ASSERT_EQ(write64(fd, "x", 1), 1);
         XCLOSE(&fd, template_path);

@@ -226,9 +226,12 @@ CAT(ENUM_PREFIX_, str_len)(enum ENUM_NAME val, char **out) {
         case CAT(ENUM_PREFIX_, COUNT):
             *out = QUOTE(ENUM_PREFIX_) "COUNT";
             return STRLIT_LEN(QUOTE(ENUM_PREFIX_) "COUNT");
-        default:
-            *out = "Invalid enum value";
-            return STRLIT_LEN("Invalid enum value");
+        default: {
+            char *invalid = "Invalid enum value";
+
+            *out = invalid;
+            return strlen32(invalid);
+        }
     }
 #else
     char *buffer = NULL;
@@ -237,8 +240,11 @@ CAT(ENUM_PREFIX_, str_len)(enum ENUM_NAME val, char **out) {
     bool32 is_first = true;
 
     if (val == 0) {
-        *out = xstrndup(STRLIT("NONE"));
-        return STRLIT_LEN("NONE");
+        char *none = "NONE";
+        int32 none_len = strlen32(none);
+
+        *out = xstrndup(none, none_len);
+        return none_len;
     }
 
     #define XX_EXACT(e)                                                        \
@@ -352,9 +358,12 @@ CAT(ENUM_PREFIX_, alias_len)(enum ENUM_NAME val, char **out) {
         case CAT(ENUM_PREFIX_, COUNT):
             *out = QUOTE(ENUM_PREFIX_) "COUNT";
             return STRLIT_LEN(QUOTE(ENUM_PREFIX_) "COUNT");
-        default:
-            *out = "Invalid enum value";
-            return STRLIT_LEN("Invalid enum value");
+        default: {
+            char *invalid = "Invalid enum value";
+
+            *out = invalid;
+            return strlen32(invalid);
+        }
     }
 #elif ENUM_CHAR_REPR
     char *buffer = NULL;
@@ -906,10 +915,11 @@ main(void) {
     {
         char counted[] = {'c', 'h', 'e', 'r', 'r', 'y'};
         char counted_prefix[] = "banana suffix";
+        char *prefix = "banana";
 
         ASSERT(TEST_NORMAL_parse(counted, (int32)SIZEOF(counted))
                == TEST_NORMAL_CHERRY);
-        ASSERT(TEST_NORMAL_parse(counted_prefix, STRLIT_LEN("banana"))
+        ASSERT(TEST_NORMAL_parse(counted_prefix, strlen32(prefix))
                == TEST_NORMAL_BANANA);
     }
 
