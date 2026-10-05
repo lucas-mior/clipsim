@@ -394,7 +394,6 @@ main(void) {
 
         {
             ulong color;
-            char *test_str = "test_clip";
             ulong len = 0;
             char *res_save = NULL;
             int32 res_clip;
@@ -412,7 +411,7 @@ main(void) {
             window = XCreateSimpleWindow(display, root, 0, 0, 1, 1, 0, color, color);
 
             XChangeProperty(display, window, XSEL_DATA, UTF8_STRING, 8,
-                            PropModeReplace, (uchar *)test_str, 9);
+                            PropModeReplace, (uchar *)STRLIT("test_clip"));
 
             {
                 XEvent mock_event;
@@ -498,12 +497,13 @@ main(void) {
             {
                 char *small_save = NULL;
                 ulong small_len = 0;
+                char *small_chunk = "small_incr_test";
+                int32 small_chunk_len = strlen32(small_chunk);
                 pid_t pid = fork();
 
                 if (pid == 0) {
                     Display *d2;
                     XEvent event;
-                    char *small_chunk = "small_incr_test";
                     
                     d2 = XOpenDisplay(NULL);
                     XSelectInput(d2, window, PropertyChangeMask);
@@ -515,7 +515,8 @@ main(void) {
                     } while (event.type != PropertyNotify || event.xproperty.state != PropertyDelete || event.xproperty.atom != XSEL_DATA);
                     
                     XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
-                                    PropModeReplace, (uchar *)small_chunk, 15);
+                                    PropModeReplace, (uchar *)small_chunk,
+                                    small_chunk_len);
                     XFlush(d2);
                                     
                     do {
@@ -530,8 +531,9 @@ main(void) {
                 } else {
                     sleep_ms(100);
                     clipboard_incremental_case(&small_save, &small_len);
-                    ASSERT_EQ(small_len, 15);
-                    ASSERT_EQ(memcmp64(small_save, "small_incr_test", 15), 0);
+                    ASSERT_EQ(small_len, small_chunk_len);
+                    ASSERT_EQ(memcmp64(small_save,
+                                       small_chunk, small_chunk_len), 0);
                     if (small_save != NULL) {
                         free2(small_save, ENTRY_MAX_LENGTH);
                     }

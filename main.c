@@ -20,16 +20,51 @@ typedef struct ClipsimCommand {
     char *shortname;
     char *longname;
     char *description;
+
+    int32 shortname_len;
+    int32 longname_len;
+    int32 description_len;
 } ClipsimCommand;
 
 static ClipsimCommand commands[] = {
-    [CMD_PRINT]  = {"-p", "--print",  "print entire history, with trimmed whitespace"},
-    [CMD_INFO]   = {"-i", "--info",   "print entry number <n>, with original whitespace"},
-    [CMD_COPY]   = {"-c", "--copy",   "copy entry number <n>, with original whitespace"},
-    [CMD_REMOVE] = {"-r", "--remove", "remove entry number <n>"},
-    [CMD_SAVE]   = {"-s", "--save",   "save history to $XDG_CACHE_HOME/clipsim/history"},
-    [CMD_DAEMON] = {"-d", "--daemon", "spawn daemon (clipboard watcher and command socket)"},
-    [CMD_HELP]   = {"-h", "--help",   "print this help message"},
+    [CMD_PRINT] = {
+        STRPASS(shortname, "-p"),
+        STRPASS(longname, "--print"),
+        STRPASS(description, "print entire history, with trimmed whitespace"),
+    },
+    [CMD_INFO] = {
+        STRPASS(shortname, "-i"),
+        STRPASS(longname, "--info"),
+        STRPASS(description,
+                "print entry number <n>, with original whitespace"),
+    },
+    [CMD_COPY] = {
+        STRPASS(shortname, "-c"),
+        STRPASS(longname, "--copy"),
+        STRPASS(description,
+                "copy entry number <n>, with original whitespace"),
+    },
+    [CMD_REMOVE] = {
+        STRPASS(shortname, "-r"),
+        STRPASS(longname, "--remove"),
+        STRPASS(description, "remove entry number <n>"),
+    },
+    [CMD_SAVE] = {
+        STRPASS(shortname, "-s"),
+        STRPASS(longname, "--save"),
+        STRPASS(description, "save history to $XDG_CACHE_HOME/clipsim/history"),
+    },
+    [CMD_DAEMON] = {
+        STRPASS(shortname, "-d"),
+        STRPASS(longname, "--daemon"),
+        STRPASS(description,
+                "spawn daemon (clipboard watcher and command socket)"),
+    },
+    [CMD_HELP] = {
+        STRPASS(shortname, "-h"),
+        STRPASS(longname, "--help"),
+        STRPASS(description, "print this help message"),
+    },
 };
 
 static void main_set_signal(int32, void (*)(int));
@@ -42,6 +77,8 @@ int32
 main(int32 argc, char *argv[]) {
     DEBUG_PRINT("%d, %s", argc, argv[0])
     int64 id;
+    int32 command_len;
+    int32 id_len;
     bool spell_error = true;
 
     program = basename(argv[0]);
@@ -52,9 +89,12 @@ main(int32 argc, char *argv[]) {
         main_usage(stderr);
     }
 
+    command_len = strlen32(argv[1]);
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
-        if (strequal(argv[1], commands[i].shortname)
-            || strequal(argv[1], commands[i].longname)) {
+        if (STREQUAL(argv[1], command_len,
+                     commands[i].shortname, commands[i].shortname_len)
+            || STREQUAL(argv[1], command_len,
+                        commands[i].longname, commands[i].longname_len)) {
             spell_error = false;
             switch (i) {
             case CMD_PRINT:
@@ -66,7 +106,8 @@ main(int32 argc, char *argv[]) {
                 if (argc != 3) {
                     main_usage(stderr);
                 }
-                if ((parse_integer(argv[2], strlen32(argv[2]), &id)) < 0) {
+                id_len = strlen32(argv[2]);
+                if ((parse_integer(argv[2], id_len, &id)) < 0) {
                     main_usage(stderr);
                 }
                 if ((id <= INT32_MIN) || (id >= INT32_MAX)) {
@@ -115,6 +156,7 @@ main_setup_daemon_signals(void) {
 bool
 main_block_middle_mouse_paste_enabled(void) {
     char *CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE;
+    int32 value_len;
 
     GETENV(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE);
 
@@ -124,10 +166,11 @@ main_block_middle_mouse_paste_enabled(void) {
         return false;
     }
 
-    if (strequal(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "0")) {
+    value_len = strlen32(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE);
+    if (STREQUAL(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, value_len, "0")) {
         return false;
     }
-    if (strequal(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, "false")) {
+    if (STREQUAL(CLIPSIM_BLOCK_MIDDLE_MOUSE_PASTE, value_len, "false")) {
         return false;
     }
 

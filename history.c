@@ -36,8 +36,8 @@ static int32 history_save_image(char **, int32 *);
 static bool history_recover_write(int32, Entry *);
 static void history_prepare_tmp_directory(void);
 
-static void history_append(char *, int, bool);
-static int history_save(void);
+static void history_append(char *, int32, bool);
+static int32 history_save(void);
 static void history_recover(int32);
 static void history_remove(int32);
 static noreturn void history_exit(int);
@@ -149,7 +149,7 @@ history_recover_write(int32 fd, Entry *e) {
     return true;
 }
 
-int
+int32
 history_save(void) {
     DEBUG_PRINT("%s", "void")
     int32 nfds = 0;
@@ -193,7 +193,7 @@ history_save(void) {
                          XDG_CACHE_HOME, basename2(e->content,
                                                    &e->content_length, NULL));
 
-            if (!strequal(image_save, e->content)) {
+            if (!STREQUAL(image_save, n, e->content, e->content_length)) {
                 if ((pipes[nfds].fd
                         = util_copy_file_async(image_save, e->content,
                                                &dests[nfds])) < 0) {
@@ -299,9 +299,6 @@ history_read(void) {
     char *p;
     int32 left;
 
-    char *clipsim = "clipsim/history";
-    int64 length;
-
     history_prepare_tmp_directory();
 
     GETENV(XDG_CACHE_HOME);
@@ -314,17 +311,16 @@ history_read(void) {
         XDG_CACHE_HOME = xdg_cache_home_buffer;
     }
 
-    length = strlen32(XDG_CACHE_HOME);
-    length += 1 + strlen32(clipsim);
-    if (length > (PATH_MAX - 1)) {
-        error("XDG_CACHE_HOME is too long.\n");
-        exit(EXIT_FAILURE);
-    }
-
     {
         char *clipsim_dir;
         char buffer[PATH_MAX];
-        int n = SNPRINTF(buffer, "%s/%s", XDG_CACHE_HOME, clipsim);
+        int32 n = SNPRINTF(buffer, "%s/%s",
+                           XDG_CACHE_HOME, "clipsim/history");
+        if ((n <= 0) || (n >= (int32)SIZEOF(buffer))) {
+            error("XDG_CACHE_HOME is too long.\n");
+            exit(EXIT_FAILURE);
+        }
+
         history.name = xmemdup(buffer, n + 1);
 
         clipsim_dir = dirname(buffer);

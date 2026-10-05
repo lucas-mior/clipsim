@@ -24,6 +24,7 @@ typedef struct IpcRequest {
 static char ipc_directory[PATH_MAX];
 static char ipc_lock_name[PATH_MAX];
 static char ipc_socket_name[PATH_MAX];
+static int32 ipc_socket_name_len;
 static File ipc_lock = {.file = NULL, .fd = -1, .name = ipc_lock_name};
 static File ipc_socket = {.file = NULL, .fd = -1, .name = ipc_socket_name};
 
@@ -55,6 +56,7 @@ ipc_resolve_socket_name(void) {
     static bool resolved = false;
     char *XDG_RUNTIME_DIR;
     int32 n;
+    int32 socket_name_len;
 
     if (resolved) {
         return;
@@ -64,11 +66,14 @@ ipc_resolve_socket_name(void) {
     if (XDG_RUNTIME_DIR && (XDG_RUNTIME_DIR[0] != '\0')) {
         n = SNPRINTF(ipc_directory, "%s/clipsim", XDG_RUNTIME_DIR);
         if ((n > 0) && (n < (int32)SIZEOF(ipc_directory))) {
-            n = SNPRINTF(ipc_socket_name, "%s/daemon.sock", ipc_directory);
-            if ((n > 0)
-                && (n < (int32)SIZEOF(((struct sockaddr_un *)0)->sun_path))) {
+            socket_name_len =
+                SNPRINTF(ipc_socket_name, "%s/daemon.sock", ipc_directory);
+            if ((socket_name_len > 0)
+                && (socket_name_len
+                    < (int32)SIZEOF(((struct sockaddr_un *)0)->sun_path))) {
                 n = SNPRINTF(ipc_lock_name, "%s/daemon.lock", ipc_directory);
                 if ((n > 0) && (n < (int32)SIZEOF(ipc_lock_name))) {
+                    ipc_socket_name_len = socket_name_len;
                     resolved = true;
                     return;
                 }
@@ -88,6 +93,7 @@ ipc_resolve_socket_name(void) {
         error("Error resolving ipc socket name.\n");
         fatal(EXIT_FAILURE);
     }
+    ipc_socket_name_len = n;
 
     n = SNPRINTF(ipc_lock_name, "%s/daemon.lock", ipc_directory);
     if ((n <= 0) || (n >= (int32)SIZEOF(ipc_lock_name))) {
@@ -567,6 +573,7 @@ ipc_client_print_entries(int32 *fd) {
         int32 test;
         int64 image_path_length = r - 1;
         char *CLIPSIM_IMAGE_PREVIEW;
+        int32 image_preview_len;
 
         if (r == 1) {
             r = read64(*fd, buffer + 1, sizeof(buffer) - 1);
@@ -594,7 +601,8 @@ ipc_client_print_entries(int32 *fd) {
         if (CLIPSIM_IMAGE_PREVIEW == NULL) {
             CLIPSIM_IMAGE_PREVIEW = "chafa";
         }
-        if (strequal(CLIPSIM_IMAGE_PREVIEW, "stiv_draw")) {
+        image_preview_len = strlen32(CLIPSIM_IMAGE_PREVIEW);
+        if (STREQUAL(CLIPSIM_IMAGE_PREVIEW, image_preview_len, "stiv_draw")) {
             execlp("stiv_draw", "stiv_draw", buffer + 1, "30", "15", NULL);
             error("Error executing stiv_draw: %s.\n", strerror(errno));
         } else {
@@ -616,7 +624,7 @@ ipc_connect_socket(bool quiet) {
     ipc_resolve_socket_name();
     memset64(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    memcpy64(addr.sun_path, ipc_socket.name, strlen32(ipc_socket.name) + 1);
+    memcpy64(addr.sun_path, ipc_socket.name, ipc_socket_name_len + 1);
 
     if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
         if (!quiet) {
@@ -671,7 +679,7 @@ ipc_make_socket(void) {
 
     memset64(&addr, 0, sizeof(addr));
     addr.sun_family = AF_UNIX;
-    memcpy64(addr.sun_path, ipc_socket.name, strlen32(ipc_socket.name) + 1);
+    memcpy64(addr.sun_path, ipc_socket.name, ipc_socket_name_len + 1);
 
     if (bind(ipc_socket.fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         error("Error binding ipc socket %s: %s\n",

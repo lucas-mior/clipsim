@@ -13,9 +13,9 @@
 #define TESTING_content 0
 #endif
 
-static void content_remove_newline(char *, int *);
+static void content_remove_newline(char *, int32 *);
 static void content_trim_spaces(int32 *, int32 *, char *, int32);
-static int32 content_check_content(uchar *, int);
+static int32 content_check_content(uchar *, int32);
 
 void
 content_remove_newline(char *text, int32 *length) {
@@ -42,8 +42,9 @@ content_trim_spaces(int32 *trimmed, int32 *trimmed_length,
     DEBUG_PRINT("%p, %p, %.50s, %d",
                 (void *)trimmed, (void *)trimmed_length, content, length)
     char *out;
-    char temp = '\0';
-    char *in = content;
+    int32 limit;
+    int32 in;
+    int32 out_len = 0;
 
     if (length <= 0) {
         *trimmed = 0;
@@ -56,30 +57,24 @@ content_trim_spaces(int32 *trimmed, int32 *trimmed_length,
 
     *trimmed = length + 1;
     out = &content[*trimmed];
+    limit = MIN(length, TRIMMED_SIZE);
 
-    if (length >= TRIMMED_SIZE) {
-        temp = content[TRIMMED_SIZE];
-        content[TRIMMED_SIZE] = '\0';
-    }
-
-    while (IS_SPACE(*in)) {
+    in = 0;
+    while ((in < limit) && IS_SPACE(content[in])) {
         in += 1;
     }
-    while (*in != '\0') {
-        while (IS_SPACE(*in) && IS_SPACE(*(in + 1))) {
+    while (in < limit) {
+        while (((in + 1) < limit) && IS_SPACE(content[in])
+               && IS_SPACE(content[in + 1])) {
             in += 1;
         }
 
-        *out = *in;
-        out += 1;
+        out[out_len] = content[in];
+        out_len += 1;
         in += 1;
     }
-    *out = '\0';
-    *trimmed_length = (int32)(out - &content[*trimmed]);
-
-    if (temp) {
-        content[TRIMMED_SIZE] = temp;
-    }
+    out[out_len] = '\0';
+    *trimmed_length = out_len;
 
     if (*trimmed_length == length) {
         *trimmed = 0;
@@ -160,10 +155,12 @@ main(void) {
     }
 
     {
-        char content[512] = "  hello   world ";
+        char content[512];
         int32 trimmed;
         int32 trimmed_length;
-        int32 orig_length = strlen32(content);
+        int32 orig_length;
+
+        orig_length = SNPRINTF(content, "%s", "  hello   world ");
         content_trim_spaces(&trimmed, &trimmed_length, content, orig_length);
         PRINTLN(content + trimmed);
         ASSERT_EQ(trimmed_length, 12);
