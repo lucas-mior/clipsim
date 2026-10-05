@@ -286,9 +286,9 @@ name collision that ends up happening. For instance, harfbuzz library defined a
 macro called SIZEOF. (Really? They really couldn't have used HB_SIZEOF, I
 guess).
 
-However, when testing files like assertion.c, it is ok and necessary to `#define
-CBASE_IMPLEMENT 1` and `#include "cbase.h"` so that the test compilation unit
-works. But this must be done inside `#if TESTING_` block.
+However, when testing files like assertions.c, it is ok and necessary to
+`#define CBASE_IMPLEMENT 1` and `#include "cbase.h"` so that the test
+compilation unit works. But this must be done inside `#if TESTING_` block.
 
 ## Formatter
 `fmt_snprintf` and `fmt_vsnprintf` are cbase's deterministic printf-style
