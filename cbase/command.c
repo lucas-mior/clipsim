@@ -367,7 +367,7 @@ cmd_windows_cmd_line(Command *command,
                                              &argument_len);
         } else {
             argument = command->argv[i];
-            argument_len = command->argvs_lens[i];
+            argument_len = command->argv_lens[i];
         }
 
         needs_quotes = argument_len == 0;
@@ -1163,9 +1163,9 @@ cmd_run_capture_combined(Command *command) {
 
 void
 cmd_print(Command *command) {
-    printf(RED("%s"), command->argv[0]);
+    printf(RED("%.*s"), SP(command->argv, 0));
     for (int32 i = 1; i < command->argc; i += 1) {
-        printf(" %s", command->argv[i]);
+        printf(" %.*s", SP(command->argv, i));
     }
     printf("\n");
     return;
@@ -1179,7 +1179,7 @@ cmd_str(Command *command, int32 *len) {
         if (i > 0) {
             str_append_byte(&string, ' ');
         }
-        STR_APPEND(&string, command->argv[i], command->argvs_lens[i]);
+        STR_APPEND(&string, command->argv[i], command->argv_lens[i]);
     }
     return str_steal(&string, len);
 }
@@ -1222,9 +1222,9 @@ cmd_array_reserve(Command *command, bool environment, int32 extra) {
             command->argv = realloc2(command->argv,
                                      old_capacity, *capacity,
                                      SIZEOF(*command->argv));
-            command->argvs_lens = realloc2(command->argvs_lens,
-                                           old_capacity, *capacity,
-                                           SIZEOF(*command->argvs_lens));
+            command->argv_lens = realloc2(command->argv_lens,
+                                          old_capacity, *capacity,
+                                          SIZEOF(*command->argv_lens));
         }
     } while (*capacity <= needed);
 
@@ -1243,10 +1243,10 @@ static void
 cmd_argument_append(Command *command, char *argument, int32 argument_len) {
     cmd_array_reserve(command, false, 1);
     command->argv[command->argc] = argument;
-    command->argvs_lens[command->argc] = argument_len;
+    command->argv_lens[command->argc] = argument_len;
     command->argc += 1;
     command->argv[command->argc] = NULL;
-    command->argvs_lens[command->argc] = 0;
+    command->argv_lens[command->argc] = 0;
     return;
 }
 
@@ -1383,7 +1383,7 @@ cmd_argv0_set(Command *command, char *argument) {
     copy = cmd_argument_alloc(command, argument_len + 1);
     memcpy64(copy, argument, argument_len + 1);
     command->argv[0] = copy;
-    command->argvs_lens[0] = argument_len;
+    command->argv_lens[0] = argument_len;
     return;
 }
 
@@ -1412,8 +1412,8 @@ cmd_reset(Command *command) {
     if (command->argv) {
         command->argv[0] = NULL;
     }
-    if (command->argvs_lens) {
-        command->argvs_lens[0] = 0;
+    if (command->argv_lens) {
+        command->argv_lens[0] = 0;
     }
     cmd_error_set(command, 0);
     command->run_elapsed_ns = 0;
@@ -1446,8 +1446,8 @@ cmd_free(Command *command) {
     cmd_cwd_clear(command);
 
     free2(command->argv, command->cap*SIZEOF(*command->argv));
-    free2(command->argvs_lens,
-          command->cap*SIZEOF(*command->argvs_lens));
+    free2(command->argv_lens,
+          command->cap*SIZEOF(*command->argv_lens));
     free2(command->env, command->env_cap*SIZEOF(*command->env));
     free2(command->env_lens,
           command->env_cap*SIZEOF(*command->env_lens));
@@ -1456,7 +1456,7 @@ cmd_free(Command *command) {
     }
 
     command->argv = NULL;
-    command->argvs_lens = NULL;
+    command->argv_lens = NULL;
     command->env = NULL;
     command->env_lens = NULL;
     command->argv_arena = NULL;
@@ -1566,14 +1566,14 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.argv[0], "echo");
         ASSERT_EQ(cmd.argv[1], "--val=123");
         ASSERT_EQ(cmd.argv[2], "test");
-        ASSERT_EQ(cmd.argvs_lens[0], 4);
-        ASSERT_EQ(cmd.argvs_lens[1], 9);
-        ASSERT_EQ(cmd.argvs_lens[2], 4);
+        ASSERT_EQ(cmd.argv_lens[0], 4);
+        ASSERT_EQ(cmd.argv_lens[1], 9);
+        ASSERT_EQ(cmd.argv_lens[2], 4);
         ASSERT(cmd.argv_arena != NULL);
 
         cmd_argv0_set(&cmd, "printf");
         ASSERT_EQ(cmd.argv[0], "printf");
-        ASSERT_EQ(cmd.argvs_lens[0], 6);
+        ASSERT_EQ(cmd.argv_lens[0], 6);
         cmd_argv0_set(&cmd, "echo");
 
         cmd_text = cmd_str(&cmd, &len);
@@ -1589,7 +1589,7 @@ main(int argc, char **argv) {
         cmd_printf(&cmd, "%f", 1.0);
         ASSERT_EQ(cmd.argv[0], "1.000000");
         ASSERT(cmd.argv_arena->pos
-               == cmd.argv_arena->begin + ALIGN(cmd.argvs_lens[0] + 1));
+               == cmd.argv_arena->begin + ALIGN(cmd.argv_lens[0] + 1));
         cmd_reset(&cmd);
 
         cmd_push_split(&cmd, "  alpha beta  gamma ", " ");
@@ -1606,8 +1606,8 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.argc, 2);
         ASSERT_EQ(cmd.argv[0], "first");
         ASSERT_EQ(cmd.argv[1], "second");
-        ASSERT_EQ(cmd.argvs_lens[0], 5);
-        ASSERT_EQ(cmd.argvs_lens[1], 6);
+        ASSERT_EQ(cmd.argv_lens[0], 5);
+        ASSERT_EQ(cmd.argv_lens[1], 6);
         ASSERT_NULL(cmd.argv[cmd.argc]);
 
         cmd_reset(&cmd);
@@ -1909,7 +1909,7 @@ main(int argc, char **argv) {
         ASSERT_ZERO(cmd.argc);
         cmd_free(&cmd);
         ASSERT(cmd.argv == NULL);
-        ASSERT(cmd.argvs_lens == NULL);
+        ASSERT(cmd.argv_lens == NULL);
         ASSERT(cmd.env == NULL);
         ASSERT(cmd.env_lens == NULL);
         ASSERT(cmd.argv_arena == NULL);

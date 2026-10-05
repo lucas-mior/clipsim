@@ -832,7 +832,7 @@ typedef struct Command {
     char *stdin_buffer;
     Arena *argv_arena;
 
-    int32 *argvs_lens;
+    int32 *argv_lens;
     int32 *env_lens;
     int32 cwd_len;
     int32 argc;
