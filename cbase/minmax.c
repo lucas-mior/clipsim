@@ -428,8 +428,7 @@ main(void) {
         CMD_PUSH(&command, "-o", "/tmp/a.out");
         cmd_printf(&command, "%s", __FILE__);
 
-        if (cmd_run(&command,
-                         CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR) < 0) {
+        if (cmd_run(&command, CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR) < 0) {
             exit(EXIT_SUCCESS);
         } else {
             ASSERT_GLOB_MATCH(command.result.stderr_output,
@@ -440,8 +439,7 @@ main(void) {
         cmd_argv0_set(&command, "clang");
         CMD_PUSH(&command, "-Wshorten-64-to-32");
 
-        if (cmd_run(&command,
-                         CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR) < 0) {
+        if (cmd_run(&command, CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR) < 0) {
             exit(EXIT_SUCCESS);
         } else {
             ASSERT_GLOB_MATCH(command.result.stderr_output,
