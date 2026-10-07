@@ -621,7 +621,7 @@ main(void) {
     work.values = values;
     workers = parallel_for_min_items(length, 1, threads_test_fill_work, &work);
 
-    ASSERT_POSITIVE(workers);
+    ASSERT_GT(workers, 0);
     for (int64 i = 0; i < length; i += 1) {
         ASSERT_GE_VAR(values[i], i);
         ASSERT_LT_VAR(values[i], i + PARALLEL_FOR_MAX_THREADS);

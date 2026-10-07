@@ -982,10 +982,6 @@ if (enum & ENUM_BITFLAG) {
   - `ASSERT(expression)`
   - `ASSERT_NULL(pointer)`
   - `ASSERT_ZERO(integer expression)`
-  - `ASSERT_POSITIVE(integer expression)`
-  - `ASSERT_NEGATIVE(integer expression)`
-  - `ASSERT_NON_POSITIVE(integer expression)`
-  - `ASSERT_NON_NEGATIVE(integer expression)`
   - `ASSERT_EQ(value1, value2)`
   - `ASSERT_NE(value1, value2)`
   - `ASSERT_EQ(string, string_len, other_string)`
@@ -1035,10 +1031,6 @@ if (enum & ENUM_BITFLAG) {
 - Prefer `ASSERT_ZERO(value);` instead of `ASSERT(value == 0)`.
   * Note: if zero means "function succeded", use
     `ASSERT(!function_call());` instead of `ASSERT_ZERO(function_call());`
-- Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT(value > 0)`.
-- Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT(value < 0)`.
-- Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT(value <= 0)`.
-- Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT(value >= 0)`.
 - `ASSERT_EQ` and `ASSERT_NE` accept either constant or variable
   operands. For integer comparisons, both operands are normalized to `llong`.
   Unsigned integer values above `LLONG_MAX` are not supported and trigger an
@@ -1054,6 +1046,14 @@ if (enum & ENUM_BITFLAG) {
   instead of writing the equivalent expressions with `ASSERT(...)`. The right
   side of these forms must satisfy `__builtin_constant_p()`; passing a variable
   is a compile-time error.
+- For sign checks, use the ordered-comparison forms:
+  ```c
+  ASSERT_LT(value, 0);
+  ASSERT_LE(value, 0);
+  ASSERT_GT(value, 0);
+  ASSERT_GE(value, 0);
+  ```
+  Use `0.0` instead of `0` when the value is floating-point.
 - If the right side of an ordered comparison is not a compiler-known constant,
   use `ASSERT_LT_VAR`, `ASSERT_LE_VAR`, `ASSERT_GT_VAR`, or `ASSERT_GE_VAR`.
   These use the heavier variable-vs-variable generic dispatch, so use them only
@@ -1065,14 +1065,10 @@ if (enum & ENUM_BITFLAG) {
   `llong`. Unsigned integer values above `LLONG_MAX` are not supported. The
   three- and four-argument string equality forms are unaffected.
 - Prefer `ASSERT_ZERO(value);` instead of `ASSERT_EQ(a, 0)`
-- Prefer `ASSERT_POSITIVE(value);` instead of `ASSERT_GT(a, 0)`
-- Prefer `ASSERT_NEGATIVE(value);` instead of `ASSERT_LT(a, 0)`
-- Prefer `ASSERT_NON_POSITIVE(value);` instead of `ASSERT_LE(a, 0)`
-- Prefer `ASSERT_NON_NEGATIVE(value);` instead of `ASSERT_GE(a, 0)`
 - Prefer `ASSERT_BETWEEN(value, 0, max);`
   instead of `ASSERT_GE(value, 0); ASSERT_LE(value, max);`
 - Prefer `ASSERT_BETWEEN(value, 0, SIZE - 1);`
-  instead of `ASSERT_NON_NEGATIVE(value); ASSERT_LT(value, SIZE):`
+  instead of `ASSERT_GE(value, 0); ASSERT_LT(value, SIZE):`
 
 ## Modules
 - Define internal functions as `static`.

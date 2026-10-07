@@ -635,7 +635,7 @@ main(void) {
                 uint32 u;
                 int32 dec_len = utf8_decode(test_buf + consumed,
                                             gen_len - consumed, &u);
-                ASSERT_POSITIVE(dec_len);
+                ASSERT_GT(dec_len, 0);
                 ASSERT(u != UTF_INVALID);
                 consumed += dec_len;
             }

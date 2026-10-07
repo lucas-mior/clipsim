@@ -768,7 +768,7 @@ CAT(hash_functions_sink_, HASH_TYPE)(void) {
 INLINE uint64
 hash_function(void *key, int32 key_length) {
     uint64 hash;
-    ASSERT_POSITIVE(key_length);
+    ASSERT_GT(key_length, 0);
     hash = rapidhash(key, key_length);
     return hash;
 }
@@ -800,7 +800,7 @@ hash_pow(double x, double n) {
     double result = 1.0;
     uint32 exponent;
 
-    ASSERT_NON_NEGATIVE(n);
+    ASSERT_GE(n, 0);
     ASSERT_LE(n, (double)UINT32_MAX);
     exponent = (uint32)n;
     ASSERT_EQ((double)exponent, n);

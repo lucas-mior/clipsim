@@ -91,9 +91,9 @@ fmt_float_validate_precision(int32 precision) {
 static int32
 fmt_float_copy(char *buffer, int64 capacity, char *source, int32 source_len) {
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(source != NULL);
-    ASSERT_NON_NEGATIVE(source_len);
+    ASSERT_GE(source_len, 0);
     ASSERT_LT(source_len, NUMTOSTR_FLOAT_RYU_BUFFER_SIZE);
 
     if ((int64)source_len >= capacity) {

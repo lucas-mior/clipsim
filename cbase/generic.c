@@ -53,7 +53,7 @@ snprint_0(char *restrict buf, int64 bufSize, ... /* strings, NULL */) {
     char *dst = buf;
     char *s;
 
-    ASSERT_NON_NEGATIVE(bufSize);
+    ASSERT_GE(bufSize, 0);
     if (bufSize) {
         remainingLen = bufSize - 1;
     } else {
@@ -97,7 +97,7 @@ toString(char *restrict buf, int64 bufSize, char *restrict fmt, ...) {
     va_list ap;
 
     ASSERT(buf);
-    ASSERT_POSITIVE(bufSize);
+    ASSERT_GT(bufSize, 0);
     ASSERT(fmt);
 
     va_start(ap, fmt);

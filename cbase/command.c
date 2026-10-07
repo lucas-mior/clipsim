@@ -1379,7 +1379,7 @@ cmd_argv0_set(Command *command, char *argument) {
     int32 argument_len = strlen32(argument);
     char *copy;
 
-    ASSERT_POSITIVE(command->argc);
+    ASSERT_GT(command->argc, 0);
     copy = cmd_argument_alloc(command, argument_len + 1);
     memcpy64(copy, argument, argument_len + 1);
     command->argv[0] = copy;
@@ -1679,7 +1679,7 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.result.status, 7);
         ASSERT(cmd.result.exited);
         ASSERT_EQ(cmd.result.exit_status, 7);
-        ASSERT_POSITIVE(cmd.run_elapsed_ns);
+        ASSERT_GT(cmd.run_elapsed_ns, 0);
 
         cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
@@ -1722,7 +1722,7 @@ main(int argc, char **argv) {
         cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
         ASSERT(cmd.stdin_buffer == NULL);
-        ASSERT_NEGATIVE((cmd_stdin_buffer_set(&cmd, NULL, 0)));
+        ASSERT_LT((cmd_stdin_buffer_set(&cmd, NULL, 0)), 0);
 
         {
             enum {
@@ -1826,7 +1826,7 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.result.status, 7);
         ASSERT(cmd.result.exited);
         ASSERT_EQ(cmd.result.exit_status, 7);
-        ASSERT_POSITIVE(cmd.run_elapsed_ns);
+        ASSERT_GT(cmd.run_elapsed_ns, 0);
 
         cmd_reset(&cmd);
         ASSERT_ZERO(cmd.argc);
@@ -1876,7 +1876,7 @@ main(int argc, char **argv) {
 #if OS_UNIX
         CMD_PUSH(&cmd, "sh", "-c", "exit 9");
         ASSERT_ZERO((cmd_run_async(&cmd, CMD_NEW_PROCESS_GROUP)));
-        ASSERT_POSITIVE(cmd.result.pid);
+        ASSERT_GT(cmd.result.pid, 0);
         ASSERT_ZERO(cmd_wait(&cmd));
         ASSERT_EQ(cmd.result.status, 9);
 
@@ -1890,7 +1890,7 @@ main(int argc, char **argv) {
         ASSERT(!cmd_run_async(&cmd,
                                   CMD_CAPTURE_STDOUT
                                   |CMD_CAPTURE_STDERR));
-        ASSERT_POSITIVE(cmd.result.pid);
+        ASSERT_GT(cmd.result.pid, 0);
         cmd_result_read_captured(&cmd);
         ASSERT_ZERO(cmd_wait(&cmd));
         ASSERT_EQ(cmd.result.stdout_output, "asyncout");

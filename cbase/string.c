@@ -897,7 +897,7 @@ main(void) {
         string_from_strings(b, sizeof(b), "|", strs, 3);
         ASSERT_EQ(b, "one|two|three");
         string_from_doubles(b, sizeof(b), ",", dbls, 2);
-        ASSERT_POSITIVE(strlen32(b));
+        ASSERT_GT(strlen32(b), 0);
     }
 
     exit(EXIT_SUCCESS);

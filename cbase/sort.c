@@ -108,8 +108,8 @@ sort_merge_subsorted(
     char *output;
     char *array2 = array;
 
-    ASSERT_NON_NEGATIVE(n);
-    ASSERT_POSITIVE(p);
+    ASSERT_GE(n, 0);
+    ASSERT_GT(p, 0);
     ASSERT_LE(p, MAX_NTHREADS);
 
     if ((n <= 1) || (p == 1)) {
@@ -117,7 +117,7 @@ sort_merge_subsorted(
     }
 
     ASSERT_LE_VAR(p, n);
-    ASSERT_POSITIVE(obj_size);
+    ASSERT_GT(obj_size, 0);
     ASSERT(array);
     ASSERT(compare);
 

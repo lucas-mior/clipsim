@@ -158,7 +158,7 @@ arena_back(Arena *arena, int64 size) {
     int64 used;
 
     ASSERT(arena != NULL);
-    ASSERT_NON_NEGATIVE(size);
+    ASSERT_GE(size, 0);
 
     used = (char *)arena->pos - arena->begin;
     ASSERT_LE_VAR(size, used);
@@ -415,7 +415,7 @@ main(void) {
         }
 
         for (Arena *a = arena; a; a = a->next) {
-            ASSERT_POSITIVE(a->npushed);
+            ASSERT_GT(a->npushed, 0);
             total_pushed += a->npushed;
         }
         ASSERT_EQ(total_pushed, LENGTH(objs));

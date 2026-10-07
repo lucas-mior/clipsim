@@ -146,10 +146,9 @@ assert_compare_value_unsigned(char *file, int32 line, char *func,
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %llu is larger than LLONG_MAX\n", name, value);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        result.kind = ASSERT_COMPARE_VALUE_INVALID;
+        return result;
     }
 
     result.kind = ASSERT_COMPARE_VALUE_INTEGER;
@@ -182,6 +181,20 @@ assert_compare_value_double(char *file, int32 line, char *func,
     (void)name;
     result.kind = ASSERT_COMPARE_VALUE_DOUBLE;
     result.adouble = value;
+    return result;
+}
+
+AssertCompareValue
+assert_compare_value_ldouble(char *file, int32 line, char *func,
+                             char *name, ldouble value) {
+    AssertCompareValue result = {0};
+
+    (void)file;
+    (void)line;
+    (void)func;
+    (void)name;
+    result.kind = ASSERT_COMPARE_VALUE_LDOUBLE;
+    result.aldouble = value;
     return result;
 }
 
@@ -237,6 +250,12 @@ assert_compare_const_double(enum AssertCompareMode mode,
 }
 
 static bool
+assert_compare_const_ldouble(enum AssertCompareMode mode,
+                             ldouble var1, ldouble var2) {
+    ASSERT_COMPARE_MODE_SWITCH(mode, var1, var2);
+}
+
+static bool
 assert_compare_const_pointer(enum AssertCompareMode mode,
                              void *var1, void *var2) {
     uintptr pointer1 = (uintptr)var1;
@@ -282,6 +301,8 @@ assert_compare_const_bool(enum AssertCompareMode mode,
 static char *
 assert_compare_value_kind_name(enum AssertCompareValueKind kind) {
     switch (kind) {
+    case ASSERT_COMPARE_VALUE_INVALID:
+        return "invalid";
     case ASSERT_COMPARE_VALUE_POINTER:
         return "pointer";
     case ASSERT_COMPARE_VALUE_STRING:
@@ -292,12 +313,14 @@ assert_compare_value_kind_name(enum AssertCompareValueKind kind) {
         return "integer";
     case ASSERT_COMPARE_VALUE_DOUBLE:
         return "floating-point";
+    case ASSERT_COMPARE_VALUE_LDOUBLE:
+        return "long double";
     default:
         UNREACHABLE();
     }
 }
 
-static noreturn void
+static bool
 assert_compare_const_unsupported(char *file, int32 line, char *func,
                                  char *name1, char *name2,
                                  AssertCompareValue var1,
@@ -307,13 +330,11 @@ assert_compare_const_unsupported(char *file, int32 line, char *func,
                      "Unsupported comparison: %s (%s), %s (%s)\n",
                      name1, assert_compare_value_kind_name(var1.kind),
                      name2, assert_compare_value_kind_name(var2.kind));
-        TRAP();
-    } else {
-        UNREACHABLE();
     }
+    return false;
 }
 
-void
+bool
 assert_compare_const(char *file, int32 line, char *func,
                      enum AssertCompareMode mode,
                      char *name1, char *name2,
@@ -321,7 +342,10 @@ assert_compare_const(char *file, int32 line, char *func,
     bool result;
     char *symbol = assert_compare_mode_symbol(mode);
 
-    if ((var1.kind == ASSERT_COMPARE_VALUE_INTEGER)
+    if ((var1.kind == ASSERT_COMPARE_VALUE_INVALID)
+        || (var2.kind == ASSERT_COMPARE_VALUE_INVALID)) {
+        return false;
+    } else if ((var1.kind == ASSERT_COMPARE_VALUE_INTEGER)
         && (var2.kind == ASSERT_COMPARE_VALUE_INTEGER)) {
         result = assert_compare_const_integer(mode,
                                               var1.integer, var2.integer);
@@ -331,27 +355,58 @@ assert_compare_const(char *file, int32 line, char *func,
                          name1, var1.integer, symbol, var2.integer, name2);
         }
     } else if (((var1.kind == ASSERT_COMPARE_VALUE_INTEGER)
-                || (var1.kind == ASSERT_COMPARE_VALUE_DOUBLE))
+                || (var1.kind == ASSERT_COMPARE_VALUE_DOUBLE)
+                || (var1.kind == ASSERT_COMPARE_VALUE_LDOUBLE))
                && ((var2.kind == ASSERT_COMPARE_VALUE_INTEGER)
-                   || (var2.kind == ASSERT_COMPARE_VALUE_DOUBLE))) {
-        double value1;
-        double value2;
+                   || (var2.kind == ASSERT_COMPARE_VALUE_DOUBLE)
+                   || (var2.kind == ASSERT_COMPARE_VALUE_LDOUBLE))) {
+        if ((var1.kind == ASSERT_COMPARE_VALUE_LDOUBLE)
+            || (var2.kind == ASSERT_COMPARE_VALUE_LDOUBLE)) {
+            ldouble value1;
+            ldouble value2;
 
-        if (var1.kind == ASSERT_COMPARE_VALUE_INTEGER) {
-            value1 = (double)var1.integer;
+            if (var1.kind == ASSERT_COMPARE_VALUE_INTEGER) {
+                value1 = (ldouble)var1.integer;
+            } else if (var1.kind == ASSERT_COMPARE_VALUE_DOUBLE) {
+                value1 = (ldouble)var1.adouble;
+            } else {
+                value1 = var1.aldouble;
+            }
+
+            if (var2.kind == ASSERT_COMPARE_VALUE_INTEGER) {
+                value2 = (ldouble)var2.integer;
+            } else if (var2.kind == ASSERT_COMPARE_VALUE_DOUBLE) {
+                value2 = (ldouble)var2.adouble;
+            } else {
+                value2 = var2.aldouble;
+            }
+
+            result = assert_compare_const_ldouble(mode, value1, value2);
+            if (!result && DEBUGGING) {
+                assert_error(file, line, func,
+                             "%s = %Lf %s %Lf = %s\n",
+                             name1, value1, symbol, value2, name2);
+            }
         } else {
-            value1 = var1.adouble;
-        }
-        if (var2.kind == ASSERT_COMPARE_VALUE_INTEGER) {
-            value2 = (double)var2.integer;
-        } else {
-            value2 = var2.adouble;
-        }
-        result = assert_compare_const_double(mode, value1, value2);
-        if (!result && DEBUGGING) {
-            assert_error(file, line, func,
-                         "%s = %f %s %f = %s\n",
-                         name1, value1, symbol, value2, name2);
+            double value1;
+            double value2;
+
+            if (var1.kind == ASSERT_COMPARE_VALUE_INTEGER) {
+                value1 = (double)var1.integer;
+            } else {
+                value1 = var1.adouble;
+            }
+            if (var2.kind == ASSERT_COMPARE_VALUE_INTEGER) {
+                value2 = (double)var2.integer;
+            } else {
+                value2 = var2.adouble;
+            }
+            result = assert_compare_const_double(mode, value1, value2);
+            if (!result && DEBUGGING) {
+                assert_error(file, line, func,
+                             "%s = %f %s %f = %s\n",
+                             name1, value1, symbol, value2, name2);
+            }
         }
     } else if ((var1.kind == ASSERT_COMPARE_VALUE_STRING)
                && (var2.kind == ASSERT_COMPARE_VALUE_STRING)) {
@@ -400,22 +455,15 @@ assert_compare_const(char *file, int32 line, char *func,
                          name1, var1.boolean, symbol, var2.boolean, name2);
         }
     } else {
-        assert_compare_const_unsupported(file, line, func,
-                                         name1, name2,
-                                         var1, var2);
+        return assert_compare_const_unsupported(file, line, func,
+                                                name1, name2,
+                                                var1, var2);
     }
 
-    if (!result) {
-        if (DEBUGGING) {
-            TRAP();
-        } else {
-            UNREACHABLE();
-        }
-    }
-    return;
+    return result;
 }
 
-void
+bool
 assert_file_contains(char *file, int32 line, char *func,
                      char *path, char *needle) {
     char *buffer;
@@ -426,25 +474,21 @@ assert_file_contains(char *file, int32 line, char *func,
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "Could not read file '%s'.\n", path);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
     if (!memmem64(buffer, buffer_len, needle, needle_len)) {
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "Needle '%s' not found in file '%s'.\n", needle, path);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
     free2(buffer, buffer_len + 1);
-    return;
+    return true;
 }
 
-void
+bool
 assert_contains(char *file, int32 line, char *func,
                 char *haystack, int32 haystack_len, char *needle) {
     int32 needle_len = strlen32(needle);
@@ -454,14 +498,13 @@ assert_contains(char *file, int32 line, char *func,
                          "expected to find substring'''\n"
                          GREEN("%.*s")"''' in '''"BLUE("%.*s")"'''\n",
                          needle_len, needle, haystack_len, haystack);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
+    return true;
 }
 
-void
+bool
 assert_not_contains(char *file, int32 line, char *func,
                     char *haystack, int32 haystack_len, char *needle) {
     int32 needle_len = strlen32(needle);
@@ -471,14 +514,13 @@ assert_not_contains(char *file, int32 line, char *func,
                          "expected to not find substring'''\n"
                          GREEN("%.*s")"''' in '''"BLUE("%.*s")"'''\n",
                          needle_len, needle, haystack_len, haystack);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
+    return true;
 }
 
-void
+bool
 assert_equal_3(char *file, int32 line, char *func,
                char *name1, char *name2,
                char *var1, int32 var1_len, char *var2) {
@@ -488,19 +530,15 @@ assert_equal_3(char *file, int32 line, char *func,
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s is NULL.\n", name1);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
     if (var2 == NULL) {
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s is NULL.\n", name2);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
 
     var2_len = strlen32(var2);
@@ -509,16 +547,14 @@ assert_equal_3(char *file, int32 line, char *func,
             assert_error(file, line, func,
                          "%s = %.*s == %s = %s\n",
                          name1, var1_len, var1, name2, var2);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
 
-    return;
+    return true;
 }
 
-void
+bool
 assert_equal_4(char *file, int32 line, char *func,
                char *name1, char *name2,
                char *var1, int32 var1_len, char *var2, int32 var2_len) {
@@ -526,19 +562,15 @@ assert_equal_4(char *file, int32 line, char *func,
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s is NULL while %s is not\n", name1, name2);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
     if (var1 && (var2 == NULL)) {
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s is NULL while %s is not\n", name2, name1);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
 
     if (var1_len != var2_len) {
@@ -546,29 +578,25 @@ assert_equal_4(char *file, int32 line, char *func,
             assert_error(file, line, func,
                          "len(%s) = %d == %d = len(%s)\n",
                          name1, var1_len, var2_len, name2);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
     if ((var1 == NULL) && (var2 == NULL)) {
-        return;
+        return true;
     }
     if (memcmp64(var1, var2, var1_len) != 0) {
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %.*s == %.*s = %s\n",
                          name1, var1_len, var1, var2_len, var2, name2);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
 
-    return;
+    return true;
 }
 
-void
+bool
 assert_not_equal_3(char *file, int32 line, char *func,
                    char *name1, char *name2,
                    char *var1, int32 var1_len, char *var2) {
@@ -576,73 +604,65 @@ assert_not_equal_3(char *file, int32 line, char *func,
 
     if ((var1 == NULL) || (var2 == NULL)) {
         if (var1 != var2) {
-            return;
+            return true;
         }
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s = NULL != NULL = %s\n", name1, name2);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
 
     var2_len = strlen32(var2);
     if (var1_len != var2_len) {
-        return;
+        return true;
     }
     if (memcmp64(var1, var2, var1_len) == 0) {
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %.*s != %s = %s\n",
                          name1, var1_len, var1, name2, var2);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
 
-    return;
+    return true;
 }
 
-void
+bool
 assert_not_equal_4(char *file, int32 line, char *func,
                    char *name1, char *name2,
                    char *var1, int32 var1_len, char *var2, int32 var2_len) {
     if ((var1 == NULL) || (var2 == NULL)) {
         if (var1 != var2) {
-            return;
+            return true;
         }
         if (var1_len != var2_len) {
-            return;
+            return true;
         }
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s = NULL != NULL = %s\n", name1, name2);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
 
     if (var1_len != var2_len) {
-        return;
+        return true;
     }
     if (memcmp64(var1, var2, var1_len) == 0) {
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %.*s != %.*s = %s\n",
                          name1, var1_len, var1, var2_len, var2, name2);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
 
-    return;
+    return true;
 }
 
-void
+bool
 assert_glob_match_impl(char *file, int32 line, char *func,
                        char *string_name, char *glob_name,
                        char *string, int32 string_len,
@@ -665,15 +685,13 @@ assert_glob_match_impl(char *file, int32 line, char *func,
                          expected_text,
                          string_name, string_len, string_len, string,
                          glob_name, glob_len, glob_len, glob);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
-    return;
+    return true;
 }
 
-void
+bool
 assert_outside(char *file, int32 line, char *func,
                char *pointer_name, char *begin_name, char *end_name,
                void *pointer, void *begin, void *end) {
@@ -686,96 +704,23 @@ assert_outside(char *file, int32 line, char *func,
             assert_error(file, line, func,
                          "invalid range: %s = %p must be before %s = %p\n",
                          begin_name, begin, end_name, end);
-            TRAP();
-        } else {
-            UNREACHABLE();
         }
+        return false;
     }
     if ((pointer_address < begin_address) || (pointer_address >= end_address)) {
-        return;
+        return true;
     }
 
     if (DEBUGGING) {
         assert_error(file, line, func,
                      "%s = %p outside [%s = %p, %s = %p)\n",
                      pointer_name, pointer, begin_name, begin, end_name, end);
-        TRAP();
-    } else {
-        UNREACHABLE();
     }
+    return false;
 }
-
-#define GENERATE_ASSERT_SIGNED(MODE, SYMBOL, EXPECTED)                  \
-void                                                                    \
-a_sign_integer_##MODE(char *file, int32 line, char *func,               \
-                      char *name, llong var) {                          \
-    if (!(var SYMBOL 0)) {                                              \
-        if (DEBUGGING) {                                                \
-            assert_error(file, line, func,                              \
-                         "%s = %lld " EXPECTED "\n", name, var);        \
-            TRAP();                                                     \
-        } else {                                                        \
-            UNREACHABLE();                                              \
-        }                                                               \
-    }                                                                   \
-    return;                                                             \
-}
-
-GENERATE_ASSERT_SIGNED(positive, >, "> 0")
-GENERATE_ASSERT_SIGNED(negative, <, "< 0")
-GENERATE_ASSERT_SIGNED(non_positive, <=, "<= 0")
-GENERATE_ASSERT_SIGNED(non_negative, >=, ">= 0")
-
-#undef GENERATE_ASSERT_SIGNED
-
-#define GENERATE_ASSERT_DOUBLE_SIGN(MODE, SYMBOL, EXPECTED)             \
-void                                                                    \
-a_sign_double_##MODE(char *file, int32 line, char *func,                \
-                     char *name, double var) {                          \
-    if (!(var SYMBOL (double)0)) {                                      \
-        if (DEBUGGING) {                                                \
-            assert_error(file, line, func,                              \
-                         "%s = %.17g " EXPECTED "\n", name, var);       \
-            TRAP();                                                     \
-        } else {                                                        \
-            UNREACHABLE();                                              \
-        }                                                               \
-    }                                                                   \
-    return;                                                             \
-}
-
-GENERATE_ASSERT_DOUBLE_SIGN(positive, >, "> 0")
-GENERATE_ASSERT_DOUBLE_SIGN(negative, <, "< 0")
-GENERATE_ASSERT_DOUBLE_SIGN(non_positive, <=, "<= 0")
-GENERATE_ASSERT_DOUBLE_SIGN(non_negative, >=, ">= 0")
-
-#undef GENERATE_ASSERT_DOUBLE_SIGN
-
-#define GENERATE_ASSERT_LDOUBLE_SIGN(MODE, SYMBOL, EXPECTED)            \
-void                                                                    \
-a_sign_ldouble_##MODE(char *file, int32 line, char *func,               \
-                      char *name, ldouble var) {                        \
-    if (!(var SYMBOL (ldouble)0)) {                                     \
-        if (DEBUGGING) {                                                \
-            assert_error(file, line, func,                              \
-                         "%s = %Lf " EXPECTED "\n", name, var);         \
-            TRAP();                                                     \
-        } else {                                                        \
-            UNREACHABLE();                                              \
-        }                                                               \
-    }                                                                   \
-    return;                                                             \
-}
-
-GENERATE_ASSERT_LDOUBLE_SIGN(positive, >, "> 0")
-GENERATE_ASSERT_LDOUBLE_SIGN(negative, <, "< 0")
-GENERATE_ASSERT_LDOUBLE_SIGN(non_positive, <=, "<= 0")
-GENERATE_ASSERT_LDOUBLE_SIGN(non_negative, >=, ">= 0")
-
-#undef GENERATE_ASSERT_LDOUBLE_SIGN
 
 #define GENERATE_ASSERT_STRINGS(MODE, SYMBOL)                                  \
-void                                                                           \
+bool                                                                           \
 a_strings_##MODE(char *file, int32 line, char *func,                           \
                  char *name1, char *name2,                                     \
                  char *var1, char *var2) {                                     \
@@ -783,37 +728,31 @@ a_strings_##MODE(char *file, int32 line, char *func,                           \
         if (DEBUGGING) {                                                       \
             assert_error(file, line, func,                                     \
                          "%s is NULL, %s is \"%s\"\n", name1, name2, var2);    \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
         }                                                                      \
+        return false;                                                          \
     }                                                                          \
     if (var1 && (var2 == NULL)) {                                              \
         if (DEBUGGING) {                                                       \
             assert_error(file, line, func,                                     \
                          "%s is NULL, %s is \"%s\"\n", name2, name1, var1);    \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
         }                                                                      \
+        return false;                                                          \
     }                                                                          \
     if ((var1 == NULL) && (var2 == NULL)) {                                    \
         if (strcmp(#SYMBOL, "==")) {                                           \
-            TRAP();                                                            \
+            return false;                                                      \
         }                                                                      \
-        return;                                                                \
+        return true;                                                           \
     }                                                                          \
     if (!(strcmp(var1, var2) SYMBOL 0)) {                                      \
         if (DEBUGGING) {                                                       \
             assert_error(file, line, func,                                     \
                          "%s = %s " #SYMBOL " %s = %s\n",                      \
                          name1, var1, var2, name2);                            \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
         }                                                                      \
+        return false;                                                          \
     }                                                                          \
-    return;                                                                    \
+    return true;                                                               \
 }
 
 GENERATE_ASSERT_STRINGS(less, <)
@@ -826,7 +765,7 @@ GENERATE_ASSERT_STRINGS(greater_equal, >=)
 #undef GENERATE_ASSERT_STRINGS
 
 #define GENERATE_ASSERT_POINTERS(MODE, SYMBOL)                                 \
-void                                                                           \
+bool                                                                           \
 a_pointers_##MODE(char *file, int32 line, char *func,                          \
                   char *name1, char *name2,                                    \
                   void *var1, void *var2) {                                    \
@@ -835,12 +774,10 @@ a_pointers_##MODE(char *file, int32 line, char *func,                          \
             assert_error(file, line, func,                                     \
                          "%s = %p " #SYMBOL " %p = %s\n",                      \
                          name1, var1, var2, name2);                            \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
         }                                                                      \
+        return false;                                                          \
     }                                                                          \
-    return;                                                                    \
+    return true;                                                               \
 }
 
 GENERATE_ASSERT_POINTERS(less, <)
@@ -853,7 +790,7 @@ GENERATE_ASSERT_POINTERS(greater_equal, >=)
 #undef GENERATE_ASSERT_POINTERS
 
 #define GENERATE_ASSERT_INTEGERS_SAME_SIGN(SIGN, FMT, SYMBOL, MODE)           \
-void                                                                          \
+bool                                                                          \
 a_both_##SIGN##_##MODE(char *file, int32 line, char *func,                    \
                        char *name1, char *name2,                              \
                        char *type1, char *type2,                              \
@@ -862,15 +799,13 @@ a_both_##SIGN##_##MODE(char *file, int32 line, char *func,                    \
     if (!(var1 SYMBOL var2)) {                                                \
         if (DEBUGGING) {                                                      \
             assert_error(file, line, func,                                    \
-                         "[%s%d]%s = "FMT" " #SYMBOL " "FMT" = %s[%s%d]\n",   \
-                         type1, bits1, name1, var1, var2, name2, type2,       \
-                         bits2);                                              \
-            TRAP();                                                           \
-        } else {                                                              \
-            UNREACHABLE();                                                    \
+                        "[%s%d]%s = "FMT" " #SYMBOL " "FMT" = %s[%s%d]\n",   \
+                        type1, bits1, name1, var1, var2, name2, type2,       \
+                        bits2);                                              \
         }                                                                     \
+        return false;                                                         \
     }                                                                         \
-    return;                                                                   \
+    return true;                                                              \
 }
 
 GENERATE_ASSERT_INTEGERS_SAME_SIGN(signed,   "%lld", ==, equal)
@@ -905,7 +840,7 @@ compare_sign_with_unsign(llong s, ullong u) {
 }
 
 #define GENERATE_ASSERT_SIGNED_UNSIGNED(MODE, SYMBOL)                          \
-void                                                                           \
+bool                                                                           \
 a_signed_unsigned##MODE(char *file, int32 line, char *func,                    \
                         char *name1, char *name2,                              \
                         char *type1, char *type2,                              \
@@ -917,12 +852,10 @@ a_signed_unsigned##MODE(char *file, int32 line, char *func,                    \
                          "[%s%d]%s = %lld " #SYMBOL " %llu = %s[%s%d]\n",      \
                          type1, bits1, name1, var1,                            \
                          var2, name2, type2, bits2);                           \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
         }                                                                      \
+        return false;                                                          \
     }                                                                          \
-    return;                                                                    \
+    return true;                                                               \
 }
 
 GENERATE_ASSERT_SIGNED_UNSIGNED(equal, ==)
@@ -935,7 +868,7 @@ GENERATE_ASSERT_SIGNED_UNSIGNED(greater_equal, >=)
 #undef GENERATE_ASSERT_SIGNED_UNSIGNED
 
 #define GENERATE_ASSERT_UNSIGNED_SIGNED(MODE, SYMBOL)                          \
-void                                                                           \
+bool                                                                           \
 a_unsigned_signed_##MODE(char *file, int32 line, char *func,                   \
                          char *name1, char *name2,                             \
                          char *type1, char *type2,                             \
@@ -947,12 +880,10 @@ a_unsigned_signed_##MODE(char *file, int32 line, char *func,                   \
                          "[%s%d]%s = %llu " #SYMBOL " %lld = %s[%s%d]\n",      \
                          type1, bits1, name1, var1, var2, name2, type2,        \
                          bits2);                                               \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
         }                                                                      \
+        return false;                                                          \
     }                                                                          \
-    return;                                                                    \
+    return true;                                                               \
 }
 
 GENERATE_ASSERT_UNSIGNED_SIGNED(equal, ==)
@@ -965,7 +896,7 @@ GENERATE_ASSERT_UNSIGNED_SIGNED(greater_equal, >=)
 #undef GENERATE_ASSERT_UNSIGNED_SIGNED
 
 #define GENERATE_ASSERT_DOUBLE(SYMBOL, MODE)                                   \
-void                                                                           \
+bool                                                                           \
 a_double_##MODE(char *file, int32 line, char *func,                            \
                 char *name1, char *name2,                                      \
                 char *type1, char *type2,                                      \
@@ -977,12 +908,10 @@ a_double_##MODE(char *file, int32 line, char *func,                            \
                          "[%s%d]%s = %f " #SYMBOL " %f = %s[%s%d]\n",          \
                          type1, bits1, name1, var1,                            \
                          var2, name2, type2, bits2);                           \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
         }                                                                      \
+        return false;                                                          \
     }                                                                          \
-    return;                                                                    \
+    return true;                                                               \
 }
 
 GENERATE_ASSERT_DOUBLE(==, equal)
@@ -1257,7 +1186,7 @@ assert_double_close_tol(double var1, double var2,
     return diff <= tolerance;
 }
 
-static noreturn void
+static bool
 assert_double_failure(char *file, int32 line, char *func,
                       char *name1, char *name2,
                       char *type1, char *type2,
@@ -1279,14 +1208,12 @@ assert_double_failure(char *file, int32 line, char *func,
                     "floating diff = %.17g, ulps = %llu, max_ulps = %llu\n",
                     diff, ulps, max_ulps);
         }
-        TRAP();
-    } else {
-        UNREACHABLE();
     }
+    return false;
 }
 
 #define GENERATE_A_DOUBLE_CLOSE(MODE, SYMBOL, EXPECT_CLOSE)                    \
-void                                                                           \
+bool                                                                           \
 a_double_##MODE(char *file, int32 line, char *func,                            \
                 char *name1, char *name2,                                      \
                 char *type1, char *type2,                                      \
@@ -1299,15 +1226,15 @@ a_double_##MODE(char *file, int32 line, char *func,                            \
                                                                                \
     if (assert_double_close_ulps(var1, var2, kind1, kind2,                     \
                                  &diff, &ulps, &max_ulps) != EXPECT_CLOSE) {   \
-        assert_double_failure(file, line, func,                                \
-                              name1, name2,                                    \
-                              type1, type2,                                    \
-                              bits1, bits2,                                    \
-                              var1, var2,                                      \
-                              SYMBOL, diff, (double)0,                         \
-                              ulps, max_ulps, false);                          \
+        return assert_double_failure(file, line, func,                         \
+                                     name1, name2,                             \
+                                     type1, type2,                             \
+                                     bits1, bits2,                             \
+                                     var1, var2,                               \
+                                     SYMBOL, diff, (double)0,                  \
+                                     ulps, max_ulps, false);                   \
     }                                                                          \
-    return;                                                                    \
+    return true;                                                               \
 }
 
 GENERATE_A_DOUBLE_CLOSE(close, "~=", true)
@@ -1316,7 +1243,7 @@ GENERATE_A_DOUBLE_CLOSE(not_close, "!~=", false)
 #undef GENERATE_A_DOUBLE_CLOSE
 
 #define GENERATE_A_DOUBLE_CLOSE_TOL(MODE, SYMBOL, EXPECT_CLOSE)           \
-void                                                                      \
+bool                                                                      \
 a_double_##MODE(char *file, int32 line, char *func,                       \
                 char *name1, char *name2,                                 \
                 char *type1, char *type2,                                 \
@@ -1328,15 +1255,15 @@ a_double_##MODE(char *file, int32 line, char *func,                       \
                                                                           \
     if (assert_double_close_tol(var1, var2, tolerance,                    \
                                 &diff, &tolerance_abs) != EXPECT_CLOSE) { \
-        assert_double_failure(file, line, func,                           \
-                              name1, name2,                               \
-                              type1, type2,                               \
-                              bits1, bits2,                               \
-                              var1, var2,                                 \
-                              SYMBOL, diff, tolerance_abs,                \
-                              0, 0, true);                                \
+        return assert_double_failure(file, line, func,                    \
+                                     name1, name2,                        \
+                                     type1, type2,                        \
+                                     bits1, bits2,                        \
+                                     var1, var2,                          \
+                                     SYMBOL, diff, tolerance_abs,         \
+                                     0, 0, true);                         \
     }                                                                     \
-    return;                                                               \
+    return true;                                                          \
 }
 
 GENERATE_A_DOUBLE_CLOSE_TOL(close_tol, "~=", true)
@@ -1345,7 +1272,7 @@ GENERATE_A_DOUBLE_CLOSE_TOL(not_close_tol, "!~=", false)
 #undef GENERATE_A_DOUBLE_CLOSE_TOL
 
 #define GENERATE_ASSERT_BOOLS(MODE, SYMBOL)                                    \
-void                                                                           \
+bool                                                                           \
 a_bool_##MODE(char *file, int32 line, char *func,                              \
               char *name1, char *name2,                                        \
               char *type1, char *type2,                                        \
@@ -1364,52 +1291,34 @@ a_bool_##MODE(char *file, int32 line, char *func,                              \
             assert_error(file, line, func,                                     \
                          "[%s%d]%s = %s " #SYMBOL " %s = %s[%s%d]\n",          \
                          type1, bits1, name1, s1, s2, name2, type2, bits2);    \
-            TRAP();                                                            \
-        } else {                                                               \
-            UNREACHABLE();                                                     \
         }                                                                      \
+        return false;                                                          \
     }                                                                          \
-    return;                                                                    \
+    return true;                                                               \
 }
 
 GENERATE_ASSERT_BOOLS(equal, ==)
 GENERATE_ASSERT_BOOLS(not_equal, !=)
 
-noreturn void
+bool
 a_bool_greater(void *p, ...) {
     (void)p;
-    if (DEBUGGING) {
-        TRAP();
-    } else {
-        UNREACHABLE();
-    }
+    return false;
 }
-noreturn void
+bool
 a_bool_less(void *p, ...) {
     (void)p;
-    if (DEBUGGING) {
-        TRAP();
-    } else {
-        UNREACHABLE();
-    }
+    return false;
 }
-noreturn void
+bool
 a_bool_greater_equal(void *p, ...) {
     (void)p;
-    if (DEBUGGING) {
-        TRAP();
-    } else {
-        UNREACHABLE();
-    }
+    return false;
 }
-noreturn void
+bool
 a_bool_less_equal(void *p, ...) {
     (void)p;
-    if (DEBUGGING) {
-        TRAP();
-    } else {
-        UNREACHABLE();
-    }
+    return false;
 }
 
 #undef GENERATE_ASSERT_BOOLS
@@ -1431,16 +1340,6 @@ assert_functions_sink(void) {
     (void)a_pointers_not_equal;
     (void)a_pointers_greater;
     (void)a_pointers_greater_equal;
-
-    (void)a_sign_integer_positive;
-    (void)a_sign_integer_negative;
-    (void)a_sign_integer_non_positive;
-    (void)a_sign_integer_non_negative;
-
-    (void)a_sign_double_positive;
-    (void)a_sign_double_negative;
-    (void)a_sign_double_non_positive;
-    (void)a_sign_double_non_negative;
 
     (void)a_both_signed_less;
     (void)a_both_signed_less_equal;
@@ -1523,20 +1422,20 @@ main(void) {
         ASSERT_EQ(pointer, NULL);
     }
 
-    ASSERT_POSITIVE(1);
-    ASSERT_NEGATIVE(-1);
+    ASSERT_GT(1, 0);
+    ASSERT_LT(-1, 0);
 
-    ASSERT_NON_NEGATIVE(0);
-    ASSERT_NON_POSITIVE(0);
+    ASSERT_GE(0, 0);
+    ASSERT_LE(0, 0);
     {
         double positive = 0.5;
         double negative = -0.5;
 
-        ASSERT_POSITIVE(positive);
-        ASSERT_NEGATIVE(negative);
-        ASSERT_NON_POSITIVE(0.0);
-        ASSERT_NON_POSITIVE(negative);
-        ASSERT_NON_NEGATIVE(positive);
+        ASSERT_GT(positive, 0.0);
+        ASSERT_LT(negative, 0.0);
+        ASSERT_LE(0.0, 0.0);
+        ASSERT_LE(negative, 0.0);
+        ASSERT_GE(positive, 0.0);
     }
     {
         char *string = NULL;
@@ -1620,11 +1519,11 @@ main(void) {
         ASSERT_GE_VAR(b, a);
     } {
         long a = -1;
-        ASSERT_NEGATIVE(a);
-        ASSERT_NEGATIVE(a);
-        ASSERT_NON_POSITIVE(a);
-        ASSERT_NEGATIVE(a);
-        ASSERT_NON_POSITIVE(a);
+        ASSERT_LT(a, 0);
+        ASSERT_LT(a, 0);
+        ASSERT_LE(a, 0);
+        ASSERT_LT(a, 0);
+        ASSERT_LE(a, 0);
     } {
         double a = 0.123;
         ASSERT_NE(a, 0.123000001);
@@ -1773,8 +1672,8 @@ main(void) {
         ASSERT_TRAPS(ASSERT_LT_VAR(b, a));
         ASSERT_TRAPS(ASSERT_GE_VAR(a, b));
         ASSERT_TRAPS(ASSERT_LE_VAR(b, a));
-        ASSERT_TRAPS(ASSERT_POSITIVE(-0.5));
-        ASSERT_TRAPS(ASSERT_NON_POSITIVE(0.5));
+        ASSERT_TRAPS(ASSERT_GT(-0.5, 0.0));
+        ASSERT_TRAPS(ASSERT_LE(0.5, 0.0));
         ASSERT_TRAPS(ASSERT_LT_VAR((void *)&array[1], (void *)&array[0]));
         ASSERT_TRAPS(ASSERT_EQ(true, false));
         ASSERT_TRAPS(ASSERT_EQ(too_large, 0));

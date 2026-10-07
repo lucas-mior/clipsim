@@ -914,7 +914,7 @@ basename2(char *path, int32 *full_length, int32 *base_len) {
     normalize(path, full_length);
 
     left = *full_length;
-    ASSERT_POSITIVE(*full_length);
+    ASSERT_GT(*full_length, 0);
     end = path + left - 1;
 
     if (left == 1) {
@@ -1070,20 +1070,20 @@ read_entire_file(char *path, char **file_bytes) {
         err = errno;
         error("Error opening "RED("%s")" for reading: %s",
               path, strerror(err));
-        ASSERT_POSITIVE(err);
+        ASSERT_GT(err, 0);
         return -err;
     }
     if (fseek(file, 0, SEEK_END) < 0) {
         err = errno;
         error("Error seeking end of %s: %s.\n", path, strerror(err));
-        ASSERT_POSITIVE(err);
+        ASSERT_GT(err, 0);
         XFCLOSE(file, path);
         return -err;
     }
     if ((len = ftell(file)) < 0) {
         err = errno;
         error("Error in ftell(%s): %s.\n", path, strerror(err));
-        ASSERT_POSITIVE(err);
+        ASSERT_GT(err, 0);
         XFCLOSE(file, path);
         return -err;
     }
@@ -1096,7 +1096,7 @@ read_entire_file(char *path, char **file_bytes) {
         err = errno;
         error("Error rewinding %s: %s.\n", path, strerror(err));
         XFCLOSE(file, path);
-        ASSERT_POSITIVE(err);
+        ASSERT_GT(err, 0);
         return -err;
     }
 
@@ -1113,7 +1113,7 @@ read_entire_file(char *path, char **file_bytes) {
         error("Error reading "RED("%s")": %s.\n", path, strerror(err));
         free2(bytes, (len + 1)*SIZEOF(*bytes));
         XFCLOSE(file, path);
-        ASSERT_POSITIVE(err);
+        ASSERT_GT(err, 0);
         return -err;
     }
     bytes[read_len] = '\0';
@@ -1222,7 +1222,7 @@ test_join_path(char *buffer, int64 buffer_len, char *dir, char *name) {
     int32 len;
 
     len = fmt_sprintf(buffer, buffer_len, "%s/%s", dir, name);
-    ASSERT_POSITIVE(len);
+    ASSERT_GT(len, 0);
     ASSERT_LT_VAR(len, buffer_len);
 
     return;
@@ -1520,7 +1520,7 @@ main(void) {
 
         SNPRINTF(template_path, "%s/stem_XXXXXX%s", temp_dir, suffix);
         fd = cbase_mkstemps(template_path, suffix_len);
-        ASSERT_NON_NEGATIVE(fd);
+        ASSERT_GE(fd, 0);
         ASSERT_EQ(write64(fd, "x", 1), 1);
         XCLOSE(&fd, template_path);
         ASSERT(util_file_exists(template_path));
@@ -1530,7 +1530,7 @@ main(void) {
                                   SIZEOF(temp_file_path),
                                   "fs_file",
                                   ".tmp");
-        ASSERT_NON_NEGATIVE(fd);
+        ASSERT_GE(fd, 0);
         ASSERT_EQ(write64(fd, "y", 1), 1);
         XCLOSE(&fd, temp_file_path);
         ASSERT(util_file_exists(temp_file_path));
@@ -1643,7 +1643,7 @@ main(void) {
 
         ASSERT_EQ(write_entire_file(path, STRLIT("abcdef")), 6);
         ASSERT(util_file_exists(path));
-        ASSERT_NON_NEGATIVE((contents_len = read_entire_file(path, &contents)));
+        ASSERT_GE((contents_len = read_entire_file(path, &contents)), 0);
         ASSERT_EQ(contents_len, 6);
         ASSERT_EQ(contents, "abcdef");
         free2(contents, contents_len + 1);
@@ -1668,7 +1668,7 @@ main(void) {
             fatal(EXIT_FAILURE);
         }
 
-        ASSERT_POSITIVE(util_filename_from(buffer2, sizeof(buffer2), fd));
+        ASSERT_GT(util_filename_from(buffer2, sizeof(buffer2), fd), 0);
         ASSERT_EQ(realpath(name, buffer3), buffer2);
         XCLOSE(&fd);
         xunlink(name);
@@ -1676,7 +1676,7 @@ main(void) {
         name2_len = SIZEOF(name2) - 1;
 #if OS_WINDOWS
         name2_len = MIN(name2_len, MAX_PATH - strlen32(temp_dir) - 2);
-        ASSERT_POSITIVE(name2_len);
+        ASSERT_GT(name2_len, 0);
 #endif
         for (int32 i = 0; i < name2_len; i += 1) {
             uint32 c = (uint32)rand_int() % (sizeof(characters) - 1);
@@ -1692,7 +1692,7 @@ main(void) {
             fatal(EXIT_FAILURE);
         }
 
-        ASSERT_POSITIVE(util_filename_from(buffer4, sizeof(buffer4), fd));
+        ASSERT_GT(util_filename_from(buffer4, sizeof(buffer4), fd), 0);
         ASSERT_EQ(realpath(buffer2, buffer3), buffer4);
         XCLOSE(&fd);
         xunlink(buffer2);

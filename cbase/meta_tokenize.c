@@ -638,7 +638,7 @@ int32
 tokenization_significant_at_or_after(Tokenization *tokenization,
                                      int32 token_index) {
     int32 result = token_index;
-    ASSERT_NON_NEGATIVE(token_index);
+    ASSERT_GE(token_index, 0);
     while ((result < tokenization->token_count)
            && token_is_trivia(&tokenization->tokens[result])) {
         result += 1;
@@ -1145,8 +1145,8 @@ test_tokenization_preprocessor_define_detection(void) {
     tokenization = tokenize(text, strlen32(text));
     plus = test_find_token(&tokenization, "+");
     int_token = test_find_token(&tokenization, "int");
-    ASSERT_NON_NEGATIVE(plus);
-    ASSERT_NON_NEGATIVE(int_token);
+    ASSERT_GE(plus, 0);
+    ASSERT_GE(int_token, 0);
     ASSERT_ZERO(tokenization_logical_line_start_offset(
                      &tokenization, tokenization.tokens[plus].offset));
     ASSERT(tokenization_is_in_preprocessor_define(&tokenization, plus));

@@ -361,7 +361,7 @@ main(void) {
 
     time_monotonic_precise(&t0);
     time_monotonic_coarse(&t1);
-    ASSERT_NON_NEGATIVE(time_monotonic_now());
+    ASSERT_GE(time_monotonic_now(), 0);
     ASSERT_EQ(time_elapsed_ns(100, 250), 150);
     ASSERT_EQ(time_elapsed_ms(1000000, 4000000), 3);
 #if OS_UNIX
@@ -374,7 +374,7 @@ main(void) {
     }
 #endif
     time_monotonic_precise(&t1);
-    ASSERT_NON_NEGATIVE(timediff(t0, t1));
+    ASSERT_GE(timediff(t0, t1), 0.0);
     PRINT_TIMINGS(1, t0, t1);
 
     exit(EXIT_SUCCESS);

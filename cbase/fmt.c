@@ -494,7 +494,7 @@ fmt_sink_init(FormatSink *sink, char *buffer, int64 capacity) {
 static void
 fmt_sink_add_total(FormatSink *sink, int64 len) {
     ASSERT(sink != NULL);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GE(len, 0);
 
     if (sink->status < 0) {
         return;
@@ -515,7 +515,7 @@ fmt_sink_write(FormatSink *sink, char *data, int64 len) {
 
     ASSERT(sink != NULL);
     ASSERT(data != NULL);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GE(len, 0);
     ASSERT_LT(len, INT32_MAX);
 
     if (sink->status < 0) {
@@ -583,7 +583,7 @@ fmt_sink_write_repeat(FormatSink *sink, char byte, int64 len) {
     int32 copy_len;
 
     ASSERT(sink != NULL);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GE(len, 0);
 
     if (sink->status < 0) {
         return;
@@ -843,8 +843,8 @@ fmt_integer_prefix(FormatSpec *spec, FormatIntegerValue value,
                    char *prefix, int32 digit_len, int64 precision_zeros) {
     ASSERT(spec != NULL);
     ASSERT(prefix != NULL);
-    ASSERT_NON_NEGATIVE(digit_len);
-    ASSERT_NON_NEGATIVE(precision_zeros);
+    ASSERT_GE(digit_len, 0);
+    ASSERT_GE(precision_zeros, 0);
 
     if (fmt_is_signed_integer_conversion(spec->conversion)) {
         if (value.negative) {
@@ -970,7 +970,7 @@ fmt_write_padded_bytes(FormatSink *sink, FormatSpec *spec,
 
     ASSERT(sink != NULL);
     ASSERT(spec != NULL);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GE(len, 0);
     ASSERT(data != NULL || len == 0);
 
     spaces = fmt_pad_len(spec->width, len);
@@ -991,7 +991,7 @@ fmt_store_count(FormatSpec *spec, FormatArgs *args, int64 count,
                 bool write_count) {
     ASSERT(spec != NULL);
     ASSERT(args != NULL);
-    ASSERT_NON_NEGATIVE(count);
+    ASSERT_GE(count, 0);
 
     if (spec->length == FMT_LENGTH_HH
         || spec->length == FMT_LENGTH_W8) {
@@ -1171,7 +1171,7 @@ static int32 UNUSED
 fmt_binary_float_set_significand_bit(FormatBinaryFloat *parts,
                                      int32 bit_index) {
     ASSERT(parts != NULL);
-    ASSERT_NON_NEGATIVE(bit_index);
+    ASSERT_GE(bit_index, 0);
 
     if (bit_index < 64) {
         parts->significand_low |= UINT64_C(1) << bit_index;
@@ -1188,7 +1188,7 @@ static bool
 fmt_binary_float_test_significand_bit(FormatBinaryFloat *parts,
                                       int32 bit_index) {
     ASSERT(parts != NULL);
-    ASSERT_NON_NEGATIVE(bit_index);
+    ASSERT_GE(bit_index, 0);
 
     if (bit_index < 64) {
         return parts->significand_low & (UINT64_C(1) << bit_index);
@@ -1249,7 +1249,7 @@ fmt_binary_float_copy_significand(FormatBinaryFloat *parts,
 static void
 fmt_big_uint_normalize(FormatBigUInt *value) {
     ASSERT(value != NULL);
-    ASSERT_NON_NEGATIVE(value->len);
+    ASSERT_GE(value->len, 0);
     ASSERT_LE(value->len, FMT_BIG_UINT_MAX_WORDS);
 
     while (value->len > 0 && value->words[value->len - 1] == 0) {
@@ -1261,7 +1261,7 @@ fmt_big_uint_normalize(FormatBigUInt *value) {
 static int32
 fmt_big_uint_ensure_word(FormatBigUInt *value, int32 index) {
     ASSERT(value != NULL);
-    ASSERT_NON_NEGATIVE(index);
+    ASSERT_GE(index, 0);
 
     if (index >= FMT_BIG_UINT_MAX_WORDS) {
         return -EOVERFLOW;
@@ -1367,7 +1367,7 @@ fmt_big_uint_test_bit(FormatBigUInt *value, int32 bit_index) {
     int32 bit_offset;
 
     ASSERT(value != NULL);
-    ASSERT_NON_NEGATIVE(bit_index);
+    ASSERT_GE(bit_index, 0);
 
     word_index = bit_index / FMT_BIG_UINT_WORD_BITS;
     bit_offset = bit_index % FMT_BIG_UINT_WORD_BITS;
@@ -1385,7 +1385,7 @@ fmt_big_uint_shift_left(FormatBigUInt *value, int32 shift) {
     int32 max_new_len;
 
     ASSERT(value != NULL);
-    ASSERT_NON_NEGATIVE(shift);
+    ASSERT_GE(shift, 0);
 
     if (value->len == 0 || shift == 0) {
         return 0;
@@ -1437,7 +1437,7 @@ fmt_big_uint_shift_right(FormatBigUInt *value, int32 shift) {
     int32 bit_shift;
 
     ASSERT(value != NULL);
-    ASSERT_NON_NEGATIVE(shift);
+    ASSERT_GE(shift, 0);
 
     if (value->len == 0 || shift == 0) {
         return;
@@ -1478,7 +1478,7 @@ fmt_big_uint_has_low_bits(FormatBigUInt *value, int32 bits) {
     int32 partial_bits;
 
     ASSERT(value != NULL);
-    ASSERT_NON_NEGATIVE(bits);
+    ASSERT_GE(bits, 0);
 
     if (bits == 0 || value->len == 0) {
         return false;
@@ -1507,7 +1507,7 @@ fmt_big_uint_remainder_half(FormatBigUInt *value, int32 bits) {
     int32 half_bit;
 
     ASSERT(value != NULL);
-    ASSERT_POSITIVE(bits);
+    ASSERT_GT(bits, 0);
 
     if (!fmt_big_uint_has_low_bits(value, bits)) {
         return FMT_REMAINDER_ZERO;
@@ -1562,7 +1562,7 @@ fmt_big_uint_div_small(FormatBigUInt *value, uint32 divisor) {
     uint64 remainder;
 
     ASSERT(value != NULL);
-    ASSERT_POSITIVE(divisor);
+    ASSERT_GT(divisor, 0);
 
     remainder = 0;
     for (int32 i = value->len - 1; i >= 0; i -= 1) {
@@ -1583,7 +1583,7 @@ fmt_big_uint_to_decimal(FormatBigUInt *value, char *buffer, int32 capacity) {
 
     ASSERT(value != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT_BETWEEN(value->len, 0, FMT_BIG_UINT_MAX_WORDS);
 
     if (value->len == 0) {
@@ -1688,7 +1688,7 @@ fmt_binary_float_scaled_decimal(FormatBinaryFloat *parts,
     int32 status;
 
     ASSERT(parts != NULL);
-    ASSERT_NON_NEGATIVE(decimal_places);
+    ASSERT_GE(decimal_places, 0);
     ASSERT(integer != NULL);
     ASSERT(remainder != NULL);
 
@@ -1719,7 +1719,7 @@ static int32 UNUSED
 fmt_binary_float_set_zero(FormatBinaryFloat *parts, bool negative,
                           int32 precision_bits) {
     ASSERT(parts != NULL);
-    ASSERT_POSITIVE(precision_bits);
+    ASSERT_GT(precision_bits, 0);
 
     fmt_binary_float_zero_significand(parts);
     parts->binary_exponent = 0;
@@ -2010,7 +2010,7 @@ fmt_float_special_body(double value, FormatSpec *spec,
 static void
 fmt_float_uppercase_body(char *body, int32 body_len) {
     ASSERT(body != NULL);
-    ASSERT_NON_NEGATIVE(body_len);
+    ASSERT_GE(body_len, 0);
 
     for (int32 i = 0; i < body_len; i += 1) {
         if (body[i] == 'e') {
@@ -2026,7 +2026,7 @@ fmt_float_force_decimal_point(char *body, int32 body_len, int32 capacity) {
     bool found_point;
 
     ASSERT(body != NULL);
-    ASSERT_NON_NEGATIVE(body_len);
+    ASSERT_GE(body_len, 0);
     ASSERT(body_len < capacity);
 
     exponent_index = body_len;
@@ -2070,7 +2070,7 @@ fmt_hex_digit_char(int32 digit, bool upper) {
     char lower_digits[] = "0123456789abcdef";
     char upper_digits[] = "0123456789ABCDEF";
 
-    ASSERT_NON_NEGATIVE(digit);
+    ASSERT_GE(digit, 0);
     ASSERT_LE(digit, 15);
 
     if (upper) {
@@ -2097,7 +2097,7 @@ fmt_float_hex_fraction_digits(uint64 fraction, char *digits, bool upper) {
 static bool
 fmt_float_hex_has_nonzero_tail(char *digits, int32 start) {
     ASSERT(digits != NULL);
-    ASSERT_NON_NEGATIVE(start);
+    ASSERT_GE(start, 0);
     ASSERT_LE(start, FMT_DOUBLE_HEX_DIGITS);
 
     for (int32 i = start; i < FMT_DOUBLE_HEX_DIGITS; i += 1) {
@@ -2114,7 +2114,7 @@ fmt_float_hex_should_round(char first_digit, char *digits, int32 precision) {
     int32 even_digit;
 
     ASSERT(digits != NULL);
-    ASSERT_NON_NEGATIVE(precision);
+    ASSERT_GE(precision, 0);
     ASSERT_LT(precision, FMT_DOUBLE_HEX_DIGITS);
 
     round_digit = fmt_hex_digit_value(digits[precision]);
@@ -2141,7 +2141,7 @@ fmt_float_hex_round(char *first_digit, char *digits, int32 precision,
                     bool upper) {
     ASSERT(first_digit != NULL);
     ASSERT(digits != NULL);
-    ASSERT_NON_NEGATIVE(precision);
+    ASSERT_GE(precision, 0);
     ASSERT_LT(precision, FMT_DOUBLE_HEX_DIGITS);
 
     if (!fmt_float_hex_should_round(*first_digit, digits, precision)) {
@@ -2180,8 +2180,8 @@ fmt_float_hex_trim_digits(char *digits) {
 static int32
 fmt_buffer_put(char *buffer, int32 capacity, int32 len, char byte) {
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GT(capacity, 0);
+    ASSERT_GE(len, 0);
 
     if (len >= capacity) {
         return -EOVERFLOW;
@@ -2194,10 +2194,10 @@ static int32
 fmt_buffer_write(char *buffer, int32 capacity, int32 len,
                  char *source, int32 source_len) {
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GT(capacity, 0);
+    ASSERT_GE(len, 0);
     ASSERT(source != NULL);
-    ASSERT_NON_NEGATIVE(source_len);
+    ASSERT_GE(source_len, 0);
 
     if (source_len > capacity - len) {
         return -EOVERFLOW;
@@ -2215,8 +2215,8 @@ fmt_float_hex_append_exponent(char *buffer, int32 capacity, int32 len,
     int32 status;
 
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GT(capacity, 0);
+    ASSERT_GE(len, 0);
 
     if (upper) {
         if ((status = fmt_buffer_put(buffer, capacity, len, 'P')) < 0) {
@@ -2255,8 +2255,8 @@ fmt_float_decimal_append_exponent(char *buffer, int32 capacity,
     int32 status;
 
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GT(capacity, 0);
+    ASSERT_GE(len, 0);
 
     if (upper) {
         if ((status = fmt_buffer_put(buffer, capacity, len, 'E')) < 0) {
@@ -2379,9 +2379,9 @@ fmt_ldouble_format_fixed_digits(char *buffer, int32 capacity,
     int32 len;
 
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
-    ASSERT_POSITIVE(digit_len);
-    ASSERT_NON_NEGATIVE(precision);
+    ASSERT_GT(capacity, 0);
+    ASSERT_GT(digit_len, 0);
+    ASSERT_GE(precision, 0);
 
     if (precision == 0) {
         if (!alternate) {
@@ -2431,10 +2431,10 @@ fmt_ldouble_generate_fixed_body(FormatSpec *spec, ldouble value,
 
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(integer != NULL);
     ASSERT(fmt_float_is_fixed(spec->conversion));
-    ASSERT_NON_NEGATIVE(spec->precision);
+    ASSERT_GE(spec->precision, 0);
 
     if ((status = fmt_decompose_ldouble(value, &parts)) < 0) {
         return status;
@@ -2462,8 +2462,8 @@ static int32
 fmt_decimal_round_digits(char *digits, int32 *len, int32 keep, bool round_up) {
     ASSERT(digits != NULL);
     ASSERT(len != NULL);
-    ASSERT_POSITIVE(*len);
-    ASSERT_POSITIVE(keep);
+    ASSERT_GT(*len, 0);
+    ASSERT_GT(keep, 0);
     ASSERT_LE_VAR(keep, *len);
 
     *len = keep;
@@ -2545,7 +2545,7 @@ fmt_ldouble_exp_exponent(FormatBinaryFloat *parts,
     ASSERT(parts != NULL);
     ASSERT(exponent != NULL);
     ASSERT(integer != NULL);
-    ASSERT_NON_NEGATIVE(value);
+    ASSERT_GE(value, 0.0);
 
     if (parts->zero) {
         *exponent = 0;
@@ -2577,9 +2577,9 @@ fmt_ldouble_exp_digits(FormatBinaryFloat *parts, ldouble value,
     int32 status;
 
     ASSERT(parts != NULL);
-    ASSERT_NON_NEGATIVE(significant_len);
+    ASSERT_GE(significant_len, 0);
     ASSERT(digits != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(digits_len != NULL);
     ASSERT(decimal_exponent != NULL);
     ASSERT(integer != NULL);
@@ -2698,9 +2698,9 @@ fmt_ldouble_format_exp_digits(char *buffer, int32 capacity,
     int32 len;
 
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
-    ASSERT_POSITIVE(digit_len);
-    ASSERT_NON_NEGATIVE(precision);
+    ASSERT_GT(capacity, 0);
+    ASSERT_GT(digit_len, 0);
+    ASSERT_GE(precision, 0);
 
     if (precision > 0 || alternate) {
         len = 2 + precision;
@@ -2735,10 +2735,10 @@ fmt_ldouble_generate_exp_body(FormatSpec *spec, ldouble value,
 
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(integer != NULL);
     ASSERT(fmt_float_is_exp(spec->conversion));
-    ASSERT_NON_NEGATIVE(spec->precision);
+    ASSERT_GE(spec->precision, 0);
 
     if ((status = fmt_decompose_ldouble(value, &parts)) < 0) {
         return status;
@@ -2779,7 +2779,7 @@ fmt_ldouble_parse_decimal_exponent(char *body, int32 body_len,
     int32 sign;
 
     ASSERT(body != NULL);
-    ASSERT_NON_NEGATIVE(body_len);
+    ASSERT_GE(body_len, 0);
     ASSERT(exponent != NULL);
 
     index = 0;
@@ -2836,7 +2836,7 @@ fmt_ldouble_strip_trailing_zeros(char *body, int32 body_len) {
     int32 end;
 
     ASSERT(body != NULL);
-    ASSERT_NON_NEGATIVE(body_len);
+    ASSERT_GE(body_len, 0);
 
     exponent_index = body_len;
     point_index = -1;
@@ -2880,7 +2880,7 @@ fmt_ldouble_generate_general_body(FormatSpec *spec, ldouble value,
 
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(integer != NULL);
     ASSERT(fmt_float_is_general(spec->conversion));
     ASSERT(spec->precision >= 1);
@@ -2930,7 +2930,7 @@ fmt_ldouble_hex_digit_count(FormatBinaryFloat *parts) {
     int32 fraction_bits;
 
     ASSERT(parts != NULL);
-    ASSERT_POSITIVE(parts->precision_bits);
+    ASSERT_GT(parts->precision_bits, 0);
 
     fraction_bits = parts->precision_bits - 1;
     return (fraction_bits + 3)/4;
@@ -2943,7 +2943,7 @@ fmt_ldouble_hex_fraction_digits(FormatBinaryFloat *parts,
 
     ASSERT(parts != NULL);
     ASSERT(digits != NULL);
-    ASSERT_NON_NEGATIVE(digit_len);
+    ASSERT_GE(digit_len, 0);
 
     fraction_bits = parts->precision_bits - 1;
     for (int32 i = 0; i < digit_len; i += 1) {
@@ -2967,7 +2967,7 @@ fmt_ldouble_hex_fraction_digits(FormatBinaryFloat *parts,
 static bool
 fmt_ldouble_hex_has_nonzero_tail(char *digits, int32 start, int32 digit_len) {
     ASSERT(digits != NULL);
-    ASSERT_NON_NEGATIVE(start);
+    ASSERT_GE(start, 0);
     ASSERT_LE_VAR(start, digit_len);
 
     for (int32 i = start; i < digit_len; i += 1) {
@@ -2985,8 +2985,8 @@ fmt_ldouble_hex_should_round(char first_digit,
     int32 even_digit;
 
     ASSERT(digits != NULL);
-    ASSERT_NON_NEGATIVE(digit_len);
-    ASSERT_NON_NEGATIVE(precision);
+    ASSERT_GE(digit_len, 0);
+    ASSERT_GE(precision, 0);
     ASSERT_LT_VAR(precision, digit_len);
 
     round_digit = fmt_hex_digit_value(digits[precision]);
@@ -3013,8 +3013,8 @@ fmt_ldouble_hex_round(char *first_digit, char *digits,
                       int32 digit_len, int32 precision, bool upper) {
     ASSERT(first_digit != NULL);
     ASSERT(digits != NULL);
-    ASSERT_NON_NEGATIVE(digit_len);
-    ASSERT_NON_NEGATIVE(precision);
+    ASSERT_GE(digit_len, 0);
+    ASSERT_GE(precision, 0);
     ASSERT_LT_VAR(precision, digit_len);
 
     if (!fmt_ldouble_hex_should_round(*first_digit,
@@ -3041,7 +3041,7 @@ fmt_ldouble_hex_round(char *first_digit, char *digits,
 static int32
 fmt_ldouble_hex_trim_digits(char *digits, int32 digit_len) {
     ASSERT(digits != NULL);
-    ASSERT_NON_NEGATIVE(digit_len);
+    ASSERT_GE(digit_len, 0);
 
     while (digit_len > 0 && digits[digit_len - 1] == '0') {
         digit_len -= 1;
@@ -3061,10 +3061,10 @@ fmt_ldouble_write_hex_body(FormatSpec *spec, char *buffer,
 
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(digits != NULL);
-    ASSERT_NON_NEGATIVE(stored_digit_len);
-    ASSERT_NON_NEGATIVE(output_digit_len);
+    ASSERT_GE(stored_digit_len, 0);
+    ASSERT_GE(output_digit_len, 0);
 
     upper = fmt_float_is_upper(spec->conversion);
     len = 0;
@@ -3123,7 +3123,7 @@ fmt_ldouble_generate_hex_body(FormatSpec *spec, ldouble value,
 
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(fmt_float_is_hex(spec->conversion));
 
     upper = fmt_float_is_upper(spec->conversion);
@@ -3179,7 +3179,7 @@ fmt_ldouble_generate_body(FormatSpec *spec, ldouble value,
 
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(integer != NULL);
 
     if (isnan(value) || isinf(value)) {
@@ -3239,7 +3239,7 @@ fmt_ldouble_generate_body(FormatSpec *spec, ldouble value,
                           FormatBigUInt *integer) {
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(integer != NULL);
 
     (void)value;
@@ -3260,7 +3260,7 @@ fmt_write_float_sign(FormatSink *sink, FormatSpec *spec,
     ASSERT(sink != NULL);
     ASSERT(spec != NULL);
     ASSERT(body != NULL);
-    ASSERT_NON_NEGATIVE(body_len);
+    ASSERT_GE(body_len, 0);
 
     inner_len = body_len;
     if (sign != '\0') {
@@ -3314,7 +3314,7 @@ fmt_float_generate_hex_body(FormatSpec *spec, double value,
 
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(fmt_float_is_hex(spec->conversion));
 
     upper = fmt_float_is_upper(spec->conversion);
@@ -3399,7 +3399,7 @@ fmt_float_parse_exponent(char *body, int32 body_len, int32 *exponent) {
     int32 sign;
 
     ASSERT(body != NULL);
-    ASSERT_NON_NEGATIVE(body_len);
+    ASSERT_GE(body_len, 0);
     ASSERT(exponent != NULL);
 
     index = 0;
@@ -3456,7 +3456,7 @@ fmt_float_strip_trailing_zeros(char *body, int32 body_len) {
     int32 end;
 
     ASSERT(body != NULL);
-    ASSERT_NON_NEGATIVE(body_len);
+    ASSERT_GE(body_len, 0);
 
     exponent_index = body_len;
     point_index = -1;
@@ -3499,7 +3499,7 @@ fmt_float_generate_general_body(FormatSpec *spec, double value,
 
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
     ASSERT(fmt_float_is_general(spec->conversion));
     ASSERT(spec->precision >= 1);
 
@@ -3547,7 +3547,7 @@ fmt_float_generate_body(FormatSpec *spec, double value,
 
     ASSERT(spec != NULL);
     ASSERT(buffer != NULL);
-    ASSERT_POSITIVE(capacity);
+    ASSERT_GT(capacity, 0);
 
     if (isnan(value) || isinf(value)) {
         int32 status;
@@ -3595,7 +3595,7 @@ fmt_float_generate_body(FormatSpec *spec, double value,
 static int32
 fmt_estimate_add(int64 *total, int64 len) {
     ASSERT(total != NULL);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GE(len, 0);
 
     if (len > (INT32_MAX - *total)) {
         return -EOVERFLOW;
@@ -3610,7 +3610,7 @@ fmt_estimate_add(int64 *total, int64 len) {
 static int64
 fmt_estimate_apply_width(FormatSpec *spec, int64 len) {
     ASSERT(spec != NULL);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GE(len, 0);
 
     return MAX(len, spec->width);
 }
@@ -4418,7 +4418,7 @@ str_float64(String *string, double value) {
     str_reserve(string, FMT_FLOAT_RYU_BUFFER_SIZE);
     len = fmt_float64_shortest(string->data + string->len,
                                string->cap - string->len, value);
-    ASSERT_NON_NEGATIVE(len);
+    ASSERT_GE(len, 0);
     string->len += len;
     return;
 }
@@ -4707,7 +4707,7 @@ static void
 test_fmt_bytes_cap(char *expected, int32 expected_len, char *format, ...) {
     char buffer[256];
 
-    ASSERT_NON_NEGATIVE(expected_len);
+    ASSERT_GE(expected_len, 0);
     ASSERT_LT(expected_len + 2, SIZEOF(buffer));
 
     for (int32 capacity = 0; capacity <= expected_len + 2; capacity += 1) {
@@ -5340,9 +5340,10 @@ test_fmt_printf_ldouble_outputs(void) {
                           NULL, 0, "%.*Lf",
                           FMT_LDOUBLE_MAX_DECIMAL_PRECISION, true_min),
                       FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 2);
-            ASSERT_POSITIVE(fmt_test_snprintf(
-                NULL, 0, "%.*Le", FMT_LDOUBLE_MAX_DECIMAL_PRECISION,
-                true_min));
+            ASSERT_GT(fmt_test_snprintf(
+                          NULL, 0, "%.*Le",
+                          FMT_LDOUBLE_MAX_DECIMAL_PRECISION, true_min),
+                      0);
         }
         ASSERT_EQ(fmt_test_snprintf(NULL, 0,
                                     "%.*Lf",
@@ -5451,7 +5452,7 @@ test_fmt_planned_plan(void) {
     int32 count;
 
     estimate = fmt_test_planned_estimate(&plan, format, 7, 4, span, 1.25);
-    ASSERT_POSITIVE(estimate);
+    ASSERT_GT(estimate, 0);
     ASSERT(plan.valid);
     ASSERT(plan.format == format);
 
@@ -5725,7 +5726,7 @@ test_fmt_float32_round_trip(float value) {
     int32 len;
 
     len = fmt_float32_shortest(buffer, SIZEOF(buffer), value);
-    ASSERT_POSITIVE(len);
+    ASSERT_GT(len, 0);
 
     end = NULL;
     parsed = strtof(buffer, &end);
@@ -5743,7 +5744,7 @@ test_fmt_float64_round_trip(double value) {
     int32 len;
 
     len = fmt_float64_shortest(buffer, SIZEOF(buffer), value);
-    ASSERT_POSITIVE(len);
+    ASSERT_GT(len, 0);
 
     end = NULL;
     parsed = strtod(buffer, &end);

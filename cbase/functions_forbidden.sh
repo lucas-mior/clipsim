@@ -71,7 +71,8 @@ if [ -n "$common_libc_never" ] \
     fi
 
     {
-        for common_libc_search_dir in . cbase src test tests; do
+        for common_libc_search_dir in \
+                . cbase src test tests examples cyblocks tools; do
             if [ ! -d "$common_libc_search_dir" ]; then
                 continue
             fi
