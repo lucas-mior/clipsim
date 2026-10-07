@@ -311,6 +311,10 @@ test_c_identifier(void) {
     ASSERT_EQ(identifier.data, "c_int");
     free2(identifier.data, identifier.cap);
 
+    identifier = c_identifier("IF", strlen32("IF"));
+    ASSERT_EQ(identifier.data, "IF");
+    free2(identifier.data, identifier.cap);
+
     identifier = c_identifier("_private", strlen32("_private"));
     ASSERT_EQ(identifier.data, "c__private");
     free2(identifier.data, identifier.cap);

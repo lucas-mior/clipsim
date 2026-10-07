@@ -107,6 +107,7 @@
   #define ENUM_NAME TokenKind
   #define ENUM_BITFLAGS 0
   #define ENUM_PREFIX_ TOKEN_
+  #define ENUM_PARSE_STRICT
   #define ENUM_FIELDS TOKEN_KIND_FIELDS
   #define XENUMS_DECLARE_ONLY 1
   #define XENUMS_NO_TESTS 1
@@ -116,6 +117,7 @@
   #define ENUM_NAME CKeyword
   #define ENUM_BITFLAGS 0
   #define ENUM_PREFIX_ C_KEYWORD_
+  #define ENUM_PARSE_STRICT
   #define ENUM_FIELDS C_KEYWORD_FIELDS
   #define XENUMS_DECLARE_ONLY 1
   #define XENUMS_NO_TESTS 1
@@ -125,6 +127,7 @@
   #define ENUM_NAME CAssignOp
   #define ENUM_BITFLAGS 0
   #define ENUM_PREFIX_ C_ASSIGN_OP_
+  #define ENUM_PARSE_STRICT
   #define ENUM_FIELDS C_ASSIGN_OP_FIELDS
   #define XENUMS_DECLARE_ONLY 1
   #define XENUMS_NO_TESTS 1
@@ -134,6 +137,7 @@
   #define ENUM_NAME CBinaryOp
   #define ENUM_BITFLAGS 0
   #define ENUM_PREFIX_ C_BINARY_OP_
+  #define ENUM_PARSE_STRICT
   #define ENUM_FIELDS C_BINARY_OP_FIELDS
   #define XENUMS_DECLARE_ONLY 1
   #define XENUMS_NO_TESTS 1
@@ -143,6 +147,7 @@
   #define ENUM_NAME CMemberOp
   #define ENUM_BITFLAGS 0
   #define ENUM_PREFIX_ C_MEMBER_OP_
+  #define ENUM_PARSE_STRICT
   #define ENUM_FIELDS C_MEMBER_OP_FIELDS
   #define XENUMS_DECLARE_ONLY 1
   #define XENUMS_NO_TESTS 1
