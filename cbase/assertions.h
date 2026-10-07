@@ -71,7 +71,6 @@ enum AssertCompareValueKind {
     ASSERT_COMPARE_VALUE_BOOL,
     ASSERT_COMPARE_VALUE_INTEGER,
     ASSERT_COMPARE_VALUE_DOUBLE,
-    ASSERT_COMPARE_VALUE_LDOUBLE,
 };
 
 enum AssertCompareMode {
@@ -91,7 +90,6 @@ typedef struct AssertCompareValue {
         bool boolean;
         llong integer;
         double adouble;
-        ldouble aldouble;
     };
 } AssertCompareValue;
 
@@ -109,8 +107,6 @@ AssertCompareValue assert_compare_value_float(char *, int32, char *,
                                               char *, float);
 AssertCompareValue assert_compare_value_double(char *, int32, char *,
                                                char *, double);
-AssertCompareValue assert_compare_value_ldouble(char *, int32, char *,
-                                                char *, ldouble);
 bool assert_compare_const(char *, int32, char *,
                           enum AssertCompareMode,
                           char *, char *,
@@ -576,9 +572,8 @@ _Generic((VAR2),                                                             \
     uint:   assert_compare_value_unsigned,                                   \
     ulong:  assert_compare_value_unsigned,                                   \
     ullong: assert_compare_value_unsigned,                                   \
-    float:   assert_compare_value_float,                                     \
-    double:  assert_compare_value_double,                                    \
-    ldouble: assert_compare_value_ldouble,                                   \
+    float:  assert_compare_value_float,                                      \
+    double: assert_compare_value_double,                                     \
     default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE_CONST               \
   )(__FILE__, __LINE__, FUNC__,                                              \
     #VAR, (VAR))

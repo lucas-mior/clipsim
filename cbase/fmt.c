@@ -2545,7 +2545,7 @@ fmt_ldouble_exp_exponent(FormatBinaryFloat *parts,
     ASSERT(parts != NULL);
     ASSERT(exponent != NULL);
     ASSERT(integer != NULL);
-    ASSERT_GE(value, 0.0);
+    ASSERT(value >= 0.0L);
 
     if (parts->zero) {
         *exponent = 0;

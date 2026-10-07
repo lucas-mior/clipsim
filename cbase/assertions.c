@@ -184,20 +184,6 @@ assert_compare_value_double(char *file, int32 line, char *func,
     return result;
 }
 
-AssertCompareValue
-assert_compare_value_ldouble(char *file, int32 line, char *func,
-                             char *name, ldouble value) {
-    AssertCompareValue result = {0};
-
-    (void)file;
-    (void)line;
-    (void)func;
-    (void)name;
-    result.kind = ASSERT_COMPARE_VALUE_LDOUBLE;
-    result.aldouble = value;
-    return result;
-}
-
 static char *
 assert_compare_mode_symbol(enum AssertCompareMode mode) {
     switch (mode) {
@@ -246,12 +232,6 @@ assert_compare_const_integer(enum AssertCompareMode mode,
 static bool
 assert_compare_const_double(enum AssertCompareMode mode,
                             double var1, double var2) {
-    ASSERT_COMPARE_MODE_SWITCH(mode, var1, var2);
-}
-
-static bool
-assert_compare_const_ldouble(enum AssertCompareMode mode,
-                             ldouble var1, ldouble var2) {
     ASSERT_COMPARE_MODE_SWITCH(mode, var1, var2);
 }
 
@@ -313,8 +293,6 @@ assert_compare_value_kind_name(enum AssertCompareValueKind kind) {
         return "integer";
     case ASSERT_COMPARE_VALUE_DOUBLE:
         return "floating-point";
-    case ASSERT_COMPARE_VALUE_LDOUBLE:
-        return "long double";
     default:
         UNREACHABLE();
     }
@@ -355,58 +333,27 @@ assert_compare_const(char *file, int32 line, char *func,
                          name1, var1.integer, symbol, var2.integer, name2);
         }
     } else if (((var1.kind == ASSERT_COMPARE_VALUE_INTEGER)
-                || (var1.kind == ASSERT_COMPARE_VALUE_DOUBLE)
-                || (var1.kind == ASSERT_COMPARE_VALUE_LDOUBLE))
+                || (var1.kind == ASSERT_COMPARE_VALUE_DOUBLE))
                && ((var2.kind == ASSERT_COMPARE_VALUE_INTEGER)
-                   || (var2.kind == ASSERT_COMPARE_VALUE_DOUBLE)
-                   || (var2.kind == ASSERT_COMPARE_VALUE_LDOUBLE))) {
-        if ((var1.kind == ASSERT_COMPARE_VALUE_LDOUBLE)
-            || (var2.kind == ASSERT_COMPARE_VALUE_LDOUBLE)) {
-            ldouble value1;
-            ldouble value2;
+                   || (var2.kind == ASSERT_COMPARE_VALUE_DOUBLE))) {
+        double value1;
+        double value2;
 
-            if (var1.kind == ASSERT_COMPARE_VALUE_INTEGER) {
-                value1 = (ldouble)var1.integer;
-            } else if (var1.kind == ASSERT_COMPARE_VALUE_DOUBLE) {
-                value1 = (ldouble)var1.adouble;
-            } else {
-                value1 = var1.aldouble;
-            }
-
-            if (var2.kind == ASSERT_COMPARE_VALUE_INTEGER) {
-                value2 = (ldouble)var2.integer;
-            } else if (var2.kind == ASSERT_COMPARE_VALUE_DOUBLE) {
-                value2 = (ldouble)var2.adouble;
-            } else {
-                value2 = var2.aldouble;
-            }
-
-            result = assert_compare_const_ldouble(mode, value1, value2);
-            if (!result && DEBUGGING) {
-                assert_error(file, line, func,
-                             "%s = %Lf %s %Lf = %s\n",
-                             name1, value1, symbol, value2, name2);
-            }
+        if (var1.kind == ASSERT_COMPARE_VALUE_INTEGER) {
+            value1 = (double)var1.integer;
         } else {
-            double value1;
-            double value2;
-
-            if (var1.kind == ASSERT_COMPARE_VALUE_INTEGER) {
-                value1 = (double)var1.integer;
-            } else {
-                value1 = var1.adouble;
-            }
-            if (var2.kind == ASSERT_COMPARE_VALUE_INTEGER) {
-                value2 = (double)var2.integer;
-            } else {
-                value2 = var2.adouble;
-            }
-            result = assert_compare_const_double(mode, value1, value2);
-            if (!result && DEBUGGING) {
-                assert_error(file, line, func,
-                             "%s = %f %s %f = %s\n",
-                             name1, value1, symbol, value2, name2);
-            }
+            value1 = var1.adouble;
+        }
+        if (var2.kind == ASSERT_COMPARE_VALUE_INTEGER) {
+            value2 = (double)var2.integer;
+        } else {
+            value2 = var2.adouble;
+        }
+        result = assert_compare_const_double(mode, value1, value2);
+        if (!result && DEBUGGING) {
+            assert_error(file, line, func,
+                         "%s = %f %s %f = %s\n",
+                         name1, value1, symbol, value2, name2);
         }
     } else if ((var1.kind == ASSERT_COMPARE_VALUE_STRING)
                && (var2.kind == ASSERT_COMPARE_VALUE_STRING)) {
