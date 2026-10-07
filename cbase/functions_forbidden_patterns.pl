@@ -159,6 +159,67 @@ sub report_strequal_strlit_args {
     return;
 }
 
+sub report_single_arg_format_string {
+    my ($path, $source, $code, $args_start, $args_end) = @_;
+    my $args = substr($code, $args_start, $args_end - $args_start);
+    my $arg_start = 0;
+    my $idx = 0;
+    my $depth = 0;
+    my $arg_count = 0;
+    my $format_start = -1;
+    my $format_end = -1;
+
+    while ($idx <= length($args)) {
+        my $ch = substr($args, $idx, 1);
+        my $arg_end = -1;
+
+        if ($idx == length($args)) {
+            $arg_end = $idx;
+        } elsif ($ch eq '(') {
+            $depth += 1;
+        } elsif ($ch eq ')') {
+            $depth -= 1;
+        } elsif ($ch eq ',' && $depth == 0) {
+            $arg_end = $idx;
+        }
+
+        if ($arg_end >= 0) {
+            $arg_count += 1;
+            if ($arg_count == 2) {
+                $format_start = $args_start + $arg_start;
+                $format_end = $args_start + $arg_end;
+                last;
+            }
+
+            $arg_start = $idx + 1;
+        }
+
+        $idx += 1;
+    }
+
+    if ($format_start < 0) {
+        return;
+    }
+
+    my $format_arg = substr($source, $format_start,
+                            $format_end - $format_start + 1);
+    my $format_spec = qr{
+        %[-+ \#0]*
+        [0-9]*
+        (?:\.(?:\*|[0-9]+))?
+        (?:hh|h|ll|l|j|z|t|L)?
+        [A-Za-z]
+    }x;
+
+    if ($format_arg =~ / "($format_spec)",/s) {
+        my $line = line_number($source, $format_start);
+        print "$path:$line:";
+        print "single-argument format string without literal content\n";
+    }
+
+    return;
+}
+
 for my $path (@paths) {
     open my $fh, '<', $path or die "$path: $!\n";
     local $/;
@@ -196,6 +257,25 @@ for my $path (@paths) {
         if ($args_end >= 0) {
             report_strequal_strlit_args($path, $source, $code,
                                         $args_start, $args_end);
+            pos($code) = $args_end + 1;
+        }
+    }
+
+    pos($code) = 0;
+    while ($code =~ /(?<![A-Za-z0-9_])str_printf(?![A-Za-z0-9_])/g) {
+        my $paren_idx = skip_space_comments($source, $-[0] + 10);
+        my $args_start;
+        my $args_end;
+
+        if (substr($source, $paren_idx, 1) ne '(') {
+            next;
+        }
+
+        $args_start = $paren_idx + 1;
+        $args_end = call_end($code, $args_start);
+        if ($args_end >= 0) {
+            report_single_arg_format_string($path, $source, $code,
+                                            $args_start, $args_end);
             pos($code) = $args_end + 1;
         }
     }

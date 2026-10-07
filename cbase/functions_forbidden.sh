@@ -163,7 +163,7 @@ if [ -n "$common_libc_never" ] \
     fi
 
     if [ -s "$common_libc_matches3" ]; then
-        error "\nError: forbidden code patterns:\n"
+        error "\nError: forbidden code patterns and formatting idioms:\n"
         cat "$common_libc_matches3" >&2
     fi
 

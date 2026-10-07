@@ -561,6 +561,21 @@ str_printf("%.*s = %d\n", name_len, name, number);
 Note: `cbase/fmt.c` auto handles the case of passing `NULL` as the `char *`
 argument for `"%s"` family formatters, no need to check it.
 
+Do not use a format string that only formats a single argument without any
+literal content:
+```c
+// bad
+str_printf(&str, "%s", "string");
+str_printf(&str, "%.*s", string_len, string);
+str_printf(&str, "%d", number);
+str_printf(&str, "%lld", number);
+
+// good
+STR_APPEND(&str, "string");
+STR_APPEND(&str, string, string_len);
+str_itoa(&str, number);
+```
+
 ## Comparing strings:
 In general, avoid `strcmp()`, use the alternatives below instead:
 - For strings that are both null terminated and we don't know the length of
