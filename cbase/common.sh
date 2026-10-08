@@ -80,6 +80,14 @@ common_get_compiler() {
     echo "$CC"
 }
 
+common_compiler_cache_key() {
+    cache_compiler=${1:-cc}
+    cache_compiler_key=${cache_compiler##*/}
+
+    printf '%s\n' "$cache_compiler_key" | sed 's/[^A-Za-z0-9_.-]/_/g'
+    return
+}
+
 common_get_program() {
     if [ -z "$1" ]; then
         error "common_get_program <full_path_to_build.sh>"
@@ -318,7 +326,12 @@ common_build_incremental_binary () {
     incremental_link_flags=$5
 
     incremental_mode=${mode:-debug}
-    incremental_objdir=${COMMON_BUILD_INCREMENTAL_OBJDIR:-bin/obj/$incremental_mode}
+    incremental_compiler_key=$(common_compiler_cache_key "$CC")
+    if [ "${COMMON_BUILD_INCREMENTAL_OBJDIR+set}" = set ]; then
+        incremental_objdir=$COMMON_BUILD_INCREMENTAL_OBJDIR
+    else
+        incremental_objdir="bin/obj/$incremental_mode/$incremental_compiler_key"
+    fi
     incremental_main_obj="$incremental_objdir/${incremental_main_source%.c}.o"
     incremental_flags_file=$incremental_objdir/flags
     incremental_source_files=
@@ -704,7 +717,12 @@ common_test_prepare_cbase_archive () {
         exit 1
     fi
 
-    test_cbase_objdir=${TEST_CBASE_OBJDIR:-bin/obj/test-cbase}
+    test_cbase_compiler_key=$(common_compiler_cache_key "$CC")
+    if [ "${TEST_CBASE_OBJDIR+set}" = set ]; then
+        test_cbase_objdir=$TEST_CBASE_OBJDIR
+    else
+        test_cbase_objdir="bin/obj/test-cbase/$test_cbase_compiler_key"
+    fi
     test_cbase_archive=$test_cbase_objdir/libcbase.a
     test_cbase_flags_file=$test_cbase_objdir/flags
     test_cbase_compile_flags="$CPPFLAGS $TEST_CPPFLAGS $CFLAGS $TEST_CFLAGS"

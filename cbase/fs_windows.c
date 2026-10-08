@@ -174,14 +174,13 @@ lstat(const char *path, struct stat *statbuf) {
         FILE_ATTRIBUTE_TAG_INFO tag_info;
         HANDLE file_handle;
 
-        file_handle = CreateFileW(
-            wide_path,
-            0,
-            FILE_SHARE_READ |FILE_SHARE_WRITE |FILE_SHARE_DELETE,
-            NULL,
-            OPEN_EXISTING,
-            FILE_FLAG_BACKUP_SEMANTICS |FILE_FLAG_OPEN_REPARSE_POINT,
-            NULL);
+        file_handle = CreateFileW(wide_path, 0,
+                                  FILE_SHARE_READ |FILE_SHARE_WRITE
+                                  |FILE_SHARE_DELETE,
+                                  NULL, OPEN_EXISTING,
+                                  FILE_FLAG_BACKUP_SEMANTICS
+                                  |FILE_FLAG_OPEN_REPARSE_POINT,
+                                  NULL);
         if (file_handle == INVALID_HANDLE_VALUE) {
             error_code = GetLastError();
             free2(wide_path, wide_path_size);

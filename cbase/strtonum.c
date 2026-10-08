@@ -355,17 +355,13 @@ main(void) {
     ASSERT_EQ(result, -127);
     ASSERT_EQ(parse_integer(STRLIT("0123"), &result), 4);
     ASSERT_EQ(result, 123);
-    ASSERT_EQ(parse_integer(
-                     STRLIT("0b1111111111111111111111111111111"
-                            "11111111111111111111111111111111"),
-                     &result),
-                 65);
+    ASSERT_EQ(parse_integer(STRLIT("0b1111111111111111111111111111111"
+                                   "11111111111111111111111111111111"),
+                            &result), 65);
     ASSERT_EQ(result, LLONG_MAX);
-    ASSERT_EQ(parse_integer(
-                     STRLIT("-0b1000000000000000000000000000000"
-                            "000000000000000000000000000000000"),
-                     &result),
-                 67);
+    ASSERT_EQ(parse_integer(STRLIT("-0b1000000000000000000000000000000"
+                                   "000000000000000000000000000000000"),
+                            &result), 67);
     ASSERT_EQ(result, LLONG_MIN);
     ASSERT_EQ(parse_integer(STRLIT("0o777777777777777777777"), &result),
                  23);
@@ -385,11 +381,9 @@ main(void) {
                  -ERANGE);
     ASSERT_EQ(parse_integer(STRLIT("-9223372036854775809"), &result),
                  -ERANGE);
-    ASSERT_EQ(parse_integer(
-                     STRLIT("0b10000000000000000000000000000000"
-                            "00000000000000000000000000000000"),
-                     &result),
-                 -ERANGE);
+    ASSERT_EQ(parse_integer(STRLIT("0b10000000000000000000000000000000"
+                                   "00000000000000000000000000000000"),
+                            &result), -ERANGE);
     ASSERT_EQ(parse_integer(STRLIT("0o1000000000000000000000"), &result),
                  -ERANGE);
     ASSERT_EQ(parse_integer(STRLIT("0x8000000000000000"), &result),

@@ -710,13 +710,15 @@ bool
 tokenization_is_in_preprocessor_define(Tokenization *tokenization,
                                        int32 token_index) {
     int32 line_start_offset;
+    int32 offset;
     int32 i;
 
     if ((token_index < 0) || (token_index >= tokenization->token_count)) {
         return false;
     }
-    line_start_offset = tokenization_logical_line_start_offset(
-        tokenization, tokenization->tokens[token_index].offset);
+    offset = tokenization->tokens[token_index].offset;
+    line_start_offset = tokenization_logical_line_start_offset(tokenization,
+                                                               offset);
     i = tokenization_token_at_or_after_offset(tokenization, line_start_offset);
     while ((i < tokenization->token_count)
            && ((tokenization->tokens[i].kind == TOKEN_SPACE)
@@ -1125,9 +1127,9 @@ test_tokenization_navigation(void) {
     ASSERT_EQ(tokenization_next_significant(&tokenization, 0), 4);
     ASSERT_EQ(tokenization_previous_significant(&tokenization, 8), 4);
     ASSERT_EQ(tokenization_token_at_or_after_offset(&tokenization, 8), 4);
-    ASSERT_EQ(
-        tokenization_token_at_or_after_offset(&tokenization, strlen32(text)),
-        tokenization.token_count);
+    ASSERT_EQ(tokenization_token_at_or_after_offset(&tokenization,
+                                                    strlen32(text)),
+              tokenization.token_count);
     ASSERT(token_is_trivia(&tokenization.tokens[1]));
     ASSERT(token_is_trivia(&tokenization.tokens[2]));
     ASSERT(!token_is_trivia(&tokenization.tokens[4]));
@@ -1141,14 +1143,15 @@ test_tokenization_preprocessor_define_detection(void) {
     Tokenization tokenization;
     int32 plus;
     int32 int_token;
+    int32 offset;
 
     tokenization = tokenize(text, strlen32(text));
     plus = test_find_token(&tokenization, "+");
     int_token = test_find_token(&tokenization, "int");
     ASSERT_GE(plus, 0);
     ASSERT_GE(int_token, 0);
-    ASSERT_ZERO(tokenization_logical_line_start_offset(
-                     &tokenization, tokenization.tokens[plus].offset));
+    offset = tokenization.tokens[plus].offset;
+    ASSERT_ZERO(tokenization_logical_line_start_offset(&tokenization, offset));
     ASSERT(tokenization_is_in_preprocessor_define(&tokenization, plus));
     ASSERT(!tokenization_is_in_preprocessor_define(&tokenization, int_token));
     ASSERT(!tokenization_is_in_preprocessor_define(&tokenization, -1));

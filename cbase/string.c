@@ -629,8 +629,8 @@ string_array_copy(StringArray *dest, StringArray *source) {
             return err;
         }
         for (int32 i = 0; i < source->len; i += 1) {
-            if ((err = string_array_append_copy(
-                     &replacement, &source->items[i])) < 0) {
+            if ((err = string_array_append_copy(&replacement,
+                                                &source->items[i])) < 0) {
                 string_array_destroy(&replacement);
                 return err;
             }

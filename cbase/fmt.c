@@ -1763,9 +1763,10 @@ fmt_decode_binary64_ldouble(ldouble value, FormatBinaryFloat *parts) {
         parts->binary_exponent = 1 - FMT_LDOUBLE_DOUBLE_EXPONENT_BIAS
                                  - FMT_LDOUBLE_DOUBLE_FRACTION_BITS;
     } else {
-        fmt_binary_float_set_significand_uint64(
-            parts,
-            (UINT64_C(1) << FMT_LDOUBLE_DOUBLE_FRACTION_BITS) | fraction);
+        uint64 significand =
+            (UINT64_C(1) << FMT_LDOUBLE_DOUBLE_FRACTION_BITS) | fraction;
+
+        fmt_binary_float_set_significand_uint64(parts, significand);
         parts->binary_exponent = (int32)exponent_bits
                                  - FMT_LDOUBLE_DOUBLE_EXPONENT_BIAS
                                  - FMT_LDOUBLE_DOUBLE_FRACTION_BITS;
@@ -1865,9 +1866,9 @@ fmt_decode_binary128_ldouble(ldouble value, FormatBinaryFloat *parts) {
     fmt_binary_float_set_significand_uint128(parts, low, fraction_high);
     if (exponent_bits != 0) {
         int32 status;
+        int32 fraction_bits = FMT_LDOUBLE_BINARY128_FRACTION_BITS;
 
-        status = fmt_binary_float_set_significand_bit(
-            parts, FMT_LDOUBLE_BINARY128_FRACTION_BITS);
+        status = fmt_binary_float_set_significand_bit(parts, fraction_bits);
         if (status < 0) {
             return status;
         }
@@ -2159,8 +2160,8 @@ fmt_float_hex_round(char *first_digit, char *digits, int32 precision,
         digits[i] = '0';
     }
 
-    *first_digit = fmt_hex_digit_char(
-        fmt_hex_digit_value(*first_digit) + 1, upper);
+    *first_digit = fmt_hex_digit_char(fmt_hex_digit_value(*first_digit) + 1,
+                                      upper);
     return;
 }
 
@@ -2453,9 +2454,9 @@ fmt_ldouble_generate_fixed_body(FormatSpec *spec, ldouble value,
         return digit_len;
     }
 
-    return fmt_ldouble_format_fixed_digits(
-        buffer, capacity, digit_len, spec->precision,
-        spec->flags & FMT_FLAG_ALTERNATE);
+    return fmt_ldouble_format_fixed_digits(buffer, capacity, digit_len,
+                                           spec->precision,
+                                           spec->flags & FMT_FLAG_ALTERNATE);
 }
 
 static int32
@@ -2641,9 +2642,9 @@ fmt_ldouble_exp_digits(FormatBinaryFloat *parts, ldouble value,
         }
         if (integer_digit_len == significant_len) {
             bool round_up;
+            int32 last_digit = digits[integer_digit_len - 1] - '0';
 
-            round_up = fmt_remainder_should_round(
-                remainder, (digits[integer_digit_len - 1] - '0') & 1);
+            round_up = fmt_remainder_should_round(remainder, last_digit & 1);
             status = fmt_decimal_round_digits(digits, &integer_digit_len,
                                               significant_len, round_up);
             if (status < 0) {
@@ -3033,8 +3034,8 @@ fmt_ldouble_hex_round(char *first_digit, char *digits,
         digits[i] = '0';
     }
 
-    *first_digit = fmt_hex_digit_char(
-        fmt_hex_digit_value(*first_digit) + 1, upper);
+    *first_digit = fmt_hex_digit_char(fmt_hex_digit_value(*first_digit) + 1,
+                                      upper);
     return;
 }
 
@@ -3142,8 +3143,8 @@ fmt_ldouble_generate_hex_body(FormatSpec *spec, ldouble value,
         exponent = 0;
     } else {
         exponent = parts.binary_exponent + parts.precision_bits - 1;
-        if (fmt_binary_float_test_significand_bit(
-                &parts, parts.precision_bits - 1)) {
+        if (fmt_binary_float_test_significand_bit(&parts,
+                                                  parts.precision_bits - 1)) {
             first_digit = '1';
         } else {
             first_digit = '0';
@@ -5336,13 +5337,11 @@ test_fmt_printf_ldouble_outputs(void) {
     if (fmt_test_ldouble_supported()) {
         true_min = ldexpl(1.0L, LDBL_MIN_EXP - LDBL_MANT_DIG);
         if (true_min != 0.0L) {
-            ASSERT_EQ(fmt_test_snprintf(
-                          NULL, 0, "%.*Lf",
-                          FMT_LDOUBLE_MAX_DECIMAL_PRECISION, true_min),
+            int32 precision = FMT_LDOUBLE_MAX_DECIMAL_PRECISION;
+
+            ASSERT_EQ(fmt_test_snprintf(NULL, 0, "%.*Lf", precision, true_min),
                       FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 2);
-            ASSERT_GT(fmt_test_snprintf(
-                          NULL, 0, "%.*Le",
-                          FMT_LDOUBLE_MAX_DECIMAL_PRECISION, true_min),
+            ASSERT_GT(fmt_test_snprintf(NULL, 0, "%.*Le", precision, true_min),
                       0);
         }
         ASSERT_EQ(fmt_test_snprintf(NULL, 0,
@@ -5353,13 +5352,13 @@ test_fmt_printf_ldouble_outputs(void) {
         ASSERT_EQ(fmt_test_snprintf(NULL, 0, "%.*Le",
                                     FMT_LDOUBLE_MAX_DECIMAL_PRECISION, 0.0L),
                   FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 6);
-        ASSERT_EQ(fmt_test_snprintf(
-                      NULL, 0, "%#.*Lg",
-                      FMT_LDOUBLE_MAX_DECIMAL_PRECISION, 0.0L),
+        ASSERT_EQ(fmt_test_snprintf(NULL, 0,
+                                    "%#.*Lg",
+                                    FMT_LDOUBLE_MAX_DECIMAL_PRECISION, 0.0L),
                   FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 1);
-        ASSERT_EQ(fmt_test_snprintf(
-                      NULL, 0, "%.*La",
-                      FMT_LDOUBLE_MAX_DECIMAL_PRECISION, 0.0L),
+        ASSERT_EQ(fmt_test_snprintf(NULL, 0,
+                                    "%.*La",
+                                    FMT_LDOUBLE_MAX_DECIMAL_PRECISION, 0.0L),
                   FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 7);
         ASSERT_EQ(fmt_test_snprintf(NULL, 0, "%.*Lf",
                                     FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 1,

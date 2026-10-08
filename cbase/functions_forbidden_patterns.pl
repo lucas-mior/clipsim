@@ -226,6 +226,36 @@ for my $path (@paths) {
     my $source = <$fh>;
     my $code = code_mask($source);
 
+    # Indentation distinguishes calls from the project's function headers.
+    while ($code =~ /^[ \t]+[^\n]*?(?<![A-Za-z0-9_])
+                     ([A-Za-z_][A-Za-z0-9_]*)[ \t]*(\()
+                     [ \t]*\r?$/gmx) {
+        my $idx = $-[0];
+        my $name = $1;
+        my $paren_idx = $-[2];
+        my $prefix = substr($code, $idx, $paren_idx - $idx);
+        my $arg_idx = skip_space_comments($source, $paren_idx + 1);
+
+        # Masked comments must not count as indentation or hide directives.
+        if (substr($source, $idx, 1) !~ /[ \t]/
+                || $prefix =~ /^[ \t]*#/
+                || $name =~ /^(?:if|for|while|switch|sizeof|_Alignof
+                                |_Generic|_Static_assert)$/x) {
+            next;
+        }
+
+        # Inspect the source so masked comments and literals still count.
+        if ($arg_idx >= length($source)
+                || substr($source, $arg_idx, 1) eq ')'
+                || substr($source, $paren_idx + 1) !~ /^[ \t]*\r?\n/) {
+            next;
+        }
+
+        my $line = line_number($source, $paren_idx);
+        print "$path:$line:$name call breaks before the first argument\n";
+    }
+
+    pos($code) = 0;
     while ($code =~ /(?<![A-Za-z0-9_])STRLIT_LEN(?![A-Za-z0-9_])/g) {
         my $idx = $-[0];
         my $paren_idx = skip_space_comments($source, $idx + 10);

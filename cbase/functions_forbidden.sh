@@ -175,7 +175,7 @@ if [ -n "$common_libc_never" ] \
         common_libc_status=1
         error "%s %s\n" \
             "In order to understand and learn how to fix the problems above," \
-            "read cbase/c-guidelines.md"
+            "read cbase/c-guidelines.md and cbase/c-format.md"
     fi
 
     rm -f \
