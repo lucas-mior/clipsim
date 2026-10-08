@@ -227,7 +227,9 @@ for my $path (@paths) {
     my $code = code_mask($source);
 
     # Indentation distinguishes calls from the project's function headers.
-    while ($code =~ /^[ \t]+[^\n]*?(?<![A-Za-z0-9_])
+    # Generated .meta.h files may break before the first argument.
+    while ($path !~ /\.meta\.h\z/
+           && $code =~ /^[ \t]+[^\n]*?(?<![A-Za-z0-9_])
                      ([A-Za-z_][A-Za-z0-9_]*)[ \t]*(\()
                      [ \t]*\r?$/gmx) {
         my $idx = $-[0];

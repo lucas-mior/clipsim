@@ -55,6 +55,9 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
 - Never use space before parenthesis of function calls.
 
 ### Never break function calls before the first argument:
+Exception: generated files ending in `.meta.h` may break before the first
+argument.
+
 The list below explains what to do:
 
 1. First, try to fit the entire call in a single line:
