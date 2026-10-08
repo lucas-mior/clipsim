@@ -228,14 +228,20 @@ for my $path (@paths) {
 
     # Indentation distinguishes calls from the project's function headers.
     # Generated .meta.h files may break before the first argument.
+    # Scan each indented line once rather than repeatedly searching for
+    # a call name at the end of the line.
     while ($path !~ /\.meta\.h\z/
-           && $code =~ /^[ \t]+[^\n]*?(?<![A-Za-z0-9_])
-                     ([A-Za-z_][A-Za-z0-9_]*)[ \t]*(\()
-                     [ \t]*\r?$/gmx) {
-        my $idx = $-[0];
+           && $code =~ /^([ \t]+[^\n]*)/gm) {
+        my $idx = $-[1];
+        my $text = $1;
+
+        next unless $text =~ /(?<![A-Za-z0-9_])
+                             ([A-Za-z_][A-Za-z0-9_]*)[ \t]*(\()
+                             [ \t]*\r?\z/x;
+
         my $name = $1;
-        my $paren_idx = $-[2];
-        my $prefix = substr($code, $idx, $paren_idx - $idx);
+        my $paren_idx = $idx + $-[2];
+        my $prefix = substr($text, 0, $-[2]);
         my $arg_idx = skip_space_comments($source, $paren_idx + 1);
 
         # Masked comments must not count as indentation or hide directives.
