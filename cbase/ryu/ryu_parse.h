@@ -17,7 +17,7 @@
 #ifndef RYU_PARSE_H
 #define RYU_PARSE_H
 
-#include "cbase.h"
+#include "../primitives.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -25,7 +25,6 @@
 
 #define RYU_IMPLEMENT
 #include "ryu.h"
-#include "ryu/s2d.c"
 
 static void
 test_ryu_assert(bool condition) {
