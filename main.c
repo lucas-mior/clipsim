@@ -183,7 +183,9 @@ main_usage(FILE *stream) {
     fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
     fprintf(stream, "Available commands:\n");
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
-        fprintf(stream, "%s | %-*s : %s\n", commands[i].shortname, 8,
+        fprintf(stream,
+                "%s | %-*s : %s\n",
+                commands[i].shortname, 8,
                 commands[i].longname, commands[i].description);
     }
     exit(stream != stdout);
