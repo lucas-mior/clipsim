@@ -216,8 +216,7 @@ ipc_set_socket_timeout(int32 fd, char *name) {
     }
     if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
                    &timeout, sizeof(timeout)) < 0) {
-        error("Error setting send timeout on %s: %s.\n",
-              name, strerror(errno));
+        error("Error setting send timeout on %s: %s.\n", name, strerror(errno));
         return false;
     }
 
