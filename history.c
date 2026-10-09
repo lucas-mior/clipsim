@@ -314,8 +314,7 @@ history_read(void) {
     {
         char *clipsim_dir;
         char buffer[PATH_MAX];
-        int32 n = SNPRINTF(buffer, "%s/%s",
-                           XDG_CACHE_HOME, "clipsim/history");
+        int32 n = SNPRINTF(buffer, "%s/%s", XDG_CACHE_HOME, "clipsim/history");
         if ((n <= 0) || (n >= (int32)SIZEOF(buffer))) {
             error("XDG_CACHE_HOME is too long.\n");
             exit(EXIT_FAILURE);
