@@ -36,9 +36,10 @@ enum Status {
 };
 
 // Parses a double prefix. Decimal input and hexadecimal %a/%A input are
-// supported, along with inf, infinity, and nan. Hexadecimal input requires a
-// 0x/0X prefix and p/P binary exponent. On success, returns the number of input
-// bytes consumed and stores the converted value in *result. A negative return
+// supported, along with inf, infinity, and nan. A leading + or - is accepted.
+// Hexadecimal input requires a 0x/0X prefix and p/P binary exponent. On
+// success, returns the number of input bytes consumed and stores the converted
+// value in *result. A negative return
 // value is an error: -INPUT_TOO_SHORT, -INPUT_TOO_LONG, or -MALFORMED_INPUT.
 //
 // s2d_n reads at most len bytes and does not require a nul terminator. Parsing

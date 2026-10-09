@@ -87,11 +87,9 @@ s2d_n(const char *buffer, int32 len, double *result) {
     {
         int32 hex_i = 0;
         bool hex_negative = false;
-        bool hex_has_sign = false;
 
         if ((buffer[hex_i] == '-') || (buffer[hex_i] == '+')) {
             hex_negative = buffer[hex_i] == '-';
-            hex_has_sign = true;
             hex_i += 1;
         }
 
@@ -425,13 +423,10 @@ s2d_n(const char *buffer, int32 len, double *result) {
             }
         }
 
-        if (hex_has_sign && (buffer[0] == '+')) {
-            return -MALFORMED_INPUT;
-        }
     }
 
-    if (buffer[i] == '-') {
-        signed_m = true;
+    if ((buffer[i] == '-') || (buffer[i] == '+')) {
+        signed_m = buffer[i] == '-';
         i += 1;
     }
 

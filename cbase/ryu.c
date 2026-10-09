@@ -65,6 +65,44 @@ test_ryu_double_from_bits(uint64 bits) {
 }
 
 static void
+test_ryu_s2d_leading_plus(void) {
+    double value;
+    int32 used;
+
+    used = s2d("+1.25rest", &value);
+    ASSERT_EQ(used, 5);
+    ASSERT_EQ(test_ryu_double_bits(value), test_ryu_double_bits(1.25));
+
+    used = s2d("+1e+2rest", &value);
+    ASSERT_EQ(used, 5);
+    ASSERT_EQ(test_ryu_double_bits(value), test_ryu_double_bits(100.0));
+
+    used = s2d("+0x1.8p+2rest", &value);
+    ASSERT_EQ(used, 9);
+    ASSERT_EQ(test_ryu_double_bits(value), test_ryu_double_bits(6.0));
+
+    used = s2d("+inf", &value);
+    ASSERT_EQ(used, 4);
+    ASSERT_EQ(test_ryu_double_bits(value), 0x7ff0000000000000ull);
+
+    used = s2d("+nan", &value);
+    ASSERT_EQ(used, 4);
+    ASSERT_EQ(test_ryu_double_bits(value), 0x7ff8000000000000ull);
+
+    used = s2d("+", &value);
+    ASSERT_EQ(used, -MALFORMED_INPUT);
+
+    {
+        char input[] = {'+', '2', '.', '5', 'x'};
+
+        used = s2d_n(input, 4, &value);
+        ASSERT_EQ(used, 4);
+        ASSERT_EQ(test_ryu_double_bits(value), test_ryu_double_bits(2.5));
+    }
+    return;
+}
+
+static void
 test_ryu_s2d_hex(void) {
     static uint64 cases[] = {
         0x0000000000000000ull,
@@ -176,6 +214,7 @@ main(void) {
     len = d2exp_buffered_n(1234.0, 2, buffer);
     test_ryu_result(buffer, len, "1.23e+03");
 
+    test_ryu_s2d_leading_plus();
     test_ryu_s2d_hex();
 
     exit(EXIT_SUCCESS);
