@@ -35,8 +35,15 @@ enum Status {
   MALFORMED_INPUT
 };
 
-enum Status s2d_n(const char * buffer, const int len, double * result);
-enum Status s2d(const char * buffer, double * result);
+// Parses a decimal double prefix. On success, returns the number of input
+// bytes consumed and stores the converted value in *result. A negative return
+// value is an error: -INPUT_TOO_SHORT, -INPUT_TOO_LONG, or -MALFORMED_INPUT.
+//
+// s2d_n reads at most len bytes and does not require a nul terminator. Parsing
+// stops before the first byte that is not part of a valid floating-point
+// token. s2d parses a nul-terminated string with the same prefix semantics.
+int32 s2d_n(const char *buffer, int32 len, double *result);
+int32 s2d(const char *buffer, double *result);
 
 enum Status s2f_n(const char * buffer, const int len, float * result);
 enum Status s2f(const char * buffer, float * result);

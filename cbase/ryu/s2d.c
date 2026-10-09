@@ -63,79 +63,109 @@ static inline double int64Bits2Double(uint64 bits) {
   return f;
 }
 
-enum Status s2d_n(const char * buffer, const int len, double * result) {
-  if (len == 0) {
-    return INPUT_TOO_SHORT;
-  }
-  int m10digits = 0;
-  int e10digits = 0;
-  int dotIndex = len;
-  int eIndex = len;
-  uint64 m10 = 0;
-  int32 e10 = 0;
-  bool signedM = false;
-  bool signedE = false;
-  int i = 0;
-  if (buffer[i] == '-') {
-    signedM = true;
-    i++;
-  }
-  for (; i < len; i++) {
-    char c = buffer[i];
-    if (c == '.') {
-      if (dotIndex != len) {
-        return MALFORMED_INPUT;
-      }
-      dotIndex = i;
-      continue;
+int32
+s2d_n(const char *buffer, int32 len, double *result) {
+    int32 m10digits = 0;
+    int32 e10digits = 0;
+    int32 dot_index = -1;
+    int32 e_index = -1;
+    uint64 m10 = 0;
+    int32 e10 = 0;
+    bool signed_m = false;
+    bool signed_e = false;
+    bool has_mantissa_digit = false;
+    int32 i = 0;
+    int32 parsed_len;
+
+    if (len <= 0) {
+        return -INPUT_TOO_SHORT;
     }
-    if ((c < '0') || (c > '9')) {
-      break;
+
+    if (buffer[i] == '-') {
+        signed_m = true;
+        i += 1;
     }
-    if (m10digits >= 17) {
-      return INPUT_TOO_LONG;
+
+    for (; i < len; i += 1) {
+        char c = buffer[i];
+
+        if ((c >= '0') && (c <= '9')) {
+            has_mantissa_digit = true;
+            if (m10digits >= 17) {
+                return -INPUT_TOO_LONG;
+            }
+            m10 = 10*m10 + (uint64)(c - '0');
+            if (m10 != 0) {
+                m10digits += 1;
+            }
+            continue;
+        }
+        if ((c == '.') && (dot_index < 0)) {
+            dot_index = i;
+            continue;
+        }
+        break;
     }
-    m10 = 10 * m10 + (c - '0');
-    if (m10 != 0) {
-      m10digits++;
+
+    if (!has_mantissa_digit) {
+        return -MALFORMED_INPUT;
     }
-  }
-  if (i < len && ((buffer[i] == 'e') || (buffer[i] == 'E'))) {
-    eIndex = i;
-    i++;
-    if (i < len && ((buffer[i] == '-') || (buffer[i] == '+'))) {
-      signedE = buffer[i] == '-';
-      i++;
+
+    if ((i < len) && ((buffer[i] == 'e') || (buffer[i] == 'E'))) {
+        int32 exponent_index = i;
+        int32 exponent_digit_index = i + 1;
+
+        if ((exponent_digit_index < len)
+            && ((buffer[exponent_digit_index] == '-')
+                || (buffer[exponent_digit_index] == '+'))) {
+            exponent_digit_index += 1;
+        }
+
+        if ((exponent_digit_index < len)
+            && (buffer[exponent_digit_index] >= '0')
+            && (buffer[exponent_digit_index] <= '9')) {
+            e_index = exponent_index;
+            i = exponent_index + 1;
+            if ((buffer[i] == '-') || (buffer[i] == '+')) {
+                signed_e = buffer[i] == '-';
+                i += 1;
+            }
+            for (; i < len; i += 1) {
+                char c = buffer[i];
+
+                if ((c < '0') || (c > '9')) {
+                    break;
+                }
+                if (e10digits > 3) {
+                    return -INPUT_TOO_LONG;
+                }
+                e10 = 10*e10 + (c - '0');
+                if (e10 != 0) {
+                    e10digits += 1;
+                }
+            }
+        }
     }
-    for (; i < len; i++) {
-      char c = buffer[i];
-      if ((c < '0') || (c > '9')) {
-        return MALFORMED_INPUT;
-      }
-      if (e10digits > 3) {
-        // TODO: Be more lenient. Return +/-Infinity or +/-0 instead.
-        return INPUT_TOO_LONG;
-      }
-      e10 = 10 * e10 + (c - '0');
-      if (e10 != 0) {
-        e10digits++;
-      }
+
+    parsed_len = i;
+
+    if (e_index < 0) {
+        e_index = parsed_len;
     }
-  }
-  if (i < len) {
-    return MALFORMED_INPUT;
-  }
-  if (signedE) {
-    e10 = -e10;
-  }
-  e10 -= dotIndex < eIndex ? eIndex - dotIndex - 1 : 0;
-  if (m10 == 0) {
-    *result = signedM ? -0.0 : 0.0;
-    return SUCCESS;
-  }
+    if (dot_index < 0) {
+        dot_index = e_index;
+    }
+    if (signed_e) {
+        e10 = -e10;
+    }
+    e10 -= dot_index < e_index ? e_index - dot_index - 1 : 0;
+    if (m10 == 0) {
+        *result = signed_m ? -0.0 : 0.0;
+        return parsed_len;
+    }
 
 #ifdef RYU_DEBUG
-  printf("Input=%s\n", buffer);
+  printf("Input=%.*s\n", parsed_len, buffer);
   printf("m10digits = %d\n", m10digits);
   printf("e10digits = %d\n", e10digits);
   printf("m10 * 10^e10 = %" PRIu64 " * 10^%d\n", m10, e10);
@@ -143,15 +173,19 @@ enum Status s2d_n(const char * buffer, const int len, double * result) {
 
   if ((m10digits + e10 <= -324) || (m10 == 0)) {
     // Number is less than 1e-324, which should be rounded down to 0; return +/-0.0.
-    uint64 ieee = ((uint64) signedM) << (DOUBLE_EXPONENT_BITS + DOUBLE_MANTISSA_BITS);
+    uint64 ieee =
+        ((uint64)signed_m) << (DOUBLE_EXPONENT_BITS + DOUBLE_MANTISSA_BITS);
     *result = int64Bits2Double(ieee);
-    return SUCCESS;
+    return parsed_len;
   }
   if (m10digits + e10 >= 310) {
     // Number is larger than 1e+309, which should be rounded to +/-Infinity.
-    uint64 ieee = (((uint64) signedM) << (DOUBLE_EXPONENT_BITS + DOUBLE_MANTISSA_BITS)) | (0x7ffull << DOUBLE_MANTISSA_BITS);
+    uint64 ieee =
+        (((uint64)signed_m)
+         << (DOUBLE_EXPONENT_BITS + DOUBLE_MANTISSA_BITS))
+        |(0x7ffull << DOUBLE_MANTISSA_BITS);
     *result = int64Bits2Double(ieee);
-    return SUCCESS;
+    return parsed_len;
   }
 
   // Convert to binary float m2 * 2^e2, while retaining information about whether the conversion
@@ -212,9 +246,12 @@ enum Status s2d_n(const char * buffer, const int len, double * result) {
 
   if (ieee_e2 > 0x7fe) {
     // Final IEEE exponent is larger than the maximum representable; return +/-Infinity.
-    uint64 ieee = (((uint64) signedM) << (DOUBLE_EXPONENT_BITS + DOUBLE_MANTISSA_BITS)) | (0x7ffull << DOUBLE_MANTISSA_BITS);
+    uint64 ieee =
+        (((uint64)signed_m)
+         << (DOUBLE_EXPONENT_BITS + DOUBLE_MANTISSA_BITS))
+        |(0x7ffull << DOUBLE_MANTISSA_BITS);
     *result = int64Bits2Double(ieee);
-    return SUCCESS;
+    return parsed_len;
   }
 
   // We need to figure out how much we need to shift m2. The tricky part is that we need to take
@@ -226,7 +263,7 @@ enum Status s2d_n(const char * buffer, const int len, double * result) {
   printf("ieee_e2 = %d\n", ieee_e2);
   printf("shift = %d\n", shift);
 #endif
-  
+
   // We need to round up if the exact value is more than 0.5 above the value we computed. That's
   // equivalent to checking if the last removed bit was 1 and either the value was not just
   // trailing zeros or the result would otherwise be odd.
@@ -247,12 +284,21 @@ enum Status s2d_n(const char * buffer, const int len, double * result) {
     // Due to how the IEEE represents +/-Infinity, we don't need to check for overflow here.
     ieee_e2++;
   }
-  
-  uint64 ieee = (((((uint64) signedM) << DOUBLE_EXPONENT_BITS) | (uint64)ieee_e2) << DOUBLE_MANTISSA_BITS) | ieee_m2;
+
+  uint64 ieee =
+      (((((uint64)signed_m) << DOUBLE_EXPONENT_BITS) |(uint64)ieee_e2)
+       << DOUBLE_MANTISSA_BITS)
+      |ieee_m2;
   *result = int64Bits2Double(ieee);
-  return SUCCESS;
+  return parsed_len;
 }
 
-enum Status s2d(const char * buffer, double * result) {
-  return s2d_n(buffer, strlen(buffer), result);
+int32
+s2d(const char *buffer, double *result) {
+    size_t len = strlen(buffer);
+
+    if (len > INT32_MAX) {
+        return -INPUT_TOO_LONG;
+    }
+    return s2d_n(buffer, (int32)len, result);
 }
