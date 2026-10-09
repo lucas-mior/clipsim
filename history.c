@@ -321,8 +321,8 @@ history_read(void) {
         clipsim_dir = dirname(buffer);
         if (mkdir(clipsim_dir, 0770) < 0) {
             if (errno != EEXIST) {
-                error("Error creating dir '%s': %s\n", clipsim_dir,
-                      strerror(errno));
+                error("Error creating dir '%s': %s\n",
+                      clipsim_dir, strerror(errno));
                 exit(EXIT_FAILURE);
             }
         }
