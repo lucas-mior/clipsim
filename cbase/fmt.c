@@ -4409,6 +4409,491 @@ fmt_sprintf(char *buffer, int64 capacity, char *format, ...) {
     return len;
 }
 
+const FmtLocale fmt_locale_c = {
+    .weekday_abbr = {
+        "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
+    },
+    .weekday = {
+        "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+        "Saturday",
+    },
+    .month_abbr = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    },
+    .month = {
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+    },
+    .am = "AM",
+    .pm = "PM",
+    .am_lower = "am",
+    .pm_lower = "pm",
+    .date_time_fmt = "%a %b %e %H:%M:%S %Y",
+    .date_fmt = "%m/%d/%y",
+    .time_fmt = "%H:%M:%S",
+    .time_12_fmt = "%I:%M:%S %p",
+};
+
+static void
+fmt_strftime_write_number(FormatSink *sink, int64 value,
+                          int32 width, char pad) {
+    char digits[64];
+    uint64 magnitude;
+    int32 len;
+    bool negative;
+
+    negative = value < 0;
+    if (negative) {
+        magnitude = (uint64)(-(value + 1)) + 1;
+    } else {
+        magnitude = (uint64)value;
+    }
+    len = fmt_integer_digits(digits, magnitude, 10, false);
+
+    if (negative) {
+        fmt_sink_write_byte(sink, '-');
+        width -= 1;
+    }
+    if (width > len) {
+        fmt_sink_write_repeat(sink, pad, width - len);
+    }
+    fmt_sink_write(sink, digits, len);
+    return;
+}
+
+static int32
+fmt_strftime_days_in_year(int64 year) {
+    if (((year%4) == 0)
+        && (((year%100) != 0) || ((year%400) == 0))) {
+        return 366;
+    }
+    return 365;
+}
+
+static void
+fmt_strftime_iso_week(struct tm *time_info,
+                      int64 *iso_year, int32 *iso_week) {
+    int64 year = 1900 + (int64)time_info->tm_year;
+    int32 iso_wday;
+    int32 thursday_yday;
+
+    iso_wday = time_info->tm_wday;
+    if (iso_wday == 0) {
+        iso_wday = 7;
+    }
+
+    thursday_yday = time_info->tm_yday + 4 - iso_wday;
+    *iso_year = year;
+    if (thursday_yday < 0) {
+        *iso_year -= 1;
+        thursday_yday += fmt_strftime_days_in_year(*iso_year);
+    } else if (thursday_yday >= fmt_strftime_days_in_year(year)) {
+        thursday_yday -= fmt_strftime_days_in_year(year);
+        *iso_year += 1;
+    }
+
+    *iso_week = thursday_yday/7 + 1;
+    return;
+}
+
+static void
+fmt_strftime_write_string(FormatSink *sink, const char *string) {
+    ASSERT(string != NULL);
+
+    while (*string != '\0') {
+        fmt_sink_write_byte(sink, *string);
+        string += 1;
+    }
+    return;
+}
+
+static void
+fmt_strftime_write_name(FormatSink *sink, const char *const *names,
+                        int32 names_len, int32 index) {
+    if ((index < 0) || (index >= names_len)) {
+        fmt_sink_write_byte(sink, '?');
+        return;
+    }
+
+    fmt_strftime_write_string(sink, names[index]);
+    return;
+}
+
+static void
+fmt_strftime_format(FormatSink *sink, const char *format,
+                    struct tm *time_info, const FmtLocale *locale) {
+    const char *cursor;
+
+    ASSERT(format != NULL);
+    ASSERT(locale != NULL);
+
+    cursor = format;
+    while (*cursor != '\0') {
+        char modifier = '\0';
+        char conversion;
+        int64 year;
+
+        if (*cursor != '%') {
+            fmt_sink_write_byte(sink, *cursor);
+            cursor += 1;
+            continue;
+        }
+
+        cursor += 1;
+        if (*cursor == 'E' || *cursor == 'O') {
+            modifier = *cursor;
+            cursor += 1;
+        }
+        if (*cursor == '\0') {
+            fmt_sink_write_byte(sink, '%');
+            if (modifier != '\0') {
+                fmt_sink_write_byte(sink, modifier);
+            }
+            break;
+        }
+
+        conversion = *cursor;
+        cursor += 1;
+        year = 1900 + (int64)time_info->tm_year;
+
+        if ((modifier == 'E')
+            && (conversion != 'c')
+            && (conversion != 'C')
+            && (conversion != 'x')
+            && (conversion != 'X')
+            && (conversion != 'y')
+            && (conversion != 'Y')) {
+            fmt_sink_write_byte(sink, '%');
+            fmt_sink_write_byte(sink, modifier);
+            fmt_sink_write_byte(sink, conversion);
+            continue;
+        }
+        if ((modifier == 'O')
+            && (conversion != 'd')
+            && (conversion != 'e')
+            && (conversion != 'H')
+            && (conversion != 'I')
+            && (conversion != 'm')
+            && (conversion != 'M')
+            && (conversion != 'S')
+            && (conversion != 'u')
+            && (conversion != 'U')
+            && (conversion != 'V')
+            && (conversion != 'w')
+            && (conversion != 'W')
+            && (conversion != 'y')) {
+            fmt_sink_write_byte(sink, '%');
+            fmt_sink_write_byte(sink, modifier);
+            fmt_sink_write_byte(sink, conversion);
+            continue;
+        }
+
+        switch (conversion) {
+        case 'a':
+            fmt_strftime_write_name(sink, locale->weekday_abbr,
+                                    LENGTH(locale->weekday_abbr),
+                                    time_info->tm_wday);
+            break;
+        case 'A':
+            fmt_strftime_write_name(sink, locale->weekday,
+                                    LENGTH(locale->weekday),
+                                    time_info->tm_wday);
+            break;
+        case 'b':
+        case 'h':
+            fmt_strftime_write_name(sink, locale->month_abbr,
+                                    LENGTH(locale->month_abbr),
+                                    time_info->tm_mon);
+            break;
+        case 'B':
+            fmt_strftime_write_name(sink, locale->month,
+                                    LENGTH(locale->month),
+                                    time_info->tm_mon);
+            break;
+        case 'c':
+            fmt_strftime_format(sink, locale->date_time_fmt, time_info, locale);
+            break;
+        case 'C': {
+            int64 century = year/100;
+            int64 year_in_century = year%100;
+
+            if (year_in_century < 0) {
+                century -= 1;
+            }
+            fmt_strftime_write_number(sink, century, 2, '0');
+            break;
+        }
+        case 'd':
+            fmt_strftime_write_number(sink, time_info->tm_mday, 2, '0');
+            break;
+        case 'D':
+            fmt_strftime_format(sink, "%m/%d/%y", time_info, locale);
+            break;
+        case 'e':
+            fmt_strftime_write_number(sink, time_info->tm_mday, 2, ' ');
+            break;
+        case 'F':
+            fmt_strftime_format(sink, "%Y-%m-%d", time_info, locale);
+            break;
+        case 'g':
+        case 'G': {
+            int64 iso_year;
+            int32 iso_week;
+
+            fmt_strftime_iso_week(time_info, &iso_year, &iso_week);
+            if (conversion == 'G') {
+                fmt_strftime_write_number(sink, iso_year, 4, '0');
+            } else {
+                int64 year_in_century = iso_year%100;
+
+                if (year_in_century < 0) {
+                    year_in_century += 100;
+                }
+                fmt_strftime_write_number(sink, year_in_century, 2, '0');
+            }
+            break;
+        }
+        case 'H':
+            fmt_strftime_write_number(sink, time_info->tm_hour, 2, '0');
+            break;
+        case 'I': {
+            int32 hour = time_info->tm_hour%12;
+
+            if (hour == 0) {
+                hour = 12;
+            }
+            fmt_strftime_write_number(sink, hour, 2, '0');
+            break;
+        }
+        case 'j':
+            fmt_strftime_write_number(sink, time_info->tm_yday + 1, 3, '0');
+            break;
+        case 'k':
+            fmt_strftime_write_number(sink, time_info->tm_hour, 2, ' ');
+            break;
+        case 'l': {
+            int32 hour = time_info->tm_hour%12;
+
+            if (hour == 0) {
+                hour = 12;
+            }
+            fmt_strftime_write_number(sink, hour, 2, ' ');
+            break;
+        }
+        case 'm':
+            fmt_strftime_write_number(sink, time_info->tm_mon + 1, 2, '0');
+            break;
+        case 'M':
+            fmt_strftime_write_number(sink, time_info->tm_min, 2, '0');
+            break;
+        case 'n':
+            fmt_sink_write_byte(sink, '\n');
+            break;
+        case 'p':
+            if (time_info->tm_hour < 12) {
+                fmt_strftime_write_string(sink, locale->am);
+            } else {
+                fmt_strftime_write_string(sink, locale->pm);
+            }
+            break;
+        case 'P':
+            if (time_info->tm_hour < 12) {
+                fmt_strftime_write_string(sink, locale->am_lower);
+            } else {
+                fmt_strftime_write_string(sink, locale->pm_lower);
+            }
+            break;
+        case 'r':
+            fmt_strftime_format(sink, locale->time_12_fmt, time_info, locale);
+            break;
+        case 'R':
+            fmt_strftime_format(sink, "%H:%M", time_info, locale);
+            break;
+        case 's': {
+            int64 epoch_year = year;
+            int64 month = 1 + (int64)time_info->tm_mon;
+            int64 era;
+            int64 year_of_era;
+            int64 day_of_year;
+            int64 day_of_era;
+            int64 days;
+            int64 seconds;
+
+            // Gregorian civil-date conversion. A 400-year era has 146097
+            // days; 719468 shifts its March-based epoch to Unix day zero.
+            epoch_year -= month <= 2;
+            if (epoch_year >= 0) {
+                era = epoch_year/400;
+            } else {
+                era = (epoch_year - 399)/400;
+            }
+            year_of_era = epoch_year - era*400;
+            if (month > 2) {
+                month -= 3;
+            } else {
+                month += 9;
+            }
+            day_of_year = (153*month + 2)/5 + time_info->tm_mday - 1;
+            day_of_era = year_of_era*365 + year_of_era/4 - year_of_era/100
+                         + day_of_year;
+            days = era*146097 + day_of_era - 719468;
+
+            seconds = days*86400;
+            seconds += (int64)time_info->tm_hour*3600;
+            seconds += (int64)time_info->tm_min*60;
+            seconds += time_info->tm_sec;
+#if OS_UNIX
+            seconds -= (int64)time_info->tm_gmtoff;
+#endif
+            fmt_strftime_write_number(sink, seconds, 1, '0');
+            break;
+        }
+        case 'S':
+            fmt_strftime_write_number(sink, time_info->tm_sec, 2, '0');
+            break;
+        case 't':
+            fmt_sink_write_byte(sink, '\t');
+            break;
+        case 'T':
+            fmt_strftime_format(sink, "%H:%M:%S", time_info, locale);
+            break;
+        case 'u': {
+            int32 weekday = time_info->tm_wday;
+
+            if (weekday == 0) {
+                weekday = 7;
+            }
+            fmt_strftime_write_number(sink, weekday, 1, '0');
+            break;
+        }
+        case 'U': {
+            int32 week;
+
+            week = (time_info->tm_yday + 7 - time_info->tm_wday)/7;
+            fmt_strftime_write_number(sink, week, 2, '0');
+            break;
+        }
+        case 'V': {
+            int64 iso_year;
+            int32 iso_week;
+
+            fmt_strftime_iso_week(time_info, &iso_year, &iso_week);
+            fmt_strftime_write_number(sink, iso_week, 2, '0');
+            break;
+        }
+        case 'w':
+            fmt_strftime_write_number(sink, time_info->tm_wday, 1, '0');
+            break;
+        case 'W': {
+            int32 monday_weekday = (time_info->tm_wday + 6)%7;
+            int32 week;
+
+            week = (time_info->tm_yday + 7 - monday_weekday)/7;
+            fmt_strftime_write_number(sink, week, 2, '0');
+            break;
+        }
+        case 'x':
+            fmt_strftime_format(sink, locale->date_fmt, time_info, locale);
+            break;
+        case 'X':
+            fmt_strftime_format(sink, locale->time_fmt, time_info, locale);
+            break;
+        case 'y': {
+            int64 year_in_century = year%100;
+
+            if (year_in_century < 0) {
+                year_in_century += 100;
+            }
+            fmt_strftime_write_number(sink, year_in_century, 2, '0');
+            break;
+        }
+        case 'Y':
+            fmt_strftime_write_number(sink, year, 4, '0');
+            break;
+        case 'z':
+#if OS_UNIX
+            if (time_info->tm_isdst >= 0) {
+                int64 offset = (int64)time_info->tm_gmtoff;
+                int64 minutes;
+                int64 hours;
+
+                if (offset < 0) {
+                    fmt_sink_write_byte(sink, '-');
+                    offset = -offset;
+                } else {
+                    fmt_sink_write_byte(sink, '+');
+                }
+                minutes = (offset/60)%60;
+                hours = offset/3600;
+                fmt_strftime_write_number(sink, hours, 2, '0');
+                fmt_strftime_write_number(sink, minutes, 2, '0');
+            }
+#endif
+            break;
+        case 'Z':
+#if OS_UNIX
+            if (time_info->tm_zone != NULL) {
+                fmt_strftime_write_string(sink, time_info->tm_zone);
+            }
+#endif
+            break;
+        case '%':
+            fmt_sink_write_byte(sink, '%');
+            break;
+        default:
+            fmt_sink_write_byte(sink, '%');
+            if (modifier != '\0') {
+                fmt_sink_write_byte(sink, modifier);
+            }
+            fmt_sink_write_byte(sink, conversion);
+            break;
+        }
+    }
+    return;
+}
+
+int32
+fmt_strftime_l(char *buffer, int64 capacity, char *format,
+               struct tm *time_info, const FmtLocale *locale) {
+    FormatSink sink;
+    int32 len;
+
+    ASSERT(locale != NULL);
+
+    if ((format == NULL) || (time_info == NULL) || (locale == NULL)) {
+        if ((buffer != NULL) && (capacity > 0)) {
+            buffer[0] = '\0';
+        }
+        return 0;
+    }
+    if ((capacity < 0) || (capacity > INT32_MAX)) {
+        return 0;
+    }
+    if ((capacity > 0) && (buffer == NULL)) {
+        return 0;
+    }
+    if (fmt_sink_init(&sink, buffer, capacity) < 0) {
+        return 0;
+    }
+
+    fmt_strftime_format(&sink, format, time_info, locale);
+    len = fmt_sink_finish(&sink);
+    if ((len < 0) || (len >= capacity)) {
+        if (capacity > 0) {
+            buffer[0] = '\0';
+        }
+        return 0;
+    }
+    return len;
+}
+
+int32
+fmt_strftime(char *buffer, int64 capacity,
+             char *format, struct tm *time_info) {
+    return fmt_strftime_l(buffer, capacity, format, time_info, &fmt_locale_c);
+}
+
 void
 str_float64(String *string, double value) {
     int32 len;
@@ -5531,6 +6016,170 @@ test_fmt_planned_plan(void) {
 }
 
 static void
+test_fmt_strftime(void) {
+    char buffer[512];
+    char tiny[4];
+    struct tm time_info = {0};
+    int32 len;
+
+    time_info.tm_year = 122;
+    time_info.tm_mon = 0;
+    time_info.tm_mday = 2;
+    time_info.tm_hour = 3;
+    time_info.tm_min = 4;
+    time_info.tm_sec = 5;
+    time_info.tm_wday = 0;
+    time_info.tm_yday = 1;
+    time_info.tm_isdst = 0;
+#if OS_UNIX
+    time_info.tm_gmtoff = 0;
+    time_info.tm_zone = "UTC";
+#endif
+
+    len = fmt_strftime(buffer, SIZEOF(buffer),
+                       "%a|%A|%b|%B|%c|%C|%d|%D|%e|%F|%g|%G|%h|%H|%I|%j|"
+                       "%k|%l|%m|%M|%p|%P|%r|%R|%s|%S|%T|%u|%U|%V|%w|%W|"
+                       "%x|%X|%y|%Y|%%", &time_info);
+    ASSERT_EQ(buffer,
+              "Sun|Sunday|Jan|January|Sun Jan  2 03:04:05 2022|20|02|"
+              "01/02/22| 2|2022-01-02|21|2021|Jan|03|03|002| 3| 3|01|"
+              "04|AM|am|03:04:05 AM|03:04|1641092645|05|03:04:05|7|01|"
+              "52|0|00|01/02/22|03:04:05|22|2022|%");
+    ASSERT_EQ(len, strlen32(buffer));
+
+    len = fmt_strftime(buffer, SIZEOF(buffer), "%n%t", &time_info);
+    ASSERT_EQ(len, 2);
+    ASSERT_EQ(buffer, 3, "\n\t", 3);
+
+    len = fmt_strftime(buffer, SIZEOF(buffer),
+                       "%Ec|%EC|%Ex|%EX|%Ey|%EY|%Od|%Oe|%OH|%OI|%Om|%OM|"
+                       "%OS|%Ou|%OU|%OV|%Ow|%OW|%Oy",
+                       &time_info);
+    ASSERT_EQ(buffer,
+              "Sun Jan  2 03:04:05 2022|20|01/02/22|03:04:05|22|2022|02|"
+              " 2|03|03|01|04|05|7|01|52|0|00|22");
+    ASSERT_EQ(len, strlen32(buffer));
+
+    len = fmt_strftime(buffer, SIZEOF(buffer), "%Ea|%Ob|%Q|%", &time_info);
+    ASSERT_EQ(buffer, "%Ea|%Ob|%Q|%");
+    ASSERT_EQ(len, 12);
+
+    time_info.tm_year = 121;
+    time_info.tm_mon = 0;
+    time_info.tm_mday = 1;
+    time_info.tm_wday = 5;
+    time_info.tm_yday = 0;
+    len = fmt_strftime(buffer, SIZEOF(buffer), "%G-%V-%g", &time_info);
+    ASSERT_EQ(len, 10);
+    ASSERT_EQ(buffer, "2020-53-20");
+
+    time_info.tm_year = 118;
+    time_info.tm_mon = 11;
+    time_info.tm_mday = 31;
+    time_info.tm_wday = 1;
+    time_info.tm_yday = 364;
+    len = fmt_strftime(buffer, SIZEOF(buffer), "%G-%V-%g", &time_info);
+    ASSERT_EQ(len, 10);
+    ASSERT_EQ(buffer, "2019-01-19");
+
+    time_info.tm_year = 122;
+    time_info.tm_mon = 0;
+    time_info.tm_mday = 2;
+    time_info.tm_hour = 3;
+    time_info.tm_min = 4;
+    time_info.tm_sec = 5;
+    time_info.tm_wday = 0;
+    time_info.tm_yday = 1;
+    time_info.tm_isdst = 0;
+#if OS_UNIX
+    time_info.tm_gmtoff = -3*3600 - 30*60;
+    time_info.tm_zone = "TEST";
+    len = fmt_strftime(buffer, SIZEOF(buffer), "%z|%Z|%s", &time_info);
+    ASSERT_EQ(buffer, "-0330|TEST|1641105245");
+    ASSERT_EQ(len, strlen32(buffer));
+#endif
+
+    ASSERT_EQ(fmt_strftime(buffer, 5, "%Y", &time_info), 4);
+    ASSERT_EQ(buffer, "2022");
+    ASSERT_ZERO(fmt_strftime(tiny, SIZEOF(tiny), "%Y", &time_info));
+    ASSERT_EQ(tiny, "");
+    ASSERT_ZERO(fmt_strftime(NULL, 0, "%Y", &time_info));
+    ASSERT_ZERO(fmt_strftime(buffer, SIZEOF(buffer), "", &time_info));
+    ASSERT_EQ(buffer, "");
+    ASSERT_ZERO(fmt_strftime(buffer, SIZEOF(buffer), NULL, &time_info));
+    ASSERT_EQ(buffer, "");
+    ASSERT_ZERO(fmt_strftime(buffer, SIZEOF(buffer), "%Y", NULL));
+    ASSERT_EQ(buffer, "");
+
+    return;
+}
+
+static void
+test_fmt_strftime_locale(void) {
+    static const FmtLocale locale = {
+        .weekday_abbr = {
+            "d0", "d1", "d2", "d3", "d4", "d5", "d6",
+        },
+        .weekday = {
+            "day0", "day1", "day2", "day3", "day4", "day5", "day6",
+        },
+        .month_abbr = {
+            "m01", "m02", "m03", "m04", "m05", "m06",
+            "m07", "m08", "m09", "m10", "m11", "m12",
+        },
+        .month = {
+            "month01", "month02", "month03", "month04", "month05",
+            "month06", "month07", "month08", "month09", "month10",
+            "month11", "month12",
+        },
+        .am = "before-noon",
+        .pm = "after-noon",
+        .am_lower = "before-noon-lower",
+        .pm_lower = "after-noon-lower",
+        .date_time_fmt = "%A/%B/%e/%Y/%X",
+        .date_fmt = "%Y.%m.%d",
+        .time_fmt = "%Hh%Mm%Ss",
+        .time_12_fmt = "%Ih%Mm%Ss %p",
+    };
+    char buffer[512];
+    struct tm time_info = {0};
+    int32 len;
+
+    time_info.tm_year = 122;
+    time_info.tm_mon = 0;
+    time_info.tm_mday = 2;
+    time_info.tm_hour = 15;
+    time_info.tm_min = 4;
+    time_info.tm_sec = 5;
+    time_info.tm_wday = 0;
+    time_info.tm_yday = 1;
+    time_info.tm_isdst = 0;
+
+    len = fmt_strftime_l(buffer, SIZEOF(buffer),
+                         "%a|%A|%b|%B|%p|%P|%c|%x|%X|%r",
+                         &time_info, &locale);
+    ASSERT_EQ(buffer,
+              "d0|day0|m01|month01|after-noon|after-noon-lower|"
+              "day0/month01/ 2/2022/15h04m05s|2022.01.02|15h04m05s|"
+              "03h04m05s after-noon");
+    ASSERT_EQ(len, strlen32(buffer));
+
+    len = fmt_strftime_l(buffer, SIZEOF(buffer),
+                         "%Ec|%Ex|%EX",
+                         &time_info, &locale);
+    ASSERT_EQ(buffer, "day0/month01/ 2/2022/15h04m05s|2022.01.02|15h04m05s");
+    ASSERT_EQ(len, strlen32(buffer));
+
+    len = fmt_strftime_l(buffer, SIZEOF(buffer),
+                         "%A|%B|%p|%P|%x|%X",
+                         &time_info, &fmt_locale_c);
+    ASSERT_EQ(buffer, "Sunday|January|PM|pm|01/02/22|15:04:05");
+    ASSERT_EQ(len, strlen32(buffer));
+
+    return;
+}
+
+static void
 test_fmt_public_api(void) {
     char buffer[32];
     char tiny[4];
@@ -5778,6 +6427,8 @@ main(void) {
     test_fmt_printf_ldouble_outputs();
     test_fmt_ldouble_decomposition();
     test_fmt_ldouble_decimal_helpers();
+    test_fmt_strftime();
+    test_fmt_strftime_locale();
     test_fmt_public_api();
     test_fmt_planned_plan();
     test_fmt_estimate();

@@ -551,6 +551,10 @@ sub report_unnecessary_call_wraps {
 
 for my $path (@paths) {
     my $absolute_path = abs_path($path) // $path;
+
+    next if $path =~ m{(?:\A|/)tests/fixtures/}
+            || $absolute_path =~ m{(?:\A|/)tests/fixtures/};
+
     my $column_limit = $absolute_path =~ m{(?:\A|/)cecup/src/}
                        ? 100 : 80;
 
