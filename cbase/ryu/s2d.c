@@ -416,7 +416,7 @@ s2d_n(const char *buffer, int32 len, double *result) {
                                 ieee |= 1ull << 63;
                             }
                             *result = int64Bits2Double(ieee);
-                            return parsed_hex_len;
+                            return -FLOAT_UNDERFLOW;
                         }
                     }
                 }
@@ -520,7 +520,7 @@ s2d_n(const char *buffer, int32 len, double *result) {
     uint64 ieee =
         ((uint64)signed_m) << (DOUBLE_EXPONENT_BITS + DOUBLE_MANTISSA_BITS);
     *result = int64Bits2Double(ieee);
-    return parsed_len;
+    return -FLOAT_UNDERFLOW;
   }
   if (m10digits + e10 >= 310) {
     // Number is larger than 1e+309, which should be rounded to +/-Infinity.
@@ -587,6 +587,7 @@ s2d_n(const char *buffer, int32 len, double *result) {
 
   // Compute the final IEEE exponent.
   uint32 ieee_e2 = (uint32) max32(0, e2 + DOUBLE_EXPONENT_BIAS + floor_log2(m2));
+  bool underflow = ieee_e2 == 0;
 
   if (ieee_e2 > 0x7fe) {
     // Final IEEE exponent is larger than the maximum representable; return +/-Infinity.
@@ -634,6 +635,12 @@ s2d_n(const char *buffer, int32 len, double *result) {
        << DOUBLE_MANTISSA_BITS)
       |ieee_m2;
   *result = int64Bits2Double(ieee);
+  if (ieee_e2 > 0x7fe) {
+    return parsed_len;
+  }
+  if (underflow) {
+    return -FLOAT_UNDERFLOW;
+  }
   return parsed_len;
 }
 

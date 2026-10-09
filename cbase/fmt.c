@@ -6399,6 +6399,7 @@ test_fmt_float64_round_trip(double value) {
     ASSERT_GT(len, 0);
 
     end = NULL;
+    // Keep libc strtod() as an independent oracle for formatter output.
     parsed = strtod(buffer, &end);
     ASSERT(end == buffer + len);
     ASSERT_EQ(test_fmt_float64_bits(parsed), test_fmt_float64_bits(value));

@@ -24,23 +24,35 @@ extern "C" {
 #endif
 
 // This is an experimental implementation of parsing strings to 64-bit floats.
-// Decimal conversion uses a Ryu-like algorithm and currently supports up to 17
-// non-zero digits. Hexadecimal floating-point input uses the C %a/%A syntax.
-// Not all strtod formats are supported. Use at your own risk.
+// Decimal conversion uses a Ryu-like algorithm. It currently accepts at most
+// 17 significant-position decimal digits after leading zeros. A longer valid
+// decimal significand can therefore fail with -INPUT_TOO_LONG instead of being
+// rounded like strtod(). Hexadecimal floating-point input uses C %a/%A syntax
+// and does not have this decimal-digit limitation. Not all strtod formats are
+// supported. Use at your own risk.
 
 enum Status {
   SUCCESS,
   INPUT_TOO_SHORT,
   INPUT_TOO_LONG,
-  MALFORMED_INPUT
+  MALFORMED_INPUT,
+  FLOAT_UNDERFLOW
 };
 
 // Parses a double prefix. Decimal input and hexadecimal %a/%A input are
 // supported, along with inf, infinity, and nan. A leading + or - is accepted.
 // Hexadecimal input requires a 0x/0X prefix and p/P binary exponent. On
 // success, returns the number of input bytes consumed and stores the converted
-// value in *result. A negative return
-// value is an error: -INPUT_TOO_SHORT, -INPUT_TOO_LONG, or -MALFORMED_INPUT.
+// value in *result. A negative return value is an error: -INPUT_TOO_SHORT,
+// -INPUT_TOO_LONG, -MALFORMED_INPUT, or -FLOAT_UNDERFLOW. Numeric overflow
+// is a successful conversion: it stores signed infinity and returns the number
+// of bytes consumed. Explicit inf/infinity and nan tokens are also successful.
+// Numeric underflow is reported for every nonzero input below the normal double
+// range, including exact subnormals, and stores the resulting signed zero or
+// subnormal value.
+//
+// Decimal significands beyond the supported 17 significant-position digits
+// may return -INPUT_TOO_LONG even if strtod() would accept and round them.
 //
 // s2d_n reads at most len bytes and does not require a nul terminator. Parsing
 // stops before the first byte that is not part of a valid floating-point

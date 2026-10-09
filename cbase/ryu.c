@@ -103,6 +103,60 @@ test_ryu_s2d_leading_plus(void) {
 }
 
 static void
+test_ryu_s2d_range_values(void) {
+    double value;
+    int32 used;
+
+    used = s2d("1e309", &value);
+    ASSERT_EQ(used, 5);
+    ASSERT_EQ(test_ryu_double_bits(value), 0x7ff0000000000000ull);
+
+    used = s2d("-1e309", &value);
+    ASSERT_EQ(used, 6);
+    ASSERT(test_ryu_double_bits(value) == 0xfff0000000000000ull);
+
+    used = s2d("1.7976931348623157e308", &value);
+    ASSERT_EQ(used, 22);
+    ASSERT_EQ(test_ryu_double_bits(value), 0x7fefffffffffffffull);
+
+    used = s2d("1.7976931348623159e308", &value);
+    ASSERT_EQ(used, 22);
+    ASSERT_EQ(test_ryu_double_bits(value), 0x7ff0000000000000ull);
+
+    used = s2d("1e-325", &value);
+    ASSERT_EQ(used, -FLOAT_UNDERFLOW);
+    ASSERT_EQ(test_ryu_double_bits(value), 0);
+
+    used = s2d("-1e-325", &value);
+    ASSERT_EQ(used, -FLOAT_UNDERFLOW);
+    ASSERT(test_ryu_double_bits(value) == 0x8000000000000000ull);
+
+    used = s2d("5e-324", &value);
+    ASSERT_EQ(used, -FLOAT_UNDERFLOW);
+    ASSERT_EQ(test_ryu_double_bits(value), 0x0000000000000001ull);
+
+    used = s2d("2.2250738585072014e-308", &value);
+    ASSERT_EQ(used, 23);
+    ASSERT_EQ(test_ryu_double_bits(value), 0x0010000000000000ull);
+
+    used = s2d("inf", &value);
+    ASSERT_EQ(used, 3);
+    ASSERT_EQ(test_ryu_double_bits(value), 0x7ff0000000000000ull);
+
+    used = s2d("1.00000000000000000", &value);
+    ASSERT_EQ(used, -INPUT_TOO_LONG);
+
+    {
+        char input[] = {'1', 'e', '3', '0', '9', 'x'};
+
+        used = s2d_n(input, 5, &value);
+        ASSERT_EQ(used, 5);
+        ASSERT_EQ(test_ryu_double_bits(value), 0x7ff0000000000000ull);
+    }
+    return;
+}
+
+static void
 test_ryu_s2d_hex(void) {
     static uint64 cases[] = {
         0x0000000000000000ull,
@@ -134,11 +188,11 @@ test_ryu_s2d_hex(void) {
     ASSERT(test_ryu_double_bits(value) == 0x8000000000000000ull);
 
     used = s2d("0x0.0000000000001p-1022", &value);
-    ASSERT_EQ(used, 23);
+    ASSERT_EQ(used, -FLOAT_UNDERFLOW);
     ASSERT_EQ(test_ryu_double_bits(value), 0x0000000000000001ull);
 
     used = s2d("0x0.fffffffffffffp-1022", &value);
-    ASSERT_EQ(used, 23);
+    ASSERT_EQ(used, -FLOAT_UNDERFLOW);
     ASSERT_EQ(test_ryu_double_bits(value), 0x000fffffffffffffull);
 
     used = s2d("0x1p-1022", &value);
@@ -154,7 +208,7 @@ test_ryu_s2d_hex(void) {
     ASSERT_EQ(test_ryu_double_bits(value), 0x7ff0000000000000ull);
 
     used = s2d("0x1p-1075", &value);
-    ASSERT_EQ(used, 9);
+    ASSERT_EQ(used, -FLOAT_UNDERFLOW);
     ASSERT(test_ryu_double_bits(value) == 0);
 
     used = s2d("0x1.00000000000008p+0", &value);
@@ -191,7 +245,12 @@ test_ryu_s2d_hex(void) {
         len = fmt_snprintf(buffer, SIZEOF(buffer), "%a", original);
         ASSERT_GT(len, 0);
         used = s2d(buffer, &value);
-        ASSERT_EQ(used, len);
+        if (((cases[i] >> 52) & 0x7ff) == 0
+            && (cases[i] & 0x000fffffffffffffull) != 0) {
+            ASSERT_EQ(used, -FLOAT_UNDERFLOW);
+        } else {
+            ASSERT_EQ(used, len);
+        }
         ASSERT(test_ryu_double_bits(value) == cases[i]);
     }
     return;
@@ -215,6 +274,7 @@ main(void) {
     test_ryu_result(buffer, len, "1.23e+03");
 
     test_ryu_s2d_leading_plus();
+    test_ryu_s2d_range_values();
     test_ryu_s2d_hex();
 
     exit(EXIT_SUCCESS);
