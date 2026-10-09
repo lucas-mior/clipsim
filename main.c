@@ -185,8 +185,8 @@ main_usage(FILE *stream) {
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
         fprintf(stream,
                 "%s | %-*s : %s\n",
-                commands[i].shortname, 8,
-                commands[i].longname, commands[i].description);
+                commands[i].shortname, 8, commands[i].longname,
+                commands[i].description);
     }
     exit(stream != stdout);
 }
