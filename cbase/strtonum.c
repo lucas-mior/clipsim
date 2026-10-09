@@ -364,10 +364,10 @@ main(void) {
                             &result), 67);
     ASSERT_EQ(result, LLONG_MIN);
     ASSERT_EQ(parse_integer(STRLIT("0o777777777777777777777"), &result),
-                 23);
+              23);
     ASSERT_EQ(result, LLONG_MAX);
     ASSERT_EQ(parse_integer(STRLIT("-0o1000000000000000000000"), &result),
-                 25);
+              25);
     ASSERT_EQ(result, LLONG_MIN);
     ASSERT_EQ(parse_integer(STRLIT("0x7fffffffffffffff"), &result), 18);
     ASSERT_EQ(result, LLONG_MAX);
@@ -378,18 +378,18 @@ main(void) {
     ASSERT_EQ(parse_integer(STRLIT("0x"), &result), -EINVAL);
     ASSERT_EQ(parse_integer(STRLIT("0o8"), &result), -EINVAL);
     ASSERT_EQ(parse_integer(STRLIT("9223372036854775808"), &result),
-                 -ERANGE);
+              -ERANGE);
     ASSERT_EQ(parse_integer(STRLIT("-9223372036854775809"), &result),
-                 -ERANGE);
+              -ERANGE);
     ASSERT_EQ(parse_integer(STRLIT("0b10000000000000000000000000000000"
                                    "00000000000000000000000000000000"),
                             &result), -ERANGE);
     ASSERT_EQ(parse_integer(STRLIT("0o1000000000000000000000"), &result),
-                 -ERANGE);
+              -ERANGE);
     ASSERT_EQ(parse_integer(STRLIT("0x8000000000000000"), &result),
-                 -ERANGE);
+              -ERANGE);
     ASSERT_EQ(parse_integer(STRLIT("-0x8000000000000001"), &result),
-                 -ERANGE);
+              -ERANGE);
 
     ASSERT_EQ(parse_integer("123xyz", 6, &result), 3);
     ASSERT_EQ(result, 123);
@@ -445,10 +445,10 @@ main(void) {
     ASSERT_EQ(atoi_base(STRLIT("-0x8000000000000000")), LLONG_MIN);
     ASSERT_EQ(atoi_base(STRLIT("0b1111111111111111111111111111111"
                                   "11111111111111111111111111111111")),
-                 LLONG_MAX);
+              LLONG_MAX);
     ASSERT_EQ(atoi_base(STRLIT("-0b1000000000000000000000000000000"
                                   "000000000000000000000000000000000")),
-                 LLONG_MIN);
+              LLONG_MIN);
 #if OS_UNIX
     ASSERT_TRAPS(atoi_base(STRLIT("0x8000000000000000")));
     ASSERT_TRAPS(atoi_base(STRLIT("-0x8000000000000001")));
@@ -464,14 +464,11 @@ main(void) {
     ASSERT_EQ(atoi_base_sat(STRLIT("0x7f")), 127);
     ASSERT_EQ(atoi_base_sat(STRLIT("-0X7F")), -127);
     ASSERT_EQ(atoi_base_sat(STRLIT("0x7fffffffffffffff")), LLONG_MAX);
-    ASSERT_EQ(atoi_base_sat(STRLIT("-0x8000000000000000")),
-                 LLONG_MIN);
+    ASSERT_EQ(atoi_base_sat(STRLIT("-0x8000000000000000")), LLONG_MIN);
     ASSERT_EQ(atoi_base_sat(STRLIT("0x8000000000000000")), LLONG_MAX);
-    ASSERT_EQ(atoi_base_sat(STRLIT("-0x8000000000000001")),
-                 LLONG_MIN);
+    ASSERT_EQ(atoi_base_sat(STRLIT("-0x8000000000000001")), LLONG_MIN);
     ASSERT_EQ(atoi_base_sat(STRLIT("0xffffffffffffffff")), LLONG_MAX);
-    ASSERT_EQ(atoi_base_sat(STRLIT("-0xffffffffffffffff")),
-                 LLONG_MIN);
+    ASSERT_EQ(atoi_base_sat(STRLIT("-0xffffffffffffffff")), LLONG_MIN);
 
     ASSERT(util_is_integer(""));
     ASSERT(util_is_integer("0123456789"));

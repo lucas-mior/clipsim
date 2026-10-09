@@ -837,8 +837,7 @@ main(void) {
         old_cap = builder.cap;
         str_append(&builder, builder.data + 1, builder.len - 1);
         ASSERT_GT_VAR(builder.cap, old_cap);
-        ASSERT_EQ(builder.data,
-                     "0123456789abcde123456789abcde");
+        ASSERT_EQ(builder.data, "0123456789abcde123456789abcde");
         str_free(&builder);
     }
 
@@ -851,8 +850,7 @@ main(void) {
         str_itoa(&builder, -9223372036854775807LL - 1);
         STR_APPEND(&builder, " ");
         str_itoa(&builder, 9223372036854775807LL);
-        ASSERT_EQ(builder.data,
-                     "x0 -9223372036854775808 9223372036854775807");
+        ASSERT_EQ(builder.data, "x0 -9223372036854775808 9223372036854775807");
         str_free(&builder);
     }
     {
@@ -872,7 +870,7 @@ main(void) {
         int32 count = 0;
 
         formatted = strflex_list_printf(&list, "%s %.10s %d%n",
-                                        "x", "abc", 7, &count);
+                                               "x", "abc", 7, &count);
         ASSERT_EQ(formatted->data, "x abc 7");
         ASSERT_EQ(formatted->len, 7);
         ASSERT_EQ(count, formatted->len);

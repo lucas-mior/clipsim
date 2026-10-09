@@ -954,7 +954,7 @@ test_cmd_exists(char *command) {
             len = SNPRINTF(candidate, "./%s", command);
         } else {
             len = SNPRINTF(candidate, "%.*s/%s",
-                            end - start, path + start, command);
+                                      end - start, path + start, command);
         }
         if ((len > 0) && (len < SIZEOF(candidate))
             && (access(candidate, X_OK) == 0)) {

@@ -206,8 +206,8 @@ xarenas_push(Arena **arenas, int32 narenas, int64 size) {
     void *p;
 
     if ((p = arenas_push(arenas, narenas, size)) == NULL) {
-        error2("Error pushing %lld bytes into arenas %p: %s.\n", size,
-               (void *)arenas, arena_strerror(errno));
+        error2("Error pushing %lld bytes into arenas %p: %s.\n",
+               size, (void *)arenas, arena_strerror(errno));
         exit(EXIT_FAILURE);
     }
     return p;

@@ -905,11 +905,11 @@ int32 cmd_status_from_wait(int status, CommandResult *result);
 char *cmd_str(Command *command, int32 *len);
 int32 cmd_wait(Command *);
 
-#define CMD_PUSH(CMD, ...)                                 \
-    cmd_push_array(CMD,                                    \
-                       (int32)(sizeof((char *[]){__VA_ARGS__}) \
-                               /sizeof(char *)),               \
-                       (char *[]){__VA_ARGS__})
+#define CMD_PUSH(CMD, ...)                                    \
+    cmd_push_array(CMD,                                       \
+                   (int32)(sizeof((char *[]){__VA_ARGS__})      \
+                           /sizeof(char *)),                   \
+                   (char *[]){__VA_ARGS__})
 
 #define CMD_ENV_PUSH_2(A, B) cmd_env_push(A, B)
 #define CMD_ENV_PUSH_3(A, B, B_LEN)                        \

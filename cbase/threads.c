@@ -487,7 +487,7 @@ parallel_for_max_threads_min_items(
     }
 
     thread_count = thread_pool_default_thread_count(length, max_threads,
-                                                   min_parallel_items);
+                                                    min_parallel_items);
     if (thread_count <= 1) {
         function(0, length, 0, user_data);
         return 1;
@@ -559,8 +559,8 @@ int32
 parallel_for_min_items(int64 length, int64 min_parallel_items,
                        ParallelForFunction *function, void *user_data) {
     return parallel_for_max_threads_min_items(length, PARALLEL_FOR_MAX_THREADS,
-                                             min_parallel_items, function,
-                                             user_data);
+                                              min_parallel_items, function,
+                                              user_data);
 }
 
 int32

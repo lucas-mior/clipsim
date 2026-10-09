@@ -941,16 +941,16 @@ test_comment_scanners(void) {
 
     ASSERT_EQ(scan_line_comment(STRLIT("// abc\nx"), 0), 6);
     ASSERT_EQ(scan_block_comment(STRLIT("/* abc */x"), 0,
-                                    &in_block_comment),
-                 9);
+                                 &in_block_comment),
+              9);
     ASSERT(!in_block_comment);
     ASSERT_EQ(scan_block_comment(STRLIT("/* abc\nx"), 0,
-                                    &in_block_comment),
-                 6);
+                                 &in_block_comment),
+              6);
     ASSERT(in_block_comment);
     ASSERT_EQ(scan_block_comment(STRLIT("continued */"), 0,
-                                    &in_block_comment),
-                 12);
+                                 &in_block_comment),
+              12);
     ASSERT(!in_block_comment);
     return;
 }

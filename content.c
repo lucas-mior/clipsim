@@ -109,8 +109,8 @@ content_check_content(uchar *data, int32 length) {
         size_t data_len = (size_t)MIN(length, MAX_MAGIC_BUFFER_LEN);
 
         if ((mime_type = magic_buffer(magic, data, data_len)) == NULL) {
-            error("Error in magic_buffer(%.*s): %s.\n", 30, data,
-                  magic_error(magic));
+            error("Error in magic_buffer(%.*s): %s.\n",
+                  30, data, magic_error(magic));
             break;
         }
         mime_type_len = strlen32((char *)mime_type);

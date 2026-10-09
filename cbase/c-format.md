@@ -146,7 +146,10 @@ single line; If it does not fit, try to fit the format string and the arguments
 in the same line; if it still does not fit, try to align the beggining of the
 first argument for the format string with the beggining of the format string; if
 it still does not fit; put the format string on a new line and the arguments for
-the format string below it. See the examples below:
+the format string below it. When wrapping the call, the line containing the end
+of the format string must contain either all format arguments or none of them.
+The format arguments may continue on later lines, but the first format-argument
+line must be aligned with the format string. See the examples below:
 ```c
 static void
 function(void) {
@@ -162,7 +165,7 @@ function(void) {
                "this fits in one line: %d\n",
                x);
 
-    // bad (format arguments are split across lines)
+    // bad (the format-string line contains some, but not all, arguments)
     str_printf(&str, "this does not fit in single line because of: %d, %d\n", x,
                y);
 
@@ -170,22 +173,22 @@ function(void) {
     str_printf(&str, "this does not fit in a single line because of: %d, %d\n",
                      x, y);
 
-    // also good (format string is separate; format arguments stay together)
+    // also good (the format-string line contains all format arguments)
     str_printf(&str,
                "this does not fit in a single line because of: %d, %d\n", x, y);
 
     // bad (passes the 80 column limit)
     str_printf(&str, "this is a format string for writing the numbers %d and %d.", x, y);
 
-    // also bad (format string is with some format arguments, but not all)
+    // also bad (the format-string line contains some, but not all, arguments)
     str_printf(&str, "this is format string for writing numbers %d and %d.", x,
                      y);
 
-    // good (format string and all format arguments fit on the same line)
+    // good (the format-string line contains all format arguments)
     str_printf(&str,
                "this is format string for writing numbers %d and %d.", x, y);
 
-    // also good (format string is separate; format arguments stay together)
+    // also good (the format-string line contains no format arguments)
     str_printf(&str,
                "this is a format string for writing the numbers %d and %d.",
                x, y);
@@ -194,13 +197,19 @@ function(void) {
     str_printf(&str, "this is a format string for writing numbers %d and %d.",
                      x, y);
 
-    // bad (one format argument is separated from the others
+    // bad (the format-string line contains some, but not all, arguments)
     printf("some format string says: %s = %g\n", states[i],
            X[final_step*nstates + i]);
 
-    // good (format arguments stay together; first arg is aligned with fmt str)
+    // good (the format-string line contains no format arguments)
     printf("some format string says: %s = %g\n",
            states[i], X[final_step*nstates + i]);
+
+    // also good (the format-string line contains no format arguments; the
+    // arguments may continue on later lines)
+    printf("some format string says: %s = %g\n",
+           states[i],
+           X[final_step*nstates + i]);
 
     return;
 }
@@ -215,7 +224,7 @@ function(void) {
     int32 x = 1;
     int32 y = 2;
 
-    // bad
+    // bad (split the format string instead of exceeding the line limit)
     str_printf(&str,
                "this is a huge huge huge huge huge huge huge huge huge huge format string = %d",
                x);

@@ -785,8 +785,7 @@ xmmap_commit(int64 *size) {
 void
 xmunmap(void *p, int64 size) {
     if (munmap(p, (size_t)size) < 0) {
-        error("Error in munmap(%p, %lld): %s.\n",
-              p, size, strerror(errno));
+        error("Error in munmap(%p, %lld): %s.\n", p, size, strerror(errno));
         fatal(EXIT_FAILURE);
     }
     return;
@@ -1039,8 +1038,7 @@ int main(void) {
         rand_int_seed(1337);
         for (int32 i = 0; i < num_strings; i += 1) {
             char stack_buf[128];
-            int32 v_len = random_ascii_string(stack_buf,
-                                              SIZEOF(stack_buf), 8);
+            int32 v_len = random_ascii_string(stack_buf, SIZEOF(stack_buf), 8);
 
             v_strings[i].len = v_len;
             v_strings[i].s = malloc2(v_len + 1);

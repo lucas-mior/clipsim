@@ -158,8 +158,7 @@ struct floating_decimal_128 generic_binary_to_decimal(
     vm = mulShift(4 * m2 - 1 - mmShift, pow5, i);
 #ifdef RYU_DEBUG
     printf("%s * 2^%d / 10^%d\n", ryu_s(mv), e2, q);
-    printf("V+=%s\nV =%s\nV-=%s\n",
-        ryu_s(vp), ryu_s(vr), ryu_s(vm));
+    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
 #endif
     // floor(log_5(2^128)) = 55, this is very conservative
     if (q <= 55) {
@@ -191,8 +190,7 @@ struct floating_decimal_128 generic_binary_to_decimal(
 #ifdef RYU_DEBUG
     printf("%s * 5^%d / 10^%d\n", ryu_s(mv), -e2, q);
     printf("%d %d %d %d\n", q, i, k, j);
-    printf("V+=%s\nV =%s\nV-=%s\n",
-        ryu_s(vp), ryu_s(vr), ryu_s(vm));
+    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
 #endif
     if (q <= 1) {
       // {vr,vp,vm} is trailing zeros if {mv,mp,mm} has at least q trailing 0 bits.
@@ -219,8 +217,7 @@ struct floating_decimal_128 generic_binary_to_decimal(
   }
 #ifdef RYU_DEBUG
   printf("e10=%d\n", e10);
-  printf("V+=%s\nV =%s\nV-=%s\n",
-      ryu_s(vp), ryu_s(vr), ryu_s(vm));
+  printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
   printf("vm is trailing zeros=%s\n", vmIsTrailingZeros ? "true" : "false");
   printf("vr is trailing zeros=%s\n", vrIsTrailingZeros ? "true" : "false");
 #endif
@@ -240,8 +237,7 @@ struct floating_decimal_128 generic_binary_to_decimal(
     ++removed;
   }
 #ifdef RYU_DEBUG
-  printf("V+=%s\nV =%s\nV-=%s\n",
-      ryu_s(vp), ryu_s(vr), ryu_s(vm));
+  printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
   printf("d-10=%s\n", vmIsTrailingZeros ? "true" : "false");
 #endif
   if (vmIsTrailingZeros) {
@@ -268,8 +264,7 @@ struct floating_decimal_128 generic_binary_to_decimal(
   const int32 exp = e10 + removed;
 
 #ifdef RYU_DEBUG
-  printf("V+=%s\nV =%s\nV-=%s\n",
-      ryu_s(vp), ryu_s(vr), ryu_s(vm));
+  printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
   printf("O=%s\n", ryu_s(output));
   printf("EXP=%d\n", exp);
 #endif

@@ -325,8 +325,7 @@ assert_compare_const(char *file, int32 line, char *func,
         return false;
     } else if ((var1.kind == ASSERT_COMPARE_VALUE_INTEGER)
         && (var2.kind == ASSERT_COMPARE_VALUE_INTEGER)) {
-        result = assert_compare_const_integer(mode,
-                                              var1.integer, var2.integer);
+        result = assert_compare_const_integer(mode, var1.integer, var2.integer);
         if (!result && DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %lld %s %lld = %s\n",
