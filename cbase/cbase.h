@@ -1058,6 +1058,8 @@ void throw_away_function();
 #include "cbase.h"
 #include "meta_common.c"
 #include "meta_tokenize.c"
+#include "meta_split.c"
+#include "meta_preproc.c"
 #include "meta_parse.c"
 #include "meta_generate.c"
 

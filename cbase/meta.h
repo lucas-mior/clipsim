@@ -263,6 +263,22 @@ enum CUnaryOp {
     C_UNARY_OP_POST_DECREMENT,
 };
 
+enum CPreprocessorDirectiveKind {
+    C_PREPROCESSOR_DIRECTIVE_UNKNOWN = 0,
+    C_PREPROCESSOR_DIRECTIVE_DEFINE,
+    C_PREPROCESSOR_DIRECTIVE_UNDEF,
+    C_PREPROCESSOR_DIRECTIVE_INCLUDE,
+    C_PREPROCESSOR_DIRECTIVE_IF,
+    C_PREPROCESSOR_DIRECTIVE_IFDEF,
+    C_PREPROCESSOR_DIRECTIVE_IFNDEF,
+    C_PREPROCESSOR_DIRECTIVE_ELIF,
+    C_PREPROCESSOR_DIRECTIVE_ELSE,
+    C_PREPROCESSOR_DIRECTIVE_ENDIF,
+    C_PREPROCESSOR_DIRECTIVE_ERROR,
+    C_PREPROCESSOR_DIRECTIVE_PRAGMA,
+    C_PREPROCESSOR_DIRECTIVE_LINE,
+};
+
 typedef struct Token {
     char *text; /* Borrowed source span, not necessarily NUL-terminated. */
     enum TokenKind kind;
@@ -270,6 +286,52 @@ typedef struct Token {
     int32 column;
     int32 offset;
 } Token;
+
+/* Half-open token-index range [first, end). */
+typedef struct TokenRange {
+    int32 first;
+    int32 end;
+} TokenRange;
+
+/* Half-open byte-offset range into Tokenization.text. */
+typedef struct SourceRange {
+    int32 start;
+    int32 end;
+} SourceRange;
+
+/* Physical line is 1-based; byte offset and byte column are 0-based. */
+typedef struct SourceLocation {
+    int32 offset;
+    int32 line;
+    int32 column;
+} SourceLocation;
+
+/* Delimiter nesting relative to the beginning of a token range. */
+typedef struct TokenDelimiterDepth {
+    int32 paren;
+    int32 bracket;
+    int32 brace;
+} TokenDelimiterDepth;
+
+typedef struct CPreprocessorDirective {
+    SourceRange source;
+    TokenRange tokens;
+    enum CPreprocessorDirectiveKind kind;
+    int32 hash_token;
+    int32 keyword_token;
+} CPreprocessorDirective;
+
+typedef struct CPreprocessorDefine {
+    CPreprocessorDirective directive;
+    SourceRange replacement_source;
+    TokenRange parameter_list;
+    TokenRange parameters;
+    TokenRange replacement;
+    int32 name_token;
+    int32 open_paren_token;
+    int32 close_paren_token;
+    bool function_like;
+} CPreprocessorDefine;
 
 typedef struct Tokenization {
     char *text;
@@ -279,7 +341,27 @@ typedef struct Tokenization {
     int32 token_count;
     int32 token_capacity;
     int32 padding;
+
+    /* Lazily allocated physical-line index owned by this tokenization. */
+    int32 line_count;
+    int32 line_capacity;
+    int32 *line_starts;
 } Tokenization;
+
+/*
+ * Borrowed top-level token splitter. Returned items refer to the original
+ * Tokenization and contain all trivia. Trim them with token_range_trim_trivia.
+ */
+typedef struct TokenRangeSplit {
+    Tokenization *tokenization;
+    TokenRange range;
+    char *separator;
+    int32 separator_len;
+    int32 cursor;
+    int32 source_cursor;
+    int32 source_end;
+    bool finished;
+} TokenRangeSplit;
 
 typedef struct Line {
     Token *tokens;
@@ -290,12 +372,6 @@ typedef struct Line {
     int32 token_capacity;
     int32 padding;
 } Line;
-
-typedef struct Document {
-    Line *lines;
-    int32 line_count;
-    int32 capacity;
-} Document;
 
 char *TOKEN_str(enum TokenKind);
 void TOKEN_str_free(char *);
@@ -340,26 +416,115 @@ int32 scan_literal_token(char *, int32, int32);
 int32 scan_number_literal(char *, int32, int32);
 bool token_is_number(Token *);
 bool token_is_trivia(Token *);
+bool token_is_open_delimiter(Token *);
+bool token_is_close_delimiter(Token *);
+bool token_delimiter_depth_equal(TokenDelimiterDepth, TokenDelimiterDepth);
+bool token_delimiter_depth_is_zero(TokenDelimiterDepth);
+/* Empty token ranges contain no significant tokens after trimming trivia. */
+bool token_range_is_empty(Tokenization *, TokenRange);
+bool token_range_is_valid(Tokenization *, TokenRange);
+int32 token_range_first_significant(Tokenization *, TokenRange);
+int32 token_range_last_significant(Tokenization *, TokenRange);
+/*
+ * Range navigation is cursor-based. Forward searches return range.end when
+ * exhausted; reverse searches return range.first - 1.
+ */
+int32 token_range_next_kind(Tokenization *, TokenRange, int32,
+                            enum TokenKind);
+int32 token_range_next_significant(Tokenization *, TokenRange, int32);
+int32 token_range_next_text(Tokenization *, TokenRange, int32,
+                            char *, int32);
+int32 token_range_previous_kind(Tokenization *, TokenRange, int32,
+                                enum TokenKind);
+int32 token_range_previous_significant(Tokenization *, TokenRange, int32);
+int32 token_range_previous_text(Tokenization *, TokenRange, int32,
+                                char *, int32);
+/*
+ * Depth is measured before the token at token_index. token_index may equal
+ * range.end, which returns the final depth. False means malformed nesting.
+ */
+bool token_range_delimiter_depth_before(Tokenization *, TokenRange, int32,
+                                        TokenDelimiterDepth *);
+bool token_range_is_balanced(Tokenization *, TokenRange);
+int32 token_range_matching_delimiter_forward(Tokenization *, TokenRange,
+                                             int32);
+int32 token_range_matching_delimiter_reverse(Tokenization *, TokenRange,
+                                             int32);
+int32 token_range_next_kind_at_depth(Tokenization *, TokenRange, int32,
+                                     TokenDelimiterDepth, enum TokenKind);
+int32 token_range_next_text_at_depth(Tokenization *, TokenRange, int32,
+                                     TokenDelimiterDepth, char *, int32);
+int32 token_range_previous_kind_at_depth(Tokenization *, TokenRange, int32,
+                                         TokenDelimiterDepth, enum TokenKind);
+int32 token_range_previous_text_at_depth(Tokenization *, TokenRange, int32,
+                                         TokenDelimiterDepth, char *, int32);
+/* Compares exact token kind/text sequences after ignoring trivia. */
+bool token_range_significant_equal(Tokenization *, TokenRange,
+                                   Tokenization *, TokenRange);
+SourceRange token_range_source_range(Tokenization *, TokenRange);
+TokenRange token_range_trim_trivia(Tokenization *, TokenRange);
+bool tokenization_blank_line_between(Tokenization *, int32, int32);
+bool tokenization_comment_between(Tokenization *, int32, int32);
 int32 tokenization_find_matching(Tokenization *, int32);
 bool tokenization_is_in_preprocessor_define(Tokenization *, int32);
+bool tokenization_line_continuation_between(Tokenization *, int32, int32);
+
+/*
+ * Split at exact separator tokens outside balanced (), [] and {}.
+ * init checks the entire range for malformed nesting; false means invalid.
+ * An empty or trivia-only range yields zero items. For nonempty ranges,
+ * consecutive/leading/trailing separators yield empty items.
+ * next returns false after exhaustion. Item token ranges retain trivia
+ * tokens, if present. next_spans also returns exact untrimmed source byte
+ * ranges, retaining inter-token whitespace even with SKIP_WHITESPACE.
+ * The input source extent is that of the supplied token range.
+ * The splitter borrows both the tokenization and separator for its lifetime.
+ * collect writes up to capacity items (items may be NULL if capacity is 0),
+ * returns the total number required, or -1 for invalid input. It never
+ * allocates; call with NULL/0 to count before allocating a result array.
+ */
+bool token_range_split_init(TokenRangeSplit *, Tokenization *, TokenRange,
+                            char *, int32);
+bool token_range_split_next(TokenRangeSplit *, TokenRange *);
+bool token_range_split_next_spans(TokenRangeSplit *, TokenRange *,
+                                  SourceRange *);
+int32 token_range_split_collect(Tokenization *, TokenRange, char *, int32,
+                                TokenRange *, int32);
+
+/*
+ * Raw preprocessor structure. No directives are expanded. Directive source
+ * ranges include the terminating physical newline when one exists.
+ */
+enum CPreprocessorDirectiveKind c_preprocessor_directive_kind(Token *);
+bool c_preprocessor_directive_at(Tokenization *, int32,
+                                 CPreprocessorDirective *);
+bool c_preprocessor_directive_containing(Tokenization *, int32,
+                                         CPreprocessorDirective *);
+bool c_preprocessor_define_info(Tokenization *, CPreprocessorDirective *,
+                                CPreprocessorDefine *);
+int32 c_preprocessor_define_parameter_count(Tokenization *,
+                                            CPreprocessorDefine *);
+bool c_preprocessor_define_parameter(Tokenization *, CPreprocessorDefine *,
+                                     int32, TokenRange *);
 int32 tokenization_logical_line_start_offset(Tokenization *, int32);
+bool tokenization_newline_between(Tokenization *, int32, int32);
 int32 tokenization_next_significant(Tokenization *, int32);
+int32 tokenization_physical_line_count(Tokenization *);
+/* Physical line arguments are 1-based; end offsets are exclusive. */
+int32 tokenization_physical_line_end_offset(Tokenization *, int32);
+int32 tokenization_physical_line_start_offset(Tokenization *, int32);
 int32 tokenization_previous_significant(Tokenization *, int32);
+SourceLocation tokenization_source_location(Tokenization *, int32);
 int32 tokenization_significant_at_or_after(Tokenization *, int32);
 int32 tokenization_token_at_or_after_offset(Tokenization *, int32);
+SourceLocation tokenization_token_location(Tokenization *, int32);
 Tokenization tokenize(char *, int32);
 void tokenize_cstyle_line(Line *, bool *);
 void tokenize_line(Line *, bool *);
 void tokenize_line_with_flags(Line *, bool *, int32);
 Line tokenize_text_with_flags(char *, int32, int32);
 Tokenization tokenize_with_flags(char *, int32, int32);
-void document_add_line(Document *, char *, int32, bool *, int32);
-void document_reserve_lines(Document *, int32);
-void free_document(Document *);
 void free_line(Line *);
-Document *parse_c_text(char *, int32);
-Document *parse_text(char *, int32);
-Document *parse_text_with_flags(char *, int32, int32);
 void c_emit_wrapped_expr(String *, char *, char *, char *, char *);
 String c_identifier(char *, int32);
 bool c_identifier_is_keyword(char *);
