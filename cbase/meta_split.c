@@ -17,6 +17,7 @@
 bool
 token_range_split_init(TokenRangeSplit *split, Tokenization *tokenization,
                        TokenRange range, char *separator, int32 separator_len) {
+    SourceRange source;
     if (split == NULL) {
         return false;
     }
@@ -32,7 +33,8 @@ token_range_split_init(TokenRangeSplit *split, Tokenization *tokenization,
     split->separator = separator;
     split->separator_len = separator_len;
     split->cursor = range.first;
-    SourceRange source = token_range_source_range(tokenization, range);
+
+    source = token_range_source_range(tokenization, range);
 
     split->source_cursor = source.start;
     split->source_end = source.end;
@@ -339,13 +341,15 @@ test_split_deep_nesting(void) {
     pos += 1;
     text[pos] = '\0';
 
-    Tokenization t = tokenize(text, pos);
-    TokenRange all = {0, t.token_count};
+    {
+        Tokenization t = tokenize(text, pos);
+        TokenRange all = {0, t.token_count};
 
-    ASSERT_EQ(token_range_split_collect(&t, all, STRLIT(","), items, 2), 2);
-    ASSERT_EQ(items[1].end - items[1].first, 1);
-    test_split_assert_text(&t, items[1], STRLIT("y"));
-    free_tokenization(&t);
+        ASSERT_EQ(token_range_split_collect(&t, all, STRLIT(","), items, 2), 2);
+        ASSERT_EQ(items[1].end - items[1].first, 1);
+        test_split_assert_text(&t, items[1], STRLIT("y"));
+        free_tokenization(&t);
+    }
     return;
 }
 
