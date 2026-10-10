@@ -25,6 +25,10 @@ extern "C" {
 
 #include <inttypes.h>
 
+enum {
+    RYU_D2S_BUFFER_SIZE = 25,
+};
+
 int d2s_buffered_n(double f, char* result);
 void d2s_buffered(double f, char* result);
 char* d2s(double f);

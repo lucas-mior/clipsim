@@ -23,13 +23,13 @@
 extern "C" {
 #endif
 
-// This is an experimental implementation of parsing strings to 64-bit floats.
-// Decimal conversion uses a Ryu-like algorithm. It currently accepts at most
-// 17 significant-position decimal digits after leading zeros. A longer valid
-// decimal significand can therefore fail with -INPUT_TOO_LONG instead of being
-// rounded like strtod(). Hexadecimal floating-point input uses C %a/%A syntax
-// and does not have this decimal-digit limitation. Not all strtod formats are
-// supported. Use at your own risk.
+// Parses decimal strings to binary64 with correct round-to-nearest-even
+// conversion. Long decimal inputs use fixed-size integer arithmetic rather
+// than an arbitrarily growing integer or a libc decimal parser. The entire
+// input can be scanned, but only 800 significant digits and a sticky bit are
+// retained: this exceeds the precision of every binary64 rounding midpoint.
+// Hexadecimal floating-point input uses C %a/%A syntax. Not all strtod
+// formats are supported.
 
 enum Status {
   SUCCESS,
@@ -51,14 +51,17 @@ enum Status {
 // range, including exact subnormals, and stores the resulting signed zero or
 // subnormal value.
 //
-// Decimal significands beyond the supported 17 significant-position digits
-// may return -INPUT_TOO_LONG even if strtod() would accept and round them.
-//
 // s2d_n reads at most len bytes and does not require a nul terminator. Parsing
 // stops before the first byte that is not part of a valid floating-point
 // token. s2d parses a nul-terminated string with the same prefix semantics.
 int32 s2d_n(const char *buffer, int32 len, double *result);
 int32 s2d(const char *buffer, double *result);
+
+// Like s2d_n, but optimized for a readable, nul-terminated buffer. Ordinary
+// decimal input is scanned without checking a length on each character.
+// The caller must ensure a terminating nul byte is accessible. This function
+// has the same prefix, rounding, and error semantics as s2d_n.
+int32 s2d_fast(const char *buffer, double *result);
 
 enum Status s2f_n(const char * buffer, const int len, float * result);
 enum Status s2f(const char * buffer, float * result);

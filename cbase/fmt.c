@@ -22,39 +22,6 @@
 #define FMT_NULL_STRING "null"
 #endif
 
-// For a binary floating type, MANT_DIG - MIN_EXP is the number of decimal
-// fractional places needed to represent its smallest subnormal exactly.
-enum {
-    FMT_FLOAT_RYU_BUFFER_SIZE = 2000,
-    FMT_DOUBLE_MAX_DECIMAL_PRECISION = DBL_MANT_DIG - DBL_MIN_EXP,
-    FMT_LDOUBLE_MAX_DECIMAL_PRECISION = LDBL_MANT_DIG - LDBL_MIN_EXP,
-    FMT_FLOAT_MAX_FIXED_PREFIX = 312,
-    FMT_FLOAT_MAX_EXP_PREFIX = 8,
-    FMT_LDOUBLE_MAX_FIXED_PREFIX = LDBL_MAX_10_EXP + 8,
-    FMT_DOUBLE_PRINTF_BUFFER_SIZE = FMT_FLOAT_MAX_FIXED_PREFIX
-                                    + FMT_DOUBLE_MAX_DECIMAL_PRECISION + 8,
-    FMT_LDOUBLE_PRINTF_BUFFER_SIZE = FMT_LDOUBLE_MAX_FIXED_PREFIX
-                                     + FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 8,
-    FMT_DOUBLE_HEX_DIGITS = 13,
-    FMT_LDOUBLE_MAX_HEX_DIGITS = (LDBL_MANT_DIG - 1 + 3)/4,
-    FMT_DOUBLE_FRACTION_BITS = 52,
-    FMT_DOUBLE_EXPONENT_BIAS = 1023,
-    FMT_DOUBLE_SUBNORMAL_EXPONENT = -1022,
-    FMT_BIG_UINT_WORD_BITS = 32,
-    // log2(10) is less than 10/3, so this bounds every decimal body.
-    FMT_BIG_UINT_MAX_BITS = (FMT_LDOUBLE_PRINTF_BUFFER_SIZE*10 + 2)/3,
-    FMT_BIG_UINT_MAX_WORDS = (FMT_BIG_UINT_MAX_BITS
-                              + FMT_BIG_UINT_WORD_BITS - 1)
-                             /FMT_BIG_UINT_WORD_BITS,
-    FMT_LDOUBLE_DOUBLE_FRACTION_BITS = 52,
-    FMT_LDOUBLE_DOUBLE_EXPONENT_BIAS = 1023,
-    FMT_LDOUBLE_X87_FRACTION_BITS = 63,
-    FMT_LDOUBLE_X87_EXPONENT_BIAS = 16383,
-    FMT_LDOUBLE_X87_EXPONENT_MASK = 0x7fff,
-    FMT_LDOUBLE_BINARY128_FRACTION_BITS = 112,
-    FMT_LDOUBLE_BINARY128_EXPONENT_BIAS = 16383,
-};
-
 #if FLT_RADIX == 2 \
     && ((LDBL_MANT_DIG == DBL_MANT_DIG && LDBL_MAX_EXP == DBL_MAX_EXP) \
         || (LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384) \
@@ -4892,34 +4859,6 @@ int32
 fmt_strftime(char *buffer, int64 capacity,
              char *format, struct tm *time_info) {
     return fmt_strftime_l(buffer, capacity, format, time_info, &fmt_locale_c);
-}
-
-void
-str_float64(String *string, double value) {
-    int32 len;
-
-    str_reserve(string, FMT_FLOAT_RYU_BUFFER_SIZE);
-    len = fmt_float64_shortest(string->data + string->len,
-                               string->cap - string->len, value);
-    ASSERT_GE(len, 0);
-    string->len += len;
-    return;
-}
-
-void
-str_float64_fixed(String *str, double value, int32 precision) {
-    int32 len;
-
-    str_reserve(str, FMT_FLOAT_RYU_BUFFER_SIZE);
-    len = fmt_float64_fixed(str->data + str->len, str->cap - str->len,
-                            value, precision);
-    if (len < 0) {
-        error("Invalid float precision %d.\n", precision);
-        fatal(EXIT_FAILURE);
-    }
-    str->len += len;
-
-    return;
 }
 
 void ATTR_PRINTF(1, 2)

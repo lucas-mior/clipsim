@@ -238,7 +238,7 @@ c_emit_wrapped_expr(String *out, char *indent, char *prefix, char *expr,
     for (int32 i = 0; expr[i] != '\0'; i += 1) {
         STR_APPEND(out, expr + i, 1);
         if (expr[i] == '(' || expr[i] == ',') {
-            STR_APPEND(out, "\n");
+            str_append_byte(out, '\n');
             STR_APPEND(out, indent, strlen32(indent));
             for (int32 j = 0; j < prefix_len; j += 1) {
                 STR_APPEND(out, " ");
@@ -246,7 +246,7 @@ c_emit_wrapped_expr(String *out, char *indent, char *prefix, char *expr,
         }
     }
     STR_APPEND(out, suffix, strlen32(suffix));
-    STR_APPEND(out, "\n");
+    str_append_byte(out, '\n');
 }
 
 #if 0 == TESTING_meta_generate

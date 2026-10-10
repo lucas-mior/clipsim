@@ -275,7 +275,7 @@ test_split_literals_comments_and_flags(void) {
                 /* The comment is trivia in the untrimmed second item. */
                 int32 first = token_range_first_significant(&t, item);
 
-                ASSERT_EQ(t.tokens[first].kind, TOKEN_IDENT);
+                ASSERT(t.tokens[first].kind == TOKEN_IDENT);
             }
             test_split_assert_text(&t, trimmed, expected[count],
                                    strlen32(expected[count]));

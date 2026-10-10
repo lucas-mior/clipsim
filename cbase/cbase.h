@@ -105,6 +105,39 @@ opt_strlen32(char *string) {
     return strlen32(string);
 }
 
+// For a binary floating type, MANT_DIG - MIN_EXP is the number of decimal
+// fractional places needed to represent its smallest subnormal exactly.
+enum {
+    FMT_FLOAT_RYU_BUFFER_SIZE = 2000,
+    FMT_DOUBLE_MAX_DECIMAL_PRECISION = DBL_MANT_DIG - DBL_MIN_EXP,
+    FMT_LDOUBLE_MAX_DECIMAL_PRECISION = LDBL_MANT_DIG - LDBL_MIN_EXP,
+    FMT_FLOAT_MAX_FIXED_PREFIX = 312,
+    FMT_FLOAT_MAX_EXP_PREFIX = 8,
+    FMT_LDOUBLE_MAX_FIXED_PREFIX = LDBL_MAX_10_EXP + 8,
+    FMT_DOUBLE_PRINTF_BUFFER_SIZE = FMT_FLOAT_MAX_FIXED_PREFIX
+                                    + FMT_DOUBLE_MAX_DECIMAL_PRECISION + 8,
+    FMT_LDOUBLE_PRINTF_BUFFER_SIZE = FMT_LDOUBLE_MAX_FIXED_PREFIX
+                                     + FMT_LDOUBLE_MAX_DECIMAL_PRECISION + 8,
+    FMT_DOUBLE_HEX_DIGITS = 13,
+    FMT_LDOUBLE_MAX_HEX_DIGITS = (LDBL_MANT_DIG - 1 + 3)/4,
+    FMT_DOUBLE_FRACTION_BITS = 52,
+    FMT_DOUBLE_EXPONENT_BIAS = 1023,
+    FMT_DOUBLE_SUBNORMAL_EXPONENT = -1022,
+    FMT_BIG_UINT_WORD_BITS = 32,
+    // log2(10) is less than 10/3, so this bounds every decimal body.
+    FMT_BIG_UINT_MAX_BITS = (FMT_LDOUBLE_PRINTF_BUFFER_SIZE*10 + 2)/3,
+    FMT_BIG_UINT_MAX_WORDS = (FMT_BIG_UINT_MAX_BITS
+                              + FMT_BIG_UINT_WORD_BITS - 1)
+                             /FMT_BIG_UINT_WORD_BITS,
+    FMT_LDOUBLE_DOUBLE_FRACTION_BITS = 52,
+    FMT_LDOUBLE_DOUBLE_EXPONENT_BIAS = 1023,
+    FMT_LDOUBLE_X87_FRACTION_BITS = 63,
+    FMT_LDOUBLE_X87_EXPONENT_BIAS = 16383,
+    FMT_LDOUBLE_X87_EXPONENT_MASK = 0x7fff,
+    FMT_LDOUBLE_BINARY128_FRACTION_BITS = 112,
+    FMT_LDOUBLE_BINARY128_EXPONENT_BIAS = 16383,
+};
+
 #include "i18n.h"
 #include "allocator.h"
 #include "memory.h"
@@ -284,6 +317,7 @@ void str_free(String *);
 void str_itoa(String *string, llong num);
 void str_float64(String *string, double value);
 void str_float64_fixed(String *string, double value, int32 precision);
+void str_float64_exp(String *string, double value, int32 precision);
 void str_bytes_pretty(String *string, llong size);
 void str_move(String *dest, String *source);
 void str_printf(String *string, char *fmt, ...);
@@ -291,7 +325,7 @@ void str_reserve(String *string, int64 extra);
 int32 str_set(String *string, char *data, int32 data_len);
 char *str_steal(String *string, int32 *len);
 char *str_opt_cstr(String *);
-char *signal_name(int32 signum);
+char *signal_get_name(int32 signum);
 void send_signal(char *executable, int32 signal_number);
 
 INLINE bool32

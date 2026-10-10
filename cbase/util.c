@@ -55,7 +55,7 @@ static char *signal_names[] = {
 #endif
 
 char *
-signal_name(int32 signum) {
+signal_get_name(int32 signum) {
 #if OS_UNIX
     if ((signum >= 0)
         && (signum < LENGTH(signal_names))
@@ -820,7 +820,7 @@ xdup2(int fd1, int fd2) {
 void
 xkill(pid_t pid, int signum) {
     if (kill(pid, signum) < 0) {
-        char *name = signal_name(signum);
+        char *name = signal_get_name(signum);
         if (name != NULL) {
             error("Error sending signal %d=%s to %d: %s.\n",
                   signum, name, pid, strerror(errno));

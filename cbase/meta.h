@@ -371,6 +371,7 @@ int32 token_is_val(Token, char *);
 int32 token_is_ptr(Token *, char *);
 int32 token_is_val_len(Token, char *, int32);
 int32 token_is_ptr_len(Token *, char *, int32);
+
 enum CAssignOp c_token_assign_op(Token *);
 enum CBinaryOp c_token_binary_op(Token *);
 enum CUnaryOp c_unary_op_from_text(char *, int32);
@@ -378,6 +379,7 @@ enum CUnaryOp c_token_unary_op(Token *);
 enum CUnaryOp c_token_postfix_unary_op(Token *);
 enum CMemberOp c_token_member_op(Token *);
 enum CKeyword c_token_keyword(Token *);
+
 bool c_text_is_type_qualifier(char *, int32);
 bool c_text_is_type_word(char *, int32);
 bool c_text_is_declaration_prefix(char *, int32);
@@ -386,8 +388,6 @@ bool c_token_is_type_word(Token *);
 bool c_token_is_declaration_prefix(Token *);
 int32 c_binary_op_precedence(enum CBinaryOp);
 
-bool char_is_alpha(char);
-bool char_is_digit(char);
 bool char_is_horizontal_space(char);
 bool char_is_identifier_body(char);
 bool char_is_identifier_start(char);
