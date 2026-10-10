@@ -363,16 +363,6 @@ typedef struct TokenRangeSplit {
     bool finished;
 } TokenRangeSplit;
 
-typedef struct Line {
-    Token *tokens;
-    char *text;
-
-    int32 len;
-    int32 token_count;
-    int32 token_capacity;
-    int32 padding;
-} Line;
-
 char *TOKEN_str(enum TokenKind);
 void TOKEN_str_free(char *);
 enum TokenKind TOKEN_parse(char *, int32);
@@ -403,10 +393,7 @@ bool char_is_identifier_body(char);
 bool char_is_identifier_start(char);
 bool char_is_number_body(char);
 bool char_is_operator_or_punct(char);
-void free_line_tokens(Line *);
 void free_tokenization(Tokenization *);
-void line_add_token(Line *, enum TokenKind, char *, int32, int32);
-void line_reserve_tokens(Line *, int32);
 bool line_starts_preprocessor(char *, int32);
 int32 literal_quote_index(char *, int32, int32);
 enum TokenKind operator_or_punct_category(char *, int32, int32, int32 *);
@@ -519,12 +506,7 @@ int32 tokenization_significant_at_or_after(Tokenization *, int32);
 int32 tokenization_token_at_or_after_offset(Tokenization *, int32);
 SourceLocation tokenization_token_location(Tokenization *, int32);
 Tokenization tokenize(char *, int32);
-void tokenize_cstyle_line(Line *, bool *);
-void tokenize_line(Line *, bool *);
-void tokenize_line_with_flags(Line *, bool *, int32);
-Line tokenize_text_with_flags(char *, int32, int32);
 Tokenization tokenize_with_flags(char *, int32, int32);
-void free_line(Line *);
 void c_emit_wrapped_expr(String *, char *, char *, char *, char *);
 String c_identifier(char *, int32);
 bool c_identifier_is_keyword(char *);

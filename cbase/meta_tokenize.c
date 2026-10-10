@@ -125,59 +125,43 @@ line_starts_preprocessor(char *text, int32 len) {
     return false;
 }
 
-void
-line_reserve_tokens(Line *line, int32 extra) {
-    int32 need;
-    int32 new_capacity;
-    Token *new_tokens;
-
-    need = line->token_count + extra;
-    if (need <= line->token_capacity) {
-        return;
-    }
-
-    if (line->token_capacity > 0) {
-        new_capacity = line->token_capacity;
-    } else {
-        new_capacity = TOKENIZE_INITIAL_TOKEN_CAPACITY;
-    }
-    while (new_capacity < need) {
-        new_capacity *= 2;
-    }
-
-    if (line->tokens) {
-        new_tokens = realloc2(line->tokens, line->token_capacity, new_capacity,
-                              SIZEOF(*line->tokens));
-    } else {
-        new_tokens = malloc2(new_capacity*SIZEOF(*new_tokens));
-    }
-
-    line->tokens = new_tokens;
-    line->token_capacity = new_capacity;
-    return;
-}
-
-void
-line_add_token(Line *line, enum TokenKind category, char *text, int32 len,
-               int32 column) {
+static void
+tokenization_add_token(Tokenization *tokenization, enum TokenKind category,
+                        char *text, int32 len, int32 offset) {
     Token *token;
 
     if (len <= 0) {
         return;
     }
 
-    if (line->token_count == line->token_capacity) {
-        line_reserve_tokens(line, 1);
+    if (tokenization->token_count >= tokenization->token_capacity) {
+        int32 new_capacity;
+
+        if (tokenization->token_capacity > 0) {
+            new_capacity = tokenization->token_capacity*2;
+        } else {
+            new_capacity = TOKENIZE_INITIAL_TOKEN_CAPACITY;
+        }
+        if (tokenization->tokens) {
+            tokenization->tokens = realloc2(tokenization->tokens,
+                                            tokenization->token_capacity,
+                                            new_capacity,
+                                            SIZEOF(*tokenization->tokens));
+        } else {
+            tokenization->tokens =
+                malloc2(new_capacity*SIZEOF(*tokenization->tokens));
+        }
+        tokenization->token_capacity = new_capacity;
     }
 
-    token = &line->tokens[line->token_count];
+    token = &tokenization->tokens[tokenization->token_count];
     token->kind = category;
     token->len = len;
-    token->column = column;
-    token->offset = column;
+    token->column = offset;
+    token->offset = offset;
     token->text = text;
 
-    line->token_count += 1;
+    tokenization->token_count += 1;
     return;
 }
 
@@ -444,101 +428,115 @@ char_is_operator_or_punct(char c) {
     }
 }
 
-void
-tokenize_line_with_flags(Line *line, bool *in_block_comment, int32 flags) {
+Tokenization
+tokenize_with_flags(char *text, int32 text_len, int32 flags) {
+    Tokenization result = {0};
+    bool in_block_comment = false;
     int32 i;
 
-    if (!*in_block_comment
-        && (flags & TOKENIZE_PREPROCESSOR_LINES)
-        && line_starts_preprocessor(line->text, line->len)) {
-        line_add_token(line, TOKEN_PREPROC, line->text, line->len, 0);
-        return;
+    result.text = text;
+    result.text_len = text_len;
+
+    if ((flags & TOKENIZE_PREPROCESSOR_LINES)
+        && line_starts_preprocessor(text, text_len)) {
+        tokenization_add_token(&result, TOKEN_PREPROC, text, text_len, 0);
+        return result;
     }
 
     i = 0;
-    while (i < line->len) {
+    while (i < text_len) {
         enum TokenKind category;
         int32 token_len;
 
-        if (*in_block_comment) {
-            if (line->text[i] == '\n') {
+        if (in_block_comment) {
+            if (text[i] == '\n') {
                 if ((flags & TOKENIZE_SKIP_WHITESPACE) == 0) {
-                    line_add_token(line, TOKEN_NEWLINE, line->text + i, 1, i);
+                    tokenization_add_token(&result, TOKEN_NEWLINE,
+                                           text + i, 1, i);
                 }
                 i += 1;
                 continue;
             }
-            token_len = scan_block_comment(line->text, line->len, i,
-                                           in_block_comment);
-            line_add_token(line, TOKEN_COMMENT, line->text + i, token_len, i);
+            token_len = scan_block_comment(text, text_len, i,
+                                           &in_block_comment);
+            tokenization_add_token(&result, TOKEN_COMMENT,
+                                   text + i, token_len, i);
             i += token_len;
             continue;
         }
 
-        if (line->text[i] == '\n') {
+        if (text[i] == '\n') {
             if ((flags & TOKENIZE_SKIP_WHITESPACE) == 0) {
-                line_add_token(line, TOKEN_NEWLINE, line->text + i, 1, i);
+                tokenization_add_token(&result, TOKEN_NEWLINE, text + i, 1, i);
             }
             i += 1;
-        } else if (char_is_horizontal_space(line->text[i])) {
+        } else if (char_is_horizontal_space(text[i])) {
             token_len = 1;
-            while (((i + token_len) < line->len)
-                   && char_is_horizontal_space(line->text[i + token_len])) {
+            while (((i + token_len) < text_len)
+                   && char_is_horizontal_space(text[i + token_len])) {
                 token_len += 1;
             }
             if ((flags & TOKENIZE_SKIP_WHITESPACE) == 0) {
-                line_add_token(line, TOKEN_SPACE, line->text + i, token_len, i);
+                tokenization_add_token(&result, TOKEN_SPACE,
+                                       text + i, token_len, i);
             }
             i += token_len;
-        } else if (((i + 1) < line->len) && (line->text[i] == '/')
-                   && (line->text[i + 1] == '/')) {
-            token_len = scan_line_comment(line->text, line->len, i);
-            line_add_token(line, TOKEN_COMMENT, line->text + i, token_len, i);
+        } else if (((i + 1) < text_len) && (text[i] == '/')
+                   && (text[i + 1] == '/')) {
+            token_len = scan_line_comment(text, text_len, i);
+            tokenization_add_token(&result, TOKEN_COMMENT,
+                                   text + i, token_len, i);
             i += token_len;
-        } else if (((i + 1) < line->len) && (line->text[i] == '/')
-                   && (line->text[i + 1] == '*')) {
-            token_len = scan_block_comment(line->text, line->len, i,
-                                           in_block_comment);
-            line_add_token(line, TOKEN_COMMENT, line->text + i, token_len, i);
+        } else if (((i + 1) < text_len) && (text[i] == '/')
+                   && (text[i + 1] == '*')) {
+            token_len = scan_block_comment(text, text_len, i,
+                                           &in_block_comment);
+            tokenization_add_token(&result, TOKEN_COMMENT,
+                                   text + i, token_len, i);
             i += token_len;
-        } else if ((line->text[i] == '\'') || (line->text[i] == '"')) {
-            token_len = scan_literal_token(line->text, line->len, i);
-            line_add_token(line, TOKEN_LITERAL, line->text + i, token_len, i);
+        } else if ((text[i] == '\'') || (text[i] == '"')) {
+            token_len = scan_literal_token(text, text_len, i);
+            tokenization_add_token(&result, TOKEN_LITERAL,
+                                   text + i, token_len, i);
             i += token_len;
-        } else if (((line->text[i] == 'L') || (line->text[i] == 'U'))
-                   && ((i + 1) < line->len)
-                   && ((line->text[i + 1] == '\'')
-                       || (line->text[i + 1] == '"'))) {
-            token_len = scan_literal_token(line->text, line->len, i);
-            line_add_token(line, TOKEN_LITERAL, line->text + i, token_len, i);
+        } else if (((text[i] == 'L') || (text[i] == 'U'))
+                   && ((i + 1) < text_len)
+                   && ((text[i + 1] == '\'')
+                       || (text[i + 1] == '"'))) {
+            token_len = scan_literal_token(text, text_len, i);
+            tokenization_add_token(&result, TOKEN_LITERAL,
+                                   text + i, token_len, i);
             i += token_len;
-        } else if ((line->text[i] == 'u')
-                   && ((((i + 1) < line->len)
-                        && ((line->text[i + 1] == '\'')
-                            || (line->text[i + 1] == '"')))
-                       || (((i + 2) < line->len)
-                           && (line->text[i + 1] == '8')
-                           && ((line->text[i + 2] == '\'')
-                               || (line->text[i + 2] == '"'))))) {
-            token_len = scan_literal_token(line->text, line->len, i);
-            line_add_token(line, TOKEN_LITERAL, line->text + i, token_len, i);
+        } else if ((text[i] == 'u')
+                   && ((((i + 1) < text_len)
+                        && ((text[i + 1] == '\'')
+                            || (text[i + 1] == '"')))
+                       || (((i + 2) < text_len)
+                           && (text[i + 1] == '8')
+                           && ((text[i + 2] == '\'')
+                               || (text[i + 2] == '"'))))) {
+            token_len = scan_literal_token(text, text_len, i);
+            tokenization_add_token(&result, TOKEN_LITERAL,
+                                   text + i, token_len, i);
             i += token_len;
-        } else if (char_is_identifier_start(line->text[i])) {
+        } else if (char_is_identifier_start(text[i])) {
             token_len = 1;
-            while (((i + token_len) < line->len)
-                   && char_is_identifier_body(line->text[i + token_len])) {
+            while (((i + token_len) < text_len)
+                   && char_is_identifier_body(text[i + token_len])) {
                 token_len += 1;
             }
-            line_add_token(line, TOKEN_IDENT, line->text + i, token_len, i);
+            tokenization_add_token(&result, TOKEN_IDENT,
+                                   text + i, token_len, i);
             i += token_len;
-        } else if (char_is_digit(line->text[i])
-                   || ((line->text[i] == '.') && ((i + 1) < line->len)
-                       && char_is_digit(line->text[i + 1]))) {
-            token_len = scan_number_literal(line->text, line->len, i);
-            line_add_token(line, TOKEN_LITERAL, line->text + i, token_len, i);
+        } else if (char_is_digit(text[i])
+                   || ((text[i] == '.') && ((i + 1) < text_len)
+                       && char_is_digit(text[i + 1]))) {
+            token_len = scan_number_literal(text, text_len, i);
+            tokenization_add_token(&result, TOKEN_LITERAL,
+                                   text + i, token_len, i);
             i += token_len;
         } else {
-            switch (line->text[i]) {
+            switch (text[i]) {
             case '+':
             case '-':
             case '*':
@@ -564,55 +562,20 @@ tokenize_line_with_flags(Line *line, bool *in_block_comment, int32 flags) {
             case '{':
             case '}':
             case '#':
-                category = operator_or_punct_category(line->text, line->len, i,
+                category = operator_or_punct_category(text, text_len, i,
                                                       &token_len);
-                line_add_token(line, category, line->text + i, token_len, i);
+                tokenization_add_token(&result, category,
+                                       text + i, token_len, i);
                 i += token_len;
                 break;
             default:
-                line_add_token(line, TOKEN_UNKNOWN, line->text + i, 1, i);
+                tokenization_add_token(&result, TOKEN_UNKNOWN, text + i, 1, i);
                 i += 1;
                 break;
             }
         }
     }
-    return;
-}
-
-Line
-tokenize_text_with_flags(char *text, int32 text_len, int32 flags) {
-    bool in_block_comment = false;
-    Line result = {0};
-
-    result.text = text;
-    result.len = text_len;
-    tokenize_line_with_flags(&result, &in_block_comment, flags);
-
     return result;
-}
-
-void
-tokenize_line(Line *line, bool *in_block_comment) {
-    tokenize_line_with_flags(line, in_block_comment, TOKENIZE_DEFAULT);
-    return;
-}
-
-void
-tokenize_cstyle_line(Line *line, bool *in_block_comment) {
-    tokenize_line_with_flags(line, in_block_comment,
-                             TOKENIZE_PREPROCESSOR_LINES);
-    return;
-}
-
-void
-free_line_tokens(Line *line) {
-    free2(line->tokens, line->token_capacity*SIZEOF(*line->tokens));
-
-    line->tokens = NULL;
-    line->token_count = 0;
-    line->token_capacity = 0;
-
-    return;
 }
 
 bool
@@ -1691,20 +1654,6 @@ tokenization_find_matching(Tokenization *tokenization, int32 open_index) {
 }
 
 Tokenization
-tokenize_with_flags(char *text, int32 text_len, int32 flags) {
-    Line line = tokenize_text_with_flags(text, text_len, flags);
-    Tokenization result = {0};
-
-    result.text = text;
-    result.text_len = text_len;
-    result.tokens = line.tokens;
-    result.token_count = line.token_count;
-    result.token_capacity = line.token_capacity;
-
-    return result;
-}
-
-Tokenization
 tokenize(char *text, int32 text_len) {
     return tokenize_with_flags(text, text_len, TOKENIZE_DEFAULT);
 }
@@ -1763,9 +1712,6 @@ meta_tokenize_sink(void) {
     (void)tokenization_source_location;
     (void)tokenization_token_location;
     (void)tokenize;
-    (void)tokenize_line;
-    (void)tokenize_cstyle_line;
-    (void)free_line_tokens;
 }
 #endif
 
@@ -1927,14 +1873,10 @@ test_line_starts_preprocessor(void) {
 }
 
 static void
-test_tokenize_line_default(void) {
+test_tokenize_default(void) {
     char *text = "int x = foo(1, \"a\"); // c\n";
-    bool in_block_comment = false;
-    Line line = {0};
+    Tokenization line = tokenize(text, strlen32(text));
 
-    line.text = text;
-    line.len = strlen32(text);
-    tokenize_line(&line, &in_block_comment);
     ASSERT_EQ(line.token_count, 17);
     test_assert_token(&line.tokens[0], TOKEN_IDENT, "int", 0);
     test_assert_token(&line.tokens[1], TOKEN_SPACE, " ", 3);
@@ -1947,20 +1889,14 @@ test_tokenize_line_default(void) {
     test_assert_token(&line.tokens[14], TOKEN_SPACE, " ", 20);
     test_assert_token(&line.tokens[15], TOKEN_COMMENT, "// c", 21);
     test_assert_token(&line.tokens[16], TOKEN_NEWLINE, "\n", 25);
-    ASSERT(!in_block_comment);
-    free_line_tokens(&line);
+    free_tokenization(&line);
     return;
 }
 
 static void
 test_tokenize_first_byte_dispatch(void) {
     char *text = "u user UPPER Lvalue u8name u\"x\" U'x' L\"z\" .5 . + @";
-    bool in_block_comment = false;
-    Line line = {0};
-
-    line.text = text;
-    line.len = strlen32(text);
-    tokenize_line(&line, &in_block_comment);
+    Tokenization line = tokenize(text, strlen32(text));
 
     test_assert_token(&line.tokens[0], TOKEN_IDENT, "u", 0);
     test_assert_token(&line.tokens[2], TOKEN_IDENT, "user", 2);
@@ -1975,8 +1911,7 @@ test_tokenize_first_byte_dispatch(void) {
     test_assert_token(&line.tokens[20], TOKEN_OPERATOR, "+", 47);
     test_assert_token(&line.tokens[22], TOKEN_UNKNOWN, "@", 49);
 
-    ASSERT(!in_block_comment);
-    free_line_tokens(&line);
+    free_tokenization(&line);
     return;
 }
 
@@ -1984,71 +1919,57 @@ static void
 test_tokenize_preprocessor_and_skip_whitespace(void) {
     char *preproc_text = "  #include \"x\"\n";
     char *skip_text = "a b\n";
-    bool in_block_comment = false;
-    Line line = {0};
-    Line skipped;
+    Tokenization line;
+    Tokenization skipped;
 
-    line.text = preproc_text;
-    line.len = strlen32(preproc_text);
-    tokenize_cstyle_line(&line, &in_block_comment);
+    line = tokenize_with_flags(preproc_text, strlen32(preproc_text),
+                               TOKENIZE_PREPROCESSOR_LINES);
     ASSERT_EQ(line.token_count, 1);
     test_assert_token(&line.tokens[0], TOKEN_PREPROC, preproc_text, 0);
-    free_line_tokens(&line);
+    ASSERT(line.text == preproc_text);
+    ASSERT_EQ(line.text_len, strlen32(preproc_text));
+    free_tokenization(&line);
 
-    skipped = tokenize_text_with_flags(skip_text, strlen32(skip_text),
-                                       TOKENIZE_SKIP_WHITESPACE);
+    skipped = tokenize_with_flags(skip_text, strlen32(skip_text),
+                                  TOKENIZE_SKIP_WHITESPACE);
     ASSERT_EQ(skipped.token_count, 2);
     test_assert_token(&skipped.tokens[0], TOKEN_IDENT, "a", 0);
     test_assert_token(&skipped.tokens[1], TOKEN_IDENT, "b", 2);
-    free_line_tokens(&skipped);
+    free_tokenization(&skipped);
     return;
 }
 
 static void
 test_tokenize_block_comment_across_lines(void) {
-    bool in_block_comment = false;
-    Line first = {0};
-    Line second = {0};
+    char *text = "/* hello\nworld */ int x;";
+    char *preproc_text = "/* hello\n# still a comment */ int x;\n";
+    Tokenization tokenization;
 
-    first.text = "/* hello\n";
-    first.len = strlen32(first.text);
-    tokenize_line_with_flags(&first, &in_block_comment, TOKENIZE_DEFAULT);
-    ASSERT(in_block_comment);
-    ASSERT_EQ(first.token_count, 2);
-    test_assert_token(&first.tokens[0], TOKEN_COMMENT, "/* hello", 0);
-    test_assert_token(&first.tokens[1], TOKEN_NEWLINE, "\n", 8);
+    tokenization = tokenize(text, strlen32(text));
+    ASSERT_EQ(tokenization.token_count, 8);
+    test_assert_token(&tokenization.tokens[0], TOKEN_COMMENT, "/* hello", 0);
+    test_assert_token(&tokenization.tokens[1], TOKEN_NEWLINE, "\n", 8);
+    test_assert_token(&tokenization.tokens[2], TOKEN_COMMENT, "world */", 9);
+    test_assert_token(&tokenization.tokens[4], TOKEN_IDENT, "int", 18);
+    free_tokenization(&tokenization);
 
-    second.text = "world */ int x;";
-    second.len = strlen32(second.text);
-    tokenize_line_with_flags(&second, &in_block_comment, TOKENIZE_DEFAULT);
-    ASSERT(!in_block_comment);
-    ASSERT_EQ(second.token_count, 6);
-    test_assert_token(&second.tokens[0], TOKEN_COMMENT, "world */", 0);
-    test_assert_token(&second.tokens[2], TOKEN_IDENT, "int", 9);
+    tokenization = tokenize_with_flags(preproc_text, strlen32(preproc_text),
+                                       TOKENIZE_PREPROCESSOR_LINES);
+    ASSERT_EQ(tokenization.token_count, 9);
+    test_assert_token(&tokenization.tokens[0], TOKEN_COMMENT, "/* hello", 0);
+    test_assert_token(&tokenization.tokens[1], TOKEN_NEWLINE, "\n", 8);
+    test_assert_token(&tokenization.tokens[2], TOKEN_COMMENT,
+                      "# still a comment */", 9);
+    test_assert_token(&tokenization.tokens[4], TOKEN_IDENT, "int", 30);
+    free_tokenization(&tokenization);
 
-    free_line_tokens(&first);
-    free_line_tokens(&second);
-
-    first = (Line){0};
-    second = (Line){0};
-    in_block_comment = false;
-
-    first.text = "/* hello\n";
-    first.len = strlen32(first.text);
-    tokenize_cstyle_line(&first, &in_block_comment);
-    ASSERT(in_block_comment);
-
-    second.text = "# still a comment */ int x;\n";
-    second.len = strlen32(second.text);
-    tokenize_cstyle_line(&second, &in_block_comment);
-    ASSERT(!in_block_comment);
-    ASSERT_EQ(second.token_count, 7);
-    test_assert_token(&second.tokens[0], TOKEN_COMMENT,
-                      "# still a comment */", 0);
-    test_assert_token(&second.tokens[2], TOKEN_IDENT, "int", 21);
-
-    free_line_tokens(&first);
-    free_line_tokens(&second);
+    tokenization = tokenize_with_flags(text, strlen32(text),
+                                       TOKENIZE_SKIP_WHITESPACE);
+    ASSERT_EQ(tokenization.token_count, 5);
+    test_assert_token(&tokenization.tokens[0], TOKEN_COMMENT, "/* hello", 0);
+    test_assert_token(&tokenization.tokens[1], TOKEN_COMMENT, "world */", 9);
+    test_assert_token(&tokenization.tokens[2], TOKEN_IDENT, "int", 18);
+    free_tokenization(&tokenization);
     return;
 }
 
@@ -2684,7 +2605,7 @@ main(void) {
     test_comment_scanners();
     test_operator_or_punct_category();
     test_line_starts_preprocessor();
-    test_tokenize_line_default();
+    test_tokenize_default();
     test_tokenize_first_byte_dispatch();
     test_tokenize_preprocessor_and_skip_whitespace();
     test_tokenize_block_comment_across_lines();
