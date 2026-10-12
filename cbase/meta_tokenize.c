@@ -111,7 +111,7 @@ line_starts_preprocessor(char *text, int32 len) {
 
 static void
 tokenization_add_token(Tokenization *tokenization, enum TokenKind category,
-                        char *text, int32 len, int32 offset) {
+                       char *text, int32 len, int32 offset) {
     Token *token;
 
     if (len <= 0) {
@@ -1423,7 +1423,7 @@ tokenization_physical_line_count(Tokenization *tokenization) {
 
 int32
 tokenization_physical_line_start_offset(Tokenization *tokenization,
-                                          int32 line) {
+                                        int32 line) {
     if (tokenization == NULL) {
         return -1;
     }

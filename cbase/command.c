@@ -134,9 +134,9 @@ cmd_result_free(CommandResult *result) {
 
 void
 cmd_result_append(String *output,
-                      String *stdout_output, String *stderr_output,
-                      bool is_stderr,
-                      char *data, int32 data_len) {
+                  String *stdout_output, String *stderr_output,
+                  bool is_stderr,
+                  char *data, int32 data_len) {
     if (data_len <= 0) {
         return;
     }
@@ -174,8 +174,8 @@ cmd_windows_error_set(Command *command, DWORD error_code) {
 
 static bool
 cmd_windows_capture_file_open(Command *command,
-                                  CommandWindowsCaptureFile *capture,
-                                  char *prefix) {
+                              CommandWindowsCaptureFile *capture,
+                              char *prefix) {
     char temp_dir[PATH_MAX];
     SECURITY_ATTRIBUTES security_attributes = {0};
     DWORD temp_dir_len;
@@ -214,7 +214,7 @@ cmd_windows_capture_file_open(Command *command,
 
 static bool
 cmd_windows_capture_file_close(Command *command,
-                                   CommandWindowsCaptureFile *capture) {
+                               CommandWindowsCaptureFile *capture) {
     if (capture->handle == INVALID_HANDLE_VALUE) {
         return true;
     }
@@ -243,9 +243,8 @@ cmd_windows_capture_file_cleanup(CommandWindowsCaptureFile *capture) {
 
 static bool
 cmd_windows_capture_file_read(Command *command,
-                                  CommandWindowsCaptureFile *capture,
-                                  char **output,
-                                  int32 *output_len) {
+                              CommandWindowsCaptureFile *capture,
+                              char **output, int32 *output_len) {
     int32 read_len;
 
     if (!cmd_windows_capture_file_close(command, capture)) {
@@ -263,9 +262,9 @@ cmd_windows_capture_file_read(Command *command,
 
 static bool
 cmd_windows_result_read_captured(Command *command,
-                                     enum CommandFlag flags,
-                                     CommandWindowsCaptureFile *stdout_capture,
-                                     CommandWindowsCaptureFile *stderr_capture) {
+                                 enum CommandFlag flags,
+                                 CommandWindowsCaptureFile *stdout_capture,
+                                 CommandWindowsCaptureFile *stderr_capture) {
     String output = {0};
     char *stdout_output = NULL;
     char *stderr_output = NULL;
@@ -324,8 +323,7 @@ cmd_windows_result_read_captured(Command *command,
 }
 
 char *
-cmd_windows_argv0(Command *command,
-                      char *argv0_windows, int32 *argv0_len) {
+cmd_windows_argv0(Command *command, char *argv0_windows, int32 *argv0_len) {
     char *exe = ".exe";
     int64 exe_len = strlen32(exe);
     int64 len0 = strlen32(command->argv[0]);
@@ -351,8 +349,7 @@ cmd_windows_argv0(Command *command,
 }
 
 void
-cmd_windows_cmd_line(Command *command,
-                             char *cmdline, int64 cmdline_len) {
+cmd_windows_cmd_line(Command *command, char *cmdline, int64 cmdline_len) {
     char argv0_windows[BUFSIZ];
     int64 j = 0;
 
@@ -571,8 +568,8 @@ cmd_result_close_poll_fd(struct pollfd *pipe, int32 *fd, int32 *left) {
 
 static void
 cmd_result_process_stdin_event(Command *command,
-                                   struct pollfd *pipe,
-                                   int32 *left, int64 *stdin_offset) {
+                               struct pollfd *pipe,
+                               int32 *left, int64 *stdin_offset) {
     int64 bytes_written;
     int64 chunk_len;
     int64 left_to_write;
@@ -630,12 +627,12 @@ cmd_result_process_stdin_event(Command *command,
 
 static void
 cmd_result_process_output_event(Command *command,
-                                    struct pollfd *pipe,
-                                    int32 *fd, int32 *left,
-                                    String *output,
-                                    String *stdout_output,
-                                    String *stderr_output,
-                                    bool is_stderr) {
+                                struct pollfd *pipe,
+                                int32 *fd, int32 *left,
+                                String *output,
+                                String *stdout_output,
+                                String *stderr_output,
+                                bool is_stderr) {
     char buffer[4096];
     int64 read_bytes;
 
@@ -810,8 +807,8 @@ cmd_child_env_apply(Command *command) {
 
 void
 cmd_child_exec(Command *command,
-                   enum CommandFlag flags,
-                   int stdin_pipe[2], int stdout_pipe[2], int stderr_pipe[2]) {
+               enum CommandFlag flags,
+               int stdin_pipe[2], int stdout_pipe[2], int stderr_pipe[2]) {
     if (command->cwd) {
         if (chdir(command->cwd) < 0) {
             error("Error changing directory to %s: %s.\n",
@@ -1298,8 +1295,7 @@ cmd_stdin_buffer_clear(Command *command) {
 }
 
 void
-cmd_env_push_length(Command *command,
-                        char *assignment, int32 assignment_len) {
+cmd_env_push_length(Command *command, char *assignment, int32 assignment_len) {
     char *copy;
 
     if (assignment_len < 0) {
@@ -1436,9 +1432,7 @@ cmd_free(Command *command) {
     free2(command->argv_lens, command->cap*SIZEOF(*command->argv_lens));
     free2(command->env, command->env_cap*SIZEOF(*command->env));
     free2(command->env_lens, command->env_cap*SIZEOF(*command->env_lens));
-    if (command->argv_arena) {
-        arena_destroy(command->argv_arena);
-    }
+    arena_destroy(command->argv_arena);
 
     command->argv = NULL;
     command->argv_lens = NULL;

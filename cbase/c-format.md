@@ -141,6 +141,45 @@ if ((flags & MY_FLAG_EXAMPLE1)
 }
 ```
 
+## Function headers
+Put qualifiers and return type in one line, function name and argument in the
+other:
+```c
+// good
+static int32
+my_function(int32 x, int32 y) {
+    return x*y;
+}
+```
+
+If the arguments do not fit all in a single line including the ending `) {`,
+then break (try to group related arguments together, like in function calls)
+and align:
+```c
+// bad (no need to break before the first argument).
+static void
+my_function(
+    StructType arg, int32 *what, int32 what_len, char *name, int32 name_len
+) {
+    return;
+}
+
+// better, but still bad
+// (we are separating what and what_len, which are clearly related)
+static void
+my_function(StructType arg, int32 *what,
+            int32 what_len, char *name, int32 name_len) {
+    return;
+}
+
+// good
+static void
+my_function(StructType arg,
+            int32 *what, int32 what_len, char *name, int32 name_len) {
+    return;
+}
+```
+
 When formatting printf-like function calls, try to fit the entire call in a
 single line; If it does not fit, try to fit the format string and the arguments
 in the same line; if it still does not fit, try to align the beggining of the

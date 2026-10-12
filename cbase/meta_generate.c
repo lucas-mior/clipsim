@@ -129,9 +129,9 @@ c_identifier(char *value, int32 value_len) {
 }
 
 void
-emit_string_array_init(String *out, char *field, char **values,
-                              int32 *value_lens, int32 count,
-                              char *fallback_prefix) {
+emit_string_array_init(String *out, char *field,
+                       char **values, int32 *value_lens, int32 count,
+                       char *fallback_prefix) {
     if (count <= 0) {
         return;
     }
@@ -163,8 +163,9 @@ emit_string_array_init(String *out, char *field, char **values,
 }
 
 void
-emit_lens_init(String *out, char *field, char **values,
-                      int32 *value_lens, int32 count, char *fallback_prefix) {
+emit_lens_init(String *out, char *field,
+               char **values, int32 *value_lens, int32 count,
+               char *fallback_prefix) {
     if (count <= 0) {
         return;
     }
@@ -193,8 +194,7 @@ emit_lens_init(String *out, char *field, char **values,
 }
 
 void
-emit_int_array_init(String *out, char *field, int32 *values,
-                           int32 count) {
+emit_int_array_init(String *out, char *field, int32 *values, int32 count) {
     if (count <= 0) {
         return;
     }

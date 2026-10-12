@@ -186,6 +186,61 @@ sub call_end {
     return -1;
 }
 
+sub argument_ranges {
+    my ($source, $code, $args_start, $args_end) = @_;
+    my @arg_starts;
+    my @arg_ends;
+    my @arg_has_newline;
+    my $first_arg_idx = skip_space_comments($source, $args_start);
+    my $idx;
+    my $paren_depth = 0;
+    my $bracket_depth = 0;
+    my $brace_depth = 0;
+
+    if ($first_arg_idx >= $args_end
+            || substr($source, $first_arg_idx, 1) eq ')') {
+        return (\@arg_starts, \@arg_ends, \@arg_has_newline);
+    }
+
+    push @arg_starts, $first_arg_idx;
+    push @arg_has_newline, 0;
+    $idx = $args_start;
+    while ($idx < $args_end) {
+        my $ch = substr($code, $idx, 1);
+
+        if ($ch eq '(') {
+            $paren_depth += 1;
+        } elsif ($ch eq ')') {
+            $paren_depth -= 1;
+        } elsif ($ch eq '[') {
+            $bracket_depth += 1;
+        } elsif ($ch eq ']') {
+            $bracket_depth -= 1;
+        } elsif ($ch eq '{') {
+            $brace_depth += 1;
+        } elsif ($ch eq '}') {
+            $brace_depth -= 1;
+        } elsif ($ch eq ',' && $paren_depth == 0
+                 && $bracket_depth == 0 && $brace_depth == 0) {
+            my $next_arg_idx = skip_space_comments($source, $idx + 1);
+
+            if ($next_arg_idx < $args_end
+                    && substr($source, $next_arg_idx, 1) ne ')') {
+                push @arg_ends, $idx;
+                push @arg_starts, $next_arg_idx;
+                push @arg_has_newline,
+                     substr($source, $idx + 1,
+                            $next_arg_idx - $idx - 1) =~ /\n/ ? 1 : 0;
+            }
+        }
+
+        $idx += 1;
+    }
+    push @arg_ends, $args_end;
+
+    return (\@arg_starts, \@arg_ends, \@arg_has_newline);
+}
+
 sub strlit_arg_has_literal {
     my ($source, $arg_start) = @_;
     my $strlit_idx = skip_space_comments($source, $arg_start);
@@ -621,6 +676,88 @@ for my $path (@paths) {
 
     if ($path !~ /\.meta\.h\z/) {
         pos($code) = 0;
+        while ($code =~ /^([A-Za-z_][A-Za-z0-9_]*)[ \t]*(\()/gm) {
+            my $name = $1;
+            my $name_idx = $-[1];
+            my $paren_idx = $-[2];
+            my $line_start = $name_idx;
+            my $prev_end;
+            my $prev_start;
+            my $prev_line;
+            my $args_start;
+            my $args_end;
+            my $next_idx;
+            my $arg_starts;
+            my $arg_ends;
+            my $arg_has_newline;
+            my $anchor_idx;
+            my $anchor_line_start = 0;
+            my $anchor_column;
+
+            next if $name =~ /^(?:if|for|while|switch|sizeof|_Alignof
+                                |_Generic|_Static_assert)$/x;
+            next if $line_start == 0;
+
+            $prev_end = $line_start - 1;
+            $prev_start = rindex($source, "\n", $prev_end - 1) + 1;
+            $prev_line = substr($source, $prev_start,
+                                $prev_end - $prev_start);
+            $prev_line =~ s/\r\z//;
+
+            # Project function declarations and definitions put the return
+            # type on the previous, unindented line. This keeps column-zero
+            # macro invocations out of the function-header checks.
+            next unless $prev_line =~ /\S/;
+            next if $prev_line =~ /^[ \t]|^[ \t]*#/;
+            next if $prev_line =~ /[;{},)]\s*\z/;
+            next if $prev_line =~ /\(/;
+
+            $args_start = $paren_idx + 1;
+            $args_end = call_end($code, $args_start);
+            next if $args_end < 0;
+            next unless substr($source, $line_start,
+                               $args_end - $line_start) =~ /\n/;
+
+            $next_idx = skip_space_comments($source, $args_end + 1);
+            next unless substr($source, $next_idx, 1) =~ /[;{]/;
+
+            ($arg_starts, $arg_ends, $arg_has_newline) =
+                argument_ranges($source, $code, $args_start, $args_end);
+            next if scalar(@$arg_starts) < 2;
+
+            $anchor_idx = $arg_starts->[0];
+            if ($anchor_idx > 0) {
+                $anchor_line_start = rindex($source, "\n",
+                                            $anchor_idx - 1) + 1;
+            }
+            $anchor_column = $anchor_idx - $anchor_line_start;
+
+            for (my $arg_idx = 1;
+                 $arg_idx < scalar(@$arg_starts); $arg_idx += 1) {
+                my $current_idx;
+                my $current_line_start = 0;
+                my $current_column;
+                my $line;
+
+                next unless $arg_has_newline->[$arg_idx];
+                $current_idx = $arg_starts->[$arg_idx];
+                if ($current_idx > 0) {
+                    $current_line_start = rindex($source, "\n",
+                                                 $current_idx - 1) + 1;
+                }
+                $current_column = $current_idx - $current_line_start;
+                next if $current_column == $anchor_column;
+
+                $line = line_number($source, $current_idx);
+                report_issue("$path:$line:$name function header parameter "
+                             . "is not aligned with first parameter\n");
+                last;
+            }
+        }
+    }
+
+    if ($path !~ /\.meta\.h\z/) {
+        pos($code) = 0;
         while ($code =~ /(?<![A-Za-z0-9_])
                          ([A-Za-z_][A-Za-z0-9_]*)/gx) {
             my $name = $1;
@@ -631,13 +768,9 @@ for my $path (@paths) {
             my $args_start;
             my $args_end;
             my $first_arg_idx;
-            my @arg_starts;
-            my @arg_ends;
-            my @arg_has_newline;
-            my $idx;
-            my $paren_depth = 0;
-            my $bracket_depth = 0;
-            my $brace_depth = 0;
+            my $arg_starts;
+            my $arg_ends;
+            my $arg_has_newline;
             my $alignment_arg = 0;
             my $format_arg_idx = -1;
             my $anchor_idx;
@@ -670,64 +803,31 @@ for my $path (@paths) {
             next if $first_arg_idx >= $args_end
                     || substr($source, $first_arg_idx, 1) eq ')';
 
-            push @arg_starts, $first_arg_idx;
-            push @arg_has_newline, 0;
-            $idx = $args_start;
-            while ($idx < $args_end) {
-                my $ch = substr($code, $idx, 1);
-
-                if ($ch eq '(') {
-                    $paren_depth += 1;
-                } elsif ($ch eq ')') {
-                    $paren_depth -= 1;
-                } elsif ($ch eq '[') {
-                    $bracket_depth += 1;
-                } elsif ($ch eq ']') {
-                    $bracket_depth -= 1;
-                } elsif ($ch eq '{') {
-                    $brace_depth += 1;
-                } elsif ($ch eq '}') {
-                    $brace_depth -= 1;
-                } elsif ($ch eq ',' && $paren_depth == 0
-                         && $bracket_depth == 0 && $brace_depth == 0) {
-                    my $next_arg_idx = skip_space_comments($source, $idx + 1);
-
-                    if ($next_arg_idx < $args_end
-                            && substr($source, $next_arg_idx, 1) ne ')') {
-                        push @arg_ends, $idx;
-                        push @arg_starts, $next_arg_idx;
-                        push @arg_has_newline,
-                             substr($source, $idx + 1,
-                                    $next_arg_idx - $idx - 1) =~ /\n/ ? 1 : 0;
-                    }
-                }
-
-                $idx += 1;
-            }
-            push @arg_ends, $args_end;
+            ($arg_starts, $arg_ends, $arg_has_newline) =
+                argument_ranges($source, $code, $args_start, $args_end);
 
             # printf-like calls align wrapped arguments with the format
             # string. Detect that argument by looking for a '%' inside a
             # string literal, so local wrappers follow the same rule.
             for (my $arg_idx = 0;
-                 $arg_idx < scalar(@arg_starts); $arg_idx += 1) {
+                 $arg_idx < scalar(@$arg_starts); $arg_idx += 1) {
                 if (range_has_percent_string_literal($source,
-                                                     $arg_starts[$arg_idx],
-                                                     $arg_ends[$arg_idx])) {
+                                                     $arg_starts->[$arg_idx],
+                                                     $arg_ends->[$arg_idx])) {
                     $format_arg_idx = $arg_idx;
                     last;
                 }
             }
 
             if ($format_arg_idx >= 0
-                    && $format_arg_idx < scalar(@arg_starts)) {
+                    && $format_arg_idx < scalar(@$arg_starts)) {
                 $alignment_arg = $format_arg_idx;
             }
 
-            if ($alignment_arg >= scalar(@arg_starts)) {
+            if ($alignment_arg >= scalar(@$arg_starts)) {
                 $alignment_arg = 0;
             }
-            $anchor_idx = $arg_starts[$alignment_arg];
+            $anchor_idx = $arg_starts->[$alignment_arg];
             $anchor_line_start = 0;
             if ($anchor_idx > 0) {
                 $anchor_line_start = rindex($source, "\n", $anchor_idx - 1)
@@ -736,14 +836,14 @@ for my $path (@paths) {
             $anchor_column = $anchor_idx - $anchor_line_start;
 
             for (my $arg_idx = $alignment_arg + 1;
-                 $arg_idx < scalar(@arg_starts); $arg_idx += 1) {
+                 $arg_idx < scalar(@$arg_starts); $arg_idx += 1) {
                 my $current_idx;
                 my $current_line_start = 0;
                 my $current_column;
                 my $line;
 
-                next unless $arg_has_newline[$arg_idx];
-                $current_idx = $arg_starts[$arg_idx];
+                next unless $arg_has_newline->[$arg_idx];
+                $current_idx = $arg_starts->[$arg_idx];
                 if ($current_idx > 0) {
                     $current_line_start = rindex($source, "\n",
                                                  $current_idx - 1) + 1;
@@ -758,17 +858,17 @@ for my $path (@paths) {
             }
 
             if ($format_arg_idx >= 0
-                    && $format_arg_idx < scalar(@arg_starts)
-                    && $format_arg_idx + 1 < scalar(@arg_starts)) {
+                    && $format_arg_idx < scalar(@$arg_starts)
+                    && $format_arg_idx + 1 < scalar(@$arg_starts)) {
                 my $format_line = line_number(
-                    $source, $arg_ends[$format_arg_idx]);
+                    $source, $arg_ends->[$format_arg_idx]);
                 my $format_line_has_args = 0;
                 my $other_line_has_args = 0;
 
                 for (my $arg_idx = $format_arg_idx + 1;
-                     $arg_idx < scalar(@arg_starts); $arg_idx += 1) {
+                     $arg_idx < scalar(@$arg_starts); $arg_idx += 1) {
                     my $line = line_number($source,
-                                           $arg_starts[$arg_idx]);
+                                           $arg_starts->[$arg_idx]);
 
                     if ($line == $format_line) {
                         $format_line_has_args = 1;
@@ -784,17 +884,18 @@ for my $path (@paths) {
                 }
             }
 
-            if (scalar(@arg_starts) >= 3) {
+            if (scalar(@$arg_starts) >= 3) {
                 my @arg_names;
                 my @arg_lines;
                 my %args_per_line;
 
                 for (my $arg_idx = 0;
-                     $arg_idx < scalar(@arg_starts); $arg_idx += 1) {
-                    my $arg = substr($code, $arg_starts[$arg_idx],
-                                     $arg_ends[$arg_idx]
-                                     - $arg_starts[$arg_idx]);
-                    my $line = line_number($source, $arg_starts[$arg_idx]);
+                     $arg_idx < scalar(@$arg_starts); $arg_idx += 1) {
+                    my $arg = substr($code, $arg_starts->[$arg_idx],
+                                     $arg_ends->[$arg_idx]
+                                     - $arg_starts->[$arg_idx]);
+                    my $line = line_number($source,
+                                           $arg_starts->[$arg_idx]);
 
                     if ($arg =~ /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*$/s) {
                         $arg_names[$arg_idx] = $1;
@@ -804,7 +905,7 @@ for my $path (@paths) {
                 }
 
                 for (my $arg_idx = 0;
-                     $arg_idx + 1 < scalar(@arg_starts); $arg_idx += 1) {
+                     $arg_idx + 1 < scalar(@$arg_starts); $arg_idx += 1) {
                     my $first_line;
                     my $second_line;
                     my $kind;
@@ -831,6 +932,15 @@ for my $path (@paths) {
     }
 
     report_unnecessary_call_wraps($path, $source, $code, $column_limit);
+
+    pos($code) = 0;
+    while ($code =~ /(?<![A-Za-z0-9_])ASSERT(?![A-Za-z0-9_])
+                     \s*\(\s*[a-z_]+\s*(>=|>)\s*0\s*\)\s*;/gx) {
+        my $assertion = $1 eq '>=' ? 'ASSERT_GE' : 'ASSERT_GT';
+        my $line = line_number($source, $-[0]);
+
+        report_issue("$path:$line:use $assertion for comparison with zero\n");
+    }
 
     pos($code) = 0;
     while ($code =~ /(?<![A-Za-z0-9_])STRLIT_LEN(?![A-Za-z0-9_])/g) {

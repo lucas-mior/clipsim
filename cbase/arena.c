@@ -89,6 +89,10 @@ void
 arena_destroy(Arena *arena) {
     Arena *next;
 
+    if (arena == NULL) {
+        return;
+    }
+
     do {
         next = arena->next;
         free(arena->name);
