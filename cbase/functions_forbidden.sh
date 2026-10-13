@@ -4,6 +4,7 @@ common_libc_never=
 common_libc_cbase_only=
 common_libc_cbase_dir=
 common_forbidden_patterns=
+common_status_temporary_patterns=
 
 common_test_source_matches_filter () {
     test_src=$1
@@ -49,19 +50,31 @@ elif [ -f functions_forbidden_patterns.pl ]; then
     common_forbidden_patterns=functions_forbidden_patterns.pl
 fi
 
+if [ -f cbase/status_temporary_patterns.py ]; then
+    common_status_temporary_patterns=cbase/status_temporary_patterns.py
+elif [ -f status_temporary_patterns.py ]; then
+    common_status_temporary_patterns=status_temporary_patterns.py
+else
+    error "Error: status_temporary_patterns.py was not found\n"
+    exit 1
+fi
+
 if [ -n "$common_libc_never" ] \
         || [ -n "$common_libc_cbase_only" ] \
-        || [ -n "$common_forbidden_patterns" ]; then
+        || [ -n "$common_forbidden_patterns" ] \
+        || [ -n "$common_status_temporary_patterns" ]; then
     common_libc_pattern=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_sources=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_matches=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_matches2=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_matches3=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
+    common_libc_matches4=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_cbase_abs=
 
     : > "$common_libc_matches"
     : > "$common_libc_matches2"
     : > "$common_libc_matches3"
+    : > "$common_libc_matches4"
 
     if [ -n "$common_libc_cbase_dir" ]; then
         common_libc_cbase_abs=$(
@@ -153,6 +166,9 @@ if [ -n "$common_libc_never" ] \
             >> "$common_libc_matches3"
     fi
 
+    python3 "$common_status_temporary_patterns" \
+        --file-list "$common_libc_sources" >> "$common_libc_matches4"
+
     if [ -s "$common_libc_matches" ]; then
         error "\nError: functions that must never be used:\n"
         cat "$common_libc_matches" >&2
@@ -168,10 +184,16 @@ if [ -n "$common_libc_never" ] \
         cat "$common_libc_matches3" >&2
     fi
 
+    if [ -s "$common_libc_matches4" ]; then
+        error "\nError: one-use status temporaries that should be inlined:\n"
+        cat "$common_libc_matches4" >&2
+    fi
+
     common_libc_status=0
     if [ -s "$common_libc_matches" ] \
             || [ -s "$common_libc_matches2" ] \
-            || [ -s "$common_libc_matches3" ]; then
+            || [ -s "$common_libc_matches3" ] \
+            || [ -s "$common_libc_matches4" ]; then
         common_libc_status=1
         error "%s %s\n" \
             "In order to understand and learn how to fix the problems above," \
@@ -183,7 +205,8 @@ if [ -n "$common_libc_never" ] \
         "$common_libc_sources" \
         "$common_libc_matches" \
         "$common_libc_matches2" \
-        "$common_libc_matches3"
+        "$common_libc_matches3" \
+        "$common_libc_matches4"
 
     if [ "$common_libc_status" -ne 0 ]; then
         exit 1

@@ -935,20 +935,22 @@ for my $path (@paths) {
 
     pos($code) = 0;
     while ($code =~ /(?<![A-Za-z0-9_])ASSERT(?![A-Za-z0-9_])
-                     \s*\(\s*[a-z_]+\s*(>=|>)\s*0\s*\)\s*;/gx) {
+                     \s*\(\s*[a-z_]+\s*(>=|>)\s*[0-9]\s*\)\s*;/gx) {
         my $assertion = $1 eq '>=' ? 'ASSERT_GE' : 'ASSERT_GT';
         my $line = line_number($source, $-[0]);
 
-        report_issue("$path:$line:use $assertion for comparison with zero\n");
+        report_issue("$path:$line:use $assertion"
+                     . " for comparison with integers\n");
     }
 
     pos($code) = 0;
     while ($code =~ /(?<![A-Za-z0-9_])ASSERT(?![A-Za-z0-9_])
-                     \s*\(\s*[a-z_]+\s*(<=|<)\s*0\s*\)\s*;/gx) {
+                     \s*\(\s*[a-z_]+\s*(<=|<)\s*[0-9]\s*\)\s*;/gx) {
         my $assertion = $1 eq '<=' ? 'ASSERT_LE' : 'ASSERT_LT';
         my $line = line_number($source, $-[0]);
 
-        report_issue("$path:$line:use $assertion for comparison with zero\n");
+        report_issue("$path:$line:use $assertion"
+                     . " for comparison with integers\n");
     }
 
     pos($code) = 0;
