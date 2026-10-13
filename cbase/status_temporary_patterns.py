@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Report one-use int32 status temporaries that should be inlined.
+"""Report int32 status temporaries whose assignment/use pairs should be inlined.
 
-The narrow pattern is a function-local declaration ``int32 status;`` where the
-same variable is assigned once, used once on the immediately following source
-line, and has no other uses in the function.  Comments, literals, member names,
-and preprocessor directives do not count as uses.
+The narrow pattern is a function-local declaration ``int32 status;`` followed
+only by one or more pairs in which ``status`` is assigned and then used on the
+immediately following source line.  The declaration plus complete pairs means
+that the variable has an odd number of references.  Comments, literals, member
+names, and preprocessor directives do not count as uses.
 """
 
 import argparse
@@ -201,24 +202,32 @@ def diagnostics_for(path):
 
     for function in functions_in(tokens):
         references = status_references(tokens, function)
-        if len(references) != 3:
+        if len(references) < 3 or len(references)%2 == 0:
             continue
 
         declarations = status_declarations(tokens, function, references)
         if len(declarations) != 1 or declarations[0] != references[0]:
             continue
 
-        assignment = references[1]
-        use = references[2]
-        if tokens[use].line != tokens[assignment].line + 1:
-            continue
-        if not is_simple_assignment_before_use(tokens, assignment, use):
+        pairs_inlineable = True
+        for offset in range(1, len(references), 2):
+            assignment = references[offset]
+            use = references[offset + 1]
+
+            if tokens[use].line != tokens[assignment].line + 1:
+                pairs_inlineable = False
+                break
+            if not is_simple_assignment_before_use(tokens, assignment, use):
+                pairs_inlineable = False
+                break
+
+        if not pairs_inlineable:
             continue
 
         line = tokens[declarations[0]].line
         diagnostics.append(
-            f"{path}:{line}:inline the one-use int32 status assignment "
-            f"into its immediately following use in {function.name}\n"
+            f"{path}:{line}:inline the int32 status assignment/use pairs "
+            f"into their immediately following uses in {function.name}\n"
         )
 
     return diagnostics
@@ -260,7 +269,7 @@ def listed_paths(path):
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="detect one-use int32 status temporaries"
+        description="detect inlineable int32 status temporaries"
     )
     parser.add_argument("paths", nargs="*", help="C files or directories")
     parser.add_argument(

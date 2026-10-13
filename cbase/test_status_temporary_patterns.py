@@ -45,8 +45,78 @@ example(void) {
 }
 """
         )
-        self.assertIn("sample.c:3:inline the one-use int32 status", output)
+        self.assertIn("sample.c:3:inline the int32 status", output)
         self.assertIn("in example", output)
+
+    def test_reports_multiple_assignment_use_pairs(self):
+        output = self.run_checker(
+            """\
+static void
+example(void) {
+    int32 status;
+
+    status = first_operation();
+    ASSERT_LE(status, 0);
+    status = second_operation();
+    ASSERT_EQ(status, 0);
+    status = third_operation();
+    ASSERT_GE(status, 0);
+    return;
+}
+"""
+        )
+        self.assertIn("sample.c:3:inline the int32 status", output)
+
+    def test_requires_odd_reference_count(self):
+        output = self.run_checker(
+            """\
+static void
+example(void) {
+    int32 status;
+
+    status = first_operation();
+    ASSERT_LE(status, 0);
+    consume(status);
+    return;
+}
+"""
+        )
+        self.assertEqual(output, "")
+
+    def test_requires_every_pair_to_be_immediate(self):
+        output = self.run_checker(
+            """\
+static void
+example(void) {
+    int32 status;
+
+    status = first_operation();
+    ASSERT_LE(status, 0);
+    status = second_operation();
+
+    ASSERT_LE(status, 0);
+    return;
+}
+"""
+        )
+        self.assertEqual(output, "")
+
+    def test_requires_every_pair_to_start_with_assignment(self):
+        output = self.run_checker(
+            """\
+static void
+example(void) {
+    int32 status;
+
+    status = first_operation();
+    ASSERT_LE(status, 0);
+    second_operation(&status);
+    ASSERT_LE(status, 0);
+    return;
+}
+"""
+        )
+        self.assertEqual(output, "")
 
     def test_accepts_inlined_form(self):
         output = self.run_checker(
@@ -60,7 +130,7 @@ example(void) {
         )
         self.assertEqual(output, "")
 
-    def test_requires_exactly_three_variable_references(self):
+    def test_rejects_extra_unpaired_reference(self):
         output = self.run_checker(
             """\
 static void
@@ -138,7 +208,7 @@ example(void) {
 }
 """
         )
-        self.assertIn("inline the one-use int32 status", output)
+        self.assertIn("inline the int32 status", output)
 
     def test_initialized_status_declaration_is_not_targeted(self):
         output = self.run_checker(
@@ -183,7 +253,7 @@ example(void) {
 """,
             file_list=True,
         )
-        self.assertIn("inline the one-use int32 status", output)
+        self.assertIn("inline the int32 status", output)
 
 
 if __name__ == "__main__":

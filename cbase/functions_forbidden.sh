@@ -185,7 +185,7 @@ if [ -n "$common_libc_never" ] \
     fi
 
     if [ -s "$common_libc_matches4" ]; then
-        error "\nError: one-use status temporaries that should be inlined:\n"
+        error "\nError: status temporaries whose assignment/use pairs should be inlined:\n"
         cat "$common_libc_matches4" >&2
     fi
 

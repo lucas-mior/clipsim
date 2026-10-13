@@ -1289,23 +1289,29 @@ appropriate cbase/ C file.
 - Don't have struct types that are only used inside a single function.
   * Use the variables you were going to store in the struct directly instead.
     (those variable might be even other struct instances).
-- Do not keep an `int32 status` temporary when it only stores a function
-  result that is consumed once on the immediately following line. Inline the
-  function call into that use instead. This removes a name and state that do not
-  carry information beyond the expression itself.
+- Do not keep an `int32 status` temporary when every assignment is consumed
+  exactly once on the immediately following line. Inline each function call
+  into its use instead. This applies equally when the same `status` temporary is
+  reused for several independent assignment/use pairs. In that form, counting
+  the declaration, `status` has an odd number of uses: one declaration plus two
+  uses for every pair.
   ```c
   // bad
   int32 status;
 
   status = operation();
   ASSERT_LE(status, 0);
+  status = other_operation();
+  ASSERT_EQ(status, 0);
 
   // good
   ASSERT_LE(operation(), 0);
+  ASSERT_EQ(other_operation(), 0);
   ```
   Keep a status variable when the value has an independent lifetime: for
-  example, when it is used more than once, needed across control-flow paths, or
-  must be retained for cleanup/error handling.
+  example, when it is used more than once after an assignment, needed across
+  control-flow paths, returned through an output parameter, or retained for
+  cleanup/error handling.
 - Everytime you call a function, look at the implementation of the function to
   check the types and the semantics of the function. Don't call functions that
   you don't know how they work. 
