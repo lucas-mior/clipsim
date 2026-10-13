@@ -45,9 +45,10 @@ def mask_non_newlines(match):
     return re.sub(r"[^\n]", " ", match.group())
 
 
-def whole_file_guard(original):
+def whole_file_guard(original, code=None):
     """Return opening/closing lines for a conventional whole-file guard."""
-    code = COMMENTS_AND_LITERALS.sub(mask_non_newlines, original)
+    if code is None:
+        code = COMMENTS_AND_LITERALS.sub(mask_non_newlines, original)
     lines = code.splitlines()
     stack = []
     pairs = {}
@@ -110,7 +111,7 @@ def whole_file_guard(original):
     return None
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Token:
     value: str
     line: int
@@ -150,7 +151,8 @@ class Source:
         self.prototype_indices = set()
         condition_depth = 0
         continued = False
-        guard = whole_file_guard(original)
+        code = COMMENTS_AND_LITERALS.sub(mask_non_newlines, original)
+        guard = whole_file_guard(original, code)
         guard_open = guard[0] if guard is not None else -1
         guard_close = guard[1] if guard is not None else -1
 
@@ -178,7 +180,6 @@ class Source:
             if condition_depth > guard_depth:
                 conditional.add(number)
 
-        code = COMMENTS_AND_LITERALS.sub(mask_non_newlines, original)
         self.tokens = []
         self.directive_uses = set()
         for number, line in enumerate(code.splitlines(), 1):
@@ -508,9 +509,12 @@ def write_cache(path, fingerprint, cache):
                 mode="w", encoding="utf-8", dir=path.parent,
                 prefix="single-use-", delete=False) as stream:
             temporary = Path(stream.name)
-            json.dump({"version": CACHE_VERSION, "checker": fingerprint,
-                       "files": cache["files"], "runs": cache["runs"]},
-                      stream, separators=(",", ":"))
+            # dumps uses the C JSON encoder in one pass; dump repeatedly
+            # writes millions of tiny fragments on large source caches.
+            stream.write(json.dumps(
+                {"version": CACHE_VERSION, "checker": fingerprint,
+                 "files": cache["files"], "runs": cache["runs"]},
+                separators=(",", ":")))
         os.replace(temporary, path)
     except OSError:
         pass
@@ -523,33 +527,95 @@ def write_cache(path, fingerprint, cache):
 
 
 
+def finding_rows(findings):
+    return [[str(path), line, kind, name, explanation]
+            for path, line, kind, name, explanation in findings]
+
+
+def decode_findings(rows):
+    findings = []
+    for item in rows:
+        if (not isinstance(item, list) or len(item) != 5 or
+                not isinstance(item[0], str) or
+                not isinstance(item[1], int) or
+                not all(isinstance(value, str) for value in item[2:])):
+            raise ValueError("invalid cached finding")
+        findings.append((Path(item[0]), *item[1:]))
+    return findings
+
+
+def fast_cache_path(cache_path):
+    return cache_path.with_name(cache_path.name + ".fast")
+
+
+def read_fast_run(cache_path, fingerprint, run_key, signatures):
+    # The large, parsed-source JSON cache is expensive to load just to
+    # retrieve a previous run's findings.  A small sidecar can safely skip
+    # it when the checker, source set, source metadata and main cache match.
+    try:
+        signature = file_signature(cache_path)
+        with fast_cache_path(cache_path).open(encoding="utf-8") as stream:
+            run = json.load(stream)
+        if (run.get("checker") == fingerprint and
+                run.get("cache_signature") == signature and
+                run.get("run_key") == run_key and
+                run.get("signatures") == signatures):
+            return decode_findings(run["findings"])
+    except (OSError, ValueError, KeyError, TypeError, IndexError):
+        pass
+    return None
+
+
+def write_fast_run(cache_path, fingerprint, run_key, signatures, findings):
+    temporary = None
+    try:
+        cache_signature = file_signature(cache_path)
+        path = fast_cache_path(cache_path)
+        with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=path.parent,
+                prefix="single-use-fast-", delete=False) as stream:
+            temporary = Path(stream.name)
+            json.dump({"checker": fingerprint,
+                       "cache_signature": cache_signature,
+                       "run_key": run_key, "signatures": signatures,
+                       "findings": finding_rows(findings)}, stream,
+                      separators=(",", ":"))
+        os.replace(temporary, path)
+    except OSError:
+        pass
+    finally:
+        if temporary is not None:
+            try:
+                temporary.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
 def cached_findings(candidate_paths, reference_paths, global_functions,
                     cache_path):
     """Analyze candidates against the complete reference-file universe."""
     fingerprint = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
-    cache = read_cache(cache_path, fingerprint)
-    if not cache:
-        cache = {"files": {}, "runs": {}}
-    entries = cache["files"]
-    runs = cache["runs"]
     all_paths = sorted(set(candidate_paths) | set(reference_paths))
     signatures = {str(path): file_signature(path) for path in all_paths}
     run_options = [[str(path) for path in candidate_paths],
                    [str(path) for path in reference_paths], global_functions]
     run_key = hashlib.sha256(json.dumps(run_options).encode()).hexdigest()
+    findings = read_fast_run(cache_path, fingerprint, run_key, signatures)
+    if findings is not None:
+        return findings
+
+    cache = read_cache(cache_path, fingerprint)
+    if not cache:
+        cache = {"files": {}, "runs": {}}
+    entries = cache["files"]
+    runs = cache["runs"]
     run = runs.get(run_key)
     if (isinstance(run, dict) and run.get("signatures") == signatures and
             isinstance(run.get("findings"), list)):
         try:
-            findings = []
-            for item in run["findings"]:
-                if (not isinstance(item, list) or len(item) != 5 or
-                        not isinstance(item[0], str) or
-                        not isinstance(item[1], int) or
-                        not all(isinstance(value, str)
-                                for value in item[2:])):
-                    raise ValueError("invalid cached finding")
-                findings.append((Path(item[0]), *item[1:]))
+            findings = decode_findings(run["findings"])
+            write_fast_run(cache_path, fingerprint, run_key, signatures,
+                           findings)
             return findings
         except (TypeError, ValueError, IndexError):
             pass
@@ -585,12 +651,12 @@ def cached_findings(candidate_paths, reference_paths, global_functions,
     if all(file_signature(path) == signatures[str(path)] for path in all_paths):
         runs[run_key] = {
             "signatures": signatures,
-            "findings": [[str(path), line, kind, name, explanation]
-                         for path, line, kind, name, explanation in findings],
+            "findings": finding_rows(findings),
         }
         dirty = True
     if dirty:
         write_cache(cache_path, fingerprint, cache)
+    write_fast_run(cache_path, fingerprint, run_key, signatures, findings)
     return findings
 
 def clear_type_use(source, index, struct):
@@ -631,10 +697,18 @@ def clear_type_use(source, index, struct):
 
 def analyze(candidates, sources, global_functions=False,
             reference_paths=None):
+    # Index only names that can produce findings.  Most source identifiers
+    # can never be queried, so indexing all of them wastes time and memory.
+    wanted = set()
+    for source in candidates:
+        wanted.update(function.name for function in source.functions)
+        for struct in source.structs:
+            wanted.update(struct.names)
+
     uses = defaultdict(list)
     for source in sources:
         for index, token in enumerate(source.tokens):
-            if IDENTIFIER.fullmatch(token.value):
+            if token.value in wanted:
                 uses[token.value].append((source, index))
 
     if reference_paths is None:

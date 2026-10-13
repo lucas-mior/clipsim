@@ -513,14 +513,18 @@ class SingleUseTests(unittest.TestCase):
         """)
         output = self.run_check(".")
         path = self.directory / ".cache/single_use_patterns.json"
+        fast_path = path.with_name(path.name + ".fast")
+        self.assertTrue(fast_path.exists())
         first = self.cache_data()
         self.assertEqual(first["version"], 3)
         self.assertEqual(len(first["files"]), 1)
         self.assertEqual(len(first["runs"]), 1)
         before = path.stat().st_mtime_ns
+        fast_before = fast_path.stat().st_mtime_ns
 
         self.assertEqual(self.run_check("."), output)
         self.assertEqual(path.stat().st_mtime_ns, before)
+        self.assertEqual(fast_path.stat().st_mtime_ns, fast_before)
         self.assertEqual(self.run_check("--no-cache", "."), output)
         self.assertEqual(path.stat().st_mtime_ns, before)
 
@@ -584,6 +588,21 @@ class SingleUseTests(unittest.TestCase):
         cache["files"][str(self.directory / "a.c")]["parsed"] = {}
         next(iter(cache["runs"].values()))["findings"] = ["bad row"]
         cache_path.write_text(json.dumps(cache), encoding="utf-8")
+        self.assertEqual(self.run_check("."), expected)
+
+    def test_fast_cache_corruption_falls_back_to_main_cache(self):
+        self.write("a.c", """
+            static int helper(void) { return 1; }
+            int run(void) { return helper(); }
+        """)
+        expected = self.run_check(".")
+        cache_path = self.directory / ".cache/single_use_patterns.json"
+        fast_path = cache_path.with_name(cache_path.name + ".fast")
+        cache_before = cache_path.stat().st_mtime_ns
+
+        fast_path.write_text("{invalid", encoding="utf-8")
+        self.assertEqual(self.run_check("."), expected)
+        self.assertEqual(cache_path.stat().st_mtime_ns, cache_before)
         self.assertEqual(self.run_check("."), expected)
 
     def test_cache_path_override_and_unwritable_destination(self):

@@ -506,10 +506,20 @@ the same metadata-based invalidation and atomic-write approach as
 reopened or reparsed. Repeated checks with the same candidate set, reference
 set, and options reuse the final findings. Adding, removing, or editing a `.c`
 or `.h` file below the current working directory invalidates the relevant
-cross-file result. Changes to the checker script invalidate the cache. Set
-`CBASE_SINGLE_USE_PATTERNS_CACHE` to override the cache path, or pass
+cross-file result. A small `.cache/single_use_patterns.json.fast` sidecar
+allows unchanged runs to reuse their results without loading the large parsed
+source cache. Both caches are invalidated when sources or the checker change.
+Set `CBASE_SINGLE_USE_PATTERNS_CACHE` to override the cache path, or pass
 `--no-cache` to disable both cache reads and writes. Cache write errors do not
 prevent analysis.
+
+`status_temporary_patterns.py`, invoked by `functions_forbidden.sh`, also
+caches per-file diagnostics by default in
+`.cache/status_temporary_patterns.json`. It checks file metadata (including
+change time) and the checker version before reusing a result. Set
+`CBASE_STATUS_TEMPORARY_PATTERNS_CACHE` to change the cache path or pass
+`--no-cache` to disable caching. Its regression tests are in
+`cbase/test_status_temporary_patterns.py`.
 
 This is intentionally conservative source analysis rather than a full C
 compiler. It ignores strings and comments, handles ordinary forward

@@ -2,6 +2,8 @@
 """Regression tests for status_temporary_patterns.py."""
 
 from pathlib import Path
+import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -239,6 +241,45 @@ example(void) {
 """
         )
         self.assertEqual(output, "")
+
+    def test_cache_reuses_and_invalidates_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "sample.c"
+            cache_path = root / "status-cache.json"
+            env = dict(os.environ)
+            env["CBASE_STATUS_TEMPORARY_PATTERNS_CACHE"] = str(cache_path)
+            code = ("static int32 example(void) {\n"
+                    "    int32 status;\n"
+                    "    status = first();\n"
+                    "    return status;\n"
+                    "}\n")
+            source.write_text(code)
+
+            def run_check(*options):
+                result = subprocess.run(
+                    ["python3", str(SCRIPT), *options, str(source)],
+                    capture_output=True, text=True, check=False, env=env,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                return result.stdout
+
+            output = run_check()
+            self.assertIn("inline the int32 status", output)
+            self.assertEqual(len(json.loads(cache_path.read_text())
+                                 ["files"]), 1)
+            before = cache_path.stat().st_mtime_ns
+            self.assertEqual(run_check(), output)
+            self.assertEqual(cache_path.stat().st_mtime_ns, before)
+            self.assertEqual(run_check("--no-cache"), output)
+
+            source.write_text(code.replace("return status;", "return value_;"))
+            self.assertEqual(run_check(), "")
+            self.assertEqual(run_check("--no-cache"), "")
+
+            cache_path.write_text("{invalid", encoding="utf-8")
+            self.assertEqual(run_check(), "")
+            self.assertIn("files", json.loads(cache_path.read_text()))
 
     def test_file_list_input(self):
         output = self.run_checker(

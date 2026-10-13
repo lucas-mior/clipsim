@@ -101,9 +101,23 @@ my $checker_hash = checker_fingerprint();
 my $cached_files = read_cache($cache_path, $checker_hash);
 my $cache_dirty = 0;
 
+# Count preceding newlines by binary search rather than rescanning every
+# prefix.  Several diagnostics perform this lookup inside argument loops.
+my @line_offsets;
+
 sub line_number {
     my ($text, $idx) = @_;
-    return (substr($text, 0, $idx) =~ tr/\n//) + 1;
+    my ($left, $right) = (0, scalar @line_offsets);
+
+    while ($left < $right) {
+        my $middle = int(($left + $right) / 2);
+        if ($line_offsets[$middle] < $idx) {
+            $left = $middle + 1;
+        } else {
+            $right = $middle;
+        }
+    }
+    return $left + 1;
 }
 
 sub mask_text {
@@ -161,6 +175,12 @@ sub skip_space_comments {
     }
 
     return $idx;
+}
+
+sub call_starts_with_newline {
+    my ($source, $start) = @_;
+    pos($source) = $start;
+    return $source =~ /\G[ \t]*\r?\n/gc;
 }
 
 sub call_end {
@@ -634,6 +654,10 @@ for my $path (@paths) {
     local $/;
     my $source = <$fh>;
     close $fh;
+    @line_offsets = ();
+    while ($source =~ /\n/g) {
+        push @line_offsets, $-[0];
+    }
     my $code = code_mask($source);
 
     # Indentation distinguishes calls from the project's function headers.
@@ -665,7 +689,7 @@ for my $path (@paths) {
         # Inspect the source so masked comments and literals still count.
         if ($arg_idx >= length($source)
                 || substr($source, $arg_idx, 1) eq ')'
-                || substr($source, $paren_idx + 1) !~ /^[ \t]*\r?\n/) {
+                || !call_starts_with_newline($source, $paren_idx + 1)) {
             next;
         }
 

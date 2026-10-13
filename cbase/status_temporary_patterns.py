@@ -9,11 +9,14 @@ names, and preprocessor directives do not count as uses.
 """
 
 import argparse
+import hashlib
+import json
 from dataclasses import dataclass
 import os
 from pathlib import Path
 import re
 import sys
+import tempfile
 
 
 IDENTIFIER = re.compile(r"[A-Za-z_]\w*\Z", re.ASCII)
@@ -25,13 +28,16 @@ COMMENTS_AND_LITERALS = re.compile(
 )
 DIRECTIVE = re.compile(r"^[ \t]*#")
 STATUS_DECLARATION_CANDIDATE = re.compile(r"\bint32\s+status\s*;")
+CACHE_ENV = "CBASE_STATUS_TEMPORARY_PATTERNS_CACHE"
+DEFAULT_CACHE = ".cache/status_temporary_patterns.json"
+CACHE_VERSION = 1
 CONTROL = {
     "if", "while", "for", "switch", "sizeof", "_Alignof", "_Generic",
     "return", "typedef", "__attribute__",
 }
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Token:
     value: str
     line: int
@@ -267,11 +273,84 @@ def listed_paths(path):
     return values
 
 
+def file_signature(path):
+    info = path.stat()
+    return [info.st_dev, info.st_ino, info.st_size,
+            info.st_mtime_ns, info.st_ctime_ns]
+
+
+def read_cache(path, fingerprint):
+    try:
+        with path.open(encoding="utf-8") as stream:
+            cache = json.load(stream)
+        if (isinstance(cache, dict) and
+                cache.get("version") == CACHE_VERSION and
+                cache.get("checker") == fingerprint and
+                isinstance(cache.get("files"), dict)):
+            return cache["files"]
+    except (OSError, ValueError, UnicodeError):
+        pass
+    return {}
+
+
+def write_cache(path, fingerprint, entries):
+    temporary = None
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=path.parent,
+                prefix="status-temporary-", delete=False) as stream:
+            temporary = Path(stream.name)
+            json.dump({"version": CACHE_VERSION, "checker": fingerprint,
+                       "files": entries}, stream, separators=(",", ":"))
+        os.replace(temporary, path)
+    except OSError:
+        pass
+    finally:
+        if temporary is not None:
+            try:
+                temporary.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+def cached_diagnostics(paths, cache_path):
+    fingerprint = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    entries = read_cache(cache_path, fingerprint)
+    dirty = False
+    for path in paths:
+        key = str(path)
+        before = file_signature(path)
+        entry = entries.get(key)
+        if (isinstance(entry, dict) and
+                entry.get("signature") == before and
+                isinstance(entry.get("diagnostics"), list) and
+                all(isinstance(line, str)
+                    for line in entry["diagnostics"])):
+            diagnostics = entry["diagnostics"]
+        else:
+            diagnostics = diagnostics_for(path)
+            after = file_signature(path)
+            if before == after:
+                entries[key] = {"signature": after,
+                                "diagnostics": diagnostics}
+                dirty = True
+            elif key in entries:
+                del entries[key]
+                dirty = True
+        for diagnostic in diagnostics:
+            sys.stdout.write(diagnostic)
+    if dirty:
+        write_cache(cache_path, fingerprint, entries)
+
+
 def parse_args(argv):
     parser = argparse.ArgumentParser(
         description="detect inlineable int32 status temporaries"
     )
     parser.add_argument("paths", nargs="*", help="C files or directories")
+    parser.add_argument("--no-cache", action="store_true",
+                        help="parse sources without reading or writing cache")
     parser.add_argument(
         "--file-list", metavar="PATH",
         help="read C file paths from PATH, one per line",
@@ -287,9 +366,13 @@ def main(argv=None):
 
     try:
         paths = collect_paths(inputs)
-        for path in paths:
-            for diagnostic in diagnostics_for(path):
-                sys.stdout.write(diagnostic)
+        if args.no_cache:
+            for path in paths:
+                for diagnostic in diagnostics_for(path):
+                    sys.stdout.write(diagnostic)
+        elif paths:
+            cache_path = Path(os.environ.get(CACHE_ENV, DEFAULT_CACHE))
+            cached_diagnostics(paths, cache_path)
     except ValueError as error:
         print(error, file=sys.stderr)
         return 2
