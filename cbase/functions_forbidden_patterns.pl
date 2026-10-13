@@ -943,6 +943,15 @@ for my $path (@paths) {
     }
 
     pos($code) = 0;
+    while ($code =~ /(?<![A-Za-z0-9_])ASSERT(?![A-Za-z0-9_])
+                     \s*\(\s*[a-z_]+\s*(<=|<)\s*0\s*\)\s*;/gx) {
+        my $assertion = $1 eq '<=' ? 'ASSERT_LE' : 'ASSERT_LT';
+        my $line = line_number($source, $-[0]);
+
+        report_issue("$path:$line:use $assertion for comparison with zero\n");
+    }
+
+    pos($code) = 0;
     while ($code =~ /(?<![A-Za-z0-9_])STRLIT_LEN(?![A-Za-z0-9_])/g) {
         my $idx = $-[0];
         my $paren_idx = skip_space_comments($source, $idx + 10);

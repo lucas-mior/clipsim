@@ -449,3 +449,74 @@ memory_functions_sink(void) {
 }
 #endif
 ```
+
+## Single-use C code patterns
+
+The checker has no default candidate path. Pass the C files or directories in
+which findings should be reported, for example:
+
+```sh
+python3 cbase/single_use_patterns.py src brn2.c
+```
+
+With no file or directory argument, it inspects nothing and exits successfully.
+For the selected candidate files it reports:
+
+- A `static` function with exactly one apparent call site in its defining `.c`
+  file. Non-static functions are excluded by default because calls from outside
+  the project cannot be ruled out. Use `--include-global` to opt into
+  closed-world analysis of non-static functions.
+- A file-scope `struct` definition (`struct Tag` or a simple `typedef struct`)
+  whose detected type references are confined to one function body. These
+  definitions are potential candidates for moving into that function.
+
+Candidate selection and cross-file validation are deliberately separate. The
+command-line files/directories, `--file-list PATH`, repeated `--exclude GLOB`,
+and repeated `--exclude-dir DIR`/`--ignore-dir DIR` options determine only
+which files can produce findings. There are no implicit `.gitignore` or
+`cbase/` exclusions.
+
+After candidate files have been selected, every non-Git-ignored `.c` and `.h`
+file below the current working directory is recursively checked for references.
+Git ignore matching follows Git's standard ignore rules, including nested
+`.gitignore` files. Candidate selection itself does not apply `.gitignore`: an
+ignored file that is explicitly supplied can still produce findings, but it is
+not used as a cross-file reference for another candidate. Candidate exclusions
+also do not remove otherwise visible files from this reference scan. Therefore,
+run the checker from the project root when references anywhere in the project
+should disqualify a finding. For example:
+
+```sh
+python3 cbase/single_use_patterns.py src --exclude-dir generated
+```
+
+Here `src/generated` cannot produce findings, but any non-Git-ignored `.c` or
+`.h` file under the current working directory can still disqualify a candidate
+by referring to it. A bare `--exclude-dir` name matches candidate directories
+at any depth; a relative path containing a slash, or an absolute path, selects
+a specific candidate subtree.
+
+Output uses `path:line: kind name: explanation`; exit status is 1 if findings
+exist, 0 if none exist, and 2 for invalid input. Run its regression tests with
+`python3 cbase/test_single_use_patterns.py`.
+
+Analysis is cached by default in `.cache/single_use_patterns.json`, following
+the same metadata-based invalidation and atomic-write approach as
+`functions_forbidden_patterns.pl`. Unchanged C files and headers are not
+reopened or reparsed. Repeated checks with the same candidate set, reference
+set, and options reuse the final findings. Adding, removing, or editing a `.c`
+or `.h` file below the current working directory invalidates the relevant
+cross-file result. Changes to the checker script invalidate the cache. Set
+`CBASE_SINGLE_USE_PATTERNS_CACHE` to override the cache path, or pass
+`--no-cache` to disable both cache reads and writes. Cache write errors do not
+prevent analysis.
+
+This is intentionally conservative source analysis rather than a full C
+compiler. It ignores strings and comments, handles ordinary forward
+declarations, checks other source and header files, and suppresses many
+uncertain cases, including conditional code and macro references. Conventional
+whole-file guards (`#ifndef NAME` or `#if !defined(NAME)`, followed by
+`#define NAME` and a final matching `#endif`) do not make the guarded code
+conditional for this purpose; nested feature/configuration conditionals still
+do. The checker does not expand macros, resolve complex declarators, or prove
+runtime call counts. Inspect findings before changing code.

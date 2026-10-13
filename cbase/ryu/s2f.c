@@ -46,11 +46,6 @@ static inline uint32 floor_log2(const uint32 value) {
 
 #endif
 
-// The max function is already defined on Windows.
-static inline int32 max32(int32 a, int32 b) {
-  return a < b ? b : a;
-}
-
 static inline float int32Bits2Float(uint32 bits) {
   float f;
   memcpy(&f, &bits, sizeof(float));
@@ -202,7 +197,7 @@ enum Status s2f_n(const char * buffer, const int len, float * result) {
 #endif
 
   // Compute the final IEEE exponent.
-  uint32 ieee_e2 = (uint32) max32(0, e2 + FLOAT_EXPONENT_BIAS + floor_log2(m2));
+  uint32 ieee_e2 = (uint32) MAX(0, e2 + FLOAT_EXPONENT_BIAS + floor_log2(m2));
 
   if (ieee_e2 > 0xfe) {
     // Final IEEE exponent is larger than the maximum representable; return +/-Infinity.

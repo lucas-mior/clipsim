@@ -1286,6 +1286,9 @@ appropriate cbase/ C file.
   * Simply write the code for the function inlined.
   * Obvious exceptions are callbacks, like the ones defined in tables, passed as
     function arguments, etc. They can't be inlined by definition.
+- Don't have struct types that are only used inside a single function.
+  * Use the variables you were going to store in the struct directly instead.
+    (those variable might be even other struct instances).
 - Everytime you call a function, look at the implementation of the function to
   check the types and the semantics of the function. Don't call functions that
   you don't know how they work. 
