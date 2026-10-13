@@ -137,7 +137,9 @@ sort_merge_subsorted(
         offsets[k] = offsets[k - 1] + n_sub[k - 1];
     }
 
-    for (int32 k = 0; k < p; k += 1) {
+    heap[0].value = &array2[offsets[0]*obj_size];
+    heap[0].p_index = 0;
+    for (int32 k = 1; k < p; k += 1) {
         heap[k].value = &array2[offsets[k]*obj_size];
         heap[k].p_index = k;
     }

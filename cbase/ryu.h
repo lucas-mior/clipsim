@@ -4,6 +4,8 @@
 #if !defined(CBASE_RYU_H)
 #define CBASE_RYU_H
 
+#include "cbase.h"
+
 #include "ryu/ryu.h"
 #include "ryu/ryu_parse.h"
 
@@ -22,14 +24,7 @@
 
 #include "ryu/d2fixed.c"
 
-#if CC_GCC || CC_CLANG
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wdeclaration-after-statement"
-#endif
 #include "ryu/s2d.c"
-#if CC_GCC || CC_CLANG
-#pragma GCC diagnostic pop
-#endif
+#include "ryu/s2f.c"
 
 #endif /* RYU_IMPLEMENT */

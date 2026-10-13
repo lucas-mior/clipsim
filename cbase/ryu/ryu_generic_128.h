@@ -14,58 +14,60 @@
 // Unless required by applicable law or agreed to in writing, this software
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.
-#ifndef RYU_GENERIC_128_H
+
+#if !defined(RYU_GENERIC_128_H)
 #define RYU_GENERIC_128_H
 
 #include "cbase.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
 // This is a generic 128-bit implementation of float to shortest conversion
 // using the Ryu algorithm. It can handle any IEEE-compatible floating-point
-// type up to 128 bits. In order to use this correctly, you must use the
-// appropriate *_to_fd128 function for the underlying type - DO NOT CAST your
-// input to another floating-point type, doing so will result in incorrect
-// output!
+// type up to 128 bits. To use this correctly, use the appropriate *_to_fd128
+// function for the underlying type. Do not cast the input to another
+// floating-point type; doing so will produce incorrect output.
 //
 // For any floating-point type that is not natively defined by the compiler,
-// you can use generic_binary_to_decimal to work directly on the underlying bit
+// generic_binary_to_decimal can work directly on the underlying bit
 // representation.
 
 #define FD128_EXCEPTIONAL_EXPONENT 0x7FFFFFFF
 
 // A floating decimal representing (-1)^s * m * 10^e.
 struct floating_decimal_128 {
-  __uint128 mantissa;
-  int32 exponent;
-  bool sign;
+    __uint128_t mantissa;
+    int32 exponent;
+    bool sign;
 };
 
 struct floating_decimal_128 float_to_fd128(float f);
 struct floating_decimal_128 double_to_fd128(double d);
 
-// According to wikipedia (https://en.wikipedia.org/wiki/Long_double), this likely only works on
-// x86 with specific compilers (clang?). May need an ifdef.
+// According to Wikipedia, this likely only works on x86 with specific
+// compilers. It may need a platform guard.
 struct floating_decimal_128 long_double_to_fd128(long double d);
 
-// Converts the given binary floating point number to the shortest decimal floating point number
-// that still accurately represents it.
+// Converts the given binary floating point number to the shortest decimal
+// floating point number that still accurately represents it.
 struct floating_decimal_128 generic_binary_to_decimal(
-    const __uint128 bits, const uint32 mantissaBits, const uint32 exponentBits, const bool explicitLeadingBit);
+    const __uint128_t bits, const uint32 mantissa_bits,
+    const uint32 exponent_bits, const bool explicit_leading_bit);
 
-// Converts the given decimal floating point number to a string, writing to result, and returning
-// the number characters written. Does not terminate the buffer with a 0. In the worst case, this
-// function can write up to 53 characters.
+// Converts the given decimal floating point number to a string, writing to
+// result, and returning the number characters written. Does not terminate the
+// buffer with a 0. In the worst case, this function can write up to 53
+// characters.
 //
 // Maximal char buffer requirement:
 // sign + mantissa digits + decimal dot + 'E' + exponent sign + exponent digits
 // = 1 + 39 + 1 + 1 + 1 + 10 = 53
-int generic_to_chars(const struct floating_decimal_128 v, char* const result);
+int generic_to_chars(const struct floating_decimal_128 v, char *result);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif
 
-#endif // RYU_GENERIC_128_H
+#endif /* RYU_GENERIC_128_H */

@@ -14,7 +14,8 @@
 // Unless required by applicable law or agreed to in writing, this software
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.
-#ifndef RYU_COMMON_H
+
+#if !defined(RYU_COMMON_H)
 #define RYU_COMMON_H
 
 #include "cbase.h"
@@ -23,90 +24,123 @@
 #define RYU_32_BIT_PLATFORM
 #endif
 
-// Returns the number of decimal digits in v, which must not contain more than 9 digits.
-static inline uint32 decimalLength9(const uint32 v) {
-  // Function precondition: v is not a 10-digit number.
-  // (f2s: 9 digits are sufficient for round-tripping.)
-  // (d2fixed: We print 9-digit blocks.)
-  assert(v < 1000000000);
-  if (v >= 100000000) { return 9; }
-  if (v >= 10000000) { return 8; }
-  if (v >= 1000000) { return 7; }
-  if (v >= 100000) { return 6; }
-  if (v >= 10000) { return 5; }
-  if (v >= 1000) { return 4; }
-  if (v >= 100) { return 3; }
-  if (v >= 10) { return 2; }
-  return 1;
+// Returns the number of decimal digits in v, which must not contain more than
+// 9 digits.
+static inline uint32
+decimal_length9(uint32 v) {
+    // Function precondition: v is not a 10-digit number.
+    // (f2s: 9 digits are sufficient for round-tripping.)
+    // (d2fixed: We print 9-digit blocks.)
+    assert(v < 1000000000);
+    if (v >= 100000000) {
+        return 9;
+    }
+    if (v >= 10000000) {
+        return 8;
+    }
+    if (v >= 1000000) {
+        return 7;
+    }
+    if (v >= 100000) {
+        return 6;
+    }
+    if (v >= 10000) {
+        return 5;
+    }
+    if (v >= 1000) {
+        return 4;
+    }
+    if (v >= 100) {
+        return 3;
+    }
+    if (v >= 10) {
+        return 2;
+    }
+    return 1;
 }
 
 // Returns e == 0 ? 1 : [log_2(5^e)]; requires 0 <= e <= 3528.
-static inline int32 log2pow5(const int32 e) {
-  // This approximation works up to the point that the multiplication overflows at e = 3529.
-  // If the multiplication were done in 64 bits, it would fail at 5^4004 which is just greater
-  // than 2^9297.
-  assert(e >= 0);
-  assert(e <= 3528);
-  return (int32) ((((uint32) e) * 1217359) >> 19);
+static inline int32
+log2_pow5(int32 e) {
+    // This approximation works up to the point that the multiplication
+    // overflows at e = 3529. If the multiplication were done in 64 bits, it
+    // would fail at 5^4004, which is just greater than 2^9297.
+    assert(e >= 0);
+    assert(e <= 3528);
+    return (int32)((((uint32)e)*1217359) >> 19);
 }
 
 // Returns e == 0 ? 1 : ceil(log_2(5^e)); requires 0 <= e <= 3528.
-static inline int32 pow5bits(const int32 e) {
-  // This approximation works up to the point that the multiplication overflows at e = 3529.
-  // If the multiplication were done in 64 bits, it would fail at 5^4004 which is just greater
-  // than 2^9297.
-  assert(e >= 0);
-  assert(e <= 3528);
-  return (int32) (((((uint32) e) * 1217359) >> 19) + 1);
+static inline int32
+pow5_bits(int32 e) {
+    // This approximation works up to the point that the multiplication
+    // overflows at e = 3529. If the multiplication were done in 64 bits, it
+    // would fail at 5^4004, which is just greater than 2^9297.
+    assert(e >= 0);
+    assert(e <= 3528);
+    return (int32)(((((uint32)e)*1217359) >> 19) + 1);
 }
 
 // Returns e == 0 ? 1 : ceil(log_2(5^e)); requires 0 <= e <= 3528.
-static inline int32 ceil_log2pow5(const int32 e) {
-  return log2pow5(e) + 1;
+static inline int32
+ceil_log2_pow5(int32 e) {
+    return log2_pow5(e) + 1;
 }
 
 // Returns floor(log_10(2^e)); requires 0 <= e <= 1650.
-static inline uint32 log10Pow2(const int32 e) {
-  // The first value this approximation fails for is 2^1651 which is just greater than 10^297.
-  assert(e >= 0);
-  assert(e <= 1650);
-  return (((uint32) e) * 78913) >> 18;
+static inline uint32
+log10_pow2(int32 e) {
+    // The first value this approximation fails for is 2^1651, which is just
+    // greater than 10^297.
+    assert(e >= 0);
+    assert(e <= 1650);
+    return (((uint32)e)*78913) >> 18;
 }
 
 // Returns floor(log_10(5^e)); requires 0 <= e <= 2620.
-static inline uint32 log10Pow5(const int32 e) {
-  // The first value this approximation fails for is 5^2621 which is just greater than 10^1832.
-  assert(e >= 0);
-  assert(e <= 2620);
-  return (((uint32) e) * 732923) >> 20;
+static inline uint32
+log10_pow5(int32 e) {
+    // The first value this approximation fails for is 5^2621, which is just
+    // greater than 10^1832.
+    assert(e >= 0);
+    assert(e <= 2620);
+    return (((uint32)e)*732923) >> 20;
 }
 
-static inline int copy_special_str(char * const result, const bool sign, const bool exponent, const bool mantissa) {
-  if (mantissa) {
-    memcpy(result, "NaN", 3);
-    return 3;
-  }
-  if (sign) {
-    result[0] = '-';
-  }
-  if (exponent) {
-    memcpy(result + sign, "Infinity", 8);
-    return sign + 8;
-  }
-  memcpy(result + sign, "0E0", 3);
-  return sign + 3;
+static inline int32
+copy_special_str(char *result, bool sign, bool exponent, bool mantissa) {
+    int32 sign_chars = 0;
+
+    if (mantissa) {
+        memcpy(result, "NaN", 3);
+        return 3;
+    }
+    if (sign) {
+        result[0] = '-';
+        sign_chars = 1;
+    }
+    if (exponent) {
+        memcpy(result + sign_chars, "Infinity", 8);
+        return sign_chars + 8;
+    }
+    memcpy(result + sign_chars, "0E0", 3);
+    return sign_chars + 3;
 }
 
-static inline uint32 float_to_bits(const float f) {
-  uint32 bits = 0;
-  memcpy(&bits, &f, sizeof(float));
-  return bits;
+static inline uint32
+float_to_bits(float f) {
+    uint32 bits = 0;
+
+    memcpy(&bits, &f, SIZEOF(bits));
+    return bits;
 }
 
-static inline uint64 double_to_bits(const double d) {
-  uint64 bits = 0;
-  memcpy(&bits, &d, sizeof(double));
-  return bits;
+static inline uint64
+double_to_bits(double d) {
+    uint64 bits = 0;
+
+    memcpy(&bits, &d, SIZEOF(bits));
+    return bits;
 }
 
-#endif // RYU_COMMON_H
+#endif /* RYU_COMMON_H */

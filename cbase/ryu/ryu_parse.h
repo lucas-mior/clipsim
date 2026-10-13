@@ -14,12 +14,13 @@
 // Unless required by applicable law or agreed to in writing, this software
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.
-#ifndef RYU_PARSE_H
+
+#if !defined(RYU_PARSE_H)
 #define RYU_PARSE_H
 
-#include "../primitives.h"
+#include "cbase.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -30,13 +31,12 @@ extern "C" {
 // retained: this exceeds the precision of every binary64 rounding midpoint.
 // Hexadecimal floating-point input uses C %a/%A syntax. Not all strtod
 // formats are supported.
-
 enum Status {
-  SUCCESS,
-  INPUT_TOO_SHORT,
-  INPUT_TOO_LONG,
-  MALFORMED_INPUT,
-  FLOAT_UNDERFLOW
+    SUCCESS,
+    INPUT_TOO_SHORT,
+    INPUT_TOO_LONG,
+    MALFORMED_INPUT,
+    FLOAT_UNDERFLOW,
 };
 
 // Parses a double prefix. Decimal input and hexadecimal %a/%A input are
@@ -47,9 +47,9 @@ enum Status {
 // -INPUT_TOO_LONG, -MALFORMED_INPUT, or -FLOAT_UNDERFLOW. Numeric overflow
 // is a successful conversion: it stores signed infinity and returns the number
 // of bytes consumed. Explicit inf/infinity and nan tokens are also successful.
-// Numeric underflow is reported for every nonzero input below the normal double
-// range, including exact subnormals, and stores the resulting signed zero or
-// subnormal value.
+// Numeric underflow is reported when a nonzero input rounds to signed zero or
+// a subnormal double. An input below the normal range that rounds to the
+// smallest normal double is successful.
 //
 // s2d_n reads at most len bytes and does not require a nul terminator. Parsing
 // stops before the first byte that is not part of a valid floating-point
@@ -63,11 +63,11 @@ int32 s2d(const char *buffer, double *result);
 // has the same prefix, rounding, and error semantics as s2d_n.
 int32 s2d_fast(const char *buffer, double *result);
 
-enum Status s2f_n(const char * buffer, const int len, float * result);
-enum Status s2f(const char * buffer, float * result);
+enum Status s2f_n(const char *buffer, int32 len, float *result);
+enum Status s2f(const char *buffer, float *result);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif
 
-#endif // RYU_PARSE_H
+#endif /* RYU_PARSE_H */

@@ -18,325 +18,474 @@
 // Runtime compiler options:
 // -DRYU_DEBUG Generate verbose debugging output to stdout.
 
-#include "ryu/ryu_generic_128.h"
+#if !defined(RYU_GENERIC_128_C)
+#define RYU_GENERIC_128_C
 
 #include "cbase.h"
 
+#include "ryu/ryu_generic_128.h"
 #include "ryu/generic_128.h"
 
-#ifdef RYU_DEBUG
-#include <inttypes.h>
-static char* ryu_s(uint128 v) {
-  int len = decimalLength(v);
-  char* b = (char*) malloc((len + 1) * sizeof(char));
-  for (int i = 0; i < len; i++) {
-    const uint32 c = (uint32) (v % 10);
-    v /= 10;
-    b[len - 1 - i] = (char) ('0' + c);
-  }
-  b[len] = 0;
-  return b;
+#define GENERIC_ONE ((uint128)1)
+
+#define RYU_FLOAT_MANTISSA_BITS 23
+#define RYU_FLOAT_EXPONENT_BITS 8
+
+#define RYU_DOUBLE_MANTISSA_BITS 52
+#define RYU_DOUBLE_EXPONENT_BITS 11
+
+#define RYU_LONG_DOUBLE_MANTISSA_BITS 64
+#define RYU_LONG_DOUBLE_EXPONENT_BITS 15
+
+#if defined(RYU_DEBUG)
+static char *
+ryu_s(uint128 value) {
+    int32 len = (int32)generic_decimal_length(value);
+    char *buffer = (char *)malloc((int64)(len + 1)*SIZEOF(char));
+
+    for (int32 i = 0; i < len; i += 1) {
+        uint32 c = (uint32)(value % 10);
+
+        value /= 10;
+        buffer[len - 1 - i] = (char)('0' + c);
+    }
+    buffer[len] = 0;
+    return buffer;
+}
+
+static char *
+generic_bool_string(bool value) {
+    return value ? "true" : "false";
 }
 #endif
 
-#define ONE ((uint128) 1)
+struct floating_decimal_128
+float_to_fd128(float f) {
+    uint32 bits = 0;
 
-#define FLOAT_MANTISSA_BITS 23
-#define FLOAT_EXPONENT_BITS 8
-
-struct floating_decimal_128 float_to_fd128(float f) {
-  uint32 bits = 0;
-  memcpy(&bits, &f, sizeof(float));
-  return generic_binary_to_decimal(bits, FLOAT_MANTISSA_BITS, FLOAT_EXPONENT_BITS, false);
+    memcpy(&bits, &f, SIZEOF(float));
+    return generic_binary_to_decimal(bits, RYU_FLOAT_MANTISSA_BITS,
+                                     RYU_FLOAT_EXPONENT_BITS, false);
 }
 
-#define DOUBLE_MANTISSA_BITS 52
-#define DOUBLE_EXPONENT_BITS 11
+struct floating_decimal_128
+double_to_fd128(double d) {
+    uint64 bits = 0;
 
-struct floating_decimal_128 double_to_fd128(double d) {
-  uint64 bits = 0;
-  memcpy(&bits, &d, sizeof(double));
-  return generic_binary_to_decimal(bits, DOUBLE_MANTISSA_BITS, DOUBLE_EXPONENT_BITS, false);
+    memcpy(&bits, &d, SIZEOF(double));
+    return generic_binary_to_decimal(bits, RYU_DOUBLE_MANTISSA_BITS,
+                                     RYU_DOUBLE_EXPONENT_BITS, false);
 }
 
-#define LONG_DOUBLE_MANTISSA_BITS 64
-#define LONG_DOUBLE_EXPONENT_BITS 15
+struct floating_decimal_128
+long_double_to_fd128(long double d) {
+    uint128 bits = 0;
 
-struct floating_decimal_128 long_double_to_fd128(long double d) {
-  uint128 bits = 0;
-  memcpy(&bits, &d, sizeof(long double));
-#ifdef RYU_DEBUG
-  // For some odd reason, this ends up with noise in the top 48 bits. We can
-  // clear out those bits with the following line; this is not required, the
-  // conversion routine should ignore those bits, but the debug output can be
-  // confusing if they aren't 0s.
-  bits &= (ONE << 80) - 1;
+    memcpy(&bits, &d, SIZEOF(long double));
+#if defined(RYU_DEBUG)
+    // For some odd reason, this ends up with noise in the top 48 bits. We can
+    // clear out those bits with the following line; this is not required, the
+    // conversion routine should ignore those bits, but the debug output can be
+    // confusing if they aren't 0s.
+    bits &= (GENERIC_ONE << 80) - 1;
 #endif
-  return generic_binary_to_decimal(bits, LONG_DOUBLE_MANTISSA_BITS, LONG_DOUBLE_EXPONENT_BITS, true);
+    return generic_binary_to_decimal(bits, RYU_LONG_DOUBLE_MANTISSA_BITS,
+                                     RYU_LONG_DOUBLE_EXPONENT_BITS, true);
 }
 
-struct floating_decimal_128 generic_binary_to_decimal(
-    const uint128 bits, const uint32 mantissaBits, const uint32 exponentBits, const bool explicitLeadingBit) {
-#ifdef RYU_DEBUG
-  printf("IN=");
-  for (int32 bit = 127; bit >= 0; --bit) {
-    printf("%u", (uint32) ((bits >> bit) & 1));
-  }
-  printf("\n");
-#endif
-
-  const uint32 bias = (1u << (exponentBits - 1)) - 1;
-  const bool ieeeSign = ((bits >> (mantissaBits + exponentBits)) & 1) != 0;
-  const uint128 ieeeMantissa = bits & ((ONE << mantissaBits) - 1);
-  const uint32 ieeeExponent = (uint32) ((bits >> mantissaBits) & ((ONE << exponentBits) - 1u));
-
-  if (ieeeExponent == 0 && ieeeMantissa == 0) {
+static struct floating_decimal_128
+generic_zero_decimal(bool ieee_sign) {
     struct floating_decimal_128 fd;
+
     fd.mantissa = 0;
     fd.exponent = 0;
-    fd.sign = ieeeSign;
+    fd.sign = ieee_sign;
     return fd;
-  }
-  if (ieeeExponent == ((1u << exponentBits) - 1u)) {
+}
+
+static struct floating_decimal_128
+generic_exceptional_decimal(uint128 ieee_mantissa, uint32 mantissa_bits,
+                            bool explicit_leading_bit, bool ieee_sign) {
     struct floating_decimal_128 fd;
-    fd.mantissa = explicitLeadingBit ? ieeeMantissa & ((ONE << (mantissaBits - 1)) - 1) : ieeeMantissa;
+
+    fd.mantissa = explicit_leading_bit
+                  ? ieee_mantissa & ((GENERIC_ONE << (mantissa_bits - 1)) - 1)
+                  : ieee_mantissa;
     fd.exponent = FD128_EXCEPTIONAL_EXPONENT;
-    fd.sign = ieeeSign;
+    fd.sign = ieee_sign;
     return fd;
-  }
+}
 
-  int32 e2;
-  uint128 m2;
-  // We subtract 2 in all cases so that the bounds computation has 2 additional bits.
-  if (explicitLeadingBit) {
-    // mantissaBits includes the explicit leading bit, so we need to correct for that here.
-    if (ieeeExponent == 0) {
-      e2 = 1 - bias - mantissaBits + 1 - 2;
+static void
+generic_normalize_binary(uint128 ieee_mantissa, uint32 ieee_exponent,
+                         uint32 mantissa_bits, uint32 bias,
+                         bool explicit_leading_bit, int32 *e2,
+                         uint128 *m2) {
+    // We subtract 2 in all cases so that the bounds computation has 2
+    // additional bits.
+    if (explicit_leading_bit) {
+        // mantissa_bits includes the explicit leading bit, so we need to
+        // correct for that here.
+        if (ieee_exponent == 0) {
+            *e2 = 1 - (int32)bias - (int32)mantissa_bits + 1 - 2;
+        } else {
+            *e2 = (int32)ieee_exponent - (int32)bias
+                  - (int32)mantissa_bits + 1 - 2;
+        }
+        *m2 = ieee_mantissa;
     } else {
-      e2 = ieeeExponent - bias - mantissaBits + 1 - 2;
+        if (ieee_exponent == 0) {
+            *e2 = 1 - (int32)bias - (int32)mantissa_bits - 2;
+            *m2 = ieee_mantissa;
+        } else {
+            *e2 = (int32)ieee_exponent - (int32)bias
+                  - (int32)mantissa_bits - 2;
+            *m2 = (GENERIC_ONE << mantissa_bits) | ieee_mantissa;
+        }
     }
-    m2 = ieeeMantissa;
-  } else {
-    if (ieeeExponent == 0) {
-      e2 = 1 - bias - mantissaBits - 2;
-      m2 = ieeeMantissa;
+    return;
+}
+
+static void
+generic_scaled_values_positive(uint128 m2, int32 e2, uint32 mm_shift,
+                               uint128 *vr, uint128 *vp, uint128 *vm,
+                               int32 *e10) {
+    uint32 q = generic_log10_pow2(e2) - (e2 > 3);
+    int32 k = FLOAT_128_POW5_INV_BITCOUNT + generic_pow5_bits(q) - 1;
+    int32 i = -e2 + (int32)q + k;
+    uint64 pow5[4];
+
+    *e10 = (int32)q;
+    generic_compute_inv_pow5(q, pow5);
+    *vr = generic_mul_shift(4*m2, pow5, i);
+    *vp = generic_mul_shift(4*m2 + 2, pow5, i);
+    *vm = generic_mul_shift(4*m2 - 1 - mm_shift, pow5, i);
+#if defined(RYU_DEBUG)
+    printf("%s * 2^%d / 10^%u\n", ryu_s(4*m2), e2, q);
+    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(*vp), ryu_s(*vr), ryu_s(*vm));
+#endif
+    return;
+}
+
+static void
+generic_update_trailing_positive(uint128 mv, uint32 q, uint32 mm_shift,
+                                 bool accept_bounds, uint128 *vp,
+                                 bool *vr_trailing_zeros,
+                                 bool *vm_trailing_zeros) {
+    // floor(log_5(2^128)) = 55, this is very conservative.
+    if (q > 55) {
+        return;
+    }
+
+    // Only one of mp, mv, and mm can be a multiple of 5, if any.
+    if (mv % 5 == 0) {
+        *vr_trailing_zeros = generic_multiple_of_power_of5(mv, q - 1);
+    } else if (accept_bounds) {
+        // Same as min(e2 + (~mm & 1), generic_pow5_factor(mm)) >= q
+        // <=> e2 + (~mm & 1) >= q && generic_pow5_factor(mm) >= q
+        // <=> true && generic_pow5_factor(mm) >= q, since e2 >= q.
+        *vm_trailing_zeros =
+            generic_multiple_of_power_of5(mv - 1 - mm_shift, q);
     } else {
-      e2 = ieeeExponent - bias - mantissaBits - 2;
-      m2 = (ONE << mantissaBits) | ieeeMantissa;
+        // Same as min(e2 + 1, generic_pow5_factor(mp)) >= q.
+        *vp -= generic_multiple_of_power_of5(mv + 2, q);
     }
-  }
-  const bool even = (m2 & 1) == 0;
-  const bool acceptBounds = even;
+    return;
+}
 
-#ifdef RYU_DEBUG
-  printf("-> %s %s * 2^%d\n", ieeeSign ? "-" : "+", ryu_s(m2), e2 + 2);
-#endif
-
-  // Step 2: Determine the interval of legal decimal representations.
-  const uint128 mv = 4 * m2;
-  // Implicit bool -> int conversion. True is 1, false is 0.
-  const uint32 mmShift =
-      (ieeeMantissa != (explicitLeadingBit ? ONE << (mantissaBits - 1) : 0))
-      || (ieeeExponent == 0);
-
-  // Step 3: Convert to a decimal power base using 128-bit arithmetic.
-  uint128 vr, vp, vm;
-  int32 e10;
-  bool vmIsTrailingZeros = false;
-  bool vrIsTrailingZeros = false;
-  if (e2 >= 0) {
-    // I tried special-casing q == 0, but there was no effect on performance.
-    // This expression is slightly faster than max(0, log10Pow2(e2) - 1).
-    const uint32 q = log10Pow2(e2) - (e2 > 3);
-    e10 = q;
-    const int32 k = FLOAT_128_POW5_INV_BITCOUNT + pow5bits(q) - 1;
-    const int32 i = -e2 + q + k;
+static void
+generic_scaled_values_negative(uint128 m2, int32 e2, uint32 mm_shift,
+                               uint128 *vr, uint128 *vp, uint128 *vm,
+                               int32 *e10, uint32 *q_result) {
+    uint32 q = generic_log10_pow5(-e2) - (-e2 > 1);
+    int32 i = -e2 - (int32)q;
+    int32 k = generic_pow5_bits(i) - FLOAT_128_POW5_BITCOUNT;
+    int32 j = (int32)q - k;
     uint64 pow5[4];
-    generic_computeInvPow5(q, pow5);
-    vr = mulShift(4 * m2, pow5, i);
-    vp = mulShift(4 * m2 + 2, pow5, i);
-    vm = mulShift(4 * m2 - 1 - mmShift, pow5, i);
-#ifdef RYU_DEBUG
-    printf("%s * 2^%d / 10^%d\n", ryu_s(mv), e2, q);
-    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
+
+    *q_result = q;
+    *e10 = (int32)q + e2;
+    generic_compute_pow5(i, pow5);
+    *vr = generic_mul_shift(4*m2, pow5, j);
+    *vp = generic_mul_shift(4*m2 + 2, pow5, j);
+    *vm = generic_mul_shift(4*m2 - 1 - mm_shift, pow5, j);
+#if defined(RYU_DEBUG)
+    printf("%s * 5^%d / 10^%u\n", ryu_s(4*m2), -e2, q);
+    printf("%u %d %d %d\n", q, i, k, j);
+    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(*vp), ryu_s(*vr), ryu_s(*vm));
 #endif
-    // floor(log_5(2^128)) = 55, this is very conservative
-    if (q <= 55) {
-      // Only one of mp, mv, and mm can be a multiple of 5, if any.
-      if (mv % 5 == 0) {
-        vrIsTrailingZeros = multipleOfPowerOf5(mv, q - 1);
-      } else if (acceptBounds) {
-        // Same as min(e2 + (~mm & 1), pow5Factor(mm)) >= q
-        // <=> e2 + (~mm & 1) >= q && pow5Factor(mm) >= q
-        // <=> true && pow5Factor(mm) >= q, since e2 >= q.
-        vmIsTrailingZeros = multipleOfPowerOf5(mv - 1 - mmShift, q);
-      } else {
-        // Same as min(e2 + 1, pow5Factor(mp)) >= q.
-        vp -= multipleOfPowerOf5(mv + 2, q);
-      }
-    }
-  } else {
-    // This expression is slightly faster than max(0, log10Pow5(-e2) - 1).
-    const uint32 q = log10Pow5(-e2) - (-e2 > 1);
-    e10 = q + e2;
-    const int32 i = -e2 - q;
-    const int32 k = pow5bits(i) - FLOAT_128_POW5_BITCOUNT;
-    const int32 j = q - k;
-    uint64 pow5[4];
-    generic_computePow5(i, pow5);
-    vr = mulShift(4 * m2, pow5, j);
-    vp = mulShift(4 * m2 + 2, pow5, j);
-    vm = mulShift(4 * m2 - 1 - mmShift, pow5, j);
-#ifdef RYU_DEBUG
-    printf("%s * 5^%d / 10^%d\n", ryu_s(mv), -e2, q);
-    printf("%d %d %d %d\n", q, i, k, j);
-    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
-#endif
+    return;
+}
+
+static void
+generic_update_trailing_negative(uint128 mv, uint32 q, uint32 mm_shift,
+                                 bool accept_bounds, uint128 *vp,
+                                 bool *vr_trailing_zeros,
+                                 bool *vm_trailing_zeros) {
     if (q <= 1) {
-      // {vr,vp,vm} is trailing zeros if {mv,mp,mm} has at least q trailing 0 bits.
-      // mv = 4 m2, so it always has at least two trailing 0 bits.
-      vrIsTrailingZeros = true;
-      if (acceptBounds) {
-        // mm = mv - 1 - mmShift, so it has 1 trailing 0 bit iff mmShift == 1.
-        vmIsTrailingZeros = mmShift == 1;
-      } else {
-        // mp = mv + 2, so it always has at least one trailing 0 bit.
-        --vp;
-      }
+        // {vr,vp,vm} is trailing zeros if {mv,mp,mm} has at least q trailing
+        // 0 bits. mv = 4 m2, so it always has at least two trailing 0 bits.
+        *vr_trailing_zeros = true;
+        if (accept_bounds) {
+            // mm = mv - 1 - mm_shift, so it has 1 trailing 0 bit iff
+            // mm_shift == 1.
+            *vm_trailing_zeros = mm_shift == 1;
+        } else {
+            // mp = mv + 2, so it always has at least one trailing 0 bit.
+            *vp -= 1;
+        }
     } else if (q < 127) { // TODO(ulfjack): Use a tighter bound here.
-      // We need to compute min(ntz(mv), pow5Factor(mv) - e2) >= q-1
-      // <=> ntz(mv) >= q-1  &&  pow5Factor(mv) - e2 >= q-1
-      // <=> ntz(mv) >= q-1    (e2 is negative and -e2 >= q)
-      // <=> (mv & ((1 << (q-1)) - 1)) == 0
-      // We also need to make sure that the left shift does not overflow.
-      vrIsTrailingZeros = multipleOfPowerOf2(mv, q - 1);
-#ifdef RYU_DEBUG
-      printf("vr is trailing zeros=%s\n", vrIsTrailingZeros ? "true" : "false");
+        // We need to compute:
+        // min(ntz(mv), generic_pow5_factor(mv) - e2) >= q - 1
+        // <=> ntz(mv) >= q - 1
+        //     && generic_pow5_factor(mv) - e2 >= q - 1
+        // <=> ntz(mv) >= q - 1    (e2 is negative and -e2 >= q)
+        // <=> (mv & ((1 << (q - 1)) - 1)) == 0
+        // We also need to make sure that the left shift does not overflow.
+        *vr_trailing_zeros = generic_multiple_of_power_of2(mv, q - 1);
+#if defined(RYU_DEBUG)
+        printf("vr is trailing zeros=%s\n",
+               generic_bool_string(*vr_trailing_zeros));
 #endif
     }
-  }
-#ifdef RYU_DEBUG
-  printf("e10=%d\n", e10);
-  printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
-  printf("vm is trailing zeros=%s\n", vmIsTrailingZeros ? "true" : "false");
-  printf("vr is trailing zeros=%s\n", vrIsTrailingZeros ? "true" : "false");
-#endif
+    return;
+}
 
-  // Step 4: Find the shortest decimal representation in the interval of legal representations.
-  uint32 removed = 0;
-  uint8 lastRemovedDigit = 0;
-  uint128 output;
-
-  while (vp / 10 > vm / 10) {
-    vmIsTrailingZeros &= vm % 10 == 0;
-    vrIsTrailingZeros &= lastRemovedDigit == 0;
-    lastRemovedDigit = (uint8) (vr % 10);
-    vr /= 10;
-    vp /= 10;
-    vm /= 10;
-    ++removed;
-  }
-#ifdef RYU_DEBUG
-  printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
-  printf("d-10=%s\n", vmIsTrailingZeros ? "true" : "false");
-#endif
-  if (vmIsTrailingZeros) {
-    while (vm % 10 == 0) {
-      vrIsTrailingZeros &= lastRemovedDigit == 0;
-      lastRemovedDigit = (uint8) (vr % 10);
-      vr /= 10;
-      vp /= 10;
-      vm /= 10;
-      ++removed;
+static void
+generic_remove_digits(uint128 *vr, uint128 *vp, uint128 *vm,
+                      bool *vr_trailing_zeros, bool *vm_trailing_zeros,
+                      uint32 *removed, uint8 *last_removed_digit) {
+    while (*vp / 10 > *vm / 10) {
+        *vm_trailing_zeros &= *vm % 10 == 0;
+        *vr_trailing_zeros &= *last_removed_digit == 0;
+        *last_removed_digit = (uint8)(*vr % 10);
+        *vr /= 10;
+        *vp /= 10;
+        *vm /= 10;
+        *removed += 1;
     }
-  }
-#ifdef RYU_DEBUG
-  printf("%s %d\n", ryu_s(vr), lastRemovedDigit);
-  printf("vr is trailing zeros=%s\n", vrIsTrailingZeros ? "true" : "false");
-#endif
-  if (vrIsTrailingZeros && (lastRemovedDigit == 5) && (vr % 2 == 0)) {
-    // Round even if the exact numbers is .....50..0.
-    lastRemovedDigit = 4;
-  }
-  // We need to take vr+1 if vr is outside bounds or we need to round up.
-  output = vr +
-      ((vr == vm && (!acceptBounds || !vmIsTrailingZeros)) || (lastRemovedDigit >= 5));
-  const int32 exp = e10 + removed;
-
-#ifdef RYU_DEBUG
-  printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
-  printf("O=%s\n", ryu_s(output));
-  printf("EXP=%d\n", exp);
-#endif
-
-  struct floating_decimal_128 fd;
-  fd.mantissa = output;
-  fd.exponent = exp;
-  fd.sign = ieeeSign;
-  return fd;
+    return;
 }
 
-static inline int copy_special_str(char * const result, const struct floating_decimal_128 fd) {
-  if (fd.mantissa) {
-    memcpy(result, "NaN", 3);
-    return 3;
-  }
-  if (fd.sign) {
-    result[0] = '-';
-  }
-  memcpy(result + fd.sign, "Infinity", 8);
-  return fd.sign + 8;
+static void
+generic_remove_vm_trailing_digits(uint128 *vr, uint128 *vp, uint128 *vm,
+                                  bool *vr_trailing_zeros, uint32 *removed,
+                                  uint8 *last_removed_digit) {
+    while (*vm % 10 == 0) {
+        *vr_trailing_zeros &= *last_removed_digit == 0;
+        *last_removed_digit = (uint8)(*vr % 10);
+        *vr /= 10;
+        *vp /= 10;
+        *vm /= 10;
+        *removed += 1;
+    }
+    return;
 }
 
-int generic_to_chars(const struct floating_decimal_128 v, char* const result) {
-  if (v.exponent == FD128_EXCEPTIONAL_EXPONENT) {
-    return copy_special_str(result, v);
-  }
+struct floating_decimal_128
+generic_binary_to_decimal(__uint128_t bits, uint32 mantissa_bits,
+                          uint32 exponent_bits, bool explicit_leading_bit) {
+    struct floating_decimal_128 fd;
+    uint32 bias;
+    uint32 ieee_exponent;
+    uint32 mm_shift;
+    uint32 removed = 0;
+    uint8 last_removed_digit = 0;
+    int32 e2;
+    int32 e10;
+    int32 exp;
+    uint128 ieee_mantissa;
+    uint128 m2;
+    uint128 mv;
+    uint128 vr;
+    uint128 vp;
+    uint128 vm;
+    uint128 output;
+    bool ieee_sign;
+    bool accept_bounds;
+    bool vm_trailing_zeros = false;
+    bool vr_trailing_zeros = false;
 
-  // Step 5: Print the decimal representation.
-  int index = 0;
-  if (v.sign) {
-    result[index++] = '-';
-  }
-
-  uint128 output = v.mantissa;
-  const uint32 olength = decimalLength(output);
-
-#ifdef RYU_DEBUG
-  printf("DIGITS=%s\n", ryu_s(v.mantissa));
-  printf("OLEN=%u\n", olength);
-  printf("EXP=%u\n", v.exponent + olength);
+#if defined(RYU_DEBUG)
+    printf("IN=");
+    for (int32 bit = 127; bit >= 0; bit -= 1) {
+        printf("%u", (uint32)((bits >> bit) & 1));
+    }
+    printf("\n");
 #endif
 
-  for (uint32 i = 0; i < olength - 1; ++i) {
-    const uint32 c = (uint32) (output % 10);
-    output /= 10;
-    result[index + olength - i] = (char) ('0' + c);
-  }
-  result[index] = '0' + (uint32) (output % 10); // output should be < 10 by now.
+    bias = (1u << (exponent_bits - 1)) - 1;
+    ieee_sign = ((bits >> (mantissa_bits + exponent_bits)) & 1) != 0;
+    ieee_mantissa = bits & ((GENERIC_ONE << mantissa_bits) - 1);
+    ieee_exponent = (uint32)(
+        (bits >> mantissa_bits) & ((GENERIC_ONE << exponent_bits) - 1));
 
-  // Print decimal point if needed.
-  if (olength > 1) {
-    result[index + 1] = '.';
-    index += olength + 1;
-  } else {
-    ++index;
-  }
+    if (ieee_exponent == 0 && ieee_mantissa == 0) {
+        return generic_zero_decimal(ieee_sign);
+    }
+    if (ieee_exponent == ((1u << exponent_bits) - 1u)) {
+        return generic_exceptional_decimal(ieee_mantissa, mantissa_bits,
+                                           explicit_leading_bit, ieee_sign);
+    }
 
-  // Print the exponent.
-  result[index++] = 'E';
-  int32 exp = v.exponent + olength - 1;
-  if (exp < 0) {
-    result[index++] = '-';
-    exp = -exp;
-  }
+    generic_normalize_binary(ieee_mantissa, ieee_exponent, mantissa_bits, bias,
+                             explicit_leading_bit, &e2, &m2);
+    accept_bounds = (m2 & 1) == 0;
 
-  uint32 elength = decimalLength(exp);
-  for (uint32 i = 0; i < elength; ++i) {
-    const uint32 c = exp % 10;
-    exp /= 10;
-    result[index + elength - 1 - i] = (char) ('0' + c);
-  }
-  index += elength;
-  return index;
+#if defined(RYU_DEBUG)
+    printf("-> %s %s * 2^%d\n", ieee_sign ? "-" : "+", ryu_s(m2), e2 + 2);
+#endif
+
+    // Step 2: Determine the interval of legal decimal representations.
+    mv = 4*m2;
+
+    // Implicit bool -> int conversion. True is 1, false is 0.
+    mm_shift = (ieee_mantissa != (explicit_leading_bit
+                                   ? GENERIC_ONE << (mantissa_bits - 1)
+                                   : 0))
+               || (ieee_exponent == 0);
+
+    // Step 3: Convert to a decimal power base using 128-bit arithmetic.
+    if (e2 >= 0) {
+        uint32 q = generic_log10_pow2(e2) - (e2 > 3);
+
+        generic_scaled_values_positive(m2, e2, mm_shift, &vr, &vp, &vm, &e10);
+        generic_update_trailing_positive(mv, q, mm_shift, accept_bounds, &vp,
+                                         &vr_trailing_zeros,
+                                         &vm_trailing_zeros);
+    } else {
+        uint32 q;
+
+        generic_scaled_values_negative(m2, e2, mm_shift, &vr, &vp, &vm, &e10,
+                                       &q);
+        generic_update_trailing_negative(mv, q, mm_shift, accept_bounds, &vp,
+                                         &vr_trailing_zeros,
+                                         &vm_trailing_zeros);
+    }
+#if defined(RYU_DEBUG)
+    printf("e10=%d\n", e10);
+    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
+    printf("vm is trailing zeros=%s\n", generic_bool_string(vm_trailing_zeros));
+    printf("vr is trailing zeros=%s\n", generic_bool_string(vr_trailing_zeros));
+#endif
+
+    // Step 4: Find the shortest decimal representation in the interval of
+    // legal representations.
+    generic_remove_digits(&vr, &vp, &vm, &vr_trailing_zeros,
+                          &vm_trailing_zeros, &removed,
+                          &last_removed_digit);
+#if defined(RYU_DEBUG)
+    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
+    printf("d-10=%s\n", generic_bool_string(vm_trailing_zeros));
+#endif
+    if (vm_trailing_zeros) {
+        generic_remove_vm_trailing_digits(&vr, &vp, &vm, &vr_trailing_zeros,
+                                          &removed, &last_removed_digit);
+    }
+#if defined(RYU_DEBUG)
+    printf("%s %u\n", ryu_s(vr), last_removed_digit);
+    printf("vr is trailing zeros=%s\n", generic_bool_string(vr_trailing_zeros));
+#endif
+    if (vr_trailing_zeros && (last_removed_digit == 5) && (vr % 2 == 0)) {
+        // Round even if the exact numbers is .....50..0.
+        last_removed_digit = 4;
+    }
+
+    // We need to take vr + 1 if vr is outside bounds or we need to round up.
+    output = vr + ((vr == vm && (!accept_bounds || !vm_trailing_zeros))
+                   || (last_removed_digit >= 5));
+    exp = e10 + (int32)removed;
+
+#if defined(RYU_DEBUG)
+    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
+    printf("O=%s\n", ryu_s(output));
+    printf("EXP=%d\n", exp);
+#endif
+
+    fd.mantissa = output;
+    fd.exponent = exp;
+    fd.sign = ieee_sign;
+    return fd;
 }
+
+static inline int32
+generic_copy_special_str(char *result, struct floating_decimal_128 fd) {
+    if (fd.mantissa) {
+        memcpy(result, "NaN", 3);
+        return 3;
+    }
+    if (fd.sign) {
+        result[0] = '-';
+    }
+    memcpy(result + fd.sign, "Infinity", 8);
+    return fd.sign + 8;
+}
+
+int
+generic_to_chars(struct floating_decimal_128 value, char *result) {
+    int32 index = 0;
+    int32 exp;
+    uint32 olength;
+    uint32 elength;
+    uint128 output;
+
+    if (value.exponent == FD128_EXCEPTIONAL_EXPONENT) {
+        return generic_copy_special_str(result, value);
+    }
+
+    // Step 5: Print the decimal representation.
+    if (value.sign) {
+        result[index] = '-';
+        index += 1;
+    }
+
+    output = value.mantissa;
+    olength = generic_decimal_length(output);
+
+#if defined(RYU_DEBUG)
+    printf("DIGITS=%s\n", ryu_s(value.mantissa));
+    printf("OLEN=%u\n", olength);
+    printf("EXP=%d\n", value.exponent + (int32)olength);
+#endif
+
+    for (uint32 i = 0; i < olength - 1; i += 1) {
+        uint32 c = (uint32)(output % 10);
+
+        output /= 10;
+        result[index + olength - i] = (char)('0' + c);
+    }
+    // output should be < 10 by now.
+    result[index] = (char)('0' + (uint32)(output % 10));
+
+    // Print decimal point if needed.
+    if (olength > 1) {
+        result[index + 1] = '.';
+        index += (int32)olength + 1;
+    } else {
+        index += 1;
+    }
+
+    // Print the exponent.
+    result[index] = 'E';
+    index += 1;
+    exp = value.exponent + (int32)olength - 1;
+
+    if (exp < 0) {
+        result[index] = '-';
+        index += 1;
+        exp = -exp;
+    }
+
+    elength = generic_decimal_length((uint32)exp);
+
+    for (uint32 i = 0; i < elength; i += 1) {
+        uint32 c = (uint32)exp % 10;
+
+        exp /= 10;
+        result[index + elength - 1 - i] = (char)('0' + c);
+    }
+    index += (int32)elength;
+    return index;
+}
+
+#endif /* RYU_GENERIC_128_C */

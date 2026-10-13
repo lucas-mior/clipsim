@@ -14,39 +14,38 @@
 // Unless required by applicable law or agreed to in writing, this software
 // is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.
-#ifndef RYU_H
+
+#if !defined(RYU_H)
 #define RYU_H
 
 #include "cbase.h"
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
-
-#include <inttypes.h>
 
 enum {
     RYU_D2S_BUFFER_SIZE = 25,
 };
 
-int d2s_buffered_n(double f, char* result);
-void d2s_buffered(double f, char* result);
-char* d2s(double f);
+int d2s_buffered_n(double f, char *result);
+void d2s_buffered(double f, char *result);
+char *d2s(double f);
 
-int f2s_buffered_n(float f, char* result);
-void f2s_buffered(float f, char* result);
-char* f2s(float f);
+int f2s_buffered_n(float f, char *result);
+void f2s_buffered(float f, char *result);
+char *f2s(float f);
 
-int d2fixed_buffered_n(double d, uint32 precision, char* result);
-void d2fixed_buffered(double d, uint32 precision, char* result);
-char* d2fixed(double d, uint32 precision);
+int d2fixed_buffered_n(double d, uint32 precision, char *result);
+void d2fixed_buffered(double d, uint32 precision, char *result);
+char *d2fixed(double d, uint32 precision);
 
-int d2exp_buffered_n(double d, uint32 precision, char* result);
-void d2exp_buffered(double d, uint32 precision, char* result);
-char* d2exp(double d, uint32 precision);
+int d2exp_buffered_n(double d, uint32 precision, char *result);
+void d2exp_buffered(double d, uint32 precision, char *result);
+char *d2exp(double d, uint32 precision);
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif
 
-#endif // RYU_H
+#endif /* RYU_H */

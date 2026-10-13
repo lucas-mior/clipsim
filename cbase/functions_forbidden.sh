@@ -101,6 +101,14 @@ if [ -n "$common_libc_never" ] \
                     \( -iname "*.c" -o -iname "*.h" \)
             fi
         done
+
+        # Vendored Ryu sources are part of the style checks, even when a
+        # caller limits general discovery with TEST_MAXDEPTH.
+        if [ -n "$common_libc_cbase_dir" ] \
+                && [ -d "$common_libc_cbase_dir/ryu" ]; then
+            find "$common_libc_cbase_dir/ryu" -type f \
+                \( -iname "*.c" -o -iname "*.h" \)
+        fi
     } | sort -u | while read -r common_source; do
         if echo "$common_source" | grep -Eq '(^|/)stc/'; then
             continue
@@ -113,6 +121,16 @@ if [ -n "$common_libc_never" ] \
         if ! common_test_source_matches_filter \
                 "$common_source" "${TEST_FILTER:-}"; then
             case "$common_source" in
+            */ryu/*.c)
+                # A 'ryu' test selection also checks the vendored C sources.
+                case "${TEST_FILTER:-}" in
+                ryu|ryu.c|*/ryu|*/ryu.c)
+                    ;;
+                *)
+                    continue
+                    ;;
+                esac
+                ;;
             *.c)
                 continue
                 ;;

@@ -95,6 +95,59 @@ sub report_issue {
     print $message;
 }
 
+# These are purely textual formatting rules. Keep numerical and compiler-
+# specific implementation idioms in Ryu untouched.
+sub check_ryu_source_style {
+    my ($path, $source) = @_;
+    my $line_number = 0;
+
+    my @lines = split /\n/, $source, -1;
+    pop @lines if length($source) && substr($source, -1) eq "\n";
+    for my $line (@lines) {
+        $line_number += 1;
+
+        if (length($line) > 80) {
+            report_issue("$path:$line_number:line exceeds 80 columns\n");
+        }
+        if ($line =~ /\t/) {
+            report_issue("$path:$line_number:tab character is forbidden\n");
+        }
+        if ($line =~ /[ \t\r]+\z/) {
+            report_issue("$path:$line_number:trailing whitespace\n");
+        }
+        if ($line =~ /^\s*#\s*ifn?def\b/) {
+            report_issue("$path:$line_number:use #if defined or "
+                         . "#if !defined\n");
+        }
+        if ($line =~ /^\s*#\s*endif\b[^\n]*\/\//) {
+            report_issue("$path:$line_number:use a block comment "
+                         . "after #endif\n");
+        }
+    }
+    if (length($source) && substr($source, -1) ne "\n") {
+        report_issue("$path:$line_number:missing final newline\n");
+    }
+}
+
+# Ternaries are prohibited by c-guidelines.md except in Ryu. Ignore macro
+# definitions: metaprogramming helpers such as cbase/minmax.c use ?: on
+# preprocessor lines, which are not ordinary C statements.
+sub check_ternary_operators {
+    my ($path, $code) = @_;
+    my $line_number = 0;
+    my $continuation = 0;
+
+    for my $line (split /\n/, $code) {
+        $line_number += 1;
+        my $directive = $continuation || $line =~ /^[ \t]*#/;
+        $continuation = $directive && $line =~ /\\[ \t]*\z/;
+        next if $directive;
+        if (index($line, '?') >= 0) {
+            report_issue("$path:$line_number:ternary operator is forbidden\n");
+        }
+    }
+}
+
 my $cache_path = $ENV{CBASE_FORBIDDEN_PATTERNS_CACHE}
                  // '.cache/functions_forbidden_patterns.json';
 my $checker_hash = checker_fingerprint();
@@ -659,6 +712,13 @@ for my $path (@paths) {
         push @line_offsets, $-[0];
     }
     my $code = code_mask($source);
+    my $is_ryu = $absolute_path =~ m{(?:\A|/)cbase/ryu/[^/]+\.[ch]\z};
+
+    if ($is_ryu) {
+        check_ryu_source_style($path, $source);
+    } else {
+        # check_ternary_operators($path, $code);
+    }
 
     # Indentation distinguishes calls from the project's function headers.
     # Generated .meta.h files may break before the first argument.
