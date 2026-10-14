@@ -6,6 +6,9 @@
 
 // libc.h is needed for limits.h and stdint.h
 #include "libc.h"
+#if !defined(SIZEOF)
+#define SIZEOF(...) (long long)(sizeof(__VA_ARGS__))
+#endif
 
 // Note: int64_t is defined as long on unix systems,
 // while int64_t is defined as long long on windows.
@@ -21,10 +24,10 @@ _Static_assert(~(0ull) == 18446744073709551615ul,
                "primitives.h requires unsigned long to be 64 bits");
 _Static_assert((unsigned char)~0 == (unsigned char)255,
                "primitives.h requires CHAR_BIT == 8");
-_Static_assert(sizeof(char)*CHAR_BIT      == 8,  "char must be 8 bits");
-_Static_assert(sizeof(short)*CHAR_BIT     == 16, "short must be 16 bits");
-_Static_assert(sizeof(int)*CHAR_BIT       == 32, "int must be 32 bits");
-_Static_assert(sizeof(long long)*CHAR_BIT == 64, "long long must be 64 bits");
+_Static_assert(SIZEOF(char)*CHAR_BIT      == 8,  "char must be 8 bits");
+_Static_assert(SIZEOF(short)*CHAR_BIT     == 16, "short must be 16 bits");
+_Static_assert(SIZEOF(int)*CHAR_BIT       == 32, "int must be 32 bits");
+_Static_assert(SIZEOF(long long)*CHAR_BIT == 64, "long long must be 64 bits");
 
 typedef unsigned char      uchar;
 typedef unsigned short     ushort;

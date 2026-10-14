@@ -36,9 +36,9 @@ _Generic((VAR),                           \
 #define ASSERT_DOUBLE_MAX_ULPS 16ull
 #endif
 
-_Static_assert(sizeof(float)*CHAR_BIT == 32,
+_Static_assert(SIZEOF(float)*CHAR_BIT == 32,
                "assertions.c ULP comparison requires 32-bit float");
-_Static_assert(sizeof(double)*CHAR_BIT == 64,
+_Static_assert(SIZEOF(double)*CHAR_BIT == 64,
                "assertions.c ULP comparison requires 64-bit double");
 
 void assert_error(char *, int32, char *,

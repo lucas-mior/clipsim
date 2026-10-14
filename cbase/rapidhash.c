@@ -181,46 +181,46 @@ rapid_mix(uint64 A, uint64 B) {
 INLINE uint64
 rapid_read_64(uint8 *p) {
     uint64 v;
-    memcpy64(&v, p, sizeof(*(&v)));
+    memcpy64(&v, p, SIZEOF(*(&v)));
     return v;
 }
 INLINE uint64
 read32(uint8 *p) {
     uint32 v;
-    memcpy64(&v, p, sizeof(*(&v)));
+    memcpy64(&v, p, SIZEOF(*(&v)));
     return v;
 }
 #elif defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
 INLINE uint64
 rapid_read_64(uint8 *p) {
     uint64 v;
-    memcpy64(&v, p, sizeof(*(&v)));
+    memcpy64(&v, p, SIZEOF(*(&v)));
     return __builtin_bswap64(v);
 }
 INLINE uint64
 read32(uint8 *p) {
     uint32 v;
-    memcpy64(&v, p, sizeof(*(&v)));
+    memcpy64(&v, p, SIZEOF(*(&v)));
     return __builtin_bswap32(v);
 }
 #elif defined(_MSC_VER)
 INLINE uint64
 rapid_read_64(uint8 *p) {
     uint64 v;
-    memcpy64(&v, p, sizeof(*(&v)));
+    memcpy64(&v, p, SIZEOF(*(&v)));
     return _byteswap_uint64(v);
 }
 INLINE uint64
 read32(uint8 *p) {
     uint32 v;
-    memcpy64(&v, p, sizeof(*(&v)));
+    memcpy64(&v, p, SIZEOF(*(&v)));
     return _byteswap_ulong(v);
 }
 #else
 INLINE uint64
 rapid_read_64(uint8 *p) {
     uint64 v;
-    memcpy(&v, p, sizeof(*(&v)));
+    memcpy(&v, p, SIZEOF(*(&v)));
     return ((v >> 56) & 0xff)
          | ((v >> 40) & 0xff00)
          | ((v >> 24) & 0xff0000)
@@ -233,7 +233,7 @@ rapid_read_64(uint8 *p) {
 INLINE uint64
 read32(uint8 *p) {
     uint32 v;
-    memcpy(&v, p, sizeof(*(&v)));
+    memcpy(&v, p, SIZEOF(*(&v)));
     return ((v >> 24) & 0xff)
          | ((v >>  8) & 0xff00)
          | ((v <<  8) & 0xff0000)

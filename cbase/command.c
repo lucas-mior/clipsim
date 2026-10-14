@@ -439,7 +439,7 @@ cmd_windows_run_process(Command *command, enum CommandFlag flags) {
 
     cmd_windows_cmd_line(command, cmdline, SIZEOF(cmdline));
 
-    startup_info.cb = sizeof(startup_info);
+    startup_info.cb = SIZEOF(startup_info);
     if (cmd_flags_capture(flags) || (flags & CMD_STDIN_TTY)) {
         startup_info.dwFlags |= STARTF_USESTDHANDLES;
         startup_info.hStdInput = GetStdHandle(STD_INPUT_HANDLE);

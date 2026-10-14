@@ -49,7 +49,7 @@ util_nthreads(void) {
         CTL_HW,
         HW_NCPU,
     };
-    size_t len = sizeof(cpus);
+    size_t len = SIZEOF(cpus);
 
     if ((sysctl(mib, 2, &cpus, &len, NULL, 0) < 0)
         || (cpus <= 0)) {

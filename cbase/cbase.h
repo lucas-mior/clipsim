@@ -217,8 +217,8 @@ typedef struct StrFlexList {
 
 #define SFLIT(literal) ((StrFlex *)&(struct {  \
     int32 len;                                 \
-    char data[sizeof(literal)];                \
-}){ sizeof(literal) - 1, literal })
+    char data[SIZEOF(literal)];                \
+}){ SIZEOF(literal) - 1, literal })
 
 // Macro trick to pass the int32 len and char *data for "%.*s" formatters.
 // Note: the single argument version is just for exploration purposes,
@@ -736,7 +736,7 @@ _Generic((VAR),                                        \
 
 #define STRLIT_ARRAY(LITERAL, SIZE)                                    \
     ((void)SIZEOF(struct {                                             \
-        _Static_assert(sizeof(LITERAL) <= ((SIZE) + 1),                \
+        _Static_assert(SIZEOF(LITERAL) <= ((SIZE) + 1),                \
                        "string literal does not fit in STRLIT_ARRAY"); \
         char dummy;                                                    \
     }),                                                                \
@@ -967,8 +967,8 @@ int32 cmd_wait(Command *);
 
 #define CMD_PUSH(CMD, ...)                                    \
     cmd_push_array(CMD,                                       \
-                   (int32)(sizeof((char *[]){__VA_ARGS__})      \
-                           /sizeof(char *)),                   \
+                   (int32)(SIZEOF((char *[]){__VA_ARGS__})      \
+                           /SIZEOF(char *)),                   \
                    (char *[]){__VA_ARGS__})
 
 #define CMD_ENV_PUSH_2(A, B) cmd_env_push(A, B)

@@ -105,7 +105,7 @@ enum CAT(ENUM_NAME, _BitIndices) ENUM_UNDERLYING_TYPE_SPEC {
     CAT(ENUM_PREFIX_, BIT_COUNT)
 };
 _Static_assert(CAT(ENUM_PREFIX_, BIT_COUNT)
-               <= (sizeof(ENUM_UNDERLYING_TYPE)*CHAR_BIT),
+               <= (SIZEOF(ENUM_UNDERLYING_TYPE)*CHAR_BIT),
                "bit flag enum does not fit in the underlying integer");
 #endif
 

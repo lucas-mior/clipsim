@@ -980,9 +980,9 @@ main(void) {
         char b[64];
         char *strs[] = {"one", "two", "three"};
         double dbls[] = {1.1, 2.2};
-        string_from_strings(b, sizeof(b), "|", strs, 3);
+        string_from_strings(b, SIZEOF(b), "|", strs, 3);
         ASSERT_EQ(b, "one|two|three");
-        string_from_doubles(b, sizeof(b), ",", dbls, 2);
+        string_from_doubles(b, SIZEOF(b), ",", dbls, 2);
         ASSERT_GT(strlen32(b), 0);
     }
 

@@ -140,6 +140,38 @@ sub check_preprocessor_conditionals {
     }
 }
 
+# Use the signed SIZEOF wrapper in project code. Its own definition
+# necessarily uses the built-in operator; suppress only that definition,
+# including any preprocessor continuation lines.
+sub check_builtin_sizeof {
+    my ($path, $source, $code) = @_;
+    my @source_lines = split /\n/, $source;
+    my @code_lines = split /\n/, $code;
+    my @sizeof_definition;
+    my $in_definition = 0;
+
+    for (my $i = 0; $i < @code_lines; $i += 1) {
+        my $line = $code_lines[$i];
+
+        if (!$in_definition
+                && $line =~ /^[ \t]*#[ \t]*define[ \t]+SIZEOF\b/) {
+            $in_definition = 1;
+        }
+        $sizeof_definition[$i] = $in_definition;
+        $in_definition = $in_definition
+                         && $source_lines[$i] =~ /\\[ \t]*\r?\z/;
+    }
+
+    pos($code) = 0;
+    while ($code =~ /(?<![A-Za-z0-9_])sizeof(?![A-Za-z0-9_])
+                    (?=\s*(?:\(|[A-Za-z_0-9*+!~&-]))/gx) {
+        my $line = line_number($source, $-[0]);
+
+        next if $sizeof_definition[$line - 1];
+        report_issue("$path:$line:use SIZEOF instead of sizeof\n");
+    }
+}
+
 # Ternaries are prohibited by c-guidelines.md except in Ryu. Ignore macro
 # definitions: metaprogramming helpers such as cbase/minmax.c use ?: on
 # preprocessor lines, which are not ordinary C statements.
@@ -853,6 +885,7 @@ for my $path (@paths) {
     my $is_ryu = $absolute_path =~ m{(?:\A|/)cbase/ryu/[^/]+\.[ch]\z};
 
     check_preprocessor_conditionals($path, $code);
+    check_builtin_sizeof($path, $source, $code) unless $is_ryu;
     check_consecutive_bounds_assertions($path, $source, $code)
         unless $is_ryu;
     check_deep_artificial_blocks($path, $source, $code)

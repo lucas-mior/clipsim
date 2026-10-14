@@ -200,7 +200,7 @@ CAT(hash_zero_, HASH_TYPE)(struct Map *map) {
     for (uint32 i = 0; i < map->capacity; i += 1) {
         map->array[i] = (Bucket){0};
     }
-    memset64(map->slot_states, 0, map->capacity*sizeof(*map->slot_states));
+    memset64(map->slot_states, 0, map->capacity*SIZEOF(*map->slot_states));
 #if HASH_DUPLICATE_KEYS
     arena_reset(map->arena_keys);
 #endif
@@ -226,15 +226,15 @@ CAT(hash_init_, HASH_TYPE)(struct Map *map, uint32 length, char *name) {
     capacity *= 2;
     power += 1;
 
-    array_size = capacity*sizeof(Bucket);
-    slot_states_size = capacity*sizeof(int8);
+    array_size = capacity*SIZEOF(Bucket);
+    slot_states_size = capacity*SIZEOF(int8);
 
     name_len = strlen32(name);
     map->name = xmalloc(name_len + 1, false);
     memcpy64(map->name, name, name_len + 1);
     map->array = xmmap_commit(&array_size);
     map->slot_states = xmmap_commit(&slot_states_size);
-    memset64(map->slot_states, 0, capacity*sizeof(*map->slot_states));
+    memset64(map->slot_states, 0, capacity*SIZEOF(*map->slot_states));
     map->capacity = capacity;
     map->bitmask = (1u << power) - 1;
     map->size = array_size;
@@ -263,7 +263,7 @@ CAT(CAT(hash_create_, HASH_TYPE), _value)(uint32 length, char *name) {
 
 static struct Map *
 CAT(hash_create_, HASH_TYPE)(uint32 length, char *name) {
-    struct Map *map = xmalloc(sizeof(*map), false);
+    struct Map *map = xmalloc(SIZEOF(*map), false);
     CAT(hash_init_, HASH_TYPE)(map, length, name);
     return map;
 }
@@ -296,8 +296,8 @@ static void
 CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
     uint32 new_capacity = map->capacity*2;
     uint32 new_bitmask = (new_capacity - 1);
-    int64 new_size = new_capacity*sizeof(Bucket);
-    int64 new_slot_states_size = new_capacity*sizeof(int8);
+    int64 new_size = new_capacity*SIZEOF(Bucket);
+    int64 new_slot_states_size = new_capacity*SIZEOF(int8);
     Bucket *new_array = xmmap_commit(&new_size);
     int8 *new_slot_states = xmmap_commit(&new_slot_states_size);
     Bucket *old_array = map->array;
@@ -310,7 +310,7 @@ CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
         fatal(EXIT_FAILURE);
     }
 
-    memset64(new_slot_states, 0, new_capacity*sizeof(*new_slot_states));
+    memset64(new_slot_states, 0, new_capacity*SIZEOF(*new_slot_states));
 
     /* if (DEBUGGING) { */
     /*     error("Resizing hash table \"%s\"... %u -> %u\n", */
@@ -339,7 +339,7 @@ CAT(hash_resize_, HASH_TYPE)(struct Map *map) {
             if (new_slot_states[rehash_probe] == HASH_SLOT_FREE) {
                 Bucket *target = &new_array[rehash_probe];
 #if HASH_KEY_FIXED_LEN
-                memcpy64(&target->key, &iterator->key, sizeof(HASH_KEY_TYPE));
+                memcpy64(&target->key, &iterator->key, SIZEOF(HASH_KEY_TYPE));
 #else
                 target->key = iterator->key;
                 target->key_len = iterator->key_len;
@@ -408,7 +408,7 @@ CAT(hash_probe_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
             iterator = &map->array[probe];
 #if HASH_KEY_FIXED_LEN
             (void)hash;
-            if (!memcmp64(&iterator->key, key, sizeof(HASH_KEY_TYPE)))
+            if (!memcmp64(&iterator->key, key, SIZEOF(HASH_KEY_TYPE)))
 #else
             if ((iterator->hash == hash)
                 && (iterator->key_len == key_length)
@@ -467,7 +467,7 @@ CAT(hash_insert_pre_calc_, HASH_TYPE)(struct Map *map,
         map->occupied += 1;
     }
 #if HASH_KEY_FIXED_LEN
-    memcpy64(&target->key, key, sizeof(HASH_KEY_TYPE));
+    memcpy64(&target->key, key, SIZEOF(HASH_KEY_TYPE));
 #else
   #if HASH_DUPLICATE_KEYS
     target->key = xarena_push(map->arena_keys, key_length + 1);
@@ -499,7 +499,7 @@ CAT(hash_insert_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
                              ) {
 
 #if HASH_KEY_FIXED_LEN
-    int32 key_length = sizeof(HASH_KEY_TYPE);
+    int32 key_length = SIZEOF(HASH_KEY_TYPE);
 #endif
     uint64 hash = hash_function(key, key_length);
     uint32 index = hash_normal(map, hash);
@@ -551,7 +551,7 @@ CAT(hash_overwrite_pre_calc_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
         map->occupied += 1;
     }
 #if HASH_KEY_FIXED_LEN
-    memcpy64(&target->key, key, sizeof(HASH_KEY_TYPE));
+    memcpy64(&target->key, key, SIZEOF(HASH_KEY_TYPE));
 #else
   #if HASH_DUPLICATE_KEYS
     target->key = xarena_push(map->arena_keys, key_length + 1);
@@ -578,7 +578,7 @@ CAT(hash_overwrite_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
                                 , HASH_VALUE_TYPE value
                                 ) {
 #if HASH_KEY_FIXED_LEN
-    int32 key_length = sizeof(HASH_KEY_TYPE);
+    int32 key_length = SIZEOF(HASH_KEY_TYPE);
 #endif
     uint64 hash = hash_function(key, key_length);
     uint32 index = hash_normal(map, hash);
@@ -630,7 +630,7 @@ CAT(hash_lookup_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
 #endif
                              ) {
 #if HASH_KEY_FIXED_LEN
-    int32 key_length = sizeof(HASH_KEY_TYPE);
+    int32 key_length = SIZEOF(HASH_KEY_TYPE);
 #endif
     uint64 hash = hash_function(key, key_length);
     uint32 index = hash_normal(map, hash);
@@ -691,7 +691,7 @@ CAT(hash_remove_, HASH_TYPE)(struct Map *map, HASH_KEY_TYPE *key
 #endif
                              ) {
 #if HASH_KEY_FIXED_LEN
-    int32 key_length = sizeof(HASH_KEY_TYPE);
+    int32 key_length = SIZEOF(HASH_KEY_TYPE);
 #endif
     uint64 hash = hash_function(key, key_length);
     uint32 index = hash_normal(map, hash);
@@ -887,7 +887,7 @@ random_string(Arena *arena, uint32 nbytes) {
 
     for (int32 i = 0; i < len; i += 1) {
         int32 ci = (int32)((uint32)rand_int()
-                           % (sizeof(characters) - 1));
+                           % (SIZEOF(characters) - 1));
         string.s[i] = characters[ci];
     }
     string.s[len] = '\0';
@@ -903,7 +903,7 @@ main(void) {
     struct timespec t1;
     struct Hash_map *map = hash_create_map(100, "strings_map");
     Arena *arena = arena_create(NBYTES*NSTRINGS, "strings_arena");
-    HashBenchString *strings = malloc(NSTRINGS*sizeof(*strings));
+    HashBenchString *strings = malloc(NSTRINGS*SIZEOF(*strings));
     HashBenchString str1 = {.s = "aaaaaaaaaaaaaaaa", .value = 10};
     HashBenchString str2 = {.s = "bbbbbbbbbbbbbbb", .value = 20};
     uint32 initial_capacity;

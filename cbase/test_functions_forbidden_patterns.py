@@ -185,6 +185,77 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertIn("sample.c:1:use #if defined", output)
         self.assertEqual(self.run_perl(path, "#if defined(FOO)\n"), "")
 
+    def test_builtin_sizeof_is_rejected_in_project_code(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "static int32\n"
+            "example(int32 *pointer) {\n"
+            "    int64 size = sizeof(*pointer);\n"
+            "    size += sizeof pointer;\n"
+            "    size += sizeof\n"
+            "            (int32);\n"
+            "    size += sizeof *pointer;\n"
+            "    return (int32)size;\n"
+            "}\n",
+        )
+        self.assertEqual(output.count("use SIZEOF instead of sizeof"), 4)
+        for line in (3, 4, 5, 7):
+            self.assertIn(f"sample.c:{line}:use SIZEOF", output)
+
+    def test_builtin_sizeof_is_rejected_in_headers_and_macros(self):
+        output = self.run_perl(
+            "src/sample.h",
+            "#define RAW_SIZE(X) sizeof(X)\n"
+            "#define RAW_SIZE_MULTILINE(X) \\\n"
+            "    sizeof(X)\n"
+            "enum { VALUE_SIZE = sizeof(int32) };\n",
+            file_list=True,
+        )
+        self.assertEqual(output.count("use SIZEOF instead of sizeof"), 3)
+        for line in (1, 3, 4):
+            self.assertIn(f"sample.h:{line}:use SIZEOF", output)
+
+    def test_builtin_sizeof_ignores_wrapper_definition(self):
+        output = self.run_perl(
+            "cbase/base_macros.h",
+            "#define SIZEOF(X) ((int64)sizeof(X))\n"
+            "#  define SIZEOF(X) \\\n"
+            "    ((int64)sizeof(X))\n"
+            "#define LENGTH(X) (sizeof(X) / sizeof(*(X)))\n"
+            "int64 a = SIZEOF(value);\n",
+        )
+        self.assertEqual(output.count("use SIZEOF instead of sizeof"), 2)
+        self.assertIn("base_macros.h:4:use SIZEOF", output)
+        self.assertNotIn("base_macros.h:1:use SIZEOF", output)
+        self.assertNotIn("base_macros.h:3:use SIZEOF", output)
+
+    def test_builtin_sizeof_ignores_literals_comments_and_names(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "// sizeof(value)\n"
+            "/* sizeof(int32) */\n"
+            'char *message = "sizeof(value)";\n'
+            "char letter = 's';\n"
+            "int64 my_sizeof = 3;\n"
+            "int64 sizeof_value = SIZEOF(int32);\n"
+            "XX(C_KEYWORD_SIZEOF, sizeof)\n",
+        )
+        self.assertNotIn("use SIZEOF instead of sizeof", output)
+
+    def test_builtin_sizeof_is_exempt_in_ryu(self):
+        output = self.run_perl(
+            "cbase/ryu/sample.c",
+            "int64 value = sizeof(value);\n",
+        )
+        self.assertNotIn("use SIZEOF instead of sizeof", output)
+
+    def test_builtin_sizeof_checker_cache_invalidates(self):
+        path = "src/sample.c"
+        self.assertEqual(self.run_perl(path, "int64 n = SIZEOF(n);\n"), "")
+        output = self.run_perl(path, "int64 n = sizeof(n);\n")
+        self.assertIn("sample.c:1:use SIZEOF", output)
+        self.assertEqual(self.run_perl(path, "int64 n = SIZEOF(n);\n"), "")
+
     def test_ryu_missing_final_newline(self):
         output = self.run_perl("cbase/ryu/sample.c", "int x;")
         self.assertIn("missing final newline", output)

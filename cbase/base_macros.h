@@ -18,7 +18,7 @@
 #define S(...) #__VA_ARGS__
 #define QUOTE(x) S(x)
 
-#define STRLIT_LEN(s) ((int32)(sizeof("" s) - 1))
+#define STRLIT_LEN(s) ((int32)(SIZEOF("" s) - 1))
 #define STRLIT(s) s, STRLIT_LEN(s)
 #define STRPASS(FIELD, s) .FIELD = s, .FIELD##_len = STRLIT_LEN(s)
 // I don't think there is any advantage of STRPASS2 over STRPASS. Don't use it.
@@ -83,8 +83,8 @@
 #if defined(SIZEOF)
 #undef SIZEOF
 #endif
-#define SIZEOF(X) ((int64)sizeof(X))
-#define LENGTH(x) (int32)((sizeof(x) / sizeof(*x)))
+#define SIZEOF(...) ((int64)sizeof(__VA_ARGS__))
+#define LENGTH(x) (int32)((SIZEOF(x) / SIZEOF(*x)))
 #define SWAP(x, y) do { __typeof__(x) SWAP = x; x = y; y = SWAP; } while (0)
 
 #define ALIGN_POWER_OF_2_(SIZE, A) (int64)(((SIZE) + ((A) - 1)) & ~((A) - 1))

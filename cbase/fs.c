@@ -437,7 +437,7 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
 
 #if DEBUGGING
     if (filename == NULL) {
-        if (util_filename_from(buffer, sizeof(buffer), *fd) >= 0) {
+        if (util_filename_from(buffer, SIZEOF(buffer), *fd) >= 0) {
             filename = buffer;
         } else {
             filename = fd_var_name;
@@ -459,7 +459,7 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-result"
 #endif
-        strerror_r(errno, error_buffer, sizeof(error_buffer));
+        strerror_r(errno, error_buffer, SIZEOF(error_buffer));
 #if CC_GCC || CC_CLANG
 #pragma GCC diagnostic pop
 #endif
@@ -694,7 +694,7 @@ util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
                 continue;
             }
             n -= 1;
-            while ((r = read64(pipes[i].fd, buffer, sizeof(buffer))) > 0) {
+            while ((r = read64(pipes[i].fd, buffer, SIZEOF(buffer))) > 0) {
                 if ((w = write64(dests[i], buffer, r)) != r) {
                     if (w < 0) {
                         error("Error writing: %s.\n", strerror(errno));
@@ -712,7 +712,7 @@ util_copy_file_async_parsed(UtilCopyFilesAsync *copy_files) {
             pipes[i].revents = 0;
         }
     }
-    free2(copy_files, sizeof(*copy_files));
+    free2(copy_files, SIZEOF(*copy_files));
     return;
 }
 #endif
@@ -836,9 +836,9 @@ util_equal_files(char *filename_a, char *filename_b) {
         }
     } while (0);
 #endif
-    while ((ra = read64(fd_a, buffer_a, sizeof(buffer_a))) > 0) {
+    while ((ra = read64(fd_a, buffer_a, SIZEOF(buffer_a))) > 0) {
         int64 rb;
-        if ((rb = read64(fd_b, buffer_b, sizeof(buffer_b))) != ra) {
+        if ((rb = read64(fd_b, buffer_b, SIZEOF(buffer_b))) != ra) {
             if (rb < 0) {
                 error("Error reading from %s: %s", filename_b, strerror(errno));
             }
@@ -1667,7 +1667,7 @@ main(void) {
             fatal(EXIT_FAILURE);
         }
 
-        ASSERT_GT(util_filename_from(buffer2, sizeof(buffer2), fd), 0);
+        ASSERT_GT(util_filename_from(buffer2, SIZEOF(buffer2), fd), 0);
         ASSERT_EQ(realpath(name, buffer3), buffer2);
         XCLOSE(&fd);
         xunlink(name);
@@ -1678,7 +1678,7 @@ main(void) {
         ASSERT_GT(name2_len, 0);
 #endif
         for (int32 i = 0; i < name2_len; i += 1) {
-            uint32 c = (uint32)rand_int() % (sizeof(characters) - 1);
+            uint32 c = (uint32)rand_int() % (SIZEOF(characters) - 1);
             name2[i] = characters[c];
         }
         name2[name2_len] = '\0';
@@ -1691,7 +1691,7 @@ main(void) {
             fatal(EXIT_FAILURE);
         }
 
-        ASSERT_GT(util_filename_from(buffer4, sizeof(buffer4), fd), 0);
+        ASSERT_GT(util_filename_from(buffer4, SIZEOF(buffer4), fd), 0);
         ASSERT_EQ(realpath(buffer2, buffer3), buffer4);
         XCLOSE(&fd);
         xunlink(buffer2);

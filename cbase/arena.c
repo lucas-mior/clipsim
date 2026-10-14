@@ -76,7 +76,7 @@ arena_create(int64 size, char *name) {
         arena->name = xmalloc(len + 1, false);
         memcpy64(arena->name, name, len + 1);
     }
-    arena->begin = (char *)arena + ALIGN(sizeof(*arena));
+    arena->begin = (char *)arena + ALIGN(SIZEOF(*arena));
     arena->size = size;
     arena->pos = arena->begin;
     arena->next = NULL;
@@ -368,7 +368,7 @@ main(void) {
         Arena *small_arena;
 
         ASSERT((small_arena = arena_create(1, "small_arena")));
-        ASSERT_GT(small_arena->size, ALIGN(sizeof(*small_arena)));
+        ASSERT_GT(small_arena->size, ALIGN(SIZEOF(*small_arena)));
         arena_destroy(small_arena);
     }
 

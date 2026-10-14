@@ -727,7 +727,7 @@ send_signal(char *executable, int32 signal_number) {
         }
 
         errno = 0;
-        if ((r = read64(cmdline, command, sizeof(command))) <= 0) {
+        if ((r = read64(cmdline, command, SIZEOF(command))) <= 0) {
             XCLOSE(&cmdline, buffer.data);
             continue;
         }
@@ -1199,7 +1199,7 @@ main(int argc, char **argv) {
 
     {
         int32 arr[] = {10, 5, 20, 1};
-        qsort64(arr, 4, sizeof(int32), util_test_qsort_cmp);
+        qsort64(arr, 4, SIZEOF(int32), util_test_qsort_cmp);
         ASSERT_EQ(arr[0], 1);
         ASSERT_EQ(arr[1], 5);
         ASSERT_EQ(arr[2], 10);
