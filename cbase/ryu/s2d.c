@@ -546,9 +546,9 @@ ryu_decimal_finish(const char *buffer, int32 parsed_len,
     }
 
 #if defined(RYU_DEBUG)
-    printf("Input=%.*s\n", parsed_len, buffer);
-    printf("m10digits = %d\n", m10digits);
-    printf("m10 * 10^e10 = %" PRIu64 " * 10^%d\n", m10, e10);
+    fmt_printf("Input=%.*s\n", parsed_len, buffer);
+    fmt_printf("m10digits = %d\n", m10digits);
+    fmt_printf("m10 * 10^e10 = %" PRIu64 " * 10^%d\n", m10, e10);
 #endif
 
     if ((m10digits + e10 <= -324) || (m10 == 0)) {
@@ -635,7 +635,7 @@ ryu_decimal_finish(const char *buffer, int32 parsed_len,
     }
 
 #if defined(RYU_DEBUG)
-    printf("m2 * 2^e2 = %" PRIu64 " * 2^%d\n", m2, e2);
+    fmt_printf("m2 * 2^e2 = %" PRIu64 " * 2^%d\n", m2, e2);
 #endif
 
     // Compute the final IEEE exponent.
@@ -659,8 +659,8 @@ ryu_decimal_finish(const char *buffer, int32 parsed_len,
             - DOUBLE_EXPONENT_BIAS - DOUBLE_MANTISSA_BITS;
     assert(shift >= 0);
 #if defined(RYU_DEBUG)
-    printf("ieee_e2 = %d\n", ieee_e2);
-    printf("shift = %d\n", shift);
+    fmt_printf("ieee_e2 = %d\n", ieee_e2);
+    fmt_printf("shift = %d\n", shift);
 #endif
 
     // Round to nearest, ties to even. The helper also handles shifts that
@@ -668,8 +668,8 @@ ryu_decimal_finish(const char *buffer, int32 parsed_len,
     ieee_m2 = s2d_round_shift(m2, shift, trailing_zeros, &round_up);
 
 #if defined(RYU_DEBUG)
-    printf("round_up = %d\n", round_up);
-    printf("ieee_m2 = %" PRIu64 "\n", ieee_m2);
+    fmt_printf("round_up = %d\n", round_up);
+    fmt_printf("ieee_m2 = %" PRIu64 "\n", ieee_m2);
 #endif
     assert(ieee_m2 <= (1ull << (DOUBLE_MANTISSA_BITS + 1)));
     ieee_m2 &= (1ull << DOUBLE_MANTISSA_BITS) - 1;

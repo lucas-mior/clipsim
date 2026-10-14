@@ -642,7 +642,7 @@ main(void) {
             ASSERT_EQ(consumed, gen_len);
             PRINTLN(test_buf);
         }
-        printf("utf8_random_string validation successful.\n");
+        fmt_printf("utf8_random_string validation successful.\n");
     }
 
     exit(EXIT_SUCCESS);

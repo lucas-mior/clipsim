@@ -161,8 +161,8 @@ generic_scaled_values_positive(uint128 m2, int32 e2, uint32 mm_shift,
     *vp = generic_mul_shift(4*m2 + 2, pow5, i);
     *vm = generic_mul_shift(4*m2 - 1 - mm_shift, pow5, i);
 #if defined(RYU_DEBUG)
-    printf("%s * 2^%d / 10^%u\n", ryu_s(4*m2), e2, q);
-    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(*vp), ryu_s(*vr), ryu_s(*vm));
+    fmt_printf("%s * 2^%d / 10^%u\n", ryu_s(4*m2), e2, q);
+    fmt_printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(*vp), ryu_s(*vr), ryu_s(*vm));
 #endif
     return;
 }
@@ -210,9 +210,9 @@ generic_scaled_values_negative(uint128 m2, int32 e2, uint32 mm_shift,
     *vp = generic_mul_shift(4*m2 + 2, pow5, j);
     *vm = generic_mul_shift(4*m2 - 1 - mm_shift, pow5, j);
 #if defined(RYU_DEBUG)
-    printf("%s * 5^%d / 10^%u\n", ryu_s(4*m2), -e2, q);
-    printf("%u %d %d %d\n", q, i, k, j);
-    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(*vp), ryu_s(*vr), ryu_s(*vm));
+    fmt_printf("%s * 5^%d / 10^%u\n", ryu_s(4*m2), -e2, q);
+    fmt_printf("%u %d %d %d\n", q, i, k, j);
+    fmt_printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(*vp), ryu_s(*vr), ryu_s(*vm));
 #endif
     return;
 }
@@ -244,8 +244,8 @@ generic_update_trailing_negative(uint128 mv, uint32 q, uint32 mm_shift,
         // We also need to make sure that the left shift does not overflow.
         *vr_trailing_zeros = generic_multiple_of_power_of2(mv, q - 1);
 #if defined(RYU_DEBUG)
-        printf("vr is trailing zeros=%s\n",
-               generic_bool_string(*vr_trailing_zeros));
+        fmt_printf("vr is trailing zeros=%s\n",
+                   generic_bool_string(*vr_trailing_zeros));
 #endif
     }
     return;
@@ -307,11 +307,11 @@ generic_binary_to_decimal(__uint128_t bits, uint32 mantissa_bits,
     bool vr_trailing_zeros = false;
 
 #if defined(RYU_DEBUG)
-    printf("IN=");
+    fmt_printf("IN=");
     for (int32 bit = 127; bit >= 0; bit -= 1) {
-        printf("%u", (uint32)((bits >> bit) & 1));
+        fmt_printf("%u", (uint32)((bits >> bit) & 1));
     }
-    printf("\n");
+    fmt_printf("\n");
 #endif
 
     bias = (1u << (exponent_bits - 1)) - 1;
@@ -333,7 +333,7 @@ generic_binary_to_decimal(__uint128_t bits, uint32 mantissa_bits,
     accept_bounds = (m2 & 1) == 0;
 
 #if defined(RYU_DEBUG)
-    printf("-> %s %s * 2^%d\n", ieee_sign ? "-" : "+", ryu_s(m2), e2 + 2);
+    fmt_printf("-> %s %s * 2^%d\n", ieee_sign ? "-" : "+", ryu_s(m2), e2 + 2);
 #endif
 
     // Step 2: Determine the interval of legal decimal representations.
@@ -363,10 +363,12 @@ generic_binary_to_decimal(__uint128_t bits, uint32 mantissa_bits,
                                          &vm_trailing_zeros);
     }
 #if defined(RYU_DEBUG)
-    printf("e10=%d\n", e10);
-    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
-    printf("vm is trailing zeros=%s\n", generic_bool_string(vm_trailing_zeros));
-    printf("vr is trailing zeros=%s\n", generic_bool_string(vr_trailing_zeros));
+    fmt_printf("e10=%d\n", e10);
+    fmt_printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
+    fmt_printf("vm is trailing zeros=%s\n",
+               generic_bool_string(vm_trailing_zeros));
+    fmt_printf("vr is trailing zeros=%s\n",
+               generic_bool_string(vr_trailing_zeros));
 #endif
 
     // Step 4: Find the shortest decimal representation in the interval of
@@ -375,16 +377,17 @@ generic_binary_to_decimal(__uint128_t bits, uint32 mantissa_bits,
                           &vm_trailing_zeros, &removed,
                           &last_removed_digit);
 #if defined(RYU_DEBUG)
-    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
-    printf("d-10=%s\n", generic_bool_string(vm_trailing_zeros));
+    fmt_printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
+    fmt_printf("d-10=%s\n", generic_bool_string(vm_trailing_zeros));
 #endif
     if (vm_trailing_zeros) {
         generic_remove_vm_trailing_digits(&vr, &vp, &vm, &vr_trailing_zeros,
                                           &removed, &last_removed_digit);
     }
 #if defined(RYU_DEBUG)
-    printf("%s %u\n", ryu_s(vr), last_removed_digit);
-    printf("vr is trailing zeros=%s\n", generic_bool_string(vr_trailing_zeros));
+    fmt_printf("%s %u\n", ryu_s(vr), last_removed_digit);
+    fmt_printf("vr is trailing zeros=%s\n",
+               generic_bool_string(vr_trailing_zeros));
 #endif
     if (vr_trailing_zeros && (last_removed_digit == 5) && (vr % 2 == 0)) {
         // Round even if the exact numbers is .....50..0.
@@ -397,9 +400,9 @@ generic_binary_to_decimal(__uint128_t bits, uint32 mantissa_bits,
     exp = e10 + (int32)removed;
 
 #if defined(RYU_DEBUG)
-    printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
-    printf("O=%s\n", ryu_s(output));
-    printf("EXP=%d\n", exp);
+    fmt_printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
+    fmt_printf("O=%s\n", ryu_s(output));
+    fmt_printf("EXP=%d\n", exp);
 #endif
 
     fd.mantissa = output;
@@ -443,9 +446,9 @@ generic_to_chars(struct floating_decimal_128 value, char *result) {
     olength = generic_decimal_length(output);
 
 #if defined(RYU_DEBUG)
-    printf("DIGITS=%s\n", ryu_s(value.mantissa));
-    printf("OLEN=%u\n", olength);
-    printf("EXP=%d\n", value.exponent + (int32)olength);
+    fmt_printf("DIGITS=%s\n", ryu_s(value.mantissa));
+    fmt_printf("OLEN=%u\n", olength);
+    fmt_printf("EXP=%d\n", value.exponent + (int32)olength);
 #endif
 
     for (uint32 i = 0; i < olength - 1; i += 1) {

@@ -1140,14 +1140,14 @@ main(int argc, char **argv) {
     }
 
     for (enum WeekDay day = WEEK_DAY_MONDAY; day < WEEK_DAY_COUNT; day += 1) {
-        printf("enum[%u] = %s\n", day, WEEK_DAY_str(day));
+        fmt_printf("enum[%u] = %s\n", day, WEEK_DAY_str(day));
     }
 
-    printf("\n");
+    fmt_printf("\n");
 
     for (uint x = 0; x < POWER_OF2_LAST; x += 1) {
         char *value_name = POWER_OF2_str((enum PowerOfTwo)x);
-        printf("enum[%u] = %s\n", x, value_name);
+        fmt_printf("enum[%u] = %s\n", x, value_name);
         POWER_OF2_str_free(value_name);
     }
 
@@ -1241,8 +1241,8 @@ main(int argc, char **argv) {
         StrFlex *flex = SFLIT("a flexible one.");
         str_printf(&out, "this is string is awesome: %d\n", 5);
         str_printf(ptr, "this is string pointer is awesome: %d\n", 5);
-        printf("at the end, both are:\n %.*s == %.*s", SP(out), SP(ptr));
-        printf("str flex also is: %.*s\n", SP(flex));
+        fmt_printf("at the end, both are:\n %.*s == %.*s", SP(out), SP(ptr));
+        fmt_printf("str flex also is: %.*s\n", SP(flex));
     }
 
     (void)malloc_debug;

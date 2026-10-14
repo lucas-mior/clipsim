@@ -1025,7 +1025,7 @@ catfile(int where, char *file) {
         fatal(EXIT_FAILURE);
     }
 
-    printf("\n");
+    fmt_printf("\n");
     while ((r = read64(fd, buffer, SIZEOF(buffer))) > 0) {
         write_all(where, buffer, r);
     }

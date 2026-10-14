@@ -4861,7 +4861,7 @@ fmt_strftime(char *buffer, int64 capacity,
     return fmt_strftime_l(buffer, capacity, format, time_info, &fmt_locale_c);
 }
 
-void ATTR_PRINTF(1, 2)
+int32 ATTR_PRINTF(1, 2)
 fmt_printf(char *format, ...) {
     char buffer[4096];
     char *big_buffer = NULL;
@@ -4902,7 +4902,7 @@ fmt_printf(char *format, ...) {
     fflush(stdout);
     write_all(STDOUT_FILENO, pbuffer, n);
     free2(big_buffer, capacity);
-    return;
+    return n;
 }
 
 #if TESTING_fmt

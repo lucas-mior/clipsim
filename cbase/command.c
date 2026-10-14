@@ -1147,11 +1147,11 @@ cmd_run_capture_combined(Command *command) {
 
 void
 cmd_print(Command *command) {
-    printf(RED("%.*s"), SP(command->argv, 0));
+    fmt_printf(RED("%.*s"), SP(command->argv, 0));
     for (int32 i = 1; i < command->argc; i += 1) {
-        printf(" %.*s", SP(command->argv, i));
+        fmt_printf(" %.*s", SP(command->argv, i));
     }
-    printf("\n");
+    fmt_printf("\n");
     return;
 }
 

@@ -890,7 +890,7 @@ typedef struct TestString {
 } TestString;
 
 int main(void) {
-    printf("--- Starting Comprehensive Memory Tests ---\n");
+    fmt_printf("--- Starting Comprehensive Memory Tests ---\n");
 
     {
         int64 size = 1;
@@ -907,17 +907,17 @@ int main(void) {
         int64 size = 256;
         char *p = malloc2(size);
         ASSERT(p != NULL);
-        printf("malloc2(256) successful.\n");
+        fmt_printf("malloc2(256) successful.\n");
 
         if (DEBUGGING_MEMORY && !RUNNING_ON_VALGRIND) {
             for (int32 i = 0; i < size; i += 1) {
                 ASSERT_EQ((uchar)p[i], 0xCD);
             }
-            printf("Memory correctly initialized with debug byte.\n");
+            fmt_printf("Memory correctly initialized with debug byte.\n");
         }
         memory_check();
         free2(p, size);
-        printf("free2(256) successful.\n");
+        fmt_printf("free2(256) successful.\n");
     }
 
     {
@@ -935,14 +935,14 @@ int main(void) {
         for (int32 i = 0; i < count; i += 1) {
             ASSERT(arr[i] == (int64)i);
         }
-        printf("realloc2 (grow) preserved data.\n");
+        fmt_printf("realloc2 (grow) preserved data.\n");
 
         memory_check();
         arr = realloc2(arr, grow, shrink, SIZEOF(int64));
         for (int32 i = 0; i < shrink; i += 1) {
             ASSERT(arr[i] == (int64)i);
         }
-        printf("realloc2 (shrink) successful.\n");
+        fmt_printf("realloc2 (shrink) successful.\n");
 
         free2(arr, shrink*SIZEOF(int64));
     }
@@ -968,7 +968,7 @@ int main(void) {
         for (int32 i = 0; i < count; i += 1) {
             ASSERT(flex->items[i] == (int64)(i*10));
         }
-        printf("realloc_flex (grow) preserved data.\n");
+        fmt_printf("realloc_flex (grow) preserved data.\n");
 
         memory_check();
         flex = realloc_flex(flex, grow, shrink, SIZEOF(int64));
@@ -976,7 +976,7 @@ int main(void) {
         for (int32 i = 0; i < shrink; i += 1) {
             ASSERT(flex->items[i] == (int64)(i*10));
         }
-        printf("realloc_flex (shrink) successful.\n");
+        fmt_printf("realloc_flex (shrink) successful.\n");
 
         free2(flex, SIZEOF(*flex) + (shrink*SIZEOF(int64)));
     }
@@ -989,12 +989,12 @@ int main(void) {
 
         ASSERT(dup != original);
         ASSERT(strequal(dup, original));
-        printf("xstrdup successful.\n");
+        fmt_printf("xstrdup successful.\n");
 
         mem_dup = xmemdup(dup, len);
         ASSERT(mem_dup != dup);
         ASSERT_ZERO(memcmp(mem_dup, dup, (size_t)len));
-        printf("xmemdup successful.\n");
+        fmt_printf("xmemdup successful.\n");
 
         free2(dup, len);
         free2(mem_dup, len);
@@ -1004,7 +1004,7 @@ int main(void) {
         int32 iterations = 2500;
         void **ptrs = malloc2(iterations*SIZEOF(void *));
 
-        printf("\n--- Starting High-Volume Stress Tests ---\n");
+        fmt_printf("\n--- Starting High-Volume Stress Tests ---\n");
 
         for (int32 i = 0; i < iterations; i += 1) {
             ptrs[i] = malloc2(1*SIZEOF(int64));
@@ -1025,14 +1025,14 @@ int main(void) {
             free2(ptrs[i], 2*SIZEOF(int64));
         }
         free2(ptrs, iterations*SIZEOF(void *));
-        printf("High-volume tracking and validation successful.\n");
+        fmt_printf("High-volume tracking and validation successful.\n");
     }
 
     {
         int32 num_strings = 2000;
         TestString *v_strings;
 
-        printf("Starting High-Volume Variable String Stress Tests.\n");
+        fmt_printf("Starting High-Volume Variable String Stress Tests.\n");
         v_strings = malloc2(num_strings*SIZEOF(*v_strings));
 
         rand_int_seed(1337);
@@ -1064,7 +1064,7 @@ int main(void) {
             free2(v_strings[i].s, v_strings[i].len + 1);
         }
         free2(v_strings, num_strings*SIZEOF(*v_strings));
-        printf("High-volume variable string tests successful.\n");
+        fmt_printf("High-volume variable string tests successful.\n");
     }
 
 #if OS_LINUX
@@ -1072,7 +1072,7 @@ int main(void) {
         // this block has to execute last,
         // because it leaves garbage still to be detected
 
-        printf("\n--- Starting Failure Case Tests ---\n");
+        fmt_printf("\n--- Starting Failure Case Tests ---\n");
 
         {
             void *untracked = (void *)0xDEADBEEF;
@@ -1199,7 +1199,7 @@ int main(void) {
         fsync(STDERR_FILENO);
     }
 #endif
-    printf("\nAll memory tests passed.\n");
+    fmt_printf("\nAll memory tests passed.\n");
     return EXIT_SUCCESS;
 }
 

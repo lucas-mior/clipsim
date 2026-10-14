@@ -263,7 +263,7 @@ contains(
         }
 
         if (!memcmp64(buffer, from_scan, length)) {
-            printf("%s == %s\n", buffer, from_scan);
+            fmt_printf("%s == %s\n", buffer, from_scan);
             *number_files -= 1;
             if (i < *number_files) {
                 memmove64(&directory_entries[i], &directory_entries[i + 1],

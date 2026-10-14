@@ -37,8 +37,8 @@ print_timings(char *file, int32 line, char *func,
     double total_seconds = (double)seconds + (double)nanos / 1.0e9;
     double micros_per = 1e6*(total_seconds / (double)nitems);
 
-    printf("\ntime elapsed %s:%d:%s\n", file, line, func);
-    printf("%gs = %gus per item.\n", total_seconds, micros_per);
+    fmt_printf("\ntime elapsed %s:%d:%s\n", file, line, func);
+    fmt_printf("%gs = %gus per item.\n", total_seconds, micros_per);
     return;
 }
 

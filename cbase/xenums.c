@@ -1053,7 +1053,7 @@ main(void) {
     ASSERT(TEST_CHAR_FLAGS_parse_chars(&cursor) == TEST_CHAR_FLAGS_NONE);
     ASSERT_EQ(cursor, "z");
 
-    printf("xenums.c: All tests passed successfully.\n");
+    fmt_printf("xenums.c: All tests passed successfully.\n");
     return EXIT_SUCCESS;
 }
 

@@ -137,7 +137,7 @@ mul_shift_mod1e9(uint64 m, uint64 const *mul, int32 j) {
 
 #if defined(RYU_DEBUG)
     if ((j < 128) || (j > 180)) {
-        printf("%d\n", j);
+        fmt_printf("%d\n", j);
     }
 #endif
 
@@ -225,7 +225,7 @@ mul_shift_mod1e9(uint64 m, uint64 const *mul, int32 j) {
 
 #if defined(RYU_DEBUG)
     if ((j < 128) || (j > 180)) {
-        printf("%d\n", j);
+        fmt_printf("%d\n", j);
     }
 #endif
 
@@ -279,7 +279,7 @@ append_n_digits(uint32 olength, uint32 digits, char *result) {
     uint32 c1;
 
 #if defined(RYU_DEBUG)
-    printf("DIGITS=%u\n", digits);
+    fmt_printf("DIGITS=%u\n", digits);
 #endif
 
     while (digits >= 10000) {
@@ -323,7 +323,7 @@ append_d_digits(uint32 olength, uint32 digits, char *result) {
     uint32 c1;
 
 #if defined(RYU_DEBUG)
-    printf("DIGITS=%u\n", digits);
+    fmt_printf("DIGITS=%u\n", digits);
 #endif
 
     while (digits >= 10000) {
@@ -364,7 +364,7 @@ append_c_digits(uint32 count, uint32 digits, char *result) {
     uint32 i = 0;
 
 #if defined(RYU_DEBUG)
-    printf("DIGITS=%u\n", digits);
+    fmt_printf("DIGITS=%u\n", digits);
 #endif
 
     // Copy pairs of digits from ryu_digit_table.
@@ -395,7 +395,7 @@ append_nine_digits(uint32 digits, char *result) {
     uint32 c1;
 
 #if defined(RYU_DEBUG)
-    printf("DIGITS=%u\n", digits);
+    fmt_printf("DIGITS=%u\n", digits);
 #endif
 
     if (digits == 0) {
@@ -478,11 +478,11 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
 
     bits = double_to_bits(d);
 #if defined(RYU_DEBUG)
-    printf("IN=");
+    fmt_printf("IN=");
     for (int32 bit = 63; bit >= 0; bit -= 1) {
-        printf("%d", (int)((bits >> bit) & 1));
+        fmt_printf("%d", (int)((bits >> bit) & 1));
     }
-    printf("\n");
+    fmt_printf("\n");
 #endif
 
     // Decode bits into sign, mantissa, and exponent.
@@ -522,7 +522,7 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
     }
 
 #if defined(RYU_DEBUG)
-    printf("-> %" PRIu64 " * 2^%d\n", m2, e2);
+    fmt_printf("-> %" PRIu64 " * 2^%d\n", m2, e2);
 #endif
 
     index = 0;
@@ -541,8 +541,8 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
         p10bits = pow10_bits_for_index(idx);
         len = (int32)length_for_index(idx);
 #if defined(RYU_DEBUG)
-        printf("idx=%u\n", idx);
-        printf("len=%d\n", len);
+        fmt_printf("idx=%u\n", idx);
+        fmt_printf("len=%d\n", len);
 #endif
         for (int32 i = len - 1; i >= 0; i -= 1) {
             int32 j;
@@ -579,7 +579,7 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
     }
 
 #if defined(RYU_DEBUG)
-    printf("e2=%d\n", e2);
+    fmt_printf("e2=%d\n", e2);
 #endif
 
     if (e2 < 0) {
@@ -589,7 +589,7 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
 
         idx = -e2 / 16;
 #if defined(RYU_DEBUG)
-        printf("idx=%d\n", idx);
+        fmt_printf("idx=%d\n", idx);
 #endif
         blocks = precision / 9 + 1;
 
@@ -627,7 +627,7 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
             // mul_shift_mod1e9. Instead, we can just increase the multipliers.
             digits = mul_shift_mod1e9(m2 << 8, pow10_split_2[p], j + 8);
 #if defined(RYU_DEBUG)
-            printf("digits=%u\n", digits);
+            fmt_printf("digits=%u\n", digits);
 #endif
             if (i < blocks - 1) {
                 append_nine_digits(digits, result + index);
@@ -642,7 +642,7 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
                     digits /= 10;
                 }
 #if defined(RYU_DEBUG)
-                printf("lastDigit=%u\n", last_digit);
+                fmt_printf("lastDigit=%u\n", last_digit);
 #endif
                 if (last_digit != 5) {
                     round_up = last_digit > 5;
@@ -661,9 +661,9 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
                     }
                     round_up = trailing_zeros ? 2 : 1;
 #if defined(RYU_DEBUG)
-                    printf("requiredTwos=%d\n", required_twos);
-                    printf("trailingZeros=%s\n",
-                           trailing_zeros ? "true" : "false");
+                    fmt_printf("requiredTwos=%d\n", required_twos);
+                    fmt_printf("trailingZeros=%s\n",
+                               trailing_zeros ? "true" : "false");
 #endif
                 }
                 if (maximum > 0) {
@@ -674,7 +674,7 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
             }
         }
 #if defined(RYU_DEBUG)
-        printf("roundUp=%d\n", round_up);
+        fmt_printf("roundUp=%d\n", round_up);
 #endif
         if (round_up != 0) {
             int round_index;
@@ -769,11 +769,11 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
 
     bits = double_to_bits(d);
 #if defined(RYU_DEBUG)
-    printf("IN=");
+    fmt_printf("IN=");
     for (int32 bit = 63; bit >= 0; bit -= 1) {
-        printf("%d", (int)((bits >> bit) & 1));
+        fmt_printf("%d", (int)((bits >> bit) & 1));
     }
-    printf("\n");
+    fmt_printf("\n");
 #endif
 
     // Decode bits into sign, mantissa, and exponent.
@@ -815,7 +815,7 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
     }
 
 #if defined(RYU_DEBUG)
-    printf("-> %" PRIu64 " * 2^%d\n", m2, e2);
+    fmt_printf("-> %" PRIu64 " * 2^%d\n", m2, e2);
 #endif
 
     print_decimal_point = precision > 0;
@@ -838,8 +838,8 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
         p10bits = pow10_bits_for_index(idx);
         len = (int32)length_for_index(idx);
 #if defined(RYU_DEBUG)
-        printf("idx=%u\n", idx);
-        printf("len=%d\n", len);
+        fmt_printf("idx=%u\n", idx);
+        fmt_printf("len=%d\n", len);
 #endif
         for (int32 i = len - 1; i >= 0; i -= 1) {
             int32 j;
@@ -883,7 +883,7 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
 
         idx = -e2 / 16;
 #if defined(RYU_DEBUG)
-        printf("idx=%d, e2=%d, min=%d\n", idx, e2, min_block_2[idx]);
+        fmt_printf("idx=%d, e2=%d, min=%d\n", idx, e2, min_block_2[idx]);
 #endif
         for (int32 i = min_block_2[idx]; i < 200; i += 1) {
             int32 j;
@@ -900,10 +900,10 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
                 digits = mul_shift_mod1e9(m2 << 8, pow10_split_2[p], j + 8);
             }
 #if defined(RYU_DEBUG)
-            printf("exact=%" PRIu64 " * (%" PRIu64 " + %" PRIu64
-                   " << 64) >> %d\n",
-                   m2, pow10_split_2[p][0], pow10_split_2[p][1], j);
-            printf("digits=%u\n", digits);
+            fmt_printf("exact=%" PRIu64 " * (%" PRIu64 " + %" PRIu64
+                       " << 64) >> %d\n",
+                       m2, pow10_split_2[p][0], pow10_split_2[p][1], j);
+            fmt_printf("digits=%u\n", digits);
 #endif
             if (printed_digits != 0) {
                 if (printed_digits + 9 > precision) {
@@ -934,9 +934,9 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
 
     maximum = precision - printed_digits;
 #if defined(RYU_DEBUG)
-    printf("availableDigits=%u\n", available_digits);
-    printf("digits=%u\n", digits);
-    printf("maximum=%u\n", maximum);
+    fmt_printf("availableDigits=%u\n", available_digits);
+    fmt_printf("digits=%u\n", digits);
+    fmt_printf("maximum=%u\n", maximum);
 #endif
     if (available_digits == 0) {
         digits = 0;
@@ -952,7 +952,7 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
         }
     }
 #if defined(RYU_DEBUG)
-    printf("lastDigit=%u\n", last_digit);
+    fmt_printf("lastDigit=%u\n", last_digit);
 #endif
     // 0 = don't round up; 1 = round up unconditionally; 2 = round up if odd.
     if (last_digit != 5) {
@@ -980,8 +980,8 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
         }
         round_up = trailing_zeros ? 2 : 1;
 #if defined(RYU_DEBUG)
-        printf("requiredTwos=%d\n", required_twos);
-        printf("trailingZeros=%s\n", trailing_zeros ? "true" : "false");
+        fmt_printf("requiredTwos=%d\n", required_twos);
+        fmt_printf("trailingZeros=%s\n", trailing_zeros ? "true" : "false");
 #endif
     }
     if (printed_digits != 0) {
@@ -1001,7 +1001,7 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
         }
     }
 #if defined(RYU_DEBUG)
-    printf("roundUp=%d\n", round_up);
+    fmt_printf("roundUp=%d\n", round_up);
 #endif
     if (round_up != 0) {
         int round_index;

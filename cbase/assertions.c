@@ -1664,7 +1664,7 @@ main(void) {
         test_remove_tree(temp_dir);
     }
 
-    printf("All assertions tests passed.\n");
+    fmt_printf("All assertions tests passed.\n");
     exit(EXIT_SUCCESS);
 }
 #endif

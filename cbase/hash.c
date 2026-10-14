@@ -167,29 +167,29 @@ CAT(hash_print_, HASH_TYPE)(struct Map *map, bool verbose) {
             }
         }
 
-        printf("\n%03u: ", i);
+        fmt_printf("\n%03u: ", i);
 
         switch (slot_state) {
         case HASH_SLOT_FREE:
-            printf("[empty]");
+            fmt_printf("[empty]");
             break;
         case HASH_SLOT_DELETED:
-            printf("[deleted]");
+            fmt_printf("[deleted]");
             break;
         default:
 #if defined(HASH_KEY_FORMATTER)
-            printf("'" HASH_KEY_FORMATTER "'", iterator->key);
+            fmt_printf("'" HASH_KEY_FORMATTER "'", iterator->key);
 #else
-            printf("key");
+            fmt_printf("key");
 #endif
 #if defined(HASH_VALUE_TYPE) && defined(HASH_VALUE_FORMATTER)
-            printf("=" HASH_VALUE_FORMATTER, iterator->value);
+            fmt_printf("=" HASH_VALUE_FORMATTER, iterator->value);
 #endif
             break;
         }
     }
 
-    printf("\n");
+    fmt_printf("\n");
     return;
 }
 

@@ -191,10 +191,10 @@ s2f_n(const char *buffer, int32 len, float *result) {
     }
 
 #if defined(RYU_DEBUG)
-    printf("Input=%s\n", buffer);
-    printf("m10_digits = %d\n", m10_digits);
-    printf("e10_digits = %d\n", e10_digits);
-    printf("m10 * 10^e10 = %u * 10^%d\n", m10, e10);
+    fmt_printf("Input=%s\n", buffer);
+    fmt_printf("m10_digits = %d\n", m10_digits);
+    fmt_printf("e10_digits = %d\n", e10_digits);
+    fmt_printf("m10 * 10^e10 = %u * 10^%d\n", m10, e10);
 #endif
 
     if ((m10_digits + e10 <= -46) || (m10 == 0)) {
@@ -278,7 +278,7 @@ s2f_n(const char *buffer, int32 len, float *result) {
     }
 
 #if defined(RYU_DEBUG)
-    printf("m2 * 2^e2 = %u * 2^%d\n", m2, e2);
+    fmt_printf("m2 * 2^e2 = %u * 2^%d\n", m2, e2);
 #endif
 
     // Compute the final IEEE exponent.
@@ -305,16 +305,16 @@ s2f_n(const char *buffer, int32 len, float *result) {
     assert(shift >= 0);
 
 #if defined(RYU_DEBUG)
-    printf("ieee_e2 = %d\n", ieee_e2);
-    printf("shift = %d\n", shift);
+    fmt_printf("ieee_e2 = %d\n", ieee_e2);
+    fmt_printf("shift = %d\n", shift);
 #endif
 
     // Round to nearest, ties to even, including full-width shifts.
     ieee_m2 = s2f_round_shift(m2, shift, trailing_zeros, &round_up);
 
 #if defined(RYU_DEBUG)
-    printf("round_up = %d\n", round_up);
-    printf("ieee_m2 = %u\n", ieee_m2);
+    fmt_printf("round_up = %d\n", round_up);
+    fmt_printf("ieee_m2 = %u\n", ieee_m2);
 #endif
 
     assert(ieee_m2 <= (1u << (FLOAT_MANTISSA_BITS + 1)));

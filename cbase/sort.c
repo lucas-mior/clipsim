@@ -218,7 +218,7 @@ test_sorting(int32 n, int32 p) {
         n_sub[i] = n / p + (n % p);
     }
 
-    printf("n_sub[P - 1] = %d\n", n_sub[p - 1]);
+    fmt_printf("n_sub[P - 1] = %d\n", n_sub[p - 1]);
 
     rand_int_seed(42);
     for (int32 i = 0; i < n; i += 1) {
