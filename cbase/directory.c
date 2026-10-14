@@ -225,8 +225,7 @@ directory_entry_index(DirEntry *entries, int32 length, char *name) {
 static void
 test_directory_entries_are_valid(DirEntry *entries, int32 length) {
     for (int32 i = 0; i < length; i += 1) {
-        ASSERT_GE(entries[i].name_len, 0);
-        ASSERT_LT(entries[i].name_len, SIZEOF(entries[i].name));
+        ASSERT_BETWEEN(entries[i].name_len, 0, SIZEOF(entries[i].name) - 1);
         ASSERT_EQ(entries[i].name_len, strlen32(entries[i].name));
         ASSERT_EQ(entries[i].name[entries[i].name_len], '\0');
     }

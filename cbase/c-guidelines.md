@@ -576,6 +576,9 @@ STR_APPEND(&str, string, string_len);
 str_itoa(&str, number);
 ```
 
+## Avoid printf from libc.
+Instead, use `fmt_printf` from `fmt.c` which has almost the same semantics.
+
 ## Comparing strings:
 In general, avoid `strcmp()`, use the alternatives below instead:
 - For strings that are both null terminated and we don't know the length of
@@ -1114,6 +1117,8 @@ static struct TestCase tests[] = {
       int32 x;
   }
   ```
+  * Note: don't create artificial blocks if the nest level is already 3 or more.
+    (3 * 4 spaces = 12 spaces).
 - Prefer to declare variable at the top of blocks
   * Exception: for loop counters (`for (int32 i = 0; i < N; i += 1)`)
   * Don't mix declarations and code (`-Wdeclaration-after-statement`)

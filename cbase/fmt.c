@@ -482,8 +482,7 @@ fmt_sink_write(FormatSink *sink, char *data, int64 len) {
 
     ASSERT(sink != NULL);
     ASSERT(data != NULL);
-    ASSERT_GE(len, 0);
-    ASSERT_LT(len, INT32_MAX);
+    ASSERT_BETWEEN(len, 0, INT32_MAX - 1);
 
     if (sink->status < 0) {
         return;
@@ -2082,8 +2081,7 @@ fmt_float_hex_should_round(char first_digit, char *digits, int32 precision) {
     int32 even_digit;
 
     ASSERT(digits != NULL);
-    ASSERT_GE(precision, 0);
-    ASSERT_LT(precision, FMT_DOUBLE_HEX_DIGITS);
+    ASSERT_BETWEEN(precision, 0, FMT_DOUBLE_HEX_DIGITS);
 
     round_digit = fmt_hex_digit_value(digits[precision]);
     if (round_digit > 8) {
@@ -2109,8 +2107,7 @@ fmt_float_hex_round(char *first_digit, char *digits, int32 precision,
                     bool upper) {
     ASSERT(first_digit != NULL);
     ASSERT(digits != NULL);
-    ASSERT_GE(precision, 0);
-    ASSERT_LT(precision, FMT_DOUBLE_HEX_DIGITS);
+    ASSERT_BETWEEN(precision, 0, FMT_DOUBLE_HEX_DIGITS);
 
     if (!fmt_float_hex_should_round(*first_digit, digits, precision)) {
         return;

@@ -149,6 +149,110 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertIn("tab character is forbidden", output)
         self.assertEqual(self.run_perl(path, "int x;\n"), "")
 
+    def test_consecutive_bounds_use_assert_between(self):
+        output = self.run_perl(
+            "sample.c",
+            "static void\n"
+            "check(void) {\n"
+            "    ASSERT_GE(index, 0);\n"
+            "    ASSERT_LT(index, size);\n"
+            "    ASSERT_GE(ctx->items[pos], 0);\n"
+            "    ASSERT_LT(ctx->items[pos], LENGTH(items));\n"
+            "}\n",
+        )
+        self.assertEqual(output.count("instead of consecutive"), 2)
+        self.assertIn(
+            "sample.c:3:use ASSERT_BETWEEN(index, 0, size - 1)",
+            output,
+        )
+        self.assertIn(
+            "sample.c:5:use ASSERT_BETWEEN(ctx->items[pos], 0, "
+            "LENGTH(items) - 1)", output,
+        )
+
+    def test_consecutive_bounds_in_macro_continuations(self):
+        output = self.run_perl(
+            "sample.c",
+            "#define CHECK_INDEX(i) do { \\\n"
+            "    ASSERT_GE(i, 0);         \\\n"
+            "    ASSERT_LT(i, LENGTH(data)); \\\n"
+            "} while (0)\n",
+        )
+        self.assertIn(
+            "sample.c:2:use ASSERT_BETWEEN(i, 0, LENGTH(data) - 1)",
+            output,
+        )
+
+    def test_consecutive_bounds_ignores_unrelated_assertions(self):
+        output = self.run_perl(
+            "sample.c",
+            "static void\n"
+            "check(void) {\n"
+            "    ASSERT_GE(i, 1);\n"
+            "    ASSERT_LT(i, size);\n"
+            "    ASSERT_GE(i, 0);\n"
+            "    ASSERT_LT(j, size);\n"
+            "    ASSERT_GE(i, 0);\n"
+            "\n"
+            "    ASSERT_LT(i, size);\n"
+            "    ASSERT_GE(i, 0); other_call();\n"
+            "    ASSERT_LT(i, size);\n"
+            "    ASSERT_GE(i, 0); ASSERT_LT(i, size);\n"
+            "    ASSERT_BETWEEN(i, 0, size - 1);\n"
+            "}\n",
+        )
+        self.assertNotIn("instead of consecutive", output)
+
+    def test_consecutive_bounds_ignore_comments_and_strings(self):
+        output = self.run_perl(
+            "sample.c",
+            "// ASSERT_GE(i, 0);\n"
+            "// ASSERT_LT(i, size);\n"
+            "/* ASSERT_GE(i, 0);\n"
+            "   ASSERT_LT(i, size); */\n"
+            'const char *text = "ASSERT_GE(i, 0);\\nASSERT_LT(i, size);";\n'
+            "ASSERT_GE(i, 0); // first comparison\n"
+            "ASSERT_LT(i, size);\n",
+        )
+        self.assertEqual(output.count("instead of consecutive"), 1)
+        self.assertIn("sample.c:6:use ASSERT_BETWEEN", output)
+
+    def test_consecutive_bounds_uses_file_list_and_cache(self):
+        path = "sample.c"
+        pair = "ASSERT_GE(i, 0);\nASSERT_LT(i, limit);\n"
+        self.assertIn(
+            "ASSERT_BETWEEN(i, 0, limit - 1)",
+            self.run_perl(path, pair, file_list=True),
+        )
+        self.assertIn(
+            "ASSERT_BETWEEN(i, 0, limit - 1)",
+            self.run_perl(path, pair, file_list=True),
+        )
+        self.assertNotIn(
+            "instead of consecutive",
+            self.run_perl(path, "ASSERT_GE(i, 0);\n", file_list=True),
+        )
+
+    def test_multiline_string_literals_must_align(self):
+        output = self.run_perl(
+            "sample.c",
+            "static void\n"
+            "function(void) {\n"
+            '    fmt_printf("A long aligned format string with value %s "\n'
+            '               "and enough text to require wrapping; "\n'
+            '               "another value is %d\\n",\n'
+            "               value, count);\n"
+            '    fmt_printf("A long misaligned format string with value %s "\n'
+            '              "and enough text to require wrapping; "\n'
+            '              "another value is %d\\n",\n'
+            "               value, count);\n"
+            "}\n",
+        )
+        self.assertEqual(
+            output.count("call string literal is not aligned"), 1,
+        )
+        self.assertIn("sample.c:8:fmt_printf call string literal", output)
+
 
 if __name__ == "__main__":
     unittest.main()

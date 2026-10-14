@@ -1185,15 +1185,12 @@ main(int argc, char **argv) {
         rand_int_seed(1234);
         for (int32 i = 0; i < 100; i += 1) {
             int32 value = rand_int_range(7);
-
-            ASSERT_GE(value, 0);
-            ASSERT_LT(value, 7);
+            ASSERT_BETWEEN(value, 0, 6);
         }
 
         rand_shuffle(values, LENGTH(values), SIZEOF(*values));
         for (int32 i = 0; i < LENGTH(values); i += 1) {
-            ASSERT_GE(values[i], 0);
-            ASSERT_LT(values[i], LENGTH(values));
+            ASSERT_BETWEEN(values[i], 0, LENGTH(values) - 1);
             ASSERT(!seen[values[i]]);
             seen[values[i]] = true;
         }

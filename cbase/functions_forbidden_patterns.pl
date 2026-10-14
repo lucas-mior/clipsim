@@ -677,6 +677,73 @@ sub report_unnecessary_call_wraps {
     return;
 }
 
+# Adjacent lower- and upper-bound checks on the same variable should use
+# the inclusive ASSERT_BETWEEN form. Parse calls instead of matching whole
+# argument lists with a regular expression, so nested size expressions work.
+sub check_consecutive_bounds_assertions {
+    my ($path, $source, $code) = @_;
+    my $variable = qr{
+        [A-Za-z_][A-Za-z0-9_]*
+        (?:\s*(?:\.|->)\s*[A-Za-z_][A-Za-z0-9_]*
+          |\s*\[\s*[A-Za-z_0-9]+\s*\])*
+    }x;
+
+    pos($code) = 0;
+    while ($code =~ /(?<![A-Za-z0-9_])ASSERT_GE(?![A-Za-z0-9_])/g) {
+        my $start = $-[0];
+        my $paren = skip_space_comments($source, $+[0]);
+        my $end;
+        my ($starts, $ends);
+        my ($value, $lower);
+        my $following;
+        my $next_paren;
+        my $next_end;
+        my ($next_starts, $next_ends);
+        my ($next_value, $upper);
+        my $line_start = rindex($code, "\n", $start - 1) + 1;
+        my $prefix = substr($code, $line_start, $start - $line_start);
+
+        next if $prefix =~ /^\s*#/;
+        next unless substr($code, $paren, 1) eq '(';
+        $end = call_end($code, $paren + 1);
+        next if $end < 0;
+        ($starts, $ends) = argument_ranges($source, $code,
+                                           $paren + 1, $end);
+        next unless @$starts == 2;
+        $value = substr($code, $starts->[0], $ends->[0] - $starts->[0]);
+        $lower = substr($code, $starts->[1], $ends->[1] - $starts->[1]);
+        $value =~ s/\s+//g;
+        $lower =~ s/\s+//g;
+        next unless $value =~ /\A$variable\z/ && $lower eq '0';
+
+        # Exactly the next physical line, with no intervening statement or
+        # blank line. Comments are masked without changing line positions.
+        $following = substr($code, $end + 1);
+        next unless $following =~ /\A[ \t]*;[ \t]*(?:\\[ \t]*)?\r?\n
+                                  [ \t]*ASSERT_LT(?![A-Za-z0-9_])/x;
+        $next_paren = skip_space_comments($source, $end + 1 + $+[0]);
+        next unless substr($code, $next_paren, 1) eq '(';
+        $next_end = call_end($code, $next_paren + 1);
+        next if $next_end < 0;
+        ($next_starts, $next_ends) = argument_ranges(
+            $source, $code, $next_paren + 1, $next_end);
+        next unless @$next_starts == 2;
+        $next_value = substr($code, $next_starts->[0],
+                             $next_ends->[0] - $next_starts->[0]);
+        $upper = substr($code, $next_starts->[1],
+                        $next_ends->[1] - $next_starts->[1]);
+        $next_value =~ s/\s+//g;
+        $upper =~ s/^\s+|\s+$//g;
+        next unless $next_value eq $value && length($upper);
+        next unless substr($code, $next_end + 1) =~ /\A[ \t]*;/;
+
+        my $line = line_number($source, $start);
+        report_issue("$path:$line:use ASSERT_BETWEEN($value, 0, "
+                     . "$upper - 1) instead of consecutive "
+                     . "ASSERT_GE/ASSERT_LT\n");
+    }
+}
+
 for my $path (@paths) {
     my $absolute_path = abs_path($path) // $path;
 
@@ -713,6 +780,9 @@ for my $path (@paths) {
     }
     my $code = code_mask($source);
     my $is_ryu = $absolute_path =~ m{(?:\A|/)cbase/ryu/[^/]+\.[ch]\z};
+
+    check_consecutive_bounds_assertions($path, $source, $code)
+        unless $is_ryu;
 
     if ($is_ryu) {
         check_ryu_source_style($path, $source);
@@ -889,6 +959,36 @@ for my $path (@paths) {
 
             ($arg_starts, $arg_ends, $arg_has_newline) =
                 argument_ranges($source, $code, $args_start, $args_end);
+
+            for (my $arg_idx = 0;
+                 $arg_idx < scalar(@$arg_starts); $arg_idx += 1) {
+                my $arg = substr($source, $arg_starts->[$arg_idx],
+                                 $arg_ends->[$arg_idx]
+                                 - $arg_starts->[$arg_idx]);
+                my $literal = qr/(?:u8|[uUL])?"(?:\\.|[^"\\])*"/;
+                my $first_idx = $arg_starts->[$arg_idx];
+                my $first_line_start;
+                my $first_column;
+
+                next unless $arg =~ /\A$literal/;
+                $first_line_start = rindex($source, "\n", $first_idx - 1)
+                                    + 1;
+                $first_column = $first_idx - $first_line_start;
+                while ($arg =~ /$literal[ \t]*\r?\n[ \t]*
+                               (?=($literal))/gx) {
+                    my $second_idx = $arg_starts->[$arg_idx] + $-[1];
+                    my $second_line_start = rindex($source, "\n",
+                                                   $second_idx - 1) + 1;
+
+                    next if $first_column
+                            == $second_idx - $second_line_start;
+
+                    my $line = line_number($source, $second_idx);
+                    report_issue("$path:$line:$name call string literal is "
+                                 . "not aligned with first literal\n");
+                    last;
+                }
+            }
 
             # printf-like calls align wrapped arguments with the format
             # string. Detect that argument by looking for a '%' inside a

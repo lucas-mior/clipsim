@@ -444,10 +444,10 @@ main(void) {
     ASSERT_EQ(atoi_base(STRLIT("0x7fffffffffffffff")), LLONG_MAX);
     ASSERT_EQ(atoi_base(STRLIT("-0x8000000000000000")), LLONG_MIN);
     ASSERT_EQ(atoi_base(STRLIT("0b1111111111111111111111111111111"
-                                  "11111111111111111111111111111111")),
+                               "11111111111111111111111111111111")),
               LLONG_MAX);
     ASSERT_EQ(atoi_base(STRLIT("-0b1000000000000000000000000000000"
-                                  "000000000000000000000000000000000")),
+                               "000000000000000000000000000000000")),
               LLONG_MIN);
 #if OS_UNIX
     ASSERT_TRAPS(atoi_base(STRLIT("0x8000000000000000")));

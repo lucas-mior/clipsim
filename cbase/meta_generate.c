@@ -333,10 +333,10 @@ test_emit_string_and_lens_inits(void) {
 
     emit_string_array_init(&out, "names", values, lens, 3, "v");
     ASSERT_EQ(out.data, "    .names = {\n"
-                           "        \"alpha\",\n"
-                           "        \"v1\",\n"
-                           "        \"quo\\\"te\",\n"
-                           "    },\n");
+                        "        \"alpha\",\n"
+                        "        \"v1\",\n"
+                        "        \"quo\\\"te\",\n"
+                        "    },\n");
 
     str_free(&out);
     emit_lens_init(&out, "name_lens", values, lens, 3, "v");

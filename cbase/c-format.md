@@ -237,18 +237,18 @@ function(void) {
                      x, y);
 
     // bad (the format-string line contains some, but not all, arguments)
-    printf("some format string says: %s = %g\n", states[i],
-           X[final_step*nstates + i]);
+    fmt_printf("some format string says: %s = %g\n", states[i],
+               X[final_step*nstates + i]);
 
     // good (the format-string line contains no format arguments)
-    printf("some format string says: %s = %g\n",
-           states[i], X[final_step*nstates + i]);
+    fmt_printf("some format string says: %s = %g\n",
+               states[i], X[final_step*nstates + i]);
 
     // also good (the format-string line contains no format arguments; the
     // arguments may continue on later lines)
-    printf("some format string says: %s = %g\n",
-           states[i],
-           X[final_step*nstates + i]);
+    fmt_printf("some format string says: %s = %g\n",
+               states[i],
+               X[final_step*nstates + i]);
 
     return;
 }

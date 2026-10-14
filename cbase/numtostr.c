@@ -93,8 +93,7 @@ fmt_float_copy(char *buffer, int64 capacity, char *source, int32 source_len) {
     ASSERT(buffer != NULL);
     ASSERT_GT(capacity, 0);
     ASSERT(source != NULL);
-    ASSERT_GE(source_len, 0);
-    ASSERT_LT(source_len, NUMTOSTR_FLOAT_RYU_BUFFER_SIZE);
+    ASSERT_BETWEEN(source_len, 0, NUMTOSTR_FLOAT_RYU_BUFFER_SIZE - 1);
 
     if ((int64)source_len >= capacity) {
         return -ENOSPC;
