@@ -173,9 +173,9 @@ history_save(void) {
         error("History file name unresolved, can't save history.");
         return 0;
     }
-    if ((history.fd
-         = open(history.name, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
-        < 0) {
+    if ((history.fd =
+            open(history.name,
+                 O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
         error("Error opening history file for saving: %s\n", strerror(errno));
         return 0;
     }
@@ -194,9 +194,9 @@ history_save(void) {
                                                    &e->content_length, NULL));
 
             if (!STREQUAL(image_save, n, e->content, e->content_length)) {
-                if ((pipes[nfds].fd
-                        = util_copy_file_async(image_save, e->content,
-                                               &dests[nfds])) < 0) {
+                if ((pipes[nfds].fd =
+                            util_copy_file_async(image_save, e->content,
+                                                 &dests[nfds])) < 0) {
                     error("Error copying %s to %s: %s.\n",
                           e->content, image_save, strerror(errno));
                     history_remove(i);
@@ -481,9 +481,8 @@ history_save_image(char **content, int32 *length) {
     history_prepare_tmp_directory();
     n = SNPRINTF(image_file, "%s/%lld.png", tmp_directory, t);
 
-    if ((file
-         = open(image_file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR))
-        < 0) {
+    if ((file = open(image_file,
+                     O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
         error("Error opening %s for saving: %s\n", image_file, strerror(errno));
         return -1;
     }

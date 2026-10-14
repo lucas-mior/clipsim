@@ -256,6 +256,220 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertIn("sample.c:1:use SIZEOF", output)
         self.assertEqual(self.run_perl(path, "int64 n = SIZEOF(n);\n"), "")
 
+    def test_short_assignments_split_after_equals_are_rejected(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "static void\n"
+            "work(void) {\n"
+            "    my_variable =\n"
+            "        this_is_a_function_call(args, other_arg);\n"
+            "    int32 value =\n"
+            "        calculate(1);\n"
+            "    options->state =\n"
+            "        flags;\n"
+            "}\n",
+        )
+        self.assertEqual(output.count("assignment fits on one line"), 3)
+        for line in (3, 5, 7):
+            self.assertIn(
+                f"sample.c:{line}:assignment fits on one line", output,
+            )
+
+    def test_assignment_wraps_check_complete_expression_length(self):
+        prefix = "    result ="
+        fits = "x" * (80 - len(prefix) - len(" ;"))
+        too_long = fits + "x"
+        output = self.run_perl(
+            "src/sample.c",
+            prefix + "\n        " + fits + ";\n"
+            + "\n"
+            + prefix + "\n        " + too_long + ";\n"
+            + "\n"
+            + "    result =\n"
+            + "        calculate(first,\n"
+            + "                  second);\n"
+            + "\n"
+            + "    result =\n"
+            + "        some_function_with_an_extremely_long_name(\n"
+            + "            first_really_long_argument, second_argument);\n",
+        )
+        self.assertEqual(output.count("assignment fits on one line"), 2)
+        self.assertIn("sample.c:1:assignment fits on one line", output)
+        self.assertIn("sample.c:7:assignment fits on one line", output)
+        self.assertNotIn("sample.c:4:assignment fits on one line", output)
+        self.assertNotIn("sample.c:11:assignment fits on one line", output)
+
+    def test_assignment_wraps_preserve_longer_related_assignments(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "    first_value =\n"
+            "        quick();\n"
+            "    second_value =\n"
+            "        some_function_with_a_long_name(first_long_argument,\n"
+            "                                       second_long_argument);\n"
+            "    third_value =\n"
+            "        quick();\n"
+            "\n"
+            "    fourth_value =\n"
+            "        quick();\n"
+            "    fifth_value = quick();\n",
+        )
+        self.assertEqual(output.count("assignment fits on one line"), 1)
+        self.assertIn("sample.c:9:assignment fits on one line", output)
+
+    def test_assignment_wraps_group_long_assignments_broken_elsewhere(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "    first_value =\n"
+            "        quick();\n"
+            "    second_value = some_function_with_an_extremely_long_name(\n"
+            "        first_really_long_argument, second_long_argument);\n"
+            "    third_value =\n"
+            "        quick();\n"
+            "\n"
+            "    fourth_value =\n"
+            "        quick();\n",
+        )
+        self.assertEqual(output.count("assignment fits on one line"), 1)
+        self.assertIn("sample.c:8:assignment fits on one line", output)
+
+    def test_assignment_wraps_are_grouped_across_comments_not_blank_lines(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "    first_value =\n"
+            "        quick();\n"
+            "    // These values are related.\n"
+            "    second_value =\n"
+            "        long_named_function_with_many_arguments(\n"
+            "            first_really_long_argument, second_long_argument);\n"
+            "    third_value =\n"
+            "        quick();\n"
+            "    \n"
+            "    fourth_value =\n"
+            "        quick();\n",
+        )
+        self.assertEqual(output.count("assignment fits on one line"), 1)
+        self.assertIn("sample.c:10:assignment fits on one line", output)
+
+    def test_assignment_wraps_do_not_cross_unrelated_statements(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "    first_value =\n"
+            "        quick();\n"
+            "    unrelated_call();\n"
+            "    second_value =\n"
+            "        some_function_with_an_extremely_long_name(\n"
+            "            first_really_long_argument, second_long_argument);\n",
+        )
+        self.assertEqual(output.count("assignment fits on one line"), 1)
+        self.assertIn("sample.c:1:assignment fits on one line", output)
+
+    def test_assignment_wraps_group_with_unwrapped_long_assignment(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "    first =\n"
+            "        small();\n"
+            "    long_value = " + "some_very_long_identifier_" * 3 + ";\n"
+            "    third =\n"
+            "        small();\n"
+            "\n"
+            "    fourth =\n"
+            "        small();\n",
+        )
+        self.assertEqual(output.count("assignment fits on one line"), 1)
+        self.assertIn("sample.c:7:assignment fits on one line", output)
+
+    def test_assignment_wraps_group_obeys_column_limit(self):
+        prefix = "    longer_value ="
+        rhs = "x" * (90 - len(prefix) - len(" ;"))
+        code = (
+            "    short_value =\n"
+            "        small();\n"
+            + prefix + "\n        " + rhs + ";\n"
+        )
+        normal = self.run_perl("src/sample.c", code)
+        cecup = self.run_perl("cecup/src/sample.c", code)
+        self.assertNotIn("assignment fits on one line", normal)
+        self.assertEqual(cecup.count("assignment fits on one line"), 2)
+
+    def test_assignment_wraps_allow_braces_inside_string_literals(self):
+        output = self.run_perl(
+            "src/sample.c",
+            '    pattern =\n'
+            '        "{value}";\n',
+        )
+        self.assertIn("sample.c:1:assignment fits on one line", output)
+
+    def test_only_assignment_lines_ending_with_bare_equals_are_checked(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "    value = function(\n"
+            "        arg);\n"
+            "    value = first +\n"
+            "        second;\n"
+            "    if (value ==\n"
+            "        other) {}\n"
+            "    value +=\n"
+            "        amount;\n"
+            "    value *=\n"
+            "        factor;\n"
+            "    value <=\n"
+            "        maximum;\n"
+            "    value = function(arg);\n",
+        )
+        self.assertNotIn("assignment fits on one line", output)
+
+    def test_assignment_wraps_ignore_comments_directives_and_braces(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "    // fake =\n"
+            "        call();\n"
+            "    /* example =\n"
+            "        value; */\n"
+            "    value =\n"
+            "        /* explanation */ call();\n"
+            "    struct Item item =\n"
+            "        { 1, 2 };\n"
+            "#define COMPLEX_ASSIGNMENT() do { \\\n"
+            "    value = \\\n"
+            "        calculate(); \\\n"
+            "} while (0)\n"
+            "    value =\n"
+            "#if defined(FEATURE)\n"
+            "        foo;\n"
+            "#else\n"
+            "        bar;\n"
+            "#endif\n",
+        )
+        self.assertNotIn("assignment fits on one line", output)
+
+    def test_assignment_wrap_check_accepts_literal_and_cache_changes(self):
+        path = "src/sample.c"
+        wrapped = '    char *message =\n        "hello";\n'
+        self.assertIn(
+            "sample.c:1:assignment fits on one line",
+            self.run_perl(path, wrapped, file_list=True),
+        )
+        self.assertIn(
+            "sample.c:1:assignment fits on one line",
+            self.run_perl(path, wrapped, file_list=True),
+        )
+        self.assertNotIn(
+            "assignment fits on one line",
+            self.run_perl(path, '    char *message = "hello";\n'),
+        )
+
+    def test_assignment_wrap_obeys_cecup_column_limit_and_ryu_exclusion(self):
+        prefix = "    int32 variable ="
+        rhs = "x" * (90 - len(prefix) - len(" ;"))
+        wrapped = prefix + "\n        " + rhs + ";\n"
+        regular = self.run_perl("src/sample.c", wrapped)
+        cecup = self.run_perl("cecup/src/sample.c", wrapped)
+        ryu = self.run_perl("cbase/ryu/sample.c", wrapped)
+        self.assertNotIn("assignment fits on one line", regular)
+        self.assertIn("assignment fits on one line", cecup)
+        self.assertNotIn("assignment fits on one line", ryu)
+
     def test_ryu_missing_final_newline(self):
         output = self.run_perl("cbase/ryu/sample.c", "int x;")
         self.assertIn("missing final newline", output)

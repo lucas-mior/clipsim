@@ -720,6 +720,128 @@ sub report_unnecessary_call_wraps {
     return;
 }
 
+# A short assignment broken immediately after '=' may match a related,
+# longer assignment. Inspect complete assignments (including unwrapped ones)
+# and report short wraps only if every assignment in the consecutive,
+# same-indentation block fits on one line. Blank lines separate blocks.
+sub check_unnecessary_assignment_wraps {
+    my ($path, $source, $code, $column_limit) = @_;
+    my @lines = split /\n/, $source;
+    my @code_lines = split /\n/, $code;
+    my @assignments;
+    my $continuation = 0;
+
+    for (my $i = 0; $i < @lines;) {
+        my $line = $lines[$i];
+        my $masked = $code_lines[$i];
+        my $directive = $continuation || $masked =~ /^[ \t]*#/;
+        my $indent;
+        my $left;
+        my $wrapped;
+        my $flat;
+        my $end;
+        my $complete = 0;
+
+        $continuation = $directive && $line =~ /\\[ \t]*\r?\z/;
+        if ($directive
+            || $masked !~ /^([ \t]*)(\S.*?)(?<![=<>!+*\/\%&|^-])=(?!=)/) {
+            $i += 1;
+            next;
+        }
+        $indent = length($1);
+        $left = $2;
+        # Only a standalone assignment can participate in this grouping.
+        # Ignore assignments embedded in conditions or other statements.
+        if ($left =~ /[;{}]/
+            || $left =~ /\A(?:if|for|while|switch|return|case|else)\b/) {
+            $i += 1;
+            next;
+        }
+        $wrapped = $line =~ /(?<![=<>!+*\/\%&|^-])=[ \t]*\r?\z/
+                   && $masked =~ /(?<![=<>!+*\/\%&|^-])=[ \t]*\r?\z/;
+        $flat = $line;
+        $flat =~ s/[ \t\r]+\z//;
+        $end = $i;
+
+        while ($end < @lines) {
+            my $part_code = $code_lines[$end];
+
+            if ($part_code =~ /;[ \t]*\r?\z/
+                && $part_code !~ /;.*;/) {
+                $complete = 1;
+                last;
+            }
+            $end += 1;
+            last if $end >= @lines;
+            my $part = $lines[$end];
+            $part_code = $code_lines[$end];
+
+            # A joined assignment must be a single complete statement.
+            last if $part !~ /\S/ || $part =~ /\\[ \t]*\r?\z/
+                    || $part_code =~ /^[ \t]*#/ || $part_code =~ /[{}]/;
+            my $trimmed = $part;
+            $trimmed =~ s/^[ \t]+//;
+            $trimmed =~ s/[ \t\r]+\z//;
+            $flat .= ' ' . $trimmed;
+            last if $part_code =~ /;.*\S/ && $part_code !~ /;[ \t]*\r?\z/;
+        }
+
+        if (!$complete) {
+            $i += 1;
+            next;
+        }
+        my $original = join("\n", @lines[$i .. $end]);
+        my $statement_code = join("\n", @code_lines[$i .. $end]);
+        my $fits = length($flat) <= $column_limit
+                   && $original !~ /\\\r?\n|\n[ \t]*#/
+                   && $statement_code !~ /[{}]/
+                   && !range_has_comment($original, 0, length($original))
+                   && !has_split_newline_literals($original);
+        push @assignments, {
+            start_line => $i + 1,
+            end_line => $end + 1,
+            indent => $indent,
+            fits => $fits,
+            wrapped => $wrapped,
+        };
+        $i = $end + 1;
+    }
+
+    for (my $start = 0; $start < @assignments;) {
+        my $end = $start + 1;
+        my $all_fit = $assignments[$start]{fits};
+
+        while ($end < @assignments
+               && $assignments[$end]{indent} == $assignments[$start]{indent}) {
+            my $previous = $assignments[$end - 1]{end_line};
+            my $next = $assignments[$end]{start_line};
+            my $adjacent = 1;
+
+            # Permit comment-only lines between assignments, but never
+            # bridge a blank line or an intervening non-assignment statement.
+            for (my $line = $previous; $line < $next - 1; $line += 1) {
+                if ($lines[$line] !~ /\S/ || $code_lines[$line] =~ /\S/) {
+                    $adjacent = 0;
+                    last;
+                }
+            }
+            last unless $adjacent;
+            $all_fit &&= $assignments[$end]{fits};
+            $end += 1;
+        }
+
+        if ($all_fit) {
+            for (my $idx = $start; $idx < $end; $idx += 1) {
+                next unless $assignments[$idx]{wrapped};
+                report_issue("$path:$assignments[$idx]{start_line}:"
+                             . "assignment fits on one line "
+                             . "but is split after =\n");
+            }
+        }
+        $start = $end;
+    }
+}
+
 # Adjacent lower- and upper-bound checks on the same variable should use
 # the inclusive ASSERT_BETWEEN form. Parse calls instead of matching whole
 # argument lists with a regular expression, so nested size expressions work.
@@ -1221,6 +1343,10 @@ for my $path (@paths) {
             }
         }
     }
+
+    check_unnecessary_assignment_wraps($path, $source, $code,
+                                       $column_limit)
+        unless $is_ryu || $path =~ /\.meta\.h\z/;
 
     report_unnecessary_call_wraps($path, $source, $code, $column_limit);
 
