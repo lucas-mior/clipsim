@@ -115,10 +115,6 @@ sub check_ryu_source_style {
         if ($line =~ /[ \t\r]+\z/) {
             report_issue("$path:$line_number:trailing whitespace\n");
         }
-        if ($line =~ /^\s*#\s*ifn?def\b/) {
-            report_issue("$path:$line_number:use #if defined or "
-                         . "#if !defined\n");
-        }
         if ($line =~ /^\s*#\s*endif\b[^\n]*\/\//) {
             report_issue("$path:$line_number:use a block comment "
                          . "after #endif\n");
@@ -126,6 +122,21 @@ sub check_ryu_source_style {
     }
     if (length($source) && substr($source, -1) ne "\n") {
         report_issue("$path:$line_number:missing final newline\n");
+    }
+}
+
+# Comments and strings are masked before checking, so only actual
+# preprocessor directives are reported. Apply this to all source files.
+sub check_preprocessor_conditionals {
+    my ($path, $code) = @_;
+    my $line_number = 0;
+
+    for my $line (split /\n/, $code) {
+        $line_number += 1;
+        if ($line =~ /^[ \t]*#[ \t]*(?:ifdef|ifndef)\b/) {
+            report_issue("$path:$line_number:use #if defined or "
+                         . "#if !defined\n");
+        }
     }
 }
 
@@ -841,6 +852,7 @@ for my $path (@paths) {
     my $code = code_mask($source);
     my $is_ryu = $absolute_path =~ m{(?:\A|/)cbase/ryu/[^/]+\.[ch]\z};
 
+    check_preprocessor_conditionals($path, $code);
     check_consecutive_bounds_assertions($path, $source, $code)
         unless $is_ryu;
     check_deep_artificial_blocks($path, $source, $code)

@@ -114,6 +114,77 @@ class ForbiddenPatternsTests(unittest.TestCase):
         ):
             self.assertIn(rule, output)
 
+    def test_ifdef_ifndef_are_rejected_in_project_sources(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "#ifdef FEATURE\n"
+            "#  ifndef OTHER_FEATURE\n"
+            "#    ifdef NESTED_FEATURE\n"
+            "#    endif\n"
+            "#  endif\n"
+            "#endif\n",
+        )
+        self.assertEqual(output.count("use #if defined or #if !defined"), 3)
+        for line in (1, 2, 3):
+            self.assertIn(f"sample.c:{line}:use #if defined", output)
+
+    def test_ifdef_ifndef_are_rejected_in_headers_and_file_lists(self):
+        output = self.run_perl(
+            "src/sample.h",
+            "# ifdef FIRST\n"
+            "# endif\n"
+            "#\tifndef SECOND\n"
+            "# endif\n",
+            file_list=True,
+        )
+        self.assertEqual(output.count("use #if defined or #if !defined"), 2)
+        self.assertIn("sample.h:1:use #if defined", output)
+        self.assertIn("sample.h:3:use #if defined", output)
+
+    def test_preprocessor_conditional_valid_forms_are_ignored(self):
+        output = self.run_perl(
+            "src/sample.h",
+            "#if defined(FEATURE)\n"
+            "#elif defined(SECOND_FEATURE)\n"
+            "#endif\n"
+            "#if !defined(THIRD_FEATURE)\n"
+            "#endif\n"
+            "#if FLAG_VALUE\n"
+            "#endif\n"
+            "#define text_ifdef #ifdef\n",
+        )
+        self.assertNotIn("use #if defined or #if !defined", output)
+
+    def test_preprocessor_conditional_comments_strings_are_ignored(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "// #ifdef COMMENT\n"
+            "/* #ifndef OTHER_COMMENT */\n"
+            'char *text = "#ifdef STRING";\n'
+            "/*\n"
+            "#ifdef MULTILINE_COMMENT\n"
+            "*/\n"
+            "# /* ignored comment */ ifdef REAL_DIRECTIVE\n",
+        )
+        self.assertEqual(output.count("use #if defined or #if !defined"), 1)
+        self.assertIn("sample.c:7:use #if defined", output)
+
+    def test_preprocessor_conditionals_ryu_not_reported_twice(self):
+        output = self.run_perl(
+            "cbase/ryu/sample.h",
+            "#ifndef GUARD\n"
+            "#define GUARD\n"
+            "#endif\n",
+        )
+        self.assertEqual(output.count("use #if defined or #if !defined"), 1)
+
+    def test_preprocessor_conditional_cache_invalidates_changes(self):
+        path = "src/sample.c"
+        self.assertEqual(self.run_perl(path, "#if defined(FOO)\n"), "")
+        output = self.run_perl(path, "#ifdef FOO\n")
+        self.assertIn("sample.c:1:use #if defined", output)
+        self.assertEqual(self.run_perl(path, "#if defined(FOO)\n"), "")
+
     def test_ryu_missing_final_newline(self):
         output = self.run_perl("cbase/ryu/sample.c", "int x;")
         self.assertIn("missing final newline", output)
