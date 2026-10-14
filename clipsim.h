@@ -39,10 +39,10 @@ do {                                                                           \
     int32 debug_len = SNPRINTF(debug_buffer, __VA_ARGS__);                     \
     if (debug_len > 0) {                                                       \
         int32 debug_limit = 0;                                                 \
-        if (debug_len < (int32)sizeof(debug_buffer)) {                         \
+        if (debug_len < (int32)SIZEOF(debug_buffer)) {                         \
             debug_limit = debug_len;                                           \
         } else {                                                               \
-            debug_limit = (int32)sizeof(debug_buffer) - 1;                     \
+            debug_limit = (int32)SIZEOF(debug_buffer) - 1;                     \
         }                                                                      \
         for (int32 _i = 0; _i < debug_limit; _i += 1) {                        \
             if (debug_buffer[_i] == '\n') {                                    \

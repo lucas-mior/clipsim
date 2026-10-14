@@ -181,7 +181,7 @@ history_save(void) {
     }
 
     for (int32 i = 0; i < history_length; i += 1) {
-        int64 tag_size = sizeof(*(&IMAGE_TAG));
+        int64 tag_size = SIZEOF(*(&IMAGE_TAG));
         Entry *e = &clipsim_entries[i];
 
         if (is_image[i]) {
@@ -250,10 +250,10 @@ history_save(void) {
     }
 
     if (nfds > 0) {
-        UtilCopyFilesAsync *copy_files = malloc2(sizeof(*copy_files));
+        UtilCopyFilesAsync *copy_files = malloc2(SIZEOF(*copy_files));
 
-        memcpy64(copy_files->pipes, pipes, sizeof(pipes));
-        memcpy64(copy_files->dests, dests, sizeof(dests));
+        memcpy64(copy_files->pipes, pipes, SIZEOF(pipes));
+        memcpy64(copy_files->dests, dests, SIZEOF(dests));
         copy_files->nfds = nfds;
 
         util_copy_file_async_parsed(copy_files);
@@ -752,8 +752,8 @@ history_remove(int32 id) {
                   (history_length - 1 - id)*SIZEOF(*is_image));
     }
 
-    memset64(&clipsim_entries[history_length - 1], 0, sizeof(*clipsim_entries));
-    memset64(&is_image[history_length - 1], 0, sizeof(*is_image));
+    memset64(&clipsim_entries[history_length - 1], 0, SIZEOF(*clipsim_entries));
+    memset64(&is_image[history_length - 1], 0, SIZEOF(*is_image));
     history_length -= 1;
 
     return;
@@ -887,7 +887,7 @@ main(void) {
         ASSERT(history_save());
 
         history_length = 0;
-        memset64(length_counts, 0, sizeof(length_counts));
+        memset64(length_counts, 0, SIZEOF(length_counts));
 
         history_read();
         ASSERT_EQ(history_length, 1);

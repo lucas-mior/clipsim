@@ -138,7 +138,7 @@ int32
 ipc_lock_exclusive_nonblock(int32 fd) {
     struct flock fd_lock;
 
-    memset64(&fd_lock, 0, sizeof(fd_lock));
+    memset64(&fd_lock, 0, SIZEOF(fd_lock));
     fd_lock.l_type = F_WRLCK;
     fd_lock.l_whence = SEEK_SET;
 
@@ -209,13 +209,13 @@ ipc_set_socket_timeout(int32 fd, char *name) {
     timeout.tv_usec = 0;
 
     if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO,
-                   &timeout, sizeof(timeout)) < 0) {
+                   &timeout, SIZEOF(timeout)) < 0) {
         error("Error setting receive timeout on %s: %s.\n",
               name, strerror(errno));
         return false;
     }
     if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
-                   &timeout, sizeof(timeout)) < 0) {
+                   &timeout, SIZEOF(timeout)) < 0) {
         error("Error setting send timeout on %s: %s.\n", name, strerror(errno));
         return false;
     }
@@ -312,7 +312,7 @@ ipc_daemon_dprintf(int32 fd, char *name, char *format, ...) {
     va_list args;
 
     va_start(args, format);
-    n = vsnprintf(buffer, sizeof(buffer), format, args);
+    n = vsnprintf(buffer, SIZEOF(buffer), format, args);
     va_end(args);
 
     if ((n < 0) || (n >= (int32)SIZEOF(buffer))) {
@@ -340,8 +340,8 @@ ipc_daemon_listen(void *unused) {
             error("ipc_daemon_listen loop...\n");
         }
 
-        memset64(&client_addr, 0, sizeof(client_addr));
-        size = sizeof(client_addr);
+        memset64(&client_addr, 0, SIZEOF(client_addr));
+        size = SIZEOF(client_addr);
         client_fd = accept(ipc_socket.fd, (struct sockaddr *)&client_addr,
                            &size);
         if (client_fd < 0) {
@@ -355,7 +355,7 @@ ipc_daemon_listen(void *unused) {
 
         ipc_set_close_on_exec(client_fd, ipc_socket.name);
         ipc_set_socket_timeout(client_fd, ipc_socket.name);
-        if (!ipc_read_all(client_fd, &request, sizeof(request),
+        if (!ipc_read_all(client_fd, &request, SIZEOF(request),
                           ipc_socket.name)) {
             XCLOSE(&client_fd, ipc_socket.name);
             continue;
@@ -405,7 +405,7 @@ ipc_client_speak(int32 command, int32 id) {
 
     request.command = command;
     request.id = id;
-    if (!ipc_write_all(fd, &request, sizeof(request), ipc_socket.name)) {
+    if (!ipc_write_all(fd, &request, SIZEOF(request), ipc_socket.name)) {
         XCLOSE(&fd, ipc_socket.name);
         fatal(EXIT_FAILURE);
     }
@@ -437,7 +437,7 @@ void
 ipc_daemon_history_save(int32 fd) {
     DEBUG_PRINT("%d", fd)
     char saved;
-    int64 saved_size = sizeof(*(&saved));
+    int64 saved_size = SIZEOF(*(&saved));
 
     error("Trying to save history...\n");
     saved = (char)history_save();
@@ -454,7 +454,7 @@ ipc_client_check_save(int32 *fd) {
 
     error("Trying to save history...\n");
 
-    if (ipc_read_all(*fd, &saved, sizeof(*(&saved)), ipc_socket.name)) {
+    if (ipc_read_all(*fd, &saved, SIZEOF(*(&saved)), ipc_socket.name)) {
         if (saved) {
             error("History saved to disk.\n");
         } else {
@@ -503,7 +503,7 @@ void
 ipc_daemon_pipe_id(int32 fd, int32 id) {
     DEBUG_PRINT("%d, %d", fd, id)
     Entry *e;
-    int64 tag_size = sizeof(*(&IMAGE_TAG));
+    int64 tag_size = SIZEOF(*(&IMAGE_TAG));
 
     if (history_length <= -1) {
         error("Clipboard history empty. Start copying text.\n");
@@ -546,7 +546,7 @@ ipc_client_print_entries(int32 *fd) {
     static char buffer[BUFSIZ];
     int64 r;
 
-    r = read64(*fd, buffer, sizeof(buffer));
+    r = read64(*fd, buffer, SIZEOF(buffer));
     if (r <= 0) {
         error("Error reading data from %s", ipc_socket.name);
         if (r < 0) {
@@ -561,7 +561,7 @@ ipc_client_print_entries(int32 *fd) {
     if (buffer[0] != IMAGE_TAG) {
         do {
             fwrite64(buffer, 1, r, stdout);
-        } while ((r = read64(*fd, buffer, sizeof(buffer))) > 0);
+        } while ((r = read64(*fd, buffer, SIZEOF(buffer))) > 0);
         if (r < 0) {
             error("Error reading data from %s: %s.\n",
                   ipc_socket.name, strerror(errno));
@@ -575,14 +575,14 @@ ipc_client_print_entries(int32 *fd) {
         int32 image_preview_len;
 
         if (r == 1) {
-            r = read64(*fd, buffer + 1, sizeof(buffer) - 1);
+            r = read64(*fd, buffer + 1, SIZEOF(buffer) - 1);
             if (r <= 0) {
                 error("Error reading image name from %s.\n", ipc_socket.name);
                 goto close;
             }
             image_path_length = r;
         }
-        if (image_path_length >= ((int64)sizeof(buffer) - 1)) {
+        if (image_path_length >= (SIZEOF(buffer) - 1)) {
             error("Image path from %s is too long.\n", ipc_socket.name);
             goto close;
         }
@@ -621,7 +621,7 @@ ipc_connect_socket(bool quiet) {
     int32 fd;
 
     ipc_resolve_socket_name();
-    memset64(&addr, 0, sizeof(addr));
+    memset64(&addr, 0, SIZEOF(addr));
     addr.sun_family = AF_UNIX;
     memcpy64(addr.sun_path, ipc_socket.name, ipc_socket_name_len + 1);
 
@@ -639,7 +639,7 @@ ipc_connect_socket(bool quiet) {
         return -1;
     }
 
-    if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    if (connect(fd, (struct sockaddr *)&addr, SIZEOF(addr)) < 0) {
         if (!quiet) {
             error("Could not connect to clipsim daemon at %s. "
                   "Is `clipsim --daemon` running?\n", ipc_socket.name);
@@ -676,11 +676,11 @@ ipc_make_socket(void) {
     }
     ipc_set_close_on_exec(ipc_socket.fd, ipc_socket.name);
 
-    memset64(&addr, 0, sizeof(addr));
+    memset64(&addr, 0, SIZEOF(addr));
     addr.sun_family = AF_UNIX;
     memcpy64(addr.sun_path, ipc_socket.name, ipc_socket_name_len + 1);
 
-    if (bind(ipc_socket.fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    if (bind(ipc_socket.fd, (struct sockaddr *)&addr, SIZEOF(addr)) < 0) {
         error("Error binding ipc socket %s: %s\n",
               ipc_socket.name, strerror(errno));
         fatal(EXIT_FAILURE);
