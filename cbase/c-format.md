@@ -136,6 +136,23 @@ Important: only try 2 if 1 does not work, only try 3 if 2 and 1 do not work,
 only try 4 if 1, 2, and 3 do not work, and so on. Remember to do a final pass,
 do the alignment, as explained in 2.
 
+## Rules for reducing long lines.
+When it happens that a line of code has more than 80 chars, the rules are:
+For function calls, check the rules above.
+
+For other types of lines, like
+assignments, macro definitions, array declarations, string literals, etc:
+
+1. Simple assignments: Break after the `=` sign
+2. Macro definitions: use backslash, reduce the macro name, or use helper macros
+3. For code that is too deeply nested: use early returns and continues when
+   possible, instead of nesting multiple ifs.
+4. Declarations: use line breaks for each struct/array member if necessary.
+5. String literals: avoid breaking them: try everything we mentioned above, even
+   reducing the name of local variables and local static functions, but if
+   unavoidable, prefer to break them at punctuation or right before prepositions
+   and conjuctions (of, in, to, with, on, and, but, or, because, if, etc).
+
 ## Identation
 When breaking long lines that are long expressions, try to make them readable
 and aligned, see below for good examples:
