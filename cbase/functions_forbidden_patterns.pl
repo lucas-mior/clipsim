@@ -995,6 +995,8 @@ sub check_deep_artificial_blocks {
 }
 
 for my $path (@paths) {
+    next if $path =~ /\.meta\.h\z/;
+
     my $absolute_path = abs_path($path) // $path;
 
     next if $path =~ m{(?:\A|/)tests/fixtures/}

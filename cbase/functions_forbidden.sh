@@ -113,6 +113,11 @@ if [ -n "$common_libc_never" ] \
         if echo "$common_source" | grep -Eq '(^|/)stc/'; then
             continue
         fi
+        case "$common_source" in
+        *.meta.h)
+            continue
+            ;;
+        esac
         if [ -n "${TEST_EXCLUDE_PATTERN:-}" ] \
                 && echo "$common_source" \
                     | grep -Eq "$TEST_EXCLUDE_PATTERN"; then
