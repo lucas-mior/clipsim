@@ -130,6 +130,15 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertEqual(output.count("line exceeds 80 columns"), 1)
         self.assertIn("sample.c:3:line exceeds 80 columns", output)
 
+    def test_project_source_unicode_column_limit(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "я" * 80 + "\n" +
+            "я" * 81 + "\n",
+        )
+        self.assertEqual(output.count("line exceeds 80 columns"), 1)
+        self.assertIn("sample.c:2:line exceeds 80 columns", output)
+
     def test_generated_meta_headers_are_ignored(self):
         contents = "#ifdef FEATURE\n\tint value = sizeof(int);  \n#endif\n"
         self.assertEqual(
