@@ -26,8 +26,8 @@
 
 int
 main(void) {
-	ASSERT(true);
-	exit(EXIT_SUCCESS);
+    ASSERT(true);
+    exit(EXIT_SUCCESS);
 }
 
 #endif /* TESTING_cbase */

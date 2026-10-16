@@ -97,8 +97,8 @@ sub report_issue {
 
 # These are purely textual formatting rules. Keep numerical and compiler-
 # specific implementation idioms in Ryu untouched.
-sub check_ryu_source_style {
-    my ($path, $source) = @_;
+sub check_source_style {
+    my ($path, $source, $column_limit, $is_ryu) = @_;
     my $line_number = 0;
 
     my @lines = split /\n/, $source, -1;
@@ -106,8 +106,9 @@ sub check_ryu_source_style {
     for my $line (@lines) {
         $line_number += 1;
 
-        if (length($line) > 80) {
-            report_issue("$path:$line_number:line exceeds 80 columns\n");
+        if (length($line) > $column_limit) {
+            report_issue("$path:$line_number:line exceeds "
+                         . "$column_limit columns\n");
         }
         if ($line =~ /\t/) {
             report_issue("$path:$line_number:tab character is forbidden\n");
@@ -115,12 +116,12 @@ sub check_ryu_source_style {
         if ($line =~ /[ \t\r]+\z/) {
             report_issue("$path:$line_number:trailing whitespace\n");
         }
-        if ($line =~ /^\s*#\s*endif\b[^\n]*\/\//) {
+        if ($is_ryu && $line =~ /^\s*#\s*endif\b[^\n]*\/\//) {
             report_issue("$path:$line_number:use a block comment "
                          . "after #endif\n");
         }
     }
-    if (length($source) && substr($source, -1) ne "\n") {
+    if ($is_ryu && length($source) && substr($source, -1) ne "\n") {
         report_issue("$path:$line_number:missing final newline\n");
     }
 }
@@ -1037,9 +1038,9 @@ for my $path (@paths) {
     check_deep_artificial_blocks($path, $source, $code)
         unless $is_ryu || $path =~ /\.meta\.h\z/;
 
-    if ($is_ryu) {
-        check_ryu_source_style($path, $source);
-    } else {
+    check_source_style($path, $source, $column_limit, $is_ryu);
+
+    if (!$is_ryu) {
         # check_ternary_operators($path, $code);
     }
 

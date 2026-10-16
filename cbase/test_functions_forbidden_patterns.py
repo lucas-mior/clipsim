@@ -114,6 +114,31 @@ class ForbiddenPatternsTests(unittest.TestCase):
         ):
             self.assertIn(rule, output)
 
+    def test_project_source_whitespace_violations(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "\tint32 value;  \n" +
+            "x" * 80 + "\n" +
+            "x" * 81 + "\n",
+        )
+        for rule in (
+            "tab character is forbidden",
+            "trailing whitespace",
+            "line exceeds 80 columns",
+        ):
+            self.assertIn(rule, output)
+        self.assertEqual(output.count("line exceeds 80 columns"), 1)
+        self.assertIn("sample.c:3:line exceeds 80 columns", output)
+
+    def test_cecup_source_accepts_up_to_100_columns(self):
+        output = self.run_perl(
+            "cecup/src/sample.c",
+            "x" * 100 + "\n" +
+            "x" * 101 + "\n",
+        )
+        self.assertEqual(output.count("line exceeds 100 columns"), 1)
+        self.assertIn("sample.c:2:line exceeds 100 columns", output)
+
     def test_ifdef_ifndef_are_rejected_in_project_sources(self):
         output = self.run_perl(
             "src/sample.c",

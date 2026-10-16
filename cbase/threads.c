@@ -69,7 +69,8 @@ void
 xpthread_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *attr) {
     int err;
     if ((err = pthread_mutex_init(mutex, attr))) {
-        error("Error initializing mutex %p: %s.\n", (void *)mutex, strerror(err));
+        error("Error initializing mutex %p: %s.\n",
+              (void *)mutex, strerror(err));
         fatal(EXIT_FAILURE);
     }
     return;

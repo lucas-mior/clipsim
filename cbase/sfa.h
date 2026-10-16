@@ -45,7 +45,8 @@ CAT(string_from_, SFA_NAME)(char *buffer, int32 size,
     }
     for (int32 i = 0; i < (array_length - 1); i += 1) {
         int32 space = size - n;
-        int32 m = fmt_sprintf(buffer + n, space, SFA_FORMAT "%s", array[i], sep);
+        int32 m = fmt_sprintf(buffer + n, space, SFA_FORMAT "%s",
+                                                 array[i], sep);
         n += m;
     }
     {

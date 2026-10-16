@@ -297,11 +297,11 @@ write_all(int fd, char *buffer, int64 left) {
     return;
 }
 
-#define RW_FUNCTION_LINKAGE 
+#define RW_FUNCTION_LINKAGE
 #define RW_FUNCTION write
 #include "rw_function.h"
 
-#define RW_FUNCTION_LINKAGE 
+#define RW_FUNCTION_LINKAGE
 #define RW_FUNCTION read
 #include "rw_function.h"
 

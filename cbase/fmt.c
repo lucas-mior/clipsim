@@ -4320,7 +4320,8 @@ fmt_vsprintf(char *buffer, int64 capacity, char *format, va_list args) {
 }
 
 int32
-fmt_vsnprintf_planned(FmtPlan *plan, char *buffer, int64 capacity, va_list args) {
+fmt_vsnprintf_planned(FmtPlan *plan,
+                      char *buffer, int64 capacity, va_list args) {
     FormatSink sink;
     int32 status;
 
@@ -5255,7 +5256,8 @@ test_fmt_char_string_outputs(void) {
     test_fmt_bytes_cap("", 0, "%.*s", 0, (char *)NULL);
     test_fmt_bytes_cap(spaces, 3, "%3.*s", 0, (char *)NULL);
 
-    test_fmt_bytes_cap(STRLIT("x=abc n=7 c=Z"), "x=%s n=%d c=%c", "abc", 7, 'Z');
+    test_fmt_bytes_cap(STRLIT("x=abc n=7 c=Z"),
+                       "x=%s n=%d c=%c", "abc", 7, 'Z');
 
     memset64(buffer, 0x7f, SIZEOF(buffer));
     ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*s", -1, "abc"),
@@ -5523,7 +5525,8 @@ test_fmt_printf_hex_float_outputs(void) {
     test_fmt_bytes_cap(STRLIT("0x1.0000000000001p+0"), "%a", lsb_after_one);
     test_fmt_bytes_cap(STRLIT("0x0.0000000000001p-1022"), "%a", true_min);
     test_fmt_bytes_cap(STRLIT("0x1p-1022"), "%a", normal_min);
-    test_fmt_bytes_cap(STRLIT("0x0.fffffffffffffp-1022"), "%a", largest_subnormal);
+    test_fmt_bytes_cap(STRLIT("0x0.fffffffffffffp-1022"),
+                       "%a", largest_subnormal);
     test_fmt_bytes_cap(STRLIT("0x1p-1022"), "%.0a", largest_subnormal);
     test_fmt_bytes_cap(STRLIT("0x1.0p-1022"), "%.1a", largest_subnormal);
 

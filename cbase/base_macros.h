@@ -55,7 +55,7 @@
 
 #define CAT(...) CAT_SELECT_ON_NUM_ARGS(CAT, __VA_ARGS__)
 
-#define RED0 "\x1b[0;31m" 
+#define RED0 "\x1b[0;31m"
 
 #define RESET      "\x1b[0m"
 
