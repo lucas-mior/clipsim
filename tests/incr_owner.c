@@ -16,7 +16,7 @@ main(int argc, char **argv) {
     Atom clip;
     Atom targets;
     Atom utf8;
-    Atom incr;   
+    Atom incr;
 
     if (argc < 2) {
         return 1;

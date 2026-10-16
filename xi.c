@@ -139,7 +139,8 @@ main(void) {
         pthread_t thread_identifier;
         int32 create_result;
 
-        create_result = pthread_create(&thread_identifier, NULL, xi_daemon_loop, NULL);
+        create_result =
+            pthread_create(&thread_identifier, NULL, xi_daemon_loop, NULL);
         ASSERT_EQ(create_result, 0);
 
         sleep_ms(100);

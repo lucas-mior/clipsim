@@ -393,7 +393,8 @@ history_read(void) {
             goto next_entry;
         }
         if (history_length >= HISTORY_BUFFER_SIZE) {
-            error("History buffer is full; skipping remaining clipsim_entries.\n");
+            error("History buffer is full; skipping remaining "
+                  "clipsim_entries.\n");
             break;
         }
 
@@ -606,7 +607,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
             e->content = malloc2(length + 1);
             memcpy64(e->content, content, length + 1);
         }
-        
+
         is_image[history_length] = true;
         break;
     default:
@@ -766,11 +767,15 @@ history_reorder(int32 oldindex) {
     int32 n = history_length - 1 - oldindex;
 
     if (n > 0) {
-        memmove64(&clipsim_entries[oldindex], &clipsim_entries[oldindex + 1], n*SIZEOF(*clipsim_entries));
-        memmove64(&is_image[oldindex], &is_image[oldindex + 1], n*SIZEOF(*is_image));
+        memmove64(&clipsim_entries[oldindex],
+                  &clipsim_entries[oldindex + 1],
+                  n*SIZEOF(*clipsim_entries));
+        memmove64(&is_image[oldindex], &is_image[oldindex + 1],
+                  n*SIZEOF(*is_image));
     }
-    
-    memmove64(&clipsim_entries[history_length - 1], &aux, SIZEOF(*clipsim_entries));
+
+    memmove64(&clipsim_entries[history_length - 1], &aux,
+              SIZEOF(*clipsim_entries));
     memmove64(&is_image[history_length - 1], &aux2, SIZEOF(*is_image));
     return;
 }

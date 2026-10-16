@@ -17,12 +17,14 @@ void
 util_close(File *file) {
     if (file->fd >= 0) {
         if (close(file->fd) < 0)
-            fprintf(stderr, "Error closing %s: %s\n", file->name, strerror(errno));
+            fprintf(stderr, "Error closing %s: %s\n",
+                            file->name, strerror(errno));
         file->fd = -1;
     }
     if (file->file != NULL) {
         if (fclose(file->file) != 0)
-            fprintf(stderr, "Error closing %s: %s\n", file->name, strerror(errno));
+            fprintf(stderr, "Error closing %s: %s\n",
+                            file->name, strerror(errno));
         file->file = NULL;
     }
     return;
@@ -51,8 +53,8 @@ reopen_magic(void) {
 
 int
 main(void) {
-	ASSERT(true);
-	exit(EXIT_SUCCESS);
+    ASSERT(true);
+    exit(EXIT_SUCCESS);
 }
 
 #endif /* TESTING_clipsim */

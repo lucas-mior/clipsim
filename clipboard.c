@@ -60,7 +60,8 @@ clipboard_daemon_watch(void) {
         exit(EXIT_FAILURE);
     }
 
-    if (!XFixesQueryExtension(display, &xfixes_event_base, &xfixes_error_base)) {
+    if (!XFixesQueryExtension(display,
+                              &xfixes_event_base, &xfixes_error_base)) {
         error("XFixes extension not available.\n");
         exit(EXIT_FAILURE);
     }
@@ -259,7 +260,8 @@ clipboard_check_target(Atom target) {
 
     XEvent xevent;
 
-    XConvertSelection(display, CLIPBOARD, target, XSEL_DATA, window, CurrentTime);
+    XConvertSelection(display, CLIPBOARD, target, XSEL_DATA, window,
+                      CurrentTime);
 
     while (true) {
         if (XCheckTypedWindowEvent(display, window, SelectionNotify, &xevent)) {
@@ -299,8 +301,10 @@ clipboard_incremental_case(char **save, ulong *length) {
         int32 retries = 100;
 
         while (true) {
-            if (XCheckTypedWindowEvent(display, window, PropertyNotify, &event)) {
-                if ((event.xproperty.state == PropertyNewValue) && (event.xproperty.atom == XSEL_DATA)) {
+            if (XCheckTypedWindowEvent(display, window, PropertyNotify,
+                                       &event)) {
+                if ((event.xproperty.state == PropertyNewValue)
+                    && (event.xproperty.atom == XSEL_DATA)) {
                     got_event = true;
                     break;
                 }
@@ -418,7 +422,8 @@ main(void) {
 
             root = DefaultRootWindow(display);
             color = BlackPixel(display, DefaultScreen(display));
-            window = XCreateSimpleWindow(display, root, 0, 0, 1, 1, 0, color, color);
+            window = XCreateSimpleWindow(display, root, 0, 0, 1, 1, 0,
+                                         color, color);
 
             XChangeProperty(display, window, XSEL_DATA, UTF8_STRING, 8,
                             PropModeReplace, (uchar *)STRLIT("test_clip"));
@@ -463,20 +468,26 @@ main(void) {
                 memset64(big_chunk, 'B', ENTRY_MAX_LENGTH + 10);
 
                 XSelectInput(d2, window, PropertyChangeMask);
-                XChangeProperty(d2, window, XSEL_DATA, INCR, 32, PropModeReplace, NULL, 0);
+                XChangeProperty(d2, window, XSEL_DATA, INCR, 32,
+                                PropModeReplace, NULL, 0);
                 XFlush(d2);
 
                 do {
                     XNextEvent(d2, &event);
-                } while (event.type != PropertyNotify || event.xproperty.state != PropertyDelete || event.xproperty.atom != XSEL_DATA);
+                } while ((event.type != PropertyNotify)
+                         || (event.xproperty.state != PropertyDelete)
+                         || (event.xproperty.atom != XSEL_DATA));
 
                 XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
-                                PropModeReplace, (uchar *)big_chunk, ENTRY_MAX_LENGTH + 10);
+                                PropModeReplace, (uchar *)big_chunk,
+                                ENTRY_MAX_LENGTH + 10);
                 XFlush(d2);
 
                 do {
                     XNextEvent(d2, &event);
-                } while (event.type != PropertyNotify || event.xproperty.state != PropertyDelete || event.xproperty.atom != XSEL_DATA);
+                } while ((event.type != PropertyNotify)
+                         || (event.xproperty.state != PropertyDelete)
+                         || (event.xproperty.atom != XSEL_DATA));
 
                 XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
                                 PropModeReplace, NULL, 0);
@@ -506,12 +517,15 @@ main(void) {
 
                 d2 = XOpenDisplay(NULL);
                 XSelectInput(d2, window, PropertyChangeMask);
-                XChangeProperty(d2, window, XSEL_DATA, INCR, 32, PropModeReplace, NULL, 0);
+                XChangeProperty(d2, window, XSEL_DATA, INCR, 32,
+                                PropModeReplace, NULL, 0);
                 XFlush(d2);
 
                 do {
                     XNextEvent(d2, &event);
-                } while (event.type != PropertyNotify || event.xproperty.state != PropertyDelete || event.xproperty.atom != XSEL_DATA);
+                } while ((event.type != PropertyNotify)
+                         || (event.xproperty.state != PropertyDelete)
+                         || (event.xproperty.atom != XSEL_DATA));
 
                 XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
                                 PropModeReplace, (uchar *)small_chunk,
@@ -520,7 +534,9 @@ main(void) {
 
                 do {
                     XNextEvent(d2, &event);
-                } while (event.type != PropertyNotify || event.xproperty.state != PropertyDelete || event.xproperty.atom != XSEL_DATA);
+                } while ((event.type != PropertyNotify)
+                         || (event.xproperty.state != PropertyDelete)
+                         || (event.xproperty.atom != XSEL_DATA));
 
                 XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
                                 PropModeReplace, NULL, 0);
