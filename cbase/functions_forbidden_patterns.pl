@@ -720,6 +720,30 @@ sub report_unnecessary_call_wraps {
     return;
 }
 
+# Put the assignment operator at the end of the preceding line rather
+# than at the start of a continuation line. Comparison operators such as ==
+# may begin a line; preprocessor continuations are outside this style rule.
+sub check_assignment_equals_at_line_start {
+    my ($path, $source, $code) = @_;
+    my @lines = split /\n/, $source;
+    my @code_lines = split /\n/, $code;
+    my $continuation = 0;
+
+    for (my $i = 0; $i < @lines; $i += 1) {
+        my $line = $lines[$i];
+        my $masked = $code_lines[$i];
+        my $directive = $continuation || $masked =~ /^[ \t]*#/;
+
+        $continuation = $directive && $line =~ /\\[ \t]*\r?\z/;
+        next if $directive;
+        if ($masked =~ /^[ \t]*=(?!=)/) {
+            report_issue("$path:" . ($i + 1)
+                         . ":assignment = must end the preceding line "
+                         . "instead of beginning a line\n");
+        }
+    }
+}
+
 # A short assignment broken immediately after '=' may match a related,
 # longer assignment. Inspect complete assignments (including unwrapped ones)
 # and report short wraps only if every assignment in the consecutive,
@@ -1343,6 +1367,9 @@ for my $path (@paths) {
             }
         }
     }
+
+    check_assignment_equals_at_line_start($path, $source, $code)
+        unless $is_ryu || $path =~ /\.meta\.h\z/;
 
     check_unnecessary_assignment_wraps($path, $source, $code,
                                        $column_limit)

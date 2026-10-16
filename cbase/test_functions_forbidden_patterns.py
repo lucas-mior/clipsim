@@ -256,6 +256,73 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertIn("sample.c:1:use SIZEOF", output)
         self.assertEqual(self.run_perl(path, "int64 n = SIZEOF(n);\n"), "")
 
+    def test_assignment_equals_cannot_begin_continuation_line(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "static void\n"
+            "work(void) {\n"
+            "    my_variable\n"
+            "        = this_function_is_long_and_had_to_break_the_line(\n"
+            "            100, 200, arg, other_arg);\n"
+            "    options->state\n"
+            "        = calculate(1);\n"
+            "    int32 value\n"
+            "= 42;\n"
+            "}\n",
+        )
+        self.assertEqual(output.count("assignment = must end"), 3)
+        for line in (4, 7, 9):
+            self.assertIn(
+                f"sample.c:{line}:assignment = must end", output,
+            )
+
+    def test_assignment_equals_may_end_line_even_when_expression_long(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "    my_variable =\n"
+            "        this_function_is_long_and_had_to_break_the_line(\n"
+            "            100, 200, arg, other_arg);\n",
+        )
+        self.assertNotIn("assignment = must end", output)
+
+    def test_comparison_equals_may_begin_line(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "    same = first\n"
+            "        == second;\n"
+            "    same = (first\n"
+            "            == second);\n"
+            "    equals = (first ==\n"
+            "              second);\n",
+        )
+        self.assertNotIn("assignment = must end", output)
+
+    def test_leading_equals_ignores_comments_literals_and_macros(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "    // = not an assignment\n"
+            "    /* comment\n"
+            "    = not an assignment\n"
+            "    */\n"
+            "    char *text = \"= still a literal\";\n"
+            "#define TEST(value) value \\\n"
+            "    = value\n"
+            "#define OTHER(value) \\\n"
+            "    = value\n",
+        )
+        self.assertNotIn("assignment = must end", output)
+
+    def test_leading_equals_still_checked_in_cecup_but_not_ryu_or_meta(self):
+        source = "    value\n        = compute();\n"
+        self.assertIn(
+            "sample.c:2:assignment = must end",
+            self.run_perl("cecup/src/sample.c", source),
+        )
+        for path in ("cbase/ryu/sample.c", "src/example.meta.h"):
+            self.assertNotIn(
+                "assignment = must end", self.run_perl(path, source),
+            )
+
     def test_short_assignments_split_after_equals_are_rejected(self):
         output = self.run_perl(
             "src/sample.c",

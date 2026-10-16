@@ -17,6 +17,18 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
 ## Operators
 - Space or newline (if at end of line) is mandatory after comma.
 - Space is mandatory around all assignment operators (`=`, `*=`, `+=`, etc).
+- Never begin a continuation line with an assignment `=`. If an assignment
+  needs to wrap, keep `=` at the end of the preceding line and break after it.
+  This restriction does not apply to the comparison operator `==`.
+  ```c
+  // bad
+  my_variable
+      = this_function_is_long_and_had_to_break_the_line(100, 200, arg, other_arg);
+
+  // good
+  my_variable =
+      this_function_is_long_and_had_to_break_the_line(100, 200, arg, other_arg);
+  ```
 - Space is forbidden around `*` used for multiplication.
 - Space is optional around `/` used for division (keep as is).
 - Space is mandatory around `+` and `-` used for binary operation.

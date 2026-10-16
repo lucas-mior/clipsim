@@ -6,9 +6,10 @@
 
 // libc.h is needed for limits.h and stdint.h
 #include "libc.h"
-#if !defined(SIZEOF)
-#define SIZEOF(...) (long long)(sizeof(__VA_ARGS__))
+#if defined(SIZEOF)
+#undef SIZEOF
 #endif
+#define SIZEOF(...) (long long)(sizeof(__VA_ARGS__))
 
 // Note: int64_t is defined as long on unix systems,
 // while int64_t is defined as long long on windows.
@@ -75,5 +76,8 @@ typedef max_align_t CbaseMaxAlign;
 #if (LLONG_MIN + 1) != (-9223372036854775807)
 #error "This compiler/machine does not use 2's complement. Throw it out."
 #endif
+
+#undef SIZEOF
+#define SIZEOF(...) (int64)(sizeof(__VA_ARGS__))
 
 #endif /* PRIMITIVES_H */

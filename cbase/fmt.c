@@ -2174,7 +2174,7 @@ fmt_buffer_write(char *buffer, int32 capacity, int32 len,
 static int32
 fmt_float_hex_append_exponent(char *buffer, int32 capacity, int32 len,
                               int32 exponent, bool upper) {
-    char digits[16];
+    char digits[64];
     uint64 magnitude;
     int32 digit_len;
     int32 status;
@@ -2214,7 +2214,7 @@ fmt_float_hex_append_exponent(char *buffer, int32 capacity, int32 len,
 static int32 UNUSED
 fmt_float_decimal_append_exponent(char *buffer, int32 capacity,
                                   int32 len, int32 exponent, bool upper) {
-    char digits[16];
+    char digits[64];
     uint64 magnitude;
     int32 digit_len;
     int32 status;
