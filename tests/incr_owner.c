@@ -104,7 +104,7 @@ main(int argc, char **argv) {
                         }
                     }
                 } else {
-                    int size = ENTRY_MAX_LENGTH * 2;
+                    int size = ENTRY_MAX_LENGTH*2;
                     char *buf = malloc2(size);
 
                     memset64(buf, 'A', size);
