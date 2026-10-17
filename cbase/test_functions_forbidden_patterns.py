@@ -607,6 +607,16 @@ class ForbiddenPatternsTests(unittest.TestCase):
         result = self.run_shell()
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_shell_disables_column_limit_for_piscou_config(self):
+        self.prepare_shell_checker()
+        self.write("piscou.1", "")
+        self.write("config.h", "x" * 81 + "\n")
+        self.write("src/extra.h", "x" * 81 + "\n")
+        result = self.run_shell()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertNotIn("config.h:1:line exceeds", result.stderr)
+        self.assertIn("extra.h:1:line exceeds 80 columns", result.stderr)
+
     def test_explicit_exclusion_still_applies(self):
         self.prepare_shell_checker()
         self.write("cbase/ryu/extra.c", "// " + "x" * 79 + "\n")

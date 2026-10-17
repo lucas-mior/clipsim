@@ -11,6 +11,17 @@ use Time::HiRes qw(stat);
 
 my $file_diagnostics = '';
 my @paths = @ARGV;
+my %no_column_limit;
+
+if (@paths && $paths[0] eq '--no-column-limit') {
+    my $path;
+
+    shift @paths;
+    $path = shift @paths;
+    if (defined($path) && $path ne '') {
+        $no_column_limit{abs_path($path) // $path} = 1;
+    }
+}
 
 if (@paths && $paths[0] eq '--file-list') {
     my $list_path;
@@ -107,7 +118,8 @@ sub check_source_style {
     for my $line (@lines) {
         $line_number += 1;
 
-        if (length($line) > $column_limit
+        if (defined($column_limit)
+                && length($line) > $column_limit
                 && length(decode('UTF-8', $line, FB_CROAK))
                    > $column_limit) {
             report_issue("$path:$line_number:line exceeds "
@@ -673,7 +685,8 @@ sub report_unnecessary_call_wraps {
         # Joining before a closing delimiter needs no intervening space.
         $flat_text =~ s/[ \t]*\r?\n[ \t]*(?=[)\],;])//g;
         $flat_text =~ s/[ \t]*\r?\n[ \t]*/ /g;
-        $fits = length($flat_text) <= $column_limit;
+        $fits = !defined($column_limit)
+                || length($flat_text) <= $column_limit;
 
         # These constructs require their original physical layout or are
         # not safely reducible to a single C source line.
@@ -820,7 +833,8 @@ sub check_unnecessary_assignment_wraps {
         }
         my $original = join("\n", @lines[$i .. $end]);
         my $statement_code = join("\n", @code_lines[$i .. $end]);
-        my $fits = length($flat) <= $column_limit
+        my $fits = (!defined($column_limit)
+                    || length($flat) <= $column_limit)
                    && $original !~ /\\\r?\n|\n[ \t]*#/
                    && $statement_code !~ /[{}]/
                    && !range_has_comment($original, 0, length($original))
@@ -1005,12 +1019,15 @@ for my $path (@paths) {
     next if $path =~ m{(?:\A|/)tests/fixtures/}
             || $absolute_path =~ m{(?:\A|/)tests/fixtures/};
 
-    my $column_limit = $absolute_path =~ m{(?:\A|/)cecup/src/}
-                       ? 100 : 80;
+    my $column_limit = $no_column_limit{$absolute_path}
+                       ? undef
+                       : $absolute_path =~ m{(?:\A|/)cecup/src/}
+                         ? 100 : 80;
 
     # The displayed path is part of the diagnostic, so distinguish spellings
     # such as "file.c" and "./file.c" even if both resolve to the same file.
-    my $key = join("\0", $path, $absolute_path);
+    my $key = join("\0", $path, $absolute_path,
+                   defined($column_limit) ? $column_limit : 'none');
     my $before = file_signature($path);
     my $entry = $cached_files->{$key};
 
