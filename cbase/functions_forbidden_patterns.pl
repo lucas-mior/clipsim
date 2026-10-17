@@ -523,6 +523,9 @@ sub check_control_flow_braces {
         }
         next if $body < @$tokens
                 && $tokens->[$body]{value} eq '{';
+        # A for loop may intentionally do all of its work in its clauses.
+        next if $keyword eq 'for' && $body < @$tokens
+                && $tokens->[$body]{value} eq ';';
         # Conditional compilation can supply distinct bodies for the
         # same header. Do not combine different preprocessor branches.
         if ($body < @$tokens) {

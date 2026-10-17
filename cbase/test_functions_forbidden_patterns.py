@@ -279,6 +279,15 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertNotIn("body must use curly braces", output)
         self.assertNotIn("must align with switch", output)
 
+    def test_control_flow_accepts_empty_for_body(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "void f(Node *node, Node *last) {\n"
+            "    for (node = first; node->next != last; node = node->next);\n"
+            "}\n",
+        )
+        self.assertNotIn("body must use curly braces", output)
+
     def test_control_flow_ignores_macros_and_conditional_branches(self):
         output = self.run_perl(
             "src/sample.c",
