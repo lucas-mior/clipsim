@@ -792,27 +792,29 @@ sub call_starts_with_newline {
     return $source =~ /\G[ \t]*\r?\n/gc;
 }
 
+# Match parentheses once per file. The previous call_end scanned characters
+# until the closing parenthesis on every lookup, including nested calls.
+my %call_ends;
+
+sub index_call_ends {
+    my ($code) = @_;
+    my @opens;
+
+    %call_ends = ();
+    while ($code =~ /[()]/g) {
+        my $idx = $-[0];
+
+        if (substr($code, $idx, 1) eq '(') {
+            push @opens, $idx;
+        } elsif (@opens) {
+            $call_ends{pop @opens} = $idx;
+        }
+    }
+}
+
 sub call_end {
     my ($code, $args_start) = @_;
-    my $idx = $args_start;
-    my $depth = 1;
-
-    while ($idx < length($code)) {
-        my $ch = substr($code, $idx, 1);
-
-        if ($ch eq '(') {
-            $depth += 1;
-        } elsif ($ch eq ')') {
-            $depth -= 1;
-            if ($depth == 0) {
-                return $idx;
-            }
-        }
-
-        $idx += 1;
-    }
-
-    return -1;
+    return $call_ends{$args_start - 1} // -1;
 }
 
 sub argument_ranges {
@@ -1121,8 +1123,11 @@ sub report_unnecessary_call_wraps {
     return if $path =~ /\.meta\.h\z/;
 
     pos($code) = 0;
+    # Only call-like identifiers can start a complete call statement.
+    # The code mask preserves whitespace in place of comments.
     while ($code =~ /(?<![A-Za-z0-9_])
-                     ([A-Za-z_][A-Za-z0-9_]*)/gx) {
+                     ([A-Za-z_][A-Za-z0-9_]*)
+                     (?=(?:\s|\\\r?\n)*\()/gx) {
         my $name = $1;
         my $name_idx = $-[1];
         my $line_start;
@@ -1565,6 +1570,8 @@ for my $path (@paths) {
     }
     my $code = code_mask($source);
     profile_checkpoint('code mask') if $profile_enabled;
+    index_call_ends($code);
+    profile_checkpoint('parenthesis index') if $profile_enabled;
     my $is_ryu = $absolute_path =~ m{(?:\A|/)cbase/ryu/[^/]+\.[ch]\z};
 
     check_preprocessor_conditionals($path, $code);
@@ -1729,8 +1736,11 @@ for my $path (@paths) {
 
     if ($path !~ /\.meta\.h\z/) {
         pos($code) = 0;
+        # Only call-like identifiers can start a candidate call.
+        # Comment-masked whitespace and spliced lines are preserved.
         while ($code =~ /(?<![A-Za-z0-9_])
-                         ([A-Za-z_][A-Za-z0-9_]*)/gx) {
+                         ([A-Za-z_][A-Za-z0-9_]*)
+                         (?=(?:\s|\\\r?\n)*\()/gx) {
             my $name = $1;
             my $name_idx = $-[1];
             my $line_start = 0;
@@ -1769,6 +1779,12 @@ for my $path (@paths) {
             $args_start = $paren_idx + 1;
             $args_end = call_end($code, $args_start);
             next if $args_end < 0;
+
+            # Every alignment and related-argument diagnostic requires
+            # a newline inside the argument list. Single-line calls need
+            # no argument splitting or string-literal inspection.
+            my $next_line = index($code, "\n", $args_start);
+            next if $next_line < 0 || $next_line >= $args_end;
 
             $first_arg_idx = skip_space_comments($source, $args_start);
             next if $first_arg_idx >= $args_end

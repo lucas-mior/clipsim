@@ -110,6 +110,7 @@ if [ -n "$common_libc_never" ] \
         || [ -n "$common_status_temporary_patterns" ]; then
     common_libc_pattern=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_sources=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
+    common_libc_external_sources=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_matches=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_matches2=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_matches3=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
@@ -155,9 +156,11 @@ if [ -n "$common_libc_never" ] \
                 \( -iname "*.c" -o -iname "*.h" \)
         fi
     } | sort -u | while read -r common_source; do
-        if echo "$common_source" | grep -Eq '(^|/)stc/'; then
+        case "$common_source" in
+        stc/*|*/stc/*)
             continue
-        fi
+            ;;
+        esac
         case "$common_source" in
         *.meta.h)
             continue
@@ -204,10 +207,13 @@ if [ -n "$common_libc_never" ] \
             }
         ' "$common_libc_never" > "$common_libc_pattern"
 
-        while read -r common_source; do
-            grep -EnH -f "$common_libc_pattern" "$common_source" \
-                >> "$common_libc_matches" || true
-        done < "$common_libc_sources"
+        # Scan a batch instead of starting a grep process for each file.
+        # NUL-separated arguments retain filenames containing spaces.
+        if [ -s "$common_libc_sources" ]; then
+            tr '\n' '\000' < "$common_libc_sources" \
+                | xargs -0 grep -EnH -f "$common_libc_pattern" -- \
+                    >> "$common_libc_matches" || true
+        fi
     fi
 
     if [ -n "$common_profile_enabled" ]; then
@@ -222,21 +228,42 @@ if [ -n "$common_libc_never" ] \
             }
         ' "$common_libc_cbase_only" > "$common_libc_pattern"
 
+        : > "$common_libc_external_sources"
         while read -r common_source; do
+            # Source discovery emits relative paths. For ordinary files,
+            # directory membership is known without an external readlink.
+            # Resolve symlinks to preserve the original exclusion behavior.
+            if [ ! -L "$common_source" ]; then
+                case "$common_libc_cbase_dir:$common_source" in
+                cbase:cbase/*|.:*)
+                    continue
+                    ;;
+                *)
+                    printf '%s\n' "$common_source" \
+                        >> "$common_libc_external_sources"
+                    continue
+                    ;;
+                esac
+            fi
+
             common_source_abs=$(
                 readlink -f "$common_source" 2>/dev/null \
                     || printf '%s\n' "$common_source"
             )
-
             case "$common_source_abs" in
             "$common_libc_cbase_abs"/*)
                 continue
                 ;;
             esac
-
-            grep -EnH -f "$common_libc_pattern" "$common_source" \
-                >> "$common_libc_matches2" || true
+            printf '%s\n' "$common_source" \
+                >> "$common_libc_external_sources"
         done < "$common_libc_sources"
+
+        if [ -s "$common_libc_external_sources" ]; then
+            tr '\n' '\000' < "$common_libc_external_sources" \
+                | xargs -0 grep -EnH -f "$common_libc_pattern" -- \
+                    >> "$common_libc_matches2" || true
+        fi
     fi
 
     if [ -n "$common_profile_enabled" ]; then
@@ -294,6 +321,7 @@ if [ -n "$common_libc_never" ] \
     rm -f \
         "$common_libc_pattern" \
         "$common_libc_sources" \
+        "$common_libc_external_sources" \
         "$common_libc_matches" \
         "$common_libc_matches2" \
         "$common_libc_matches3" \

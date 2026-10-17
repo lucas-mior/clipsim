@@ -1247,6 +1247,49 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertEqual(plain.stdout, cold.stdout)
         self.assertNotIn("[profile", plain.stderr)
 
+    def test_batched_shell_scan_preserves_order_and_spaced_paths(self):
+        self.prepare_shell_checker()
+        self.write("cbase/functions_never_use.txt", "malloc\n")
+        self.write("cbase/functions_allowed_cbase_only.txt", "free\n")
+        self.write("cbase/allowed.c", "free(0);\n")
+        self.write("src/first name.c", "malloc(1);\nfree(0);\n")
+        self.write("src/second.c", "malloc(2);\n")
+
+        result = self.run_shell()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("src/first name.c:1:malloc(1)", result.stderr)
+        self.assertIn("src/second.c:1:malloc(2)", result.stderr)
+        self.assertIn("src/first name.c:2:free(0)", result.stderr)
+        self.assertNotIn("cbase/allowed.c:1:free(0)", result.stderr)
+        self.assertLess(result.stderr.index("src/first name.c:1:malloc"),
+                        result.stderr.index("src/second.c:1:malloc"))
+
+    def test_batched_shell_scan_resolves_symlinks_for_cbase(self):
+        self.prepare_shell_checker()
+        self.write("cbase/functions_allowed_cbase_only.txt", "free\n")
+        internal = self.write("cbase/internal.c", "free(0);\n")
+        external = self.write("src/external.c", "free(1);\n")
+        (self.root / "src/internal_link.c").symlink_to(internal)
+        (self.root / "cbase/external_link.c").symlink_to(external)
+
+        result = self.run_shell()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("src/external.c:1:free(1)", result.stderr)
+        self.assertIn("cbase/external_link.c:1:free(1)", result.stderr)
+        self.assertNotIn("src/internal_link.c:1:free(0)", result.stderr)
+        self.assertNotIn("cbase/internal.c:1:free(0)", result.stderr)
+
+    def test_call_alignment_with_comments_and_nested_calls(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "static void\n"
+            "run(void) {\n"
+            "    function /* separator */ (inner(a, b),\n"
+            "       other);\n"
+            "}\n",
+        )
+        self.assertIn("function call argument is not aligned", output)
+
     def test_shell_profiling_preserves_diagnostics_and_exit_status(self):
         self.prepare_shell_checker()
         self.write("src/sample.c", "int32 total = left * right;\n")
