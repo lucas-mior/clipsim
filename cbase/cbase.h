@@ -1053,8 +1053,6 @@ void throw_away_function();
 #pragma clang diagnostic pop
 #endif
 
-#include "meta.h"
-
 #define CBASE_DECLARATIONS_COMPLETE 1
 #endif /* CBASE_H */
 
@@ -1090,10 +1088,4 @@ void throw_away_function();
 
 #include "command.c"
 #include "cbase.h"
-#include "meta_common.c"
-#include "meta_tokenize.c"
-#include "meta_split.c"
-#include "meta_preproc.c"
-#include "meta_generate.c"
-
 #endif
