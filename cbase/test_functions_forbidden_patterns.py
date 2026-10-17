@@ -193,6 +193,8 @@ class ForbiddenPatternsTests(unittest.TestCase):
             "HASH_KEY_TYPE *key;\n"
             "CONDITION_VARIABLE *condition;\n"
             "FILETIME *filetime;\n"
+            "FTS *handle;\n"
+            "FTSENT *entry;\n"
             "const char *const *names;\n"
             "CAT(SYS_NAME, _Data) *pid = data;\n"
             "#define TRAP(...) *(int *)0 = 0\n"
