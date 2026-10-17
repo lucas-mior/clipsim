@@ -159,7 +159,6 @@ class ForbiddenPatternsTests(unittest.TestCase):
             "int32 * value;\n"
             "CySystemRuntime *sys;\n"
             "CustomType * object;\n"
-            "fftwf_complex *spectrum;\n"
             "struct CustomType *member;\n"
             "double * restrict data;\n"
             "char **argv;\n"
@@ -230,6 +229,209 @@ class ForbiddenPatternsTests(unittest.TestCase):
         output = self.run_perl(path, "int32 n = a * b;\n")
         self.assertIn("sample.c:1:space around multiplication", output)
         self.assertEqual(self.run_perl(path, "int32 n = a*b;\n"), "")
+
+    def test_control_flow_requires_braces_for_each_body(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "void f(int32 x) {\n"
+            "    if (x) perform();\n"
+            "    else perform();\n"
+            "    for (int32 i = 0; i < x; i += 1) perform();\n"
+            "    while (x) perform();\n"
+            "    switch (x) perform();\n"
+            "    do perform(); while (x);\n"
+            "}\n",
+        )
+        for keyword in ("if", "else", "for", "while", "switch", "do"):
+            self.assertIn(f"{keyword} body must use curly braces", output)
+        self.assertEqual(output.count("body must use curly braces"), 6)
+
+    def test_control_flow_accepts_braces_else_if_and_do_while(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "void f(int32 x) {\n"
+            "    if (x) {\n"
+            "        perform();\n"
+            "    } else if (x > 1) {\n"
+            "        perform();\n"
+            "    } else {\n"
+            "        perform();\n"
+            "    }\n"
+            "    for (;;) {\n"
+            "        do {\n"
+            "            perform();\n"
+            "        } while (x);\n"
+            "        break;\n"
+            "    }\n"
+            "    while (x) {\n"
+            "        break;\n"
+            "    }\n"
+            "    switch (x) {\n"
+            "    case 0:\n"
+            "        break;\n"
+            "    default:\n"
+            "        break;\n"
+            "    }\n"
+            "}\n",
+        )
+        self.assertNotIn("body must use curly braces", output)
+        self.assertNotIn("must align with switch", output)
+
+    def test_control_flow_ignores_macros_and_conditional_branches(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "#define UNBRACED(x) if (x) call()\n"
+            "#define TWO_LINES(x) \\\n"
+            "    if (x) call()\n"
+            "void f(int32 x) {\n"
+            "#if FEATURE\n"
+            "    if (x)\n"
+            "#else\n"
+            "    if (other(x))\n"
+            "#endif\n"
+            "    { call(); }\n"
+            "}\n",
+        )
+        self.assertNotIn("body must use curly braces", output)
+
+    def test_missing_trailing_commas_are_not_enforced(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "int32 values[] = {1, 2};\n"
+            "int32 matrix[][2] = {{1, 2}, {3, 4}};\n"
+            "S compact = { .x = 1, .y = 2 };\n"
+            "S vertical = {\n"
+            "    .x = 1\n"
+            "};\n"
+            "S literal = (S){.x = 1};\n"
+            "int32 zero[] = {0};\n",
+        )
+        self.assertEqual(output, "")
+
+    def test_multiple_variables_in_declaration_are_rejected(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "int32 a, b;\n"
+            "double x = foo(1, 2), y = 3;\n"
+            "char *one, *two;\n"
+            "int32 i[2], j[2];\n"
+            "int32 (*first)(void), (*second)(void);\n"
+            "unsigned long long big, bigger;\n"
+            "int32 one[] = {1, 2,}, two[] = {3, 4,};\n"
+            "void f(void) {\n"
+            "    for (int32 m = 0, n = 1; m < n; m += 1) {\n"
+            "    }\n"
+            "}\n",
+        )
+        self.assertEqual(output.count("only one variable declaration per line"), 8)
+
+    def test_separate_declarations_on_same_line_are_rejected(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "void f(void) {\n"
+            "    int32 a; int32 b;\n"
+            "}\n",
+        )
+        self.assertEqual(output.count("only one variable declaration per line"), 1)
+
+    def test_declarations_ignore_comma_expressions_and_parameters(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "typedef struct Example {\n"
+            "    int32 x;\n"
+            "    int32 y;\n"
+            "} Example;\n"
+            "void f(int32 x, int32 y) {\n"
+            "    int32 z = foo(x, y);\n"
+            "    int32 array[] = {1, 2,};\n"
+            "    z = (x, y);\n"
+            "    call(x, y);\n"
+            "    if (x > 0) {\n"
+            "        return;\n"
+            "    }\n"
+            "}\n",
+        )
+        self.assertNotIn("only one variable declaration per line", output)
+
+    def test_case_and_default_must_align_with_nearest_switch(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "void f(int32 x) {\n"
+            "    switch (x) {\n"
+            "        case 0:\n"
+            "            switch (x) {\n"
+            "                case 1:\n"
+            "                    break;\n"
+            "                default:\n"
+            "                break;\n"
+            "            }\n"
+            "            break;\n"
+            "        default:\n"
+            "            break;\n"
+            "    }\n"
+            "}\n",
+        )
+        self.assertEqual(output.count("must align with switch"), 4)
+
+    def test_case_alignment_accepts_nested_switch_and_case_scopes(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "void f(int32 x) {\n"
+            "    switch (x) {\n"
+            "    case 0: {\n"
+            "        switch (x) {\n"
+            "        case 1:\n"
+            "            break;\n"
+            "        default:\n"
+            "            break;\n"
+            "        }\n"
+            "        break;\n"
+            "    }\n"
+            "    default:\n"
+            "        break;\n"
+            "    }\n"
+            "}\n",
+        )
+        self.assertNotIn("must align with switch", output)
+
+    def test_structural_checks_ignore_vendored_ryu(self):
+        output = self.run_perl(
+            "cbase/ryu/sample.c",
+            "if (flag) do_it();\n"
+            "int32 a, b;\n"
+            "int32 array[] = {1, 2};\n"
+            "switch (flag) {\n"
+            "    case 1: break;\n"
+            "}\n",
+        )
+        for phrase in (
+            "body must use curly braces",
+            "only one variable declaration per line",
+            "must align with switch",
+        ):
+            self.assertNotIn(phrase, output)
+
+    def test_shell_checker_reports_structural_rules(self):
+        self.prepare_shell_checker()
+        self.write(
+            "src/sample.c",
+            "void f(void) {\n"
+            "    int32 x, y;\n"
+            "    if (x) return;\n"
+            "    int32 values[] = {1, 2};\n"
+            "    switch (x) {\n"
+            "        case 1: break;\n"
+            "    }\n"
+            "}\n",
+        )
+        result = self.run_shell(TEST_FILTER="sample")
+        self.assertEqual(result.returncode, 1)
+        for phrase in (
+            "body must use curly braces",
+            "only one variable declaration per line",
+            "must align with switch",
+        ):
+            self.assertIn(phrase, result.stderr)
 
     def test_project_source_unicode_column_limit(self):
         output = self.run_perl(
@@ -1008,6 +1210,62 @@ class ForbiddenPatternsTests(unittest.TestCase):
             output.count("call string literal is not aligned"), 1,
         )
         self.assertIn("sample.c:8:fmt_printf call string literal", output)
+
+
+    def test_perl_profiling_reports_cold_and_warm_cache(self):
+        source = self.write("src/sample.c", "int32 total = left * right;\n")
+        args = ["perl", str(CHECKER), str(source)]
+        env = dict(self.environment)
+        env["CBASE_FORBIDDEN_PROFILE"] = "1"
+
+        cold = subprocess.run(
+            args, cwd=self.root, env=env, capture_output=True,
+            text=True, check=False,
+        )
+        warm = subprocess.run(
+            args, cwd=self.root, env=env, capture_output=True,
+            text=True, check=False,
+        )
+        self.assertEqual(cold.returncode, 0)
+        self.assertEqual(warm.returncode, 0)
+        self.assertEqual(cold.stdout, warm.stdout)
+        self.assertIn("space around multiplication", cold.stdout)
+        self.assertIn("[profile perl] files: hits=0 misses=1", cold.stderr)
+        self.assertIn("[profile perl] files: hits=1 misses=0", warm.stderr)
+        self.assertIn("[profile perl] initializer discovery", cold.stderr)
+        self.assertIn("[profile perl] cache lookup", warm.stderr)
+        self.assertIn("[profile perl] TOTAL", warm.stderr)
+
+        env["CBASE_FORBIDDEN_PROFILE"] = "0"
+        plain = subprocess.run(
+            args, cwd=self.root, env=env, capture_output=True,
+            text=True, check=False,
+        )
+        self.assertEqual(plain.returncode, 0)
+        self.assertEqual(plain.stdout, cold.stdout)
+        self.assertNotIn("[profile", plain.stderr)
+
+    def test_shell_profiling_preserves_diagnostics_and_exit_status(self):
+        self.prepare_shell_checker()
+        self.write("src/sample.c", "int32 total = left * right;\n")
+        cold = self.run_shell(CBASE_FORBIDDEN_PROFILE="1")
+        warm = self.run_shell(CBASE_FORBIDDEN_PROFILE="1")
+        self.assertEqual(cold.returncode, 1)
+        self.assertEqual(warm.returncode, 1)
+        self.assertIn("[profile shell] selected sources:", cold.stderr)
+        self.assertIn("[profile shell] Perl pattern checker", cold.stderr)
+        self.assertIn("[profile shell] TOTAL", warm.stderr)
+        self.assertIn("[profile perl] files: hits=0 misses=1", cold.stderr)
+        self.assertIn("[profile perl] files: hits=1 misses=0", warm.stderr)
+
+        plain = self.run_shell(CBASE_FORBIDDEN_PROFILE="0")
+        self.assertEqual(plain.returncode, 1)
+        self.assertNotIn("[profile", plain.stderr)
+        self.assertIn("space around multiplication", plain.stderr)
+        for result in (cold, warm):
+            self.assertIn("space around multiplication", result.stderr)
+            self.assertEqual(result.stdout, plain.stdout)
+
 
 
 if __name__ == "__main__":

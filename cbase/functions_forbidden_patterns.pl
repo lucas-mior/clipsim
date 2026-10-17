@@ -7,7 +7,45 @@ use File::Basename qw(dirname);
 use File::Path qw(make_path);
 use File::Temp qw(tempfile);
 use JSON::PP qw(decode_json encode_json);
-use Time::HiRes qw(stat);
+use Time::HiRes qw(stat time);
+
+# Profiling is opt-in. All timings are cumulative wall-clock seconds and go
+# to stderr, so ordinary diagnostics and the on-disk cache remain unchanged.
+my $profile_enabled = defined($ENV{CBASE_FORBIDDEN_PROFILE})
+                      && $ENV{CBASE_FORBIDDEN_PROFILE} ne ''
+                      && $ENV{CBASE_FORBIDDEN_PROFILE} ne '0';
+my $profile_total_started = time() if $profile_enabled;
+my $profile_checkpoint_started;
+my %profile_times;
+my ($profile_hits, $profile_misses, $profile_bytes) = (0, 0, 0);
+
+sub profile_checkpoint {
+    my ($stage) = @_;
+    my $now = time();
+
+    $profile_times{$stage} += $now - $profile_checkpoint_started;
+    $profile_checkpoint_started = $now;
+}
+
+sub profile_report {
+    my ($elapsed) = @_;
+    my $accounted = 0;
+
+    printf STDERR "[profile perl] files: hits=%d misses=%d bytes=%d\n",
+        $profile_hits, $profile_misses, $profile_bytes;
+    for my $stage (sort {
+            $profile_times{$b} <=> $profile_times{$a} || $a cmp $b
+        } keys %profile_times) {
+        $accounted += $profile_times{$stage};
+        printf STDERR "[profile perl] %-29s %10.3f ms\n",
+            $stage, 1000 * $profile_times{$stage};
+    }
+    my $other = $elapsed - $accounted;
+    printf STDERR "[profile perl] %-29s %10.3f ms\n",
+        'startup / other', 1000 * $other;
+    printf STDERR "[profile perl] %-29s %10.3f ms\n",
+        'TOTAL', 1000 * $elapsed;
+}
 
 my $file_diagnostics = '';
 my @paths = @ARGV;
@@ -264,12 +302,10 @@ sub check_multiplication_spacing {
                                      |int32|int64|uint8|uint16|uint32|uint64
                                      |uchar|llong|ullong|bool32|uint|ulong
                                      |const|restrict|volatile
-                                     |size_t|ptrdiff_t|ssize_t|FILE|DIR
-                                     |fftwf_complex)$/x
+                                     |size_t|ptrdiff_t|ssize_t|FILE|DIR)$/x
                         || $word =~ /^[A-Z][A-Za-z0-9_]*[a-z][A-Za-z0-9_]*$/
                         || ($word =~ /^(?:[A-Z][A-Z0-9_]*_TYPE
-                                         |CONDITION_VARIABLE|FILETIME
-                                         |FTS|FTSENT)$/x
+                                         |CONDITION_VARIABLE|FILETIME)$/x
                             && $right_char =~ /[a-z_]/)
                         || $word =~ /^[A-Za-z_][A-Za-z0-9_]*_t$/
                         || $prefix =~ /\b(?:struct|union|enum)\s+$/
@@ -304,9 +340,14 @@ sub check_ternary_operators {
 
 my $cache_path = $ENV{CBASE_FORBIDDEN_PATTERNS_CACHE}
                  // '.cache/functions_forbidden_patterns.json';
+my $profile_cache_started = time() if $profile_enabled;
 my $checker_hash = checker_fingerprint();
 my $cached_files = read_cache($cache_path, $checker_hash);
 my $cache_dirty = 0;
+if ($profile_enabled) {
+    $profile_times{'cache fingerprint / read'} =
+        time() - $profile_cache_started;
+}
 
 # Count preceding newlines by binary search rather than rescanning every
 # prefix.  Several diagnostics perform this lookup inside argument loops.
@@ -345,6 +386,366 @@ sub code_mask {
     }{ mask_text($&) }gexs;
 
     return $code;
+}
+
+# Preserve a marker for each string or character literal while masking
+# comments. Remove preprocessor directives, including their continuation
+# lines, so generated macro syntax does not confuse the structural checks.
+sub structural_code {
+    my ($source) = @_;
+    my $code = $source;
+
+    $code =~ s{
+          "(?:\\.|[^"\\])*"
+        | '(?:\\.|[^'\\])*'
+        | //[^\n]*
+        | /\*.*?\*/
+    }{
+        my $match = $&;
+        my $masked = mask_text($match);
+        if ($match =~ /\A["']/) {
+            substr($masked, 0, 1) = '@';
+        }
+        $masked;
+    }gexs;
+
+    my @lines = split /\n/, $code, -1;
+    my @original = split /\n/, $source, -1;
+    my $continuation = 0;
+
+    for (my $i = 0; $i < @lines; $i += 1) {
+        my $directive = $continuation
+                        || $lines[$i] =~ /^[ \t]*#/;
+        $continuation = $directive
+                        && $original[$i] =~ /\\[ \t]*\r?\z/;
+        $lines[$i] = mask_text($lines[$i]) if $directive;
+    }
+    return join("\n", @lines);
+}
+
+# Tokenize only the syntax needed by the checks below. Keep source byte
+# positions to report original line numbers and compare indentation.
+sub structural_tokens {
+    my ($source) = @_;
+    my $code = structural_code($source);
+    my @tokens;
+
+    while ($code =~ /([A-Za-z_][A-Za-z_0-9]*
+                     |[0-9]+(?:\.[0-9]+)?
+                     |\.\.\.|->|[^\s])/gx) {
+        push @tokens, { value => $1, pos => $-[0] };
+    }
+    return \@tokens;
+}
+
+sub matching_delimiters {
+    my ($tokens) = @_;
+    my @stack;
+    my %matches;
+    my %open_for = (')' => '(', '}' => '{', ']' => '[');
+
+    for (my $i = 0; $i < @$tokens; $i += 1) {
+        my $v = $tokens->[$i]{value};
+
+        if ($v eq '(' || $v eq '{' || $v eq '[') {
+            push @stack, $i;
+        } elsif (exists $open_for{$v} && @stack
+                 && $tokens->[$stack[-1]]{value} eq $open_for{$v}) {
+            my $start = pop @stack;
+            $matches{$start} = $i;
+            $matches{$i} = $start;
+        }
+    }
+    return \%matches;
+}
+
+sub token_column {
+    my ($source, $token) = @_;
+    my $pos = $token->{pos};
+
+    return $pos - (rindex($source, "\n", $pos - 1) + 1);
+}
+
+# This check requires a block after if/else/for/while/switch/do. The while
+# belonging to a do-while is a terminator, not a second loop body.
+sub check_control_flow_braces {
+    my ($path, $source, $tokens, $matches) = @_;
+    my %do_while;
+
+    for (my $i = 0; $i < @$tokens; $i += 1) {
+        next unless $tokens->[$i]{value} eq 'do';
+        my $body = $i + 1;
+
+        my $end;
+        if ($body < @$tokens && $tokens->[$body]{value} eq '{') {
+            $end = $matches->{$body};
+        } else {
+            # Also recognize an invalid, unbraced do-body so that the
+            # terminator is not reported as a second missing brace.
+            for (my $j = $body; $j < @$tokens; $j += 1) {
+                if ($tokens->[$j]{value} eq ';') {
+                    $end = $j;
+                    last;
+                }
+                if ($tokens->[$j]{value} eq '(') {
+                    my $close = $matches->{$j};
+                    $j = $close if defined($close);
+                }
+            }
+        }
+        next unless defined($end);
+        my $while = $end + 1;
+        if ($while < @$tokens
+                && $tokens->[$while]{value} eq 'while') {
+            $do_while{$while} = 1;
+        }
+    }
+
+    for (my $i = 0; $i < @$tokens; $i += 1) {
+        my $keyword = $tokens->[$i]{value};
+        my $body;
+
+        if ($keyword eq 'if' || $keyword eq 'for'
+                || $keyword eq 'while' || $keyword eq 'switch') {
+            next if $keyword eq 'while' && $do_while{$i};
+            next unless $i + 1 < @$tokens
+                        && $tokens->[$i + 1]{value} eq '(';
+            my $end = $matches->{$i + 1};
+            next unless defined($end);
+            $body = $end + 1;
+        } elsif ($keyword eq 'else' || $keyword eq 'do') {
+            $body = $i + 1;
+            next if $keyword eq 'else' && $body < @$tokens
+                    && $tokens->[$body]{value} eq 'if';
+        } else {
+            next;
+        }
+        next if $body < @$tokens
+                && $tokens->[$body]{value} eq '{';
+        # Conditional compilation can supply distinct bodies for the
+        # same header. Do not combine different preprocessor branches.
+        if ($body < @$tokens) {
+            my $from = $tokens->[$i]{pos};
+            my $between = substr($source, $from,
+                                 $tokens->[$body]{pos} - $from);
+            next if $between =~ /^[ \t]*#/m;
+        }
+        my $line = line_number($source, $tokens->[$i]{pos});
+        report_issue("$path:$line:$keyword body must use curly braces\n");
+    }
+}
+
+# Match labels to the innermost enclosing switch, not simply the closest
+# opening brace: case labels can be nested inside scoped case bodies.
+sub check_switch_case_alignment {
+    my ($path, $source, $tokens, $matches) = @_;
+    my @switches;
+
+    for (my $i = 0; $i < @$tokens; $i += 1) {
+        next unless $tokens->[$i]{value} eq 'switch';
+        next unless $i + 1 < @$tokens
+                    && $tokens->[$i + 1]{value} eq '(';
+        my $end = $matches->{$i + 1};
+        next unless defined($end) && $end + 1 < @$tokens;
+        my $open = $end + 1;
+        next unless $tokens->[$open]{value} eq '{';
+        my $close = $matches->{$open};
+        next unless defined($close);
+        push @switches, {
+            open => $open, close => $close,
+            column => token_column($source, $tokens->[$i]),
+        };
+    }
+
+    for (my $i = 0; $i < @$tokens; $i += 1) {
+        my $keyword = $tokens->[$i]{value};
+        next unless $keyword eq 'case' || $keyword eq 'default';
+        my $switch;
+
+        for my $item (@switches) {
+            next unless $item->{open} < $i && $i < $item->{close};
+            if (!defined($switch) || $item->{open} > $switch->{open}) {
+                $switch = $item;
+            }
+        }
+        next unless defined($switch);
+        next if token_column($source, $tokens->[$i])
+                == $switch->{column};
+        my $line = line_number($source, $tokens->[$i]{pos});
+        report_issue("$path:$line:$keyword must align with switch\n");
+    }
+}
+
+# Distinguish initializer lists from struct/enum definitions and statement
+# blocks. Declaration checking uses this to skip initializer expressions.
+sub initializer_braces {
+    my ($tokens, $matches) = @_;
+    my %initializers;
+    my @active_initializers;
+
+    for (my $i = 0; $i < @$tokens; $i += 1) {
+        next unless $tokens->[$i]{value} eq '{';
+        my $close = $matches->{$i};
+        next unless defined($close) && $i > 0;
+        my $previous = $tokens->[$i - 1]{value};
+        my $is_initializer = $previous eq '=' || $previous eq '{';
+
+        while (@active_initializers
+               && $matches->{$active_initializers[-1]} < $i) {
+            pop @active_initializers;
+        }
+        my $parent = @active_initializers
+                     ? $active_initializers[-1] : undef;
+
+        if ($previous eq ')' && defined($matches->{$i - 1})) {
+            my $open = $matches->{$i - 1};
+            my $before = $open > 0
+                         ? $tokens->[$open - 1]{value} : '';
+            my $first = $open + 1 < $i - 1
+                        ? $tokens->[$open + 1]{value} : '';
+            # A compound literal has a type name in parentheses. A call,
+            # condition, or function header must not be treated as one.
+            my $type_like = $first =~ /^[A-Za-z_]/;
+            for (my $j = $open + 1; $j < $i - 1; $j += 1) {
+                my $value = $tokens->[$j]{value};
+                if ($value !~ /^(?:[A-Za-z_][A-Za-z_0-9]*|\*|\[|\]
+                                |[0-9]+)$/x) {
+                    $type_like = 0;
+                    last;
+                }
+            }
+            # A function-like macro can generate a function name.
+            if ($type_like && $before !~ /^(?:if|for|while|switch)$/
+                    && ($before !~ /^[A-Za-z_][A-Za-z_0-9]*$/
+                        || $before eq 'return')
+                    && $before ne ')' && $before ne ']') {
+                $is_initializer = 1;
+            }
+        }
+        if (defined($parent) && $previous eq ',') {
+            $is_initializer = 1;
+        }
+        next unless $is_initializer;
+        $initializers{$i} = 1;
+        push @active_initializers, $i;
+    }
+    return \%initializers;
+}
+
+# Recognize declaration prefixes without mistaking expressions, function
+# arguments, or initializer members for multiple variable declarators.
+sub declaration_start {
+    my ($tokens, $start, $end) = @_;
+    return 0 if $start + 1 >= $end;
+    my $first = $tokens->[$start]{value};
+    return 0 unless $first =~ /^[A-Za-z_][A-Za-z_0-9]*$/;
+    return 0 if $first =~ /^(?:return|if|for|while|switch|do|else
+                              |case|default|goto|break|continue|typedef)$/x;
+    my $i = $start;
+    my $has_builtin_type = $first =~ /^(?:signed|unsigned|short|long)$/;
+
+    while ($i < $end && $tokens->[$i]{value}
+           =~ /^(?:static|extern|auto|register|const|volatile|restrict
+                 |signed|unsigned|long|short|inline|_Atomic)$/x) {
+        $i += 1;
+    }
+    if ($has_builtin_type && $i < $end) {
+        my $declarator = $tokens->[$i]{value};
+        if ($declarator =~ /^[A-Za-z_][A-Za-z_0-9]*$/
+                && $i + 1 < $end
+                && $tokens->[$i + 1]{value} =~ /^(?:,|=|\[)$/) {
+            return 1;
+        }
+    }
+    return 0 if $i >= $end;
+    if ($tokens->[$i]{value} =~ /^(?:struct|union|enum)$/) {
+        $i += 1;
+        return 0 if $i >= $end;
+    }
+    return 0 unless $tokens->[$i]{value}
+                    =~ /^[A-Za-z_][A-Za-z_0-9]*$/;
+    $i += 1;
+    while ($i < $end && $tokens->[$i]{value}
+           =~ /^(?:const|volatile|restrict|\*)$/) {
+        $i += 1;
+    }
+    return 0 if $i >= $end;
+    if ($tokens->[$i]{value} eq '(' && $i + 3 < $end) {
+        # Function pointer declarator, e.g. int (*a)(void), (*b)(void).
+        return $tokens->[$i + 1]{value} eq '*'
+               && $tokens->[$i + 2]{value}
+                  =~ /^[A-Za-z_][A-Za-z_0-9]*$/
+               && $tokens->[$i + 3]{value} eq ')';
+    }
+    return $tokens->[$i]{value} =~ /^[A-Za-z_][A-Za-z_0-9]*$/;
+}
+
+sub check_declaration_segment {
+    my ($path, $source, $tokens, $matches, $start, $end,
+        $declaration_lines) = @_;
+    return unless declaration_start($tokens, $start, $end);
+    my $depth = 0;
+    my $comma = 0;
+
+    for (my $i = $start; $i < $end; $i += 1) {
+        my $value = $tokens->[$i]{value};
+        if ($value eq '(' || $value eq '[' || $value eq '{') {
+            my $close = $matches->{$i};
+            if (defined($close) && $close < $end) {
+                $i = $close;
+                next;
+            }
+        }
+        if ($value eq ',') {
+            $comma = 1;
+            last;
+        }
+    }
+    my $line = line_number($source, $tokens->[$start]{pos});
+    if ($comma || $declaration_lines->{$line}) {
+        report_issue("$path:$line:only one variable declaration per line\n");
+    }
+    $declaration_lines->{$line} = 1;
+}
+
+sub check_multiple_declarations {
+    my ($path, $source, $tokens, $matches, $initializers) = @_;
+    my $start = 0;
+    my %declaration_lines;
+
+    for (my $i = 0; $i < @$tokens; $i += 1) {
+        my $v = $tokens->[$i]{value};
+
+        if ($v eq '{' && $initializers->{$i}) {
+            my $close = $matches->{$i};
+            if (defined($close)) {
+                $i = $close;
+                next;
+            }
+        }
+        if ($v eq 'for' && $i + 1 < @$tokens
+                && $tokens->[$i + 1]{value} eq '(') {
+            my $paren = $i + 1;
+            my $end = $matches->{$paren};
+            if (defined($end)) {
+                for (my $j = $paren + 1; $j < $end; $j += 1) {
+                    if ($tokens->[$j]{value} eq ';') {
+                        check_declaration_segment(
+                            $path, $source, $tokens, $matches,
+                            $paren + 1, $j, \%declaration_lines);
+                        last;
+                    }
+                }
+            }
+        }
+        if ($v eq ';') {
+            check_declaration_segment($path, $source, $tokens, $matches,
+                                      $start, $i, \%declaration_lines);
+            $start = $i + 1;
+        } elsif ($v eq '{' || $v eq '}') {
+            $start = $i + 1;
+        }
+    }
 }
 
 sub skip_space_comments {
@@ -1108,6 +1509,7 @@ sub check_deep_artificial_blocks {
 
 for my $path (@paths) {
     next if $path =~ /\.meta\.h\z/;
+    my $profile_lookup_started = time() if $profile_enabled;
 
     my $absolute_path = abs_path($path) // $path;
 
@@ -1133,9 +1535,20 @@ for my $path (@paths) {
             && defined($entry->{diagnostics})
             && !ref($entry->{diagnostics})) {
         print $entry->{diagnostics};
+        if ($profile_enabled) {
+            $profile_hits += 1;
+            $profile_times{'cache lookup'} +=
+                time() - $profile_lookup_started;
+        }
         next;
     }
 
+    if ($profile_enabled) {
+        $profile_misses += 1;
+        $profile_times{'cache lookup'} +=
+            time() - $profile_lookup_started;
+        $profile_checkpoint_started = time();
+    }
     $file_diagnostics = '';
     open my $fh, '<', $path or die "$path: $!\n";
     local $/;
@@ -1145,18 +1558,45 @@ for my $path (@paths) {
     while ($source =~ /\n/g) {
         push @line_offsets, $-[0];
     }
+    if ($profile_enabled) {
+        $profile_bytes += length($source);
+        profile_checkpoint('file read / line index');
+    }
     my $code = code_mask($source);
+    profile_checkpoint('code mask') if $profile_enabled;
     my $is_ryu = $absolute_path =~ m{(?:\A|/)cbase/ryu/[^/]+\.[ch]\z};
 
     check_preprocessor_conditionals($path, $code);
+    profile_checkpoint('preprocessor conditionals') if $profile_enabled;
+    if (!$is_ryu) {
+        my $tokens = structural_tokens($source);
+        my $matches = matching_delimiters($tokens);
+        profile_checkpoint('structural tokenize / match')
+            if $profile_enabled;
+
+        check_control_flow_braces($path, $source, $tokens, $matches);
+        profile_checkpoint('control-flow braces') if $profile_enabled;
+        my $initializers = initializer_braces($tokens, $matches);
+        profile_checkpoint('initializer discovery') if $profile_enabled;
+        check_multiple_declarations($path, $source, $tokens,
+                                    $matches, $initializers);
+        profile_checkpoint('multiple declarations') if $profile_enabled;
+        check_switch_case_alignment($path, $source, $tokens, $matches);
+        profile_checkpoint('switch/case alignment') if $profile_enabled;
+    }
     check_multiplication_spacing($path, $source, $code) unless $is_ryu;
+    profile_checkpoint('multiplication spacing') if $profile_enabled;
     check_builtin_sizeof($path, $source, $code) unless $is_ryu;
+    profile_checkpoint('sizeof') if $profile_enabled;
     check_consecutive_bounds_assertions($path, $source, $code)
         unless $is_ryu;
+    profile_checkpoint('bounds assertions') if $profile_enabled;
     check_deep_artificial_blocks($path, $source, $code)
         unless $is_ryu || $path =~ /\.meta\.h\z/;
+    profile_checkpoint('artificial blocks') if $profile_enabled;
 
     check_source_style($path, $source, $column_limit, $is_ryu);
+    profile_checkpoint('line whitespace / length') if $profile_enabled;
 
     if (!$is_ryu) {
         # check_ternary_operators($path, $code);
@@ -1199,6 +1639,8 @@ for my $path (@paths) {
         report_issue("$path:$line:$name call breaks before the first "
                      . "argument\n");
     }
+
+    profile_checkpoint('call first-argument scan') if $profile_enabled;
 
     if ($path !~ /\.meta\.h\z/) {
         pos($code) = 0;
@@ -1281,6 +1723,8 @@ for my $path (@paths) {
             }
         }
     }
+
+    profile_checkpoint('function header alignment') if $profile_enabled;
 
     if ($path !~ /\.meta\.h\z/) {
         pos($code) = 0;
@@ -1487,14 +1931,19 @@ for my $path (@paths) {
         }
     }
 
+    profile_checkpoint('call argument alignment') if $profile_enabled;
+
     check_assignment_equals_at_line_start($path, $source, $code)
         unless $is_ryu || $path =~ /\.meta\.h\z/;
+    profile_checkpoint('assignment equals placement') if $profile_enabled;
 
     check_unnecessary_assignment_wraps($path, $source, $code,
                                        $column_limit)
         unless $is_ryu || $path =~ /\.meta\.h\z/;
+    profile_checkpoint('unnecessary assignment wraps') if $profile_enabled;
 
     report_unnecessary_call_wraps($path, $source, $code, $column_limit);
+    profile_checkpoint('unnecessary call wraps') if $profile_enabled;
 
     pos($code) = 0;
     while ($code =~ /(?<![A-Za-z0-9_])ASSERT(?![A-Za-z0-9_])
@@ -1516,6 +1965,8 @@ for my $path (@paths) {
                      . " for comparison with integers\n");
     }
 
+    profile_checkpoint('simple assertion forms') if $profile_enabled;
+
     pos($code) = 0;
     while ($code =~ /(?<![A-Za-z0-9_])STRLIT_LEN(?![A-Za-z0-9_])/g) {
         my $idx = $-[0];
@@ -1532,6 +1983,8 @@ for my $path (@paths) {
             report_issue("$path:$line:STRLIT_LEN called on a literal string\n");
         }
     }
+
+    profile_checkpoint('STRLIT_LEN') if $profile_enabled;
 
     pos($code) = 0;
     while ($code =~ /(?<![A-Za-z0-9_])STREQUAL(?![A-Za-z0-9_])/g) {
@@ -1552,6 +2005,8 @@ for my $path (@paths) {
         }
     }
 
+    profile_checkpoint('STREQUAL') if $profile_enabled;
+
     pos($code) = 0;
     while ($code =~ /(?<![A-Za-z0-9_])str_printf(?![A-Za-z0-9_])/g) {
         my $paren_idx = skip_space_comments($source, $-[0] + 10);
@@ -1570,6 +2025,8 @@ for my $path (@paths) {
             pos($code) = $args_end + 1;
         }
     }
+    profile_checkpoint('str_printf') if $profile_enabled;
+
     # Do not cache diagnostics if the file changed during inspection.
     my $after = file_signature($path);
     if (defined($before) && defined($after) && $before eq $after) {
@@ -1590,6 +2047,12 @@ for my $path (@paths) {
         delete $cached_files->{$key};
         $cache_dirty = 1;
     }
+    profile_checkpoint('cache update') if $profile_enabled;
 }
 
+my $profile_write_started = time() if $profile_enabled;
 write_cache($cache_path, $checker_hash, $cached_files) if $cache_dirty;
+if ($profile_enabled) {
+    $profile_times{'cache write'} = time() - $profile_write_started;
+    profile_report(time() - $profile_total_started);
+}

@@ -362,16 +362,21 @@ default:
   int32 x;
   int32 y;
   ```
-- Always use trailing commas for arrays and structs (except when initializing to
-  zero):
+- Always use trailing commas in array initializers, including single-line
+  initializers. For struct initializers, trailing commas are mandatory only
+  when the initializer spans multiple lines. Initializing with `{0}` is exempt:
   ```c
-  int32 array[] = {
-      1,
-      2,
-      3,
-  };
+  int32 array[] = {1, 2, 3,};
 
   int32 array2[10] = {0};
+
+  S horizontal = { "a", 1, var };
+
+  S vertical = {
+      "a",
+      1,
+      var,
+  };
   ```
 
 ## Curly braces

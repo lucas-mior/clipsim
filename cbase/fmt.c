@@ -762,26 +762,26 @@ fmt_integer_digits(char *digits, uint64 value, int32 base, bool upper) {
         uint64 digit;
 
         switch (base) {
-            case 16:
-                digit = value & 15;
-                value >>= 4;
-                break;
-            case 10:
-                digit = value % 10;
-                value /= 10;
-                break;
-            case 8:
-                digit = value & 7;
-                value >>= 3;
-                break;
-            case 2:
-                digit = value & 1;
-                value >>= 1;
-                break;
-            default:
-                digit = value % (uint64)base;
-                value /= (uint64)base;
-                break;
+        case 16:
+            digit = value & 15;
+            value >>= 4;
+            break;
+        case 10:
+            digit = value % 10;
+            value /= 10;
+            break;
+        case 8:
+            digit = value & 7;
+            value >>= 3;
+            break;
+        case 2:
+            digit = value & 1;
+            value >>= 1;
+            break;
+        default:
+            digit = value % (uint64)base;
+            value /= (uint64)base;
+            break;
         }
 
         reversed[len] = digit_table[digit];

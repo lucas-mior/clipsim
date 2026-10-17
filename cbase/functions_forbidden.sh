@@ -1,5 +1,45 @@
 # shellcheck shell=sh
 
+# Optional wall-clock profiling. Diagnostics remain on stdout/stderr as before;
+# profiling records go to stderr and never enter the matched-pattern files.
+common_profile_enabled=
+case "${CBASE_FORBIDDEN_PROFILE:-}" in
+''|0)
+    ;;
+*)
+    common_profile_enabled=1
+    ;;
+esac
+
+if [ -n "$common_profile_enabled" ]; then
+    common_profile_now () {
+        common_profile_timestamp=$(date +%s%N)
+        case "$common_profile_timestamp" in
+        *[!0-9]*|'')
+            perl -MTime::HiRes=time -e \
+                'printf "%.0f\n", time() * 1000000000'
+            ;;
+        *)
+            printf '%s\n' "$common_profile_timestamp"
+            ;;
+        esac
+    }
+
+    common_profile_report () {
+        common_profile_label=$1
+        common_profile_end=$(common_profile_now)
+        common_profile_elapsed=$((common_profile_end - common_profile_start))
+        printf '[profile shell] %-22s %d.%03d ms\n' \
+            "$common_profile_label" \
+            "$((common_profile_elapsed / 1000000))" \
+            "$((common_profile_elapsed % 1000000 / 1000))" >&2
+        common_profile_start=$common_profile_end
+    }
+
+    common_profile_total_start=$(common_profile_now)
+    common_profile_start=$common_profile_total_start
+fi
+
 common_libc_never=
 common_libc_cbase_only=
 common_libc_cbase_dir=
@@ -149,6 +189,12 @@ if [ -n "$common_libc_never" ] \
 
         printf '%s\n' "$common_source"
     done > "$common_libc_sources"
+    if [ -n "$common_profile_enabled" ]; then
+        common_profile_report 'setup / source discovery'
+        common_profile_file_count=$(wc -l < "$common_libc_sources")
+        printf '[profile shell] selected sources: %s\n' \
+            "$common_profile_file_count" >&2
+    fi
 
     if [ -n "$common_libc_never" ]; then
         awk '
@@ -162,6 +208,10 @@ if [ -n "$common_libc_never" ] \
             grep -EnH -f "$common_libc_pattern" "$common_source" \
                 >> "$common_libc_matches" || true
         done < "$common_libc_sources"
+    fi
+
+    if [ -n "$common_profile_enabled" ]; then
+        common_profile_report 'forbidden libc scan'
     fi
 
     if [ -n "$common_libc_cbase_only" ]; then
@@ -189,14 +239,26 @@ if [ -n "$common_libc_never" ] \
         done < "$common_libc_sources"
     fi
 
+    if [ -n "$common_profile_enabled" ]; then
+        common_profile_report 'cbase-only libc scan'
+    fi
+
     if [ -n "$common_forbidden_patterns" ]; then
         perl "$common_forbidden_patterns" \
             --no-column-limit "$common_no_column_limit" \
             --file-list "$common_libc_sources" >> "$common_libc_matches3"
     fi
 
+    if [ -n "$common_profile_enabled" ]; then
+        common_profile_report 'Perl pattern checker'
+    fi
+
     python3 "$common_status_temporary_patterns" \
         --file-list "$common_libc_sources" >> "$common_libc_matches4"
+
+    if [ -n "$common_profile_enabled" ]; then
+        common_profile_report 'Python status checker'
+    fi
 
     if [ -s "$common_libc_matches" ]; then
         error "\nError: functions that must never be used:\n"
@@ -236,6 +298,16 @@ if [ -n "$common_libc_never" ] \
         "$common_libc_matches2" \
         "$common_libc_matches3" \
         "$common_libc_matches4"
+
+    if [ -n "$common_profile_enabled" ]; then
+        common_profile_report 'reporting / cleanup'
+        common_profile_total_end=$(common_profile_now)
+        common_profile_total=$((common_profile_total_end \
+                                - common_profile_total_start))
+        printf '[profile shell] %-22s %d.%03d ms\n' 'TOTAL' \
+            "$((common_profile_total / 1000000))" \
+            "$((common_profile_total % 1000000 / 1000))" >&2
+    fi
 
     if [ "$common_libc_status" -ne 0 ]; then
         exit 1
