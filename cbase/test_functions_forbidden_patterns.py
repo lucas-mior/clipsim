@@ -159,6 +159,7 @@ class ForbiddenPatternsTests(unittest.TestCase):
             "int32 * value;\n"
             "CySystemRuntime *sys;\n"
             "CustomType * object;\n"
+            "fftwf_complex *spectrum;\n"
             "struct CustomType *member;\n"
             "double * restrict data;\n"
             "char **argv;\n"

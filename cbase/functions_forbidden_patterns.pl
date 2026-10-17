@@ -264,7 +264,8 @@ sub check_multiplication_spacing {
                                      |int32|int64|uint8|uint16|uint32|uint64
                                      |uchar|llong|ullong|bool32|uint|ulong
                                      |const|restrict|volatile
-                                     |size_t|ptrdiff_t|ssize_t|FILE|DIR)$/x
+                                     |size_t|ptrdiff_t|ssize_t|FILE|DIR
+                                     |fftwf_complex)$/x
                         || $word =~ /^[A-Z][A-Za-z0-9_]*[a-z][A-Za-z0-9_]*$/
                         || ($word =~ /^(?:[A-Z][A-Z0-9_]*_TYPE
                                          |CONDITION_VARIABLE|FILETIME)$/x
