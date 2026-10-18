@@ -143,12 +143,14 @@ For function calls, check the rules above.
 For other types of lines, like
 assignments, macro definitions, array declarations, string literals, etc:
 
-1. Simple assignments: Break after the `=` sign
-2. Macro definitions: use backslash, reduce the macro name, or use helper macros
-3. For code that is too deeply nested: use early returns and continues when
+1. Arithmetic expressions: break lines before one (or more) of the operators, if
+   needed.
+2. Simple assignments: Break after the `=` sign
+3. Macro definitions: use backslash, reduce the macro name, or use helper macros
+4. For code that is too deeply nested: use early returns and continues when
    possible, instead of nesting multiple ifs.
-4. Declarations: use line breaks for each struct/array member if necessary.
-5. String literals: avoid breaking them: try everything we mentioned above, even
+5. Declarations: use line breaks for each struct/array member if necessary.
+6. String literals: avoid breaking them: try everything we mentioned above, even
    reducing the name of local variables and local static functions, but if
    unavoidable, prefer to break them at punctuation or right before prepositions
    and conjuctions (of, in, to, with, on, and, but, or, because, if, etc).
