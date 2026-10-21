@@ -130,11 +130,11 @@ preconditions; assert those instead.
 
 - Always add an explicit `return;` at the end of void functions, unless the path
   is unreachable (as an example, it may call `fatal` or `exit`).
-- Never use the ternary operator:
+- Avoid the ternary operator:
   ```c
   something = condition ? whentrue : whenfalse;
   ```
-  Use normal `if`/`else` blocks instead.
+  Prefer normal `if`/`else` blocks instead when they are clearer.
 - Avoid creating functions that exit the program. Use `fatal(EXIT_FAILURE)` at
   the call site.
 

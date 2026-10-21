@@ -79,21 +79,20 @@ class ForbiddenPatternsTests(unittest.TestCase):
         )
         self.assertEqual(output, "")
 
-    # def test_non_ryu_ternary_is_rejected_but_macro_is_not(self):
-    #     output = self.run_perl(
-    #         "cbase/sample.c",
-    #         "#define CHOOSE(a, b) ((a) ? (a) : (b))\n"
-    #         "static int\n"
-    #         "choose(int x) {\n"
-    #         "    return x ? 1 : 0;\n"
-    #         "}\n"
-    #         "static char\n"
-    #         "question(void) {\n"
-    #         "    return '?'; // ? in a comment\n"
-    #         "}\n",
-    #     )
-    #     self.assertEqual(output.count("ternary operator is forbidden"), 1)
-    #     self.assertIn("sample.c:4:ternary operator", output)
+    def test_non_ryu_ternary_is_permitted(self):
+        output = self.run_perl(
+            "cbase/sample.c",
+            "#define CHOOSE(a, b) ((a) ? (a) : (b))\n"
+            "static int\n"
+            "choose(int x) {\n"
+            "    return x ? 1 : 0;\n"
+            "}\n"
+            "static char\n"
+            "question(void) {\n"
+            "    return '?'; // ? in a comment\n"
+            "}\n",
+        )
+        self.assertEqual(output, "")
 
     def test_ryu_whitespace_and_preprocessor_violations(self):
         output = self.run_perl(

@@ -226,25 +226,6 @@ sub check_builtin_sizeof {
     }
 }
 
-# Ternaries are prohibited by c-guidelines.md except in Ryu. Ignore macro
-# definitions: metaprogramming helpers such as cbase/minmax.c use ?: on
-# preprocessor lines, which are not ordinary C statements.
-sub check_ternary_operators {
-    my ($path, $code) = @_;
-    my $line_number = 0;
-    my $continuation = 0;
-
-    for my $line (split /\n/, $code) {
-        $line_number += 1;
-        my $directive = $continuation || $line =~ /^[ \t]*#/;
-        $continuation = $directive && $line =~ /\\[ \t]*\z/;
-        next if $directive;
-        if (index($line, '?') >= 0) {
-            report_issue("$path:$line_number:ternary operator is forbidden\n");
-        }
-    }
-}
-
 my $cache_path = $ENV{CBASE_FORBIDDEN_PATTERNS_CACHE}
                  // '.cache/functions_forbidden_patterns.json';
 my $profile_cache_started = time() if $profile_enabled;
@@ -1521,9 +1502,6 @@ for my $path (@paths) {
     check_source_style($path, $source, $column_limit, $is_ryu);
     profile_checkpoint('line whitespace / length') if $profile_enabled;
 
-    if (!$is_ryu) {
-        # check_ternary_operators($path, $code);
-    }
 
 # An indented prototype inside a block is a declaration, not a call.
 # Only inspect the source prefix preceding the candidate name; do not
