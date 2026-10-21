@@ -130,6 +130,31 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertEqual(output.count("line exceeds 80 columns"), 1)
         self.assertIn("sample.c:3:line exceeds 80 columns", output)
 
+    def test_long_lines_preserve_tab_and_trailing_diagnostics(self):
+        source = (
+            "// " + "x" * 81 + "\t  \n"
+            "// " + "é" * 81 + "\t  \n"
+            "// " + "x" * 81 + "\n"
+            "// " + "x" * 76 + "\t\n"
+            "// " + "é" * 74 + "\t \n"
+        )
+        output = self.run_perl("src/long_ws.c", source)
+        expected = {
+            1: ("line exceeds 80 columns", "tab character is forbidden",
+                "trailing whitespace"),
+            2: ("line exceeds 80 columns", "tab character is forbidden",
+                "trailing whitespace"),
+            3: ("line exceeds 80 columns",),
+            4: ("tab character is forbidden", "trailing whitespace"),
+            5: ("tab character is forbidden", "trailing whitespace"),
+        }
+        for line, issues in expected.items():
+            for issue in issues:
+                self.assertIn(f"long_ws.c:{line}:{issue}", output)
+        self.assertEqual(output.count("line exceeds 80 columns"), 3)
+        self.assertEqual(output.count("tab character is forbidden"), 4)
+        self.assertEqual(output.count("trailing whitespace"), 4)
+
     def test_multiplication_spacing_is_not_checked(self):
         output = self.run_perl(
             "src/sample.c",
@@ -721,6 +746,30 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertNotIn("assignment fits on one line", normal)
         self.assertEqual(cecup.count("assignment fits on one line"), 2)
 
+    def test_assignment_wrap_does_not_consume_multiple_statements(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "void work(void) {\n"
+            "    a =\n"
+            "        f(); other();\n"
+            "    b =\n"
+            "        g();\n"
+            "}\n",
+        )
+        self.assertEqual(output.count("assignment fits on one line"), 1)
+        self.assertIn("sample.c:4:assignment fits on one line", output)
+        self.assertNotIn("sample.c:2:assignment fits on one line", output)
+
+    def test_assignment_wrap_requires_standalone_start_line(self):
+        output = self.run_perl(
+            "src/sample.c",
+            "void work(void) {\n"
+            "    a = x; b =\n"
+            "        y;\n"
+            "}\n",
+        )
+        self.assertNotIn("assignment fits on one line", output)
+
     def test_assignment_wraps_allow_braces_inside_string_literals(self):
         output = self.run_perl(
             "src/sample.c",
@@ -1192,6 +1241,21 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertIn("cbase/external_link.c:1:free(1)", result.stderr)
         self.assertNotIn("src/internal_link.c:1:free(0)", result.stderr)
         self.assertNotIn("cbase/internal.c:1:free(0)", result.stderr)
+
+    def test_local_function_prototype_is_not_a_call(self):
+        output = self.run_perl(
+            "src/local_proto.c",
+            "void f(void) {\n"
+            "    int32 work(\n"
+            "        int32 a, int32 b);\n"
+            "    return work(\n"
+            "        a, b);\n"
+            "}\n",
+        )
+        self.assertEqual(output.count("call breaks before the first "
+                                      "argument"), 1)
+        self.assertIn("local_proto.c:4:work call breaks", output)
+        self.assertNotIn("local_proto.c:2:work call breaks", output)
 
     def test_call_alignment_with_comments_and_nested_calls(self):
         output = self.run_perl(

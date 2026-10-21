@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Cwd qw(abs_path);
 use Digest::SHA;
-use Encode qw(decode FB_CROAK);
+use Encode qw(decode FB_CROAK LEAVE_SRC);
 use File::Basename qw(dirname);
 use File::Path qw(make_path);
 use File::Temp qw(tempfile);
@@ -158,7 +158,7 @@ sub check_source_style {
 
         if (defined($column_limit)
                 && length($line) > $column_limit
-                && length(decode('UTF-8', $line, FB_CROAK))
+                && length(decode('UTF-8', $line, FB_CROAK | LEAVE_SRC))
                    > $column_limit) {
             report_issue("$path:$line_number:line exceeds "
                          . "$column_limit columns\n");
@@ -1202,6 +1202,12 @@ sub check_unnecessary_assignment_wraps {
         }
         $indent = length($1);
         $left = $2;
+        # Do not treat the last assignment of a multi-statement line as a
+        # standalone candidate merely because that line ends with '='.
+        if ($masked =~ /;.*(?<![=<>!+*\/\%&|^-])=[ \t]*\r?\z/) {
+            $i += 1;
+            next;
+        }
         # Only a standalone assignment can participate in this grouping.
         # Ignore assignments embedded in conditions or other statements.
         if ($left =~ /[;{}]/
@@ -1218,8 +1224,10 @@ sub check_unnecessary_assignment_wraps {
         while ($end < @lines) {
             my $part_code = $code_lines[$end];
 
-            if ($part_code =~ /;[ \t]*\r?\z/
-                && $part_code !~ /;.*;/) {
+            # Two semicolons indicate multiple statements on the physical
+            # line, not one complete assignment for this candidate.
+            last if $part_code =~ /;.*;/;
+            if ($part_code =~ /;[ \t]*\r?\z/) {
                 $complete = 1;
                 last;
             }
@@ -1517,6 +1525,20 @@ for my $path (@paths) {
         # check_ternary_operators($path, $code);
     }
 
+# An indented prototype inside a block is a declaration, not a call.
+# Only inspect the source prefix preceding the candidate name; do not
+# require translation-unit parsing or typedef lookup.  Exclude expression
+# introducers such as 'return', which can legally precede a call.
+sub local_function_declaration_prefix {
+    my ($prefix) = @_;
+    return 0 unless $prefix =~
+        /^[ \t]*(?:(?:static|extern|inline|const|volatile|restrict)\s+)*
+          ([A-Za-z_][A-Za-z0-9_]*)\s*(?:\*+\s*)?$/x;
+    my $type = $1;
+    return $type !~ /^(?:return|goto|case|else|if|for|while|switch|
+                        sizeof|_Alignof|_Generic)$/x;
+}
+
     # Indentation distinguishes calls from the project's function headers.
     # Generated .meta.h files may break before the first argument.
     # Scan each indented line once rather than repeatedly searching for
@@ -1542,6 +1564,8 @@ for my $path (@paths) {
                                 |_Generic|_Static_assert)$/x) {
             next;
         }
+        my $declaration_prefix = substr($prefix, 0, -length($name));
+        next if local_function_declaration_prefix($declaration_prefix);
 
         # Inspect the source so masked comments and literals still count.
         if ($arg_idx >= length($source)
@@ -1676,6 +1700,7 @@ for my $path (@paths) {
             # return, assignments, and control-flow keywords.
             next unless $line_prefix =~ /^[ \t]/;
             next if $line_prefix =~ /^[ \t]*#/;
+            next if local_function_declaration_prefix($line_prefix);
             next if $name =~ /^(?:if|for|while|switch|sizeof|_Alignof
                                 |_Generic|_Static_assert)$/x;
 
