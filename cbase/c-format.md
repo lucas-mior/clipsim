@@ -44,8 +44,8 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
 - Space is mandatory around boolean or and boolean and (`&&`, and `||`).
 - Space is mandatory around all comparison operators.
 - Space is forbidden between a unary operator and its operand.
-- In general, prefer `+= 1` instead of `++`.
-- In general, prefer `-= 1` instead of `--`.
+- Prefer `+= 1` over `++`, except in `value = *pointer++;`.
+- Prefer `-= 1` over `--`, except in `while (value--) {}`.
 
 ## Casts
 
