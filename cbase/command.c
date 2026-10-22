@@ -394,7 +394,8 @@ cmd_windows_cmd_line(Command *command, char *cmdline, int64 cmdline_len) {
             j += argument_len;
         }
         if (i < command->argc - 1) {
-            cmdline[j++] = ' ';
+            cmdline[j] = ' ';
+            j += 1;
         }
     }
     cmdline[j] = '\0';

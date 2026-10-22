@@ -22,7 +22,7 @@ static struct sigaction assert_traps_old_signal_action;
 static bool assert_traps_signal_installed = false;
 
 static noreturn void
-assert_traps_signal_handler(int signal_number) {
+assert_traps_signal_handler(int32 signal_number) {
     (void)signal_number;
     assert_traps_caught = true;
     siglongjmp(assert_traps_env, 1);
@@ -247,7 +247,7 @@ assert_compare_const_pointer(enum AssertCompareMode mode,
 static bool
 assert_compare_const_string(enum AssertCompareMode mode,
                             char *var1, char *var2) {
-    int comparison;
+    int32 comparison;
 
     if ((var1 == NULL) || (var2 == NULL)) {
         return (var1 == NULL) && (var2 == NULL)
@@ -318,7 +318,6 @@ assert_compare_const(char *file, int32 line, char *func,
                      char *name1, char *name2,
                      AssertCompareValue var1, AssertCompareValue var2) {
     bool result;
-    char *symbol = assert_compare_mode_symbol(mode);
 
     if ((var1.kind == ASSERT_COMPARE_VALUE_INVALID)
         || (var2.kind == ASSERT_COMPARE_VALUE_INVALID)) {
@@ -329,7 +328,9 @@ assert_compare_const(char *file, int32 line, char *func,
         if (!result && DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %lld %s %lld = %s\n",
-                         name1, var1.integer, symbol, var2.integer, name2);
+                         name1, var1.integer,
+                         assert_compare_mode_symbol(mode),
+                         var2.integer, name2);
         }
     } else if (((var1.kind == ASSERT_COMPARE_VALUE_INTEGER)
                 || (var1.kind == ASSERT_COMPARE_VALUE_DOUBLE))
@@ -352,7 +353,8 @@ assert_compare_const(char *file, int32 line, char *func,
         if (!result && DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %f %s %f = %s\n",
-                         name1, value1, symbol, value2, name2);
+                         name1, value1, assert_compare_mode_symbol(mode),
+                         value2, name2);
         }
     } else if ((var1.kind == ASSERT_COMPARE_VALUE_STRING)
                && (var2.kind == ASSERT_COMPARE_VALUE_STRING)) {
@@ -361,12 +363,15 @@ assert_compare_const(char *file, int32 line, char *func,
             if ((var1.string == NULL) || (var2.string == NULL)) {
                 assert_error(file, line, func,
                              "%s = %p %s %p = %s\n",
-                             name1, (void *)var1.string, symbol,
+                             name1, (void *)var1.string,
+                             assert_compare_mode_symbol(mode),
                              (void *)var2.string, name2);
             } else {
                 assert_error(file, line, func,
                              "%s = %s %s %s = %s\n",
-                             name1, var1.string, symbol, var2.string, name2);
+                             name1, var1.string,
+                             assert_compare_mode_symbol(mode),
+                             var2.string, name2);
             }
         }
     } else if (((var1.kind == ASSERT_COMPARE_VALUE_POINTER)
@@ -390,7 +395,8 @@ assert_compare_const(char *file, int32 line, char *func,
         if (!result && DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %p %s %p = %s\n",
-                         name1, pointer1, symbol, pointer2, name2);
+                         name1, pointer1, assert_compare_mode_symbol(mode),
+                         pointer2, name2);
         }
     } else if ((var1.kind == ASSERT_COMPARE_VALUE_BOOL)
                && (var2.kind == ASSERT_COMPARE_VALUE_BOOL)) {
@@ -398,7 +404,9 @@ assert_compare_const(char *file, int32 line, char *func,
         if (!result && DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %d %s %d = %s\n",
-                         name1, var1.boolean, symbol, var2.boolean, name2);
+                         name1, var1.boolean,
+                         assert_compare_mode_symbol(mode),
+                         var2.boolean, name2);
         }
     } else {
         return assert_compare_const_unsupported(file, line, func,
@@ -769,7 +777,7 @@ GENERATE_ASSERT_INTEGERS_SAME_SIGN(unsigned, "%llx", >=, greater_equal)
 
 #undef GENERATE_ASSERT_INTEGERS_SAME_SIGN
 
-static int
+static int32
 compare_sign_with_unsign(llong s, ullong u) {
     ullong saux;
     if (s < 0) {
@@ -904,8 +912,8 @@ assert_double_is_zero(double x) {
     return x == (double)0;
 }
 
-static int
-assert_fp_common_kind(int kind1, int kind2) {
+static int32
+assert_fp_common_kind(int32 kind1, int32 kind2) {
     if ((kind1 == ASSERT_FP_KIND_FLOAT) || (kind2 == ASSERT_FP_KIND_FLOAT)) {
         return ASSERT_FP_KIND_FLOAT;
     }
@@ -916,7 +924,7 @@ assert_fp_common_kind(int kind1, int kind2) {
 }
 
 static ullong
-assert_fp_max_ulps(int common_kind) {
+assert_fp_max_ulps(int32 common_kind) {
     if (common_kind == ASSERT_FP_KIND_FLOAT) {
         return (ullong)ASSERT_FLOAT_MAX_ULPS;
     }
@@ -1043,11 +1051,11 @@ assert_double_special_close(double var1, double var2,
 
 static bool
 assert_double_close_ulps(double var1, double var2,
-                         int kind1, int kind2,
+                         int32 kind1, int32 kind2,
                          double *diff_out,
                          ullong *ulps_out,
                          ullong *max_ulps_out) {
-    int common_kind;
+    int32 common_kind;
     bool handled;
     double diff;
     ullong ulps;
@@ -1164,7 +1172,7 @@ a_double_##MODE(char *file, int32 line, char *func,                            \
                 char *name1, char *name2,                                      \
                 char *type1, char *type2,                                      \
                 int32 bits1, int32 bits2,                                      \
-                int kind1, int kind2,                                          \
+                int32 kind1, int32 kind2,                                      \
                 double var1, double var2) {                                    \
     double diff;                                                               \
     ullong ulps;                                                               \
@@ -1346,7 +1354,7 @@ assert_functions_sink(void) {
 #define CBASE_IMPLEMENT
 #include "cbase.h"
 
-int
+int32
 main(void) {
     ASSERT(true);
     ASSERT(!false);
@@ -1397,19 +1405,19 @@ main(void) {
         ASSERT_EQ(a, b);
         ASSERT_NE(a, c);
     } {
-        int a = 1;
-        int b = 1;
+        int32 a = 1;
+        int32 b = 1;
         ASSERT_EQ(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GE_VAR(a, b);
     } {
-        int a = 1;
+        int32 a = 1;
         uint b = 1;
         ASSERT_EQ(a, b);
         ASSERT_LE_VAR(a, b);
         ASSERT_GE_VAR(a, b);
     } {
-        int a = 1;
+        int32 a = 1;
         uint b = 2;
         ASSERT_NE(a, b);
         ASSERT_LT_VAR(a, b);
@@ -1542,7 +1550,7 @@ main(void) {
         void *b = &a;
         ASSERT_NE(a, b);
     } {
-        int array[100];
+        int32 array[100];
         void *a = &array[0];
         void *b = &array[1];
         ASSERT_NE(a, b);
@@ -1560,7 +1568,7 @@ main(void) {
         ASSERT_NE(a, b);
     } {
         char haystack[] = "alpha beta gamma";
-        char binary_haystack[] = { 'a', 'b', '\0', 'c', 'd' };
+        char binary_haystack[] = { 'a', 'b', '\0', 'c', 'd', };
 
         ASSERT_CONTAINS(haystack, SIZEOF(haystack) - 1, "alpha");
         ASSERT_CONTAINS(haystack, SIZEOF(haystack) - 1, "beta");
@@ -1592,13 +1600,13 @@ main(void) {
         /* ASSERT_GE_VAR(a, x); */
 
         // uncomment to trigger a non-constant RHS compile error
-        /* int y = 1; */
+        /* int32 y = 1; */
         /* ASSERT_LT(1, y); */
     }
 
 #if OS_UNIX
     {
-        int a = 0;
+        int32 a = 0;
         double b = 1;
         double close_a = 0.1 + 0.2;
         double close_b = 0.3;

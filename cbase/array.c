@@ -16,7 +16,7 @@
 
 void *
 generic_array_init(int32 cap, int64 item_size) {
-    GenericArrayHeader *header;
+    union GenericArrayHeader *header;
     int64 size;
 
     if (cap < 0) {
@@ -33,7 +33,7 @@ generic_array_init(int32 cap, int64 item_size) {
 
 void *
 generic_array_grow(void *array, int64 item_size) {
-    GenericArrayHeader *header;
+    union GenericArrayHeader *header;
     int32 old_cap;
     int32 new_cap;
     int64 old_size;
@@ -96,7 +96,7 @@ generic_array_next_capacity(int32 old_cap, int32 needed_count) {
 
 bool
 generic_array_reserve(void **array, int32 needed_count, int64 item_size) {
-    GenericArrayHeader *header;
+    union GenericArrayHeader *header;
     int32 old_cap;
     int32 old_count;
     int32 new_cap;

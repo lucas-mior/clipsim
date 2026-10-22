@@ -268,7 +268,7 @@ readSmall(uint8 *p, uint64 k) {
  *  Returns a 64-bit hash.
  */
 INLINE uint64
-rapidhash_internal(void *key, int64 len, uint64 seed, const uint64 *secret) {
+rapidhash_internal(void *key, int64 len, uint64 seed, uint64 *secret) {
     uint8 *p = key;
     uint64 *s = (uint64 *)secret;
     uint64 a;
@@ -353,7 +353,7 @@ rapidhash_internal(void *key, int64 len, uint64 seed, const uint64 *secret) {
 
 INLINE uint64
 rapidhash_withSeed(void *key, int64 len, uint64 seed) {
-    return rapidhash_internal(key, len, seed, rapid_secret);
+    return rapidhash_internal(key, len, seed, (uint64 *)rapid_secret);
 }
 
 uint64
@@ -362,8 +362,7 @@ rapidhash(void *key, int64 len) {
 }
 
 INLINE rapidhash128_t
-rapidhash128_internal(void *key, uint64 len, uint64 seed,
-                      const uint64 *secret) {
+rapidhash128_internal(void *key, uint64 len, uint64 seed, uint64 *secret) {
     uint8 *p = key;
     uint64 a;
     uint64 b;
@@ -427,7 +426,7 @@ rapidhash128_internal(void *key, uint64 len, uint64 seed,
 
 rapidhash128_t
 rapidhash128(void *key, uint64 len) {
-    return rapidhash128_internal(key, len, rapid_seed, rapid_secret);
+    return rapidhash128_internal(key, len, rapid_seed, (uint64 *)rapid_secret);
 }
 
 #endif /* RAPIDHASH_C */

@@ -139,7 +139,7 @@ test_ryu_s2d_leading_plus(void) {
     ASSERT_EQ(used, -MALFORMED_INPUT);
 
     {
-        char input[] = {'+', '2', '.', '5', 'x'};
+        char input[] = {'+', '2', '.', '5', 'x',};
 
         used = s2d_n(input, 4, &value);
         ASSERT_EQ(used, 4);
@@ -208,7 +208,7 @@ test_ryu_s2d_range_values(void) {
     ASSERT_EQ(test_ryu_double_bits(value), 0x3ff0000000000000ull);
 
     {
-        char input[] = {'1', 'e', '3', '0', '9', 'x'};
+        char input[] = {'1', 'e', '3', '0', '9', 'x',};
 
         used = s2d_n(input, 5, &value);
         ASSERT_EQ(used, 5);
@@ -297,7 +297,7 @@ test_ryu_s2d_hex(void) {
     ASSERT_EQ(test_ryu_double_bits(value), 0x7ff8000000000000ull);
 
     {
-        char input[] = {'0', 'x', '1', '.', '8', 'p', '+', '2', 'x'};
+        char input[] = {'0', 'x', '1', '.', '8', 'p', '+', '2', 'x',};
 
         used = s2d_n(input, 8, &value);
         ASSERT_EQ(used, 8);
@@ -969,7 +969,7 @@ tryu_s2f_reference_outputs(void) {
 
 static void
 tryu_s2f_bounded_inputs(void) {
-    char input[] = {'1', '.', '2', '5', 'x'};
+    char input[] = {'1', '.', '2', '5', 'x',};
     float value;
     enum Status status;
 

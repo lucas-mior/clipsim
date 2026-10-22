@@ -84,7 +84,8 @@ here_impl(char *file, int32 line, char *func) {
 #endif
 
     error2("\n======== HERE(%lld): %s:%d:%s()\n",
-           here_counter++, file, line, func);
+           here_counter, file, line, func);
+    here_counter += 1;
 #if OS_UNIX
     SNPRINTF(buffer, "%s:%d:%s\n", file, line, func);
     switch (fork()) {
@@ -239,7 +240,9 @@ getopt_long(
     optarg = NULL;
     if (short_position && *short_position) {
         opt = memchr64(optstring, *short_position, strlen32(optstring));
-        optopt = *short_position++;
+        optopt = *short_position;
+        short_position += 1;
+
         if ((opt == NULL) || (*opt == ':')) {
             return '?';
         }
@@ -259,6 +262,7 @@ getopt_long(
             optind += 1;
             short_position = NULL;
         }
+
         return optopt;
     }
 
@@ -1036,8 +1040,7 @@ util_test_qsort_cmp(void *a, void *b) {
         mem_literal_actual = MEM_LITERAL_SHORT(mem_literal_haystack,           \
                                                mem_literal_haystack_len,       \
                                                LITERAL);                       \
-        ASSERT_EQ(                                                     \
-            (void *)mem_literal_actual, (void *)mem_literal_expected);        \
+        ASSERT_EQ((void *)mem_literal_actual, (void *)mem_literal_expected);   \
     } while (0)
 
 #define ASSERT_MEM_LITERAL(HAYSTACK, LITERAL, OFFSET)                          \
@@ -1045,7 +1048,7 @@ util_test_qsort_cmp(void *a, void *b) {
 
 static void
 util_test_mem_literal_short(void) {
-    char binary_haystack[] = {'x', 'a', '\0', 'b', 'y'};
+    char binary_haystack[] = {'x', 'a', '\0', 'b', 'y',};
 
     ASSERT_NULL(MEM_LITERAL_SHORT(NULL, 2, "ab"));
     ASSERT_NULL(MEM_LITERAL_SHORT("", 0, "ab"));
@@ -1179,7 +1182,7 @@ main(int argc, char **argv) {
     }
 
     {
-        int32 values[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+        int32 values[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9,};
         bool seen[10] = {0};
 
         rand_int_seed(1234);
@@ -1198,7 +1201,7 @@ main(int argc, char **argv) {
 
 
     {
-        int32 arr[] = {10, 5, 20, 1};
+        int32 arr[] = {10, 5, 20, 1,};
         qsort64(arr, 4, SIZEOF(int32), util_test_qsort_cmp);
         ASSERT_EQ(arr[0], 1);
         ASSERT_EQ(arr[1], 5);

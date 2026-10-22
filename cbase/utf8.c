@@ -56,7 +56,7 @@ utf8_decode_byte(char c, int32 *i) {
 
 char
 utf8_encode_byte(uint32 u, int32 i) {
-    return (char)(utf8_byte[i] | (u & (uint32) ~utf8_mask[i]));
+    return (char)(utf8_byte[i] | (u & (uint32)~utf8_mask[i]));
 }
 
 int32
@@ -554,7 +554,7 @@ main(void) {
             0x20AC,
             0x1F60A,
             0x1F1E9, // Regional Indicator D
-            0x1F1EA  // Regional Indicator E
+            0x1F1EA, // Regional Indicator E
         };
         int32 str_len = strlen32(test_str);
         int32 consumed_total = 0;

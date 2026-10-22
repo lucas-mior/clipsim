@@ -41,7 +41,7 @@ arena_print(Arena *arena) {
 }
 
 char *
-arena_strerror(int arena_errno) {
+arena_strerror(int32 arena_errno) {
     switch (arena_errno) {
     case EARENA_INVALID:
         return "Invalid arena pointer";
@@ -358,7 +358,7 @@ arena_functions_sink(void) {
 #define CBASE_IMPLEMENT
 #include "cbase.h"
 
-int
+int32
 main(void) {
     Arena *arena;
     char *objs[1000];
@@ -426,7 +426,7 @@ main(void) {
     }
 
     {
-        int aux;
+        int32 aux;
         int32 nallocated = LENGTH(objs);
 
         while (nallocated > 0) {

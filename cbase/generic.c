@@ -423,8 +423,8 @@ main(void) {
     }
 
     {
-        void* var_voidptr = NULL;
-        char* var_string = "a nice string";
+        void *var_voidptr = NULL;
+        char *var_string = "a nice string";
         char var_buffer[128] = "a nice buffer";
         bool var_bool = true;
         char var_char = 'c';

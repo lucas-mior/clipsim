@@ -272,7 +272,7 @@ _Generic((VAR),                                      \
 )
 
 #define MINMAX_COMPARE_DIAGNOSTIC_(RESULT, MODE, VAR1, VAR2)               \
-  __extension__ ({                                                         \
+  __extension__({                                                          \
     _Pragma("GCC diagnostic push")                                         \
     _Pragma("GCC diagnostic ignored \"-Wpedantic\"")                       \
     _Pragma("GCC diagnostic ignored \"-Wsign-compare\"")                   \

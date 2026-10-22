@@ -895,7 +895,7 @@ main(void) {
            == TEST_STRICT_FLAGS_NONE);
 
     {
-        char counted[] = {'R', 'E', 'A', 'D'};
+        char counted[] = {'R', 'E', 'A', 'D',};
 
         ASSERT(TEST_FLAGS_parse(counted, (int32)SIZEOF(counted))
                == TEST_FLAGS_READ);
@@ -955,7 +955,7 @@ main(void) {
            == TEST_STRICT_NORMAL_PEANUT_BUTTER);
 
     {
-        char counted[] = {'c', 'h', 'e', 'r', 'r', 'y'};
+        char counted[] = {'c', 'h', 'e', 'r', 'r', 'y',};
         char counted_prefix[] = "banana suffix";
         char *prefix = "banana";
 

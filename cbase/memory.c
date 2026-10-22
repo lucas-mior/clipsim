@@ -954,7 +954,7 @@ int main(void) {
         int64 initial_size;
         TestFlex *flex;
 
-        initial_size = SIZEOF(TestFlex) + (count*SIZEOF(int64));
+        initial_size = SIZEOF(*flex) + (count*SIZEOF(int64));
         flex = malloc2(initial_size);
         flex->count = (int32)count;
 

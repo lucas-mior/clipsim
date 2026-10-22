@@ -4374,7 +4374,7 @@ fmt_sprintf(char *buffer, int64 capacity, char *format, ...) {
     return len;
 }
 
-const FmtLocale fmt_locale_c = {
+FmtLocale fmt_locale_c = {
     .weekday_abbr = {
         "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat",
     },
@@ -4463,7 +4463,7 @@ fmt_strftime_iso_week(struct tm *time_info,
 }
 
 static void
-fmt_strftime_write_string(FormatSink *sink, const char *string) {
+fmt_strftime_write_string(FormatSink *sink, char *string) {
     ASSERT(string != NULL);
 
     while (*string != '\0') {
@@ -4474,7 +4474,7 @@ fmt_strftime_write_string(FormatSink *sink, const char *string) {
 }
 
 static void
-fmt_strftime_write_name(FormatSink *sink, const char *const *names,
+fmt_strftime_write_name(FormatSink *sink, char **names,
                         int32 names_len, int32 index) {
     if ((index < 0) || (index >= names_len)) {
         fmt_sink_write_byte(sink, '?');
@@ -4486,9 +4486,9 @@ fmt_strftime_write_name(FormatSink *sink, const char *const *names,
 }
 
 static void
-fmt_strftime_format(FormatSink *sink, const char *format,
-                    struct tm *time_info, const FmtLocale *locale) {
-    const char *cursor;
+fmt_strftime_format(FormatSink *sink, char *format,
+                    struct tm *time_info, FmtLocale *locale) {
+    char *cursor;
 
     ASSERT(format != NULL);
     ASSERT(locale != NULL);
@@ -4799,7 +4799,7 @@ fmt_strftime_format(FormatSink *sink, const char *format,
         case 'Z':
 #if OS_UNIX
             if (time_info->tm_zone != NULL) {
-                fmt_strftime_write_string(sink, time_info->tm_zone);
+                fmt_strftime_write_string(sink, (char *)time_info->tm_zone);
             }
 #endif
             break;
@@ -4820,7 +4820,7 @@ fmt_strftime_format(FormatSink *sink, const char *format,
 
 int32
 fmt_strftime_l(char *buffer, int64 capacity, char *format,
-               struct tm *time_info, const FmtLocale *locale) {
+               struct tm *time_info, FmtLocale *locale) {
     FormatSink sink;
     int32 len;
 
@@ -5227,10 +5227,10 @@ test_fmt_null_string_configuration(void) {
 static void
 test_fmt_char_string_outputs(void) {
     char nul_char_expected[] = {'\0'};
-    char span[] = {'a', '\0', 'b', 'c'};
-    char span_expected[] = {'a', '\0', 'b', 'c'};
-    char span_width_expected[] = {' ', ' ', 'a', '\0', 'b'};
-    char span_left_expected[] = {'a', '\0', 'b', ' ', ' '};
+    char span[] = {'a', '\0', 'b', 'c',};
+    char span_expected[] = {'a', '\0', 'b', 'c',};
+    char span_width_expected[] = {' ', ' ', 'a', '\0', 'b',};
+    char span_left_expected[] = {'a', '\0', 'b', ' ', ' ',};
     char plain_precision_expected[] = {'a'};
     char spaces[] = {' ', ' ', ' '};
     char buffer[16];
@@ -5872,7 +5872,7 @@ fmt_test_planned_sprintf(FmtPlan *plan, char *buffer, int64 capacity, ...) {
 static void
 test_fmt_planned_plan(void) {
     char format[] = "x=%d s=%.*s f=%g";
-    char span[] = {'a', '\0', 'b', 'c'};
+    char span[] = {'a', '\0', 'b', 'c',};
     char buffer[128];
     FmtPlan plan = {0};
     int32 estimate;
@@ -6055,7 +6055,7 @@ test_fmt_strftime(void) {
 
 static void
 test_fmt_strftime_locale(void) {
-    static const FmtLocale locale = {
+    static FmtLocale locale = {
         .weekday_abbr = {
             "d0", "d1", "d2", "d3", "d4", "d5", "d6",
         },
@@ -6191,7 +6191,7 @@ test_fmt_public_api(void) {
 
 static void
 test_fmt_estimate(void) {
-    char span[] = {'a', '\0', 'b', 'c'};
+    char span[] = {'a', '\0', 'b', 'c',};
     char buffer[64];
     int32 estimate;
     int32 exact;

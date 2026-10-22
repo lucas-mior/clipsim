@@ -169,7 +169,7 @@ fmt_float64_exp(char *buffer, int64 capacity, double value, int32 precision) {
 int32
 bytes_pretty(char *buffer, int64 raw) {
     static char *const suffixes[] = {
-        "B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"
+        "B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB",
     };
     double aux_pretty;
     int64 i;
@@ -245,7 +245,8 @@ fmt_time_elapsed(char *buffer, double elapsed) {
     milliseconds = total_milliseconds%1000;
 
     if (negative) {
-        raw_seconds[raw_len++] = '-';
+        raw_seconds[raw_len] = '-';
+        raw_len += 1;
     }
     number_len = itoa2(number, SIZEOF(number), total_seconds);
     memcpy64(raw_seconds + raw_len, number, number_len);
@@ -263,7 +264,8 @@ fmt_time_elapsed(char *buffer, double elapsed) {
     }
 
     if (negative) {
-        buffer[n++] = '-';
+        buffer[n] = '-';
+        n += 1;
     }
 
     if (elapsed <= 3600.0) {

@@ -19,8 +19,8 @@ static time_t timezone_offset = 0;
 
 int32
 strftime2(char *buffer, int64 size, char *format, struct tm *time_info) {
-    size_t n;
-    n = strftime(buffer, (size_t)size, format, time_info);
+    int64 n;
+    n = (int64)strftime(buffer, (size_t)size, format, time_info);
     if (n == 0) {
         error("Error in strftime(\"%s\").\n", format);
         fatal(EXIT_FAILURE);
@@ -92,7 +92,7 @@ sleep_ns(int64 nanoseconds) {
     {
         struct timespec requested;
         struct timespec remaining;
-        int status;
+        int32 status;
 
         requested.tv_sec = (time_t)(nanoseconds / 1000000000);
         requested.tv_nsec = (long)(nanoseconds % 1000000000);

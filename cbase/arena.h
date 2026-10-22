@@ -37,7 +37,7 @@ void arena_print(Arena *arena);
 void *arena_push(Arena *arena, int64 size);
 uint32 arena_push_index32(Arena *arena, uint32 size);
 void *arena_reset(Arena *arena);
-char *arena_strerror(int arena_errno);
+char *arena_strerror(int32 arena_errno);
 Arena *arena_with_space(Arena *arena, int64 size);
 void arenas_destroy(Arena **arenas, int32 number);
 bool arenas_pop(Arena **arenas, int32 narenas, void *p);

@@ -441,21 +441,21 @@ typedef struct FmtPlan {
 // bytes and may contain UTF-8. Locale format strings may use fmt_strftime
 // directives but must not form recursive %c/%x/%X/%r expansion cycles.
 typedef struct FmtLocale {
-    const char *weekday_abbr[7];
-    const char *weekday[7];
-    const char *month_abbr[12];
-    const char *month[12];
-    const char *am;
-    const char *pm;
-    const char *am_lower;
-    const char *pm_lower;
-    const char *date_time_fmt;
-    const char *date_fmt;
-    const char *time_fmt;
-    const char *time_12_fmt;
+    char *weekday_abbr[7];
+    char *weekday[7];
+    char *month_abbr[12];
+    char *month[12];
+    char *am;
+    char *pm;
+    char *am_lower;
+    char *pm_lower;
+    char *date_time_fmt;
+    char *date_fmt;
+    char *time_fmt;
+    char *time_12_fmt;
 } FmtLocale;
 
-extern const FmtLocale fmt_locale_c;
+extern FmtLocale fmt_locale_c;
 
 // cbase fmt_printf-compatible formatter. It returns the byte count that would
 // have been written, excluding the terminating '\0'. It writes a terminating
@@ -483,7 +483,7 @@ int32 fmt_vsnprintf_planned(FmtPlan *, char *, int64, va_list);
 // remain valid and unmodified during the call. On Unix, %z and %Z use only
 // tm_gmtoff/tm_zone already present in struct tm.
 int32 fmt_strftime(char *, int64, char *, struct tm *);
-int32 fmt_strftime_l(char *, int64, char *, struct tm *, const FmtLocale *);
+int32 fmt_strftime_l(char *, int64, char *, struct tm *, FmtLocale *);
 
 String *string_array_append(StringArray *);
 int32 string_array_append_copy(StringArray *array, String *item);
@@ -986,13 +986,13 @@ int32 cmd_wait(Command *);
 #pragma warning(push)
 #pragma warning(disable: 4324)
 #endif
-typedef union GenericArrayHeader {
+union GenericArrayHeader {
     struct {
         int32 count;
         int32 cap;
     };
     CbaseMaxAlign alignment;
-} GenericArrayHeader;
+};
 #if CBASE_CRT_MSVC
 #pragma warning(pop)
 #endif
@@ -1004,8 +1004,8 @@ bool generic_array_reserve(void **array, int32 needed_count,
 int32 generic_array_capacity(void *array);
 void generic_array_set_count(void *array, int32 count);
 
-#define ARRAY_HEADER(ARRAY)   ((GenericArrayHeader *)((void *)(ARRAY)) - 1)
-#define ARRAY_LEN(ARRAY)      ((ARRAY) ? ARRAY_HEADER(ARRAY)->count : 0)
+#define ARRAY_HEADER(ARRAY)  ((union GenericArrayHeader *)((void *)(ARRAY)) - 1)
+#define ARRAY_LEN(ARRAY)     ((ARRAY) ? ARRAY_HEADER(ARRAY)->count : 0)
 #define ARRAY_CAPACITY(ARRAY) generic_array_capacity(ARRAY)
 
 #define ARRAY_RESERVE(ARRAY, NEEDED_COUNT)                       \
@@ -1026,7 +1026,7 @@ void generic_array_set_count(void *array, int32 count);
 } while (0)
 #define ARRAY_FREE(ARRAY) do {                                   \
     if (ARRAY) {                                                 \
-        GenericArrayHeader *array_header_ = ARRAY_HEADER(ARRAY); \
+        union GenericArrayHeader *array_header_ = ARRAY_HEADER(ARRAY); \
         free2(array_header_, SIZEOF(*array_header_)              \
               + array_header_->cap*SIZEOF(*(ARRAY)));            \
         (ARRAY) = NULL;                                          \

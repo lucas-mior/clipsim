@@ -190,8 +190,8 @@ sort_functions_sink(void) {
 #define CBASE_IMPLEMENT
 #include "cbase.h"
 
-static int32 possibleN[] = {31, 32, 33, 50};
-static int32 possibleP[] = {1, 2, 3, 8};
+static int32 possibleN[] = {31, 32, 33, 50,};
+static int32 possibleP[] = {1, 2, 3, 8,};
 
 static int32
 compare_int(void *a, void *b) {
