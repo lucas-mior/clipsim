@@ -192,7 +192,7 @@ really needs to iterate over bit positions.
 
 The underlying type defaults to `uint32`, must be unsigned, and must have
 enough bits for all generated flags. A custom unsigned type can be selected
-with `ENUM_UNDERLYING_TYPE`.
+with `EnumUnderlyingType`.
 
 Use `|` to combine flags:
 

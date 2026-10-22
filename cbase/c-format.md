@@ -364,11 +364,11 @@ default:
   int32 x;
   int32 y;
   ```
-- Always use trailing commas in array initializers, including single-line
-  initializers. For struct initializers, trailing commas are mandatory only
-  when the initializer spans multiple lines. Initializing with `{0}` is exempt:
+- Use trailing commas in array initializers with four or more elements, even
+  for single-line initializers. For struct initializers, trailing commas are
+  mandatory only when the initializer spans multiple lines. `{0}` is exempt:
   ```c
-  int32 array[] = {1, 2, 3,};
+  int32 array[] = {1, 2, 3, 4,};
 
   int32 array2[10] = {0};
 

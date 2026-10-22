@@ -17,7 +17,7 @@
 #define ENUM_NAME CommandFlag
 #define ENUM_BITFLAGS 1
 #define ENUM_PREFIX_ CMD_
-#define ENUM_UNDERLYING_TYPE uint32
+#define EnumUnderlyingType uint32
 #define ENUM_FIELDS                   \
     XX(CMD_CAPTURE_STDOUT)        \
     XX(CMD_CAPTURE_STDERR)        \

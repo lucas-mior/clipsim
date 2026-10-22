@@ -67,7 +67,7 @@ preconditions; assert those instead.
 ## Types
 
 - `const` keyword:
-  * Never use const qualifiers in function signatures.
+  * Function signatures may use const only when required by an external API.
   * You can use it for static constant global data.
   * You can use it for casts needed to interface with the C standard library or
     other stupid libraries.
@@ -1028,8 +1028,10 @@ if (enum & ENUM_BITFLAG) {
 
   // bad
   ASSERT(access(path, F_OK) == 0);
-  // good
+  // good, if we don't care about the specific non-zero error code
   ASSERT(!access(path, F_OK));
+  // good, if we care about the specific negative error code.
+  ASSERT_EQ(access(path, F_OK), 0);
   ```
 - Prefer `ASSERT_ZERO(value);` instead of `ASSERT(value == 0)`.
   * Note: if zero means "function succeded", use
