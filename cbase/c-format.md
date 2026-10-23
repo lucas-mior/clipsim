@@ -144,7 +144,14 @@ For other types of lines, like
 assignments, macro definitions, array declarations, string literals, etc:
 
 1. Arithmetic expressions: break lines before one (or more) of the operators, if
-   needed.
+   needed and align accordingly to the arithmetic precence:
+   ```
+   double result = variable_x
+                   *(variable_y + width)
+                   *function_call(arguments);
+   double other = variable_x + variable_y
+                               *(width + var_much + more + stuff + many);
+   ```
 2. Simple assignments: Break after the `=` sign
 3. Macro definitions: use backslash, reduce the macro name, or use helper macros
 4. For code that is too deeply nested: use early returns and continues when

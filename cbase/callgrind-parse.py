@@ -9,6 +9,7 @@ from collections import defaultdict
 # Increase recursion depth for deeply nested call graphs
 sys.setrecursionlimit(200000)
 
+
 def resolve_name(line, name_map):
     """Resolves Callgrind's string compression: e.g., 'fn=(1) main'"""
     val = line.split('=', 1)[1].strip()
@@ -22,6 +23,7 @@ def resolve_name(line, name_map):
         else:
             return name_map.get(id_part, f"unknown_fn_{id_part}")
     return val
+
 
 def parse_callgrind(filepath):
     name_map = {}
@@ -114,6 +116,7 @@ def parse_callgrind(filepath):
 
     return self_costs, edge_costs, call_counts, function_sources
 
+
 def find_sccs(nodes, adj):
     """Tarjan's algorithm to find Strongly Connected Components (cycles)"""
     index = 0
@@ -153,53 +156,6 @@ def find_sccs(nodes, adj):
             strongconnect(v)
 
     return sccs
-
-def annotate_top_sources(filepath, rankings, function_sources):
-    project_root = Path(__file__).resolve().parent
-    output_dir = Path.cwd()
-    seen_sources = set()
-    output_sources = {}
-
-    for ranking in rankings:
-        for name, _ in ranking[:5]:
-            for source in sorted(function_sources.get(name, ())):
-                if not source.endswith('.c'):
-                    continue
-
-                path = Path(source)
-                if not path.is_absolute():
-                    path = project_root / path
-                path = path.resolve()
-                if not path.is_file():
-                    continue
-                try:
-                    relative = path.relative_to(project_root)
-                except ValueError:
-                    # Skip libc and any other external source trees.
-                    continue
-
-                if path in seen_sources:
-                    continue
-                seen_sources.add(path)
-
-                output_name = f"profile-{path.name}.c.txt"
-                if output_name in output_sources:
-                    print(
-                        f"Skipping {relative}: {output_name} already belongs to "
-                        f"{output_sources[output_name]}",
-                        file=sys.stderr,
-                    )
-                    continue
-                output_sources[output_name] = relative
-
-                with (output_dir / output_name).open('w') as output:
-                    subprocess.run(
-                        ['callgrind_annotate', str(Path(filepath).resolve()),
-                         source],
-                        cwd=project_root,
-                        stdout=output,
-                        check=True,
-                    )
 
 
 def main():
@@ -276,17 +232,8 @@ def main():
     print_top(sorted_incl, "TOP FUNCTIONS BY INCLUSIVE TIME (Cycle-Aware)", 1.0)
     print_top(sorted_excl, "TOP FUNCTIONS BY EXCLUSIVE TIME (Self Cost)", 1.0)
     print_top(sorted_calls, "TOP FUNCTIONS BY NUMBER OF CALLS", None)
+    return
 
-    # Use exactly the entries eligible for the three displayed rankings.
-    top_calls = [(name, cost) for name, cost in sorted_calls
-                 if call_counts.get(name, 0) > 0][:5]
-    top_excl = [(name, cost) for name, cost in sorted_excl
-                if (cost / total_time) * 100 >= 1.0][:5]
-    top_incl = [(name, cost) for name, cost in sorted_incl
-                if (cost / total_time) * 100 >= 1.0][:5]
-    annotate_top_sources(
-        filepath, (top_calls, top_excl, top_incl), function_sources
-    )
 
 if __name__ == "__main__":
     main()
