@@ -884,6 +884,33 @@ class ForbiddenPatternsTests(unittest.TestCase):
         self.assertNotIn("config.h:1:line exceeds", result.stderr)
         self.assertIn("extra.h:1:line exceeds 80 columns", result.stderr)
 
+    def test_shell_runs_csanecheck_after_perl_checker(self):
+        order = self.root / "order.txt"
+        self.write(
+            "functions_forbidden_patterns.pl",
+            "open my $stream, '>>', $ENV{'CHECKER_ORDER'} or die;\n"
+            "print {$stream} \"perl\\n\";\n"
+            "close $stream;\n",
+        )
+        self.write("status_temporary_patterns.py", "")
+        csanecheck = self.write(
+            "cbase/csanecheck",
+            "#!/bin/sh\n"
+            "printf 'csanecheck\\n' >> \"$CHECKER_ORDER\"\n"
+            "printf '%s\\n' 'src/sample.c:1:1: error[TEST]: finding'\n"
+            "exit 1\n",
+        )
+        csanecheck.chmod(0o755)
+        self.write("src/sample.c", "int32 value;\n")
+
+        result = self.run_shell(CHECKER_ORDER=str(order))
+
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertEqual(order.read_text(encoding="utf-8"),
+                         "perl\ncsanecheck\n")
+        self.assertIn("Error: csanecheck findings:", result.stderr)
+        self.assertIn("error[TEST]: finding", result.stderr)
+
     def test_explicit_exclusion_still_applies(self):
         self.prepare_shell_checker()
         self.write("cbase/ryu/extra.c", "// " + "x" * 79 + "\n")

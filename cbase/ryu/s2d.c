@@ -370,7 +370,6 @@ ryu_decimal_extended(const char *buffer, int32 parsed_len,
     int32 approximate_len = 0;
     int64 approximate_exponent;
     double estimate;
-    int32 status;
 
     if (order >= 309) {
         bits = 0x7ff0000000000000ull;
@@ -441,8 +440,8 @@ ryu_decimal_extended(const char *buffer, int32 parsed_len,
             approximate_len += 1;
         }
     }
-    status = s2d_n(approximate, approximate_len, &estimate);
-    assert(status > 0 || status == -FLOAT_UNDERFLOW);
+    ASSERT_GE(abs(s2d_n(approximate, approximate_len, &estimate)),
+              FLOAT_UNDERFLOW);
     memcpy(&bits, &estimate, SIZEOF(bits));
     if (bits == 0x7ff0000000000000ull) {
         bits -= 1;
