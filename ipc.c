@@ -312,7 +312,7 @@ ipc_daemon_dprintf(int32 fd, char *name, char *format, ...) {
     va_list args;
 
     va_start(args, format);
-    n = vsnprintf(buffer, SIZEOF(buffer), format, args);
+    n = fmt_vsnprintf(buffer, SIZEOF(buffer), format, args);
     va_end(args);
 
     if ((n < 0) || (n >= (int32)SIZEOF(buffer))) {

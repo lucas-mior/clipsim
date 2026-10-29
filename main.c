@@ -180,13 +180,13 @@ main_block_middle_mouse_paste_enabled(void) {
 void
 main_usage(FILE *stream) {
     DEBUG_PRINT("%p", (void *)stream)
-    fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
-    fprintf(stream, "Available commands:\n");
+    fmt_fprintf(stream, "usage: %s COMMAND [n]\n", "clipsim");
+    fmt_fprintf(stream, "Available commands:\n");
     for (int32 i = 0; i < LENGTH(commands); i += 1) {
-        fprintf(stream,
-                "%s | %-*s : %s\n",
-                commands[i].shortname, 8, commands[i].longname,
-                commands[i].description);
+        fmt_fprintf(stream,
+                    "%s | %-*s : %s\n",
+                    commands[i].shortname, 8, commands[i].longname,
+                    commands[i].description);
     }
     exit(stream != stdout);
 }
