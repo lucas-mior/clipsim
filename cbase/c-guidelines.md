@@ -1396,3 +1396,19 @@ still do not know, use common sense.
 - Use `round64(x)` instead of `(int64)round(x)`.
   These wrappers check whether the rounded result fits in `int64` when
   debugging is enabled.
+
+## Integer literals in function and macro calls
+
+- Pass integer literals directly to functions and macros. Do not cast an
+  integer literal argument to `int32` or `int64`.
+  ```c
+  // bad
+  call_this_function(x, (int64)1);
+  MY_MACRO((int32)-2);
+
+  // good
+  call_this_function(x, 1);
+  MY_MACRO(-2);
+  ```
+  This applies to direct literal arguments, not casts in expressions or
+  casts of variables.
