@@ -23,9 +23,12 @@ CAT(f, RW_FUNCTION, 64)(void *buffer, int64 size, int64 n, FILE *file) {
         error("Error: Invalid size = %lld\n", size);
         fatal(EXIT_FAILURE);
     }
-    if (n <= 0) {
+    if (n < 0) {
         error("Error: Invalid n = %lld\n", n);
         fatal(EXIT_FAILURE);
+    }
+    if (n == 0) {
+        return 0;
     }
     if (size >= (MAXOF(size)/n)) {
         error("Error: Overflow (%lld*%lld)\n", size, n);

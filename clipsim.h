@@ -49,9 +49,9 @@ do {                                                                           \
                 debug_buffer[_i] = ' ';                                        \
             }                                                                  \
         }                                                                      \
-        dprintf(STDERR_FILENO,                                                 \
-                "%s:%d -> %s(%s)\n",                                           \
-                __FILE__, __LINE__, __func__, debug_buffer);                   \
+        fmt_dprintf(STDERR_FILENO,                                             \
+                    "%s:%d -> %s(%s)\n",                                       \
+                    __FILE__, __LINE__, __func__, debug_buffer);               \
     }                                                                          \
 } while (0);
 #else

@@ -577,7 +577,11 @@ str_itoa(&str, number);
 ```
 
 ## Avoid printf from libc.
-Instead, use `fmt_printf` from `fmt.c` which has almost the same semantics.
+Do not call libc `printf`-family functions directly in project code, including
+`printf`, `fprintf`, `sprintf`, `snprintf`, their `v` variants, and POSIX/GNU
+or wide-character variants. Instead, use `fmt_printf`, `fmt_snprintf`,
+or the appropriate `cbase` string/error-formatting wrappers. Direct libc calls
+are permitted inside `cbase/` to implement those wrappers.
 
 ## Comparing strings:
 In general, avoid `strcmp()`, use the alternatives below instead:

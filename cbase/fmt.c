@@ -4859,37 +4859,36 @@ fmt_strftime(char *buffer, int64 capacity,
     return fmt_strftime_l(buffer, capacity, format, time_info, &fmt_locale_c);
 }
 
-int32 ATTR_PRINTF(1, 2)
-fmt_printf(char *format, ...) {
+static int32
+fmt_vfprintf(FILE *file, char *format, va_list args) {
     char buffer[4096];
     char *big_buffer = NULL;
     char *pbuffer = buffer;
     int64 capacity = SIZEOF(buffer);
-    va_list args;
     va_list args_copy;
     int32 n;
 
-    va_start(args, format);
+    ASSERT(file != NULL);
+
     va_copy(args_copy, args);
     n = fmt_vsnprintf(pbuffer, capacity, format, args);
-    va_end(args);
 
     if (n < 0) {
         va_end(args_copy);
-        error2("Error formatting stdout output (n = %d).\n", n);
+        error2("Error formatting stream output (n = %d).\n", n);
         fatal(EXIT_FAILURE);
     }
 
     if (n >= capacity) {
         int32 retry_n;
 
-        capacity = n + 1;
+        capacity = (int64)n + 1;
         big_buffer = malloc2(capacity);
         pbuffer = big_buffer;
         retry_n = fmt_vsnprintf(pbuffer, capacity, format, args_copy);
         va_end(args_copy);
         if ((retry_n < 0) || (retry_n != n)) {
-            error2("Error formatting stdout output (n = %d).\n", retry_n);
+            error2("Error formatting stream output (n = %d).\n", retry_n);
             fatal(EXIT_FAILURE);
         }
         n = retry_n;
@@ -4897,9 +4896,90 @@ fmt_printf(char *format, ...) {
         va_end(args_copy);
     }
 
-    fflush(stdout);
-    write_all(STDOUT_FILENO, pbuffer, n);
+    if (fflush(file) == EOF) {
+        error2("Error flushing stream output: %s.\n", strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
+
+    if (fwrite64(pbuffer, 1, n, file) != n) {
+        error2("Error writing stream output: %s.\n", strerror(errno));
+        fatal(EXIT_FAILURE);
+    }
     free2(big_buffer, capacity);
+    return n;
+}
+
+int32 ATTR_PRINTF(1, 2)
+fmt_printf(char *format, ...) {
+    va_list args;
+    int32 n;
+
+    va_start(args, format);
+    n = fmt_vfprintf(stdout, format, args);
+    va_end(args);
+    return n;
+}
+
+int32 ATTR_PRINTF(2, 3)
+fmt_fprintf(FILE *file, char *format, ...) {
+    va_list args;
+    int32 n;
+
+    va_start(args, format);
+    n = fmt_vfprintf(file, format, args);
+    va_end(args);
+    return n;
+}
+
+int32 ATTR_PRINTF(2, 0)
+fmt_vdprintf(int32 fd, char *format, va_list args) {
+    char buffer[4096];
+    char *big_buffer = NULL;
+    char *pbuffer = buffer;
+    int64 capacity = SIZEOF(buffer);
+    va_list args_copy;
+    int32 n;
+
+    va_copy(args_copy, args);
+    n = fmt_vsnprintf(pbuffer, capacity, format, args);
+
+    if (n < 0) {
+        va_end(args_copy);
+        error2("Error formatting file descriptor output (n = %d).\n", n);
+        fatal(EXIT_FAILURE);
+    }
+
+    if (n >= capacity) {
+        int32 retry_n;
+
+        capacity = (int64)n + 1;
+        big_buffer = malloc2(capacity);
+        pbuffer = big_buffer;
+        retry_n = fmt_vsnprintf(pbuffer, capacity, format, args_copy);
+        va_end(args_copy);
+        if ((retry_n < 0) || (retry_n != n)) {
+            error2("Error formatting file descriptor output (n = %d).\n",
+                   retry_n);
+            fatal(EXIT_FAILURE);
+        }
+        n = retry_n;
+    } else {
+        va_end(args_copy);
+    }
+
+    write_all(fd, pbuffer, n);
+    free2(big_buffer, capacity);
+    return n;
+}
+
+int32 ATTR_PRINTF(2, 3)
+fmt_dprintf(int32 fd, char *format, ...) {
+    va_list args;
+    int32 n;
+
+    va_start(args, format);
+    n = fmt_vdprintf(fd, format, args);
+    va_end(args);
     return n;
 }
 
@@ -6199,7 +6279,7 @@ test_fmt_estimate(void) {
 
     ASSERT_EQ(fmt_test_public_estimate("abc"), 3);
     ASSERT_EQ(fmt_snprintf_estimate("%d", 0), 11);
-    ASSERT_EQ(fmt_snprintf_estimate("%lld", 0), 20);
+    ASSERT_EQ(fmt_snprintf_estimate("%lld", 0ll), 20);
     ASSERT_EQ(fmt_snprintf_estimate("%#b", 0), 34);
     ASSERT_EQ(fmt_snprintf_estimate("%100d", 0), 100);
     ASSERT_EQ(fmt_snprintf_estimate("%p", (void *)NULL),
@@ -6415,6 +6495,23 @@ main(void) {
 
     test_fmt_float64_round_trip(0.1);
     test_fmt_float32_round_trip(0.1f);
+
+#if OS_UNIX
+    {
+        char output[16];
+        int fds[2];
+        int64 len;
+
+        xpipe(fds);
+        ASSERT_EQ(fmt_dprintf(fds[1], "%s:%04d", "value", 7), 10);
+        XCLOSE(&fds[1]);
+        len = read64(fds[0], output, SIZEOF(output) - 1);
+        ASSERT_EQ(len, 10);
+        output[len] = '\0';
+        ASSERT_EQ(output, "value:0007");
+        XCLOSE(&fds[0]);
+    }
+#endif
 
     exit(EXIT_SUCCESS);
 }
