@@ -35,4 +35,20 @@ floor64(double x) {
     return (int64)f;
 }
 
+int64
+round64(double x) {
+    double f = round(x);
+    if (DEBUGGING) {
+        if (f <= (double)MINOF(round64(0))) {
+            error("%f does not fit in int64.\n", f);
+            fatal(EXIT_FAILURE);
+        }
+        if (f >= (double)MAXOF(round64(0))) {
+            error("%f does not fit in int64.\n", f);
+            fatal(EXIT_FAILURE);
+        }
+    }
+    return (int64)f;
+}
+
 #endif

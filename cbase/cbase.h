@@ -49,6 +49,7 @@ uint64 rapidhash(void *key, int64 len);
 
 int64 ceil64(double x);
 int64 floor64(double x);
+int64 round64(double x);
 
 int fdtruncate64(int32 fd, int64 len);
 

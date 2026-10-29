@@ -1388,3 +1388,11 @@ in `cbase/`, but not in any project main code (use the wrapper instead).
 
 If these guides miss some case, decide based on the files in `cbase/`. If you
 still do not know, use common sense.
+
+## Rounding to int64
+
+- Use `floor64(x)` instead of `(int64)floor(x)`.
+- Use `ceil64(x)` instead of `(int64)ceil(x)`.
+- Use `round64(x)` instead of `(int64)round(x)`.
+  These wrappers check whether the rounded result fits in `int64` when
+  debugging is enabled.

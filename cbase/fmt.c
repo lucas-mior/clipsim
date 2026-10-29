@@ -6199,7 +6199,7 @@ test_fmt_estimate(void) {
 
     ASSERT_EQ(fmt_test_public_estimate("abc"), 3);
     ASSERT_EQ(fmt_snprintf_estimate("%d", 0), 11);
-    ASSERT_EQ(fmt_snprintf_estimate("%lld", (int64)0), 20);
+    ASSERT_EQ(fmt_snprintf_estimate("%lld", 0), 20);
     ASSERT_EQ(fmt_snprintf_estimate("%#b", 0), 34);
     ASSERT_EQ(fmt_snprintf_estimate("%100d", 0), 100);
     ASSERT_EQ(fmt_snprintf_estimate("%p", (void *)NULL),
