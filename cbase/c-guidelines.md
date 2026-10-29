@@ -111,6 +111,26 @@ preconditions; assert those instead.
       return (int32)value;
   }
   ```
+- `MAXOF(expression)` and `MINOF(expression)` derive limits from the type of
+  an expression, without evaluating it. Use them with variables or function
+  calls so that the check follows changes to the variable or return type.
+  Never pass integer literals, including casted literals, to these macros.
+  A cast such as `MAXOF((int32)0)` repeats the type explicitly and defeats
+  the purpose of the macro. When the type is already known, use its named
+  limit (`INT32_MAX`, `INT32_MIN`, `INT64_MAX`, `INT64_MIN`, etc.).
+  ```c
+  // bad: repeating a type instead of using its named limit
+  if (n >= MAXOF((int32)0)) { /* ... */ }
+  if (n <= MINOF((int64)0)) { /* ... */ }
+
+  // good: known type, fixed limit
+  if (n >= INT32_MAX) { /* ... */ }
+  if (n <= INT64_MIN) { /* ... */ }
+
+  // good: bound follows the variable or function return type
+  if (n >= MAXOF(target_value)) { /* ... */ }
+  if (n <= MINOF(target_function())) { /* ... */ }
+  ```
 - unsigned integers: avoid, prefer signed integers
   * use unsigned integers for bit flags and other bit-wise operated values.
   * use unsigned for converting integers to and from enums.

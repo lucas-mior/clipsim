@@ -228,7 +228,7 @@ cbase_getcwd(char *buffer, int64 size) {
     {
         DWORD len;
 
-        if (size > MAXOF((DWORD)0)) {
+        if (size >= INT16_MAX) {
             errno = EINVAL;
             return NULL;
         }
@@ -348,7 +348,7 @@ util_filename_from(char *buffer, int64 size, int fd) {
         if ((h = (HANDLE)h2) == INVALID_HANDLE_VALUE) {
             return -EINVAL;
         }
-        if (size > MAXOF((DWORD)0)) {
+        if (size >= INT16_MAX) {
             return -EINVAL;
         }
 
