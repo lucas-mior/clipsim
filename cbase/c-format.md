@@ -218,6 +218,28 @@ my_function(StructType arg,
 }
 ```
 
+### Other related arguments case
+If two consecutive function arguments are string literals, and the others
+are not string literals, then those 2 are probably related, so put them together
+or each on its own line:
+```c
+// bad
+if ((status = cy_example_options_set_double(configured, "fit",
+                                            "lambda_up",
+                                            options->lm.lambda_up))
+        < 0) {
+    goto cleanup;
+}
+
+// good
+if ((status = cy_example_options_set_double(configured,
+                                            "fit", "lambda_up",
+                                            options->lm.lambda_up))
+        < 0) {
+    goto cleanup;
+}
+```
+
 When formatting printf-like function calls, try to fit the entire call in a
 single line; If it does not fit, try to fit the format string and the arguments
 in the same line; if it still does not fit, try to align the beggining of the

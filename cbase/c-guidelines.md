@@ -1374,6 +1374,18 @@ appropriate cbase/ C file.
   ```
 
 ## Testing
+Indent directives nested inside the automatic `TESTING_file_prefix` setup by
+two spaces per nesting level:
+```c
+#if !defined(TESTING_file_prefix)
+  #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+  #define TESTING_file_prefix 1
+  #else
+  #define TESTING_file_prefix 0
+  #endif
+#endif
+```
+
 Every .c file (except the main program) must have a testing block:
 ```c
 #if TESTING_file_prefix
