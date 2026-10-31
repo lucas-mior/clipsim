@@ -50,12 +50,13 @@ checks, even with `TEST_MAXDEPTH` set. Selecting `TEST_FILTER=ryu` also
 checks Ryu's implementation `.c` files rather than only `cbase/ryu.c`.
 Explicit `TEST_EXCLUDE_PATTERN` exclusions still apply.
 
-`functions_forbidden_patterns.pl` enforces Ryu's 80-column limit, whitespace,
+`csanecheck` enforces Ryu's 80-column limit, whitespace,
 preprocessor guard/comment conventions, and its existing shared formatting
 rules. Ternary operators are expressly permitted in Ryu, but the general C
 rule against them still applies to ordinary non-macro source code elsewhere.
 Performance-sensitive arithmetic and representation choices above are not
 banned by this style checker.
 
-Run `python3 cbase/test_functions_forbidden_patterns.py` to test discovery,
-formatting diagnostics, the ternary exception, and cache invalidation.
+Run `./build.sh test csanecheck` to run the checker regression tests.
+The removed Perl regression suite and its cache-specific tests are no longer
+available.
