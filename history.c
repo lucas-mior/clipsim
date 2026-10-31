@@ -23,7 +23,7 @@ static int32 history_length;
 static File history = {
     .file = NULL,
     .fd = -1,
-    .name = NULL
+    .name = NULL,
 };
 static char *XDG_CACHE_HOME = NULL;
 static char xdg_cache_home_buffer[4096];
