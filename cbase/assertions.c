@@ -66,8 +66,7 @@ assert_traps_restore(char *file, int32 line, char *func) {
 #endif
 
 void
-assert_error(char *file, int32 line, char *func,
-             char *format, ...) {
+assert_error(char *file, int32 line, char *func, char *format, ...) {
     va_list ap;
 
     fflush(stdout);
@@ -259,8 +258,7 @@ assert_compare_const_string(enum AssertCompareMode mode,
 }
 
 static bool
-assert_compare_const_bool(enum AssertCompareMode mode,
-                          bool var1, bool var2) {
+assert_compare_const_bool(enum AssertCompareMode mode, bool var1, bool var2) {
     switch (mode) {
     case ASSERT_COMPARE_MODE_EQUAL:
         return var1 == var2;

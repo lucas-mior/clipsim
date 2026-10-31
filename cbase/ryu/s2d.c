@@ -800,8 +800,7 @@ ryu_hex_lower_nonzero(uint64 prefix, int32 lower_prefix_bits, bool sticky) {
 }
 
 static uint64
-ryu_hex_round(uint64 prefix, int32 prefix_bits, int32 kept_bits,
-              bool sticky) {
+ryu_hex_round(uint64 prefix, int32 prefix_bits, int32 kept_bits, bool sticky) {
     int32 discarded_prefix_bits = prefix_bits - kept_bits;
     int32 lower_prefix_bits = discarded_prefix_bits - 1;
     uint64 significand = prefix >> discarded_prefix_bits;
@@ -1036,8 +1035,7 @@ ryu_parse_hex_double(const char *buffer, int32 len, int32 index,
 }
 
 static int32
-ryu_parse_nondecimal_double(const char *buffer, int32 len,
-                            double *result) {
+ryu_parse_nondecimal_double(const char *buffer, int32 len, double *result) {
     int32 index = 0;
     bool negative = false;
     int32 status;

@@ -152,8 +152,7 @@ mul_shift_mod1e9(uint64 m, uint64 const *mul, int32 j) {
 // Returns the low 64 bits of the high 128 bits of the 256-bit product of a
 // and b.
 static inline uint64
-umul256_hi128_lo64(uint64 a_hi, uint64 a_lo,
-                   uint64 b_hi, uint64 b_lo) {
+umul256_hi128_lo64(uint64 a_hi, uint64 a_lo, uint64 b_hi, uint64 b_lo) {
     uint64 b00_hi;
     uint64 b00_lo;
     uint64 b01_hi;

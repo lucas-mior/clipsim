@@ -618,8 +618,7 @@ realloc_flex_debug(char *file, int32 line, char *func,
 }
 
 void
-free_debug(char *file, int32 line, char *func,
-           void *pointer, int64 size) {
+free_debug(char *file, int32 line, char *func, void *pointer, int64 size) {
     DebugAllocInfo info;
     intptr pointer_key = (intptr)pointer;
 

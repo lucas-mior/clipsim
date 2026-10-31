@@ -251,8 +251,7 @@ utf8_characters(char *string, int32 string_len) {
 }
 
 int32
-utf8_byte_position(char *string, int32 string_len,
-                   int32 character) {
+utf8_byte_position(char *string, int32 string_len, int32 character) {
     int32 byte;
 
     if (character <= 0) {
@@ -290,8 +289,7 @@ utf8_width(char *string, int32 string_len) {
 
 #if !OS_WINDOWS
 int32
-utf8_suffix_width_position(char *string, int32 string_len,
-                           int32 max_width) {
+utf8_suffix_width_position(char *string, int32 string_len, int32 max_width) {
     int32 byte;
     int32 remaining_width;
 

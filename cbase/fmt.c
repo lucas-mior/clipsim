@@ -4437,8 +4437,7 @@ fmt_strftime_days_in_year(int64 year) {
 }
 
 static void
-fmt_strftime_iso_week(struct tm *time_info,
-                      int64 *iso_year, int32 *iso_week) {
+fmt_strftime_iso_week(struct tm *time_info, int64 *iso_year, int32 *iso_week) {
     int64 year = 1900 + (int64)time_info->tm_year;
     int32 iso_wday;
     int32 thursday_yday;
@@ -4854,8 +4853,7 @@ fmt_strftime_l(char *buffer, int64 capacity, char *format,
 }
 
 int32
-fmt_strftime(char *buffer, int64 capacity,
-             char *format, struct tm *time_info) {
+fmt_strftime(char *buffer, int64 capacity, char *format, struct tm *time_info) {
     return fmt_strftime_l(buffer, capacity, format, time_info, &fmt_locale_c);
 }
 
