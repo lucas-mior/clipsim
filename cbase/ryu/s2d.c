@@ -1007,8 +1007,7 @@ ryu_parse_hex_double(const char *buffer, int32 len, int32 index,
             } else if (kept_bits == 0) {
                 int32 lower_prefix_bits = prefix_bits - 1;
 
-                if (ryu_hex_lower_nonzero(prefix, lower_prefix_bits,
-                                          sticky)) {
+                if (ryu_hex_lower_nonzero(prefix, lower_prefix_bits, sticky)) {
                     significand = 1;
                 }
             }
