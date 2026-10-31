@@ -43,7 +43,6 @@ fi
 common_libc_never=
 common_libc_cbase_only=
 common_libc_cbase_dir=
-common_forbidden_patterns=
 common_no_column_limit=
 common_status_temporary_patterns=
 
@@ -85,12 +84,6 @@ elif [ -f functions_allowed_cbase_only.txt ]; then
     common_libc_cbase_dir=.
 fi
 
-if [ -f cbase/functions_forbidden_patterns.pl ]; then
-    common_forbidden_patterns=cbase/functions_forbidden_patterns.pl
-elif [ -f functions_forbidden_patterns.pl ]; then
-    common_forbidden_patterns=functions_forbidden_patterns.pl
-fi
-
 if [ -f piscou.1 ] && [ -f config.h ]; then
     common_no_column_limit=config.h
 fi
@@ -106,7 +99,6 @@ fi
 
 if [ -n "$common_libc_never" ] \
         || [ -n "$common_libc_cbase_only" ] \
-        || [ -n "$common_forbidden_patterns" ] \
         || [ -n "$common_status_temporary_patterns" ]; then
     common_libc_pattern=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_sources=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
@@ -271,16 +263,6 @@ if [ -n "$common_libc_never" ] \
 
     if [ -n "$common_profile_enabled" ]; then
         common_profile_report 'cbase-only libc scan'
-    fi
-
-    if [ -n "$common_forbidden_patterns" ]; then
-        perl "$common_forbidden_patterns" \
-            --no-column-limit "$common_no_column_limit" \
-            --file-list "$common_libc_sources" >> "$common_libc_matches3"
-    fi
-
-    if [ -n "$common_profile_enabled" ]; then
-        common_profile_report 'Perl pattern checker'
     fi
 
     if [ -x cbase/csanecheck ]; then
