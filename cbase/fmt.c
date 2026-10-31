@@ -1260,8 +1260,7 @@ fmt_big_uint_add_one(FormatBigUInt *value) {
     if (carry != 0) {
         int32 status;
 
-        status = fmt_big_uint_ensure_word(value, value->len);
-        if (status < 0) {
+        if ((status = fmt_big_uint_ensure_word(value, value->len)) < 0) {
             return status;
         }
         value->words[value->len - 1] = (uint32)carry;
@@ -1514,8 +1513,7 @@ fmt_big_uint_mul_small(FormatBigUInt *value, uint32 factor) {
     if (carry != 0) {
         int32 status;
 
-        status = fmt_big_uint_ensure_word(value, value->len);
-        if (status < 0) {
+        if ((status = fmt_big_uint_ensure_word(value, value->len)) < 0) {
             return status;
         }
         value->words[value->len - 1] = (uint32)carry;
@@ -1834,8 +1832,9 @@ fmt_decode_binary128_ldouble(ldouble value, FormatBinaryFloat *parts) {
         int32 status;
         int32 fraction_bits = FMT_LDOUBLE_BINARY128_FRACTION_BITS;
 
-        status = fmt_binary_float_set_significand_bit(parts, fraction_bits);
-        if (status < 0) {
+        if ((status =
+                 fmt_binary_float_set_significand_bit(parts,
+                                                      fraction_bits)) < 0) {
             return status;
         }
         parts->binary_exponent = (int32)exponent_bits
@@ -2592,9 +2591,9 @@ fmt_ldouble_exp_digits(FormatBinaryFloat *parts, ldouble value,
             } else {
                 round_up = (digits[significant_len - 1] - '0') & 1;
             }
-            status = fmt_decimal_round_digits(digits, &integer_digit_len,
-                                              significant_len, round_up);
-            if (status < 0) {
+            if ((status = fmt_decimal_round_digits(digits, &integer_digit_len,
+                                                   significant_len,
+                                                   round_up)) < 0) {
                 return status;
             }
             if (integer_digit_len > significant_len) {
@@ -2609,9 +2608,9 @@ fmt_ldouble_exp_digits(FormatBinaryFloat *parts, ldouble value,
             int32 last_digit = digits[integer_digit_len - 1] - '0';
 
             round_up = fmt_remainder_should_round(remainder, last_digit & 1);
-            status = fmt_decimal_round_digits(digits, &integer_digit_len,
-                                              significant_len, round_up);
-            if (status < 0) {
+            if ((status = fmt_decimal_round_digits(digits, &integer_digit_len,
+                                                   significant_len,
+                                                   round_up)) < 0) {
                 return status;
             }
             if (integer_digit_len > significant_len) {
@@ -3148,8 +3147,8 @@ fmt_ldouble_generate_body(FormatSpec *spec, ldouble value,
     ASSERT(integer != NULL);
 
     if (isnan(value) || isinf(value)) {
-        status = fmt_ldouble_special_body(value, spec, buffer, &body_len);
-        if (status < 0) {
+        if ((status = fmt_ldouble_special_body(value, spec, buffer,
+                                               &body_len)) < 0) {
             return status;
         }
         return body_len;
@@ -3516,8 +3515,8 @@ fmt_float_generate_body(FormatSpec *spec, double value,
     if (isnan(value) || isinf(value)) {
         int32 status;
 
-        status = fmt_float_special_body(value, spec, buffer, &body_len);
-        if (status < 0) {
+        if ((status = fmt_float_special_body(value, spec, buffer,
+                                             &body_len)) < 0) {
             return status;
         }
         return body_len;
