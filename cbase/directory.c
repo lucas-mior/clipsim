@@ -243,7 +243,7 @@ test_get_directory_entries_reads_directory(void) {
     ASSERT_GE(directory_entry_index(entries, length, "cbase.h"), 0);
     ASSERT_GE(directory_entry_index(entries, length, "directory.c"), 0);
 
-    free2(entries, (int64)length*SIZEOF(*entries));
+    free2(entries, length*SIZEOF(*entries));
     return;
 }
 

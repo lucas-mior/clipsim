@@ -147,7 +147,7 @@ lstat(const char *path, struct stat *statbuf) {
         return -1;
     }
 
-    wide_path_size = (int64)wide_path_length*SIZEOF(*wide_path);
+    wide_path_size = wide_path_length*SIZEOF(*wide_path);
     wide_path = malloc2(wide_path_size);
     if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1,
                             wide_path, wide_path_length)
@@ -315,7 +315,7 @@ main(void) {
             ASSERT(contains(buffer, length, dirent, &nfiles));
         }
 
-        free2(dirent, (int64)dirent_capacity*SIZEOF(*dirent));
+        free2(dirent, dirent_capacity*SIZEOF(*dirent));
     }
 
     exit(EXIT_SUCCESS);

@@ -41,7 +41,7 @@
 static char *
 ryu_s(uint128 value) {
     int32 len = (int32)generic_decimal_length(value);
-    char *buffer = (char *)malloc((int64)(len + 1)*SIZEOF(char));
+    char *buffer = (char *)malloc((len + 1)*SIZEOF(char));
 
     for (int32 i = 0; i < len; i += 1) {
         uint32 c = (uint32)(value % 10);

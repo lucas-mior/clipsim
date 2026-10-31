@@ -20,7 +20,11 @@
 
 static volatile bool recovered = false;
 static int32 history_length;
-static File history = {.file = NULL, .fd = -1, .name = NULL};
+static File history = {
+    .file = NULL,
+    .fd = -1,
+    .name = NULL
+};
 static char *XDG_CACHE_HOME = NULL;
 static char xdg_cache_home_buffer[4096];
 static char *HOME = NULL;
