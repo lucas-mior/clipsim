@@ -160,8 +160,8 @@ preconditions; assert those instead.
 
 ## `sizeof`
 
-The `SIZEOF` macro casts the result of `sizeof` to `int64`. Signed sizes are way
-better than unsigned. Never use `sizeof`, always use `SIZEOF`.
+The `SIZEOF` macro makes `sizeof` signed (`int64`); use it instead of `sizeof`.
+For fixed-array counts, use `LENGTH(array)`, not `SIZEOF(array)/SIZEOF(array[0])`.
 Use the `SIZEOF` macro like this:
 
 ```c

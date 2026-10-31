@@ -296,6 +296,108 @@ common_build_run_analyzers () {
     exit 0
 }
 
+# GCC/Clang dependency files list the headers included by one object.
+# Return success when any prerequisite changed or the depfile is missing.
+common_build_depfile_outdated () {
+    dep_object=$1
+    dep_file="$dep_object.d"
+
+    if [ ! -f "$dep_object" ] || [ ! -f "$dep_file" ]; then
+        return 0
+    fi
+
+    dep_paths=$(awk '
+        NR == 1 {sub(/^[^:]*:/, "")}
+        {
+            continued = ($0 ~ /\\$/)
+            sub(/\\$/, "")
+            printf " %s", $0
+            if (!continued) {exit}
+        }
+    ' "$dep_file")
+    for dep_path in $dep_paths; do
+        if [ ! -f "$dep_path" ] || [ "$dep_path" -nt "$dep_object" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Compile one executable's entry point incrementally and link cached archives.
+# Link each time: bin/<name> is shared with unity builds and other compilers.
+common_build_incremental_archive_binary () {
+    if [ "$#" -ne 5 ]; then
+        error "common_build_incremental_archive_binary "
+        error "<exe> <source> <compile_flags> <objects> <link_flags>\n"
+        exit 1
+    fi
+
+    incremental_archive_exe=$1
+    incremental_archive_source=$2
+    incremental_archive_compile_flags=$3
+    incremental_archive_objects=$4
+    incremental_archive_link_flags=$5
+    incremental_archive_compiler_key=$(common_compiler_cache_key "$CC")
+    incremental_archive_objdir="bin/obj/${mode:-debug}"
+    incremental_archive_objdir="$incremental_archive_objdir/$incremental_archive_compiler_key/targets"
+    incremental_archive_object="$incremental_archive_objdir/${incremental_archive_source%.c}.o"
+    incremental_archive_flags_file="$incremental_archive_object.flags"
+    incremental_archive_flags="CC=$CC
+COMPILE_FLAGS=$incremental_archive_compile_flags"
+
+    mkdir -p "$(dirname "$incremental_archive_object")"
+    incremental_archive_rebuild=0
+    if [ ! -f "$incremental_archive_flags_file" ] \
+            || ! printf '%s\n' "$incremental_archive_flags" \
+                | cmp -s - "$incremental_archive_flags_file"; then
+        incremental_archive_rebuild=1
+    elif [ ! -f "$incremental_archive_object" ]; then
+        incremental_archive_rebuild=1
+    else
+        case "$CC" in
+        *tcc*)
+            if [ "$incremental_archive_source" -nt "$incremental_archive_object" ] \
+                    || find src cbase cmeta -type f -name '*.h' \
+                        -newer "$incremental_archive_object" \
+                        -print | grep -q .; then
+                incremental_archive_rebuild=1
+            fi
+            ;;
+        *)
+            if common_build_depfile_outdated "$incremental_archive_object"; then
+                incremental_archive_rebuild=1
+            fi
+            ;;
+        esac
+    fi
+
+    if [ "$incremental_archive_rebuild" -eq 1 ]; then
+        incremental_archive_depflags=
+        case "$CC" in
+        *tcc*) ;;
+        *)
+            incremental_archive_depflags="-MMD -MP"
+            incremental_archive_depflags="$incremental_archive_depflags -MF $incremental_archive_object.d"
+            ;;
+        esac
+        trace_on
+        $CC $incremental_archive_compile_flags \
+            $incremental_archive_depflags \
+            -c "$incremental_archive_source" \
+            -o "$incremental_archive_object"
+        trace_off
+        printf '%s\n' "$incremental_archive_flags" \
+            > "$incremental_archive_flags_file"
+    fi
+
+    trace_on
+    $CC $incremental_archive_compile_flags \
+        -o "$incremental_archive_exe" "$incremental_archive_object" \
+        $incremental_archive_objects $incremental_archive_link_flags
+    trace_off
+    return 0
+}
+
 common_build_incremental_roots_are_newer () {
     incremental_rebuild_target=$1
     incremental_rebuild_roots=${COMMON_BUILD_INCREMENTAL_ROOTS:-cbase}

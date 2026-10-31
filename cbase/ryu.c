@@ -303,7 +303,7 @@ test_ryu_s2d_hex(void) {
         ASSERT_EQ(test_ryu_double_bits(value), test_ryu_double_bits(6.0));
     }
 
-    for (int32 i = 0; i < SIZEOF(cases)/SIZEOF(cases[0]); i += 1) {
+    for (int32 i = 0; i < LENGTH(cases); i += 1) {
         double original = test_ryu_double_from_bits(cases[i]);
 
         len = fmt_snprintf(buffer, SIZEOF(buffer), "%a", original);
@@ -383,7 +383,7 @@ test_ryu_s2d_long_decimal(void) {
             0x7fefffffffffffffull,
         };
 
-        for (int32 i = 0; i < SIZEOF(cases)/SIZEOF(cases[0]); i += 1) {
+        for (int32 i = 0; i < LENGTH(cases); i += 1) {
             double original = test_ryu_double_from_bits(cases[i]);
             int32 len = d2fixed_buffered_n(original, 1074, buffer);
 
