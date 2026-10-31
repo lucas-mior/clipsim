@@ -650,8 +650,7 @@ history_prune(void) {
 
     memcpy64(&is_image[0], &is_image[to_remove],
              HISTORY_KEEP_SIZE*SIZEOF(*is_image));
-    memset64(&is_image[HISTORY_KEEP_SIZE], 0,
-             to_remove*SIZEOF(*is_image));
+    memset64(&is_image[HISTORY_KEEP_SIZE], 0, to_remove*SIZEOF(*is_image));
 
     history_length = HISTORY_KEEP_SIZE;
 

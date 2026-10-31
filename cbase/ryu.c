@@ -76,17 +76,16 @@ test_ryu_round_shift_boundaries(void) {
     ASSERT(!rounded_up);
     ASSERT_EQ(s2d_round_shift(7, 1, true, &rounded_up), 4);
     ASSERT(rounded_up);
-    ASSERT_EQ(s2d_round_shift(0xc000000000000000ull, 63, true,
-                              &rounded_up), 2);
+
+    ASSERT_EQ(s2d_round_shift(0xc000000000000000ull, 63, true, &rounded_up), 2);
     ASSERT(rounded_up);
-    ASSERT_EQ(s2d_round_shift(0x8000000000000000ull, 64, true,
-                              &rounded_up), 0);
+    ASSERT_EQ(s2d_round_shift(0x8000000000000000ull, 64, true, &rounded_up), 0);
     ASSERT(!rounded_up);
+
     ASSERT_EQ(s2d_round_shift(0x8000000000000000ull, 64, false,
                               &rounded_up), 1);
     ASSERT(rounded_up);
-    ASSERT_EQ(s2d_round_shift(0x8000000000000001ull, 64, true,
-                              &rounded_up), 1);
+    ASSERT_EQ(s2d_round_shift(0x8000000000000001ull, 64, true, &rounded_up), 1);
     ASSERT(rounded_up);
     ASSERT_EQ(s2d_round_shift(UINT64_MAX, 65, false, &rounded_up), 0);
     ASSERT(!rounded_up);

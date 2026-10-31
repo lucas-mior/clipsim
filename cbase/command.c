@@ -1842,10 +1842,8 @@ main(int argc, char **argv) {
         {
             char *flags_str;
 
-            flags_str = CMD_str(CMD_CAPTURE_STDOUT
-                                         |CMD_CAPTURE_STDERR);
-            ASSERT_EQ(flags_str,
-                      "CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR");
+            flags_str = CMD_str(CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR);
+            ASSERT_EQ(flags_str, "CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR");
             CMD_str_free(flags_str);
             ASSERT(CMD_parse(STRLIT("CAPTURE_STDOUT|CAPTURE_STDERR"))
                    == (CMD_CAPTURE_STDOUT |CMD_CAPTURE_STDERR));
