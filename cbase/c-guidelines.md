@@ -168,8 +168,22 @@ Use the `SIZEOF` macro like this:
 int64 alloc_size = len*SIZEOF(*pointer);
 ```
 
-Note: don't cast a `int32 len` to `int64`, when multiplying by a `SIZEOF`,
-because C auto promotes it.
+Do not cast a signed integer operand to `int64` solely to multiply by
+`SIZEOF(...)`. The macro yields `int64`, so the usual arithmetic conversions
+already widen the other integer operand before multiplication. This also
+applies when `SIZEOF(...)` is the left operand.
+
+```c
+// bad: unnecessary int64 cast
+int64 bytes = (int64)len*SIZEOF(*pointer);
+
+// good: len is widened by the multiplication
+int64 bytes = len*SIZEOF(*pointer);
+```
+
+Keep casts that actually change semantics, such as converting a floating-point
+value or changing the handling of a `uint64` value. Do not remove casts from
+compound expressions or unary operations without checking their evaluation.
 
 Avoid using `SIZEOF(TypePointedTo)`. Prefer to use `SIZEOF(*pointer)`.
 
