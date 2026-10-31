@@ -25,7 +25,11 @@ static char ipc_directory[PATH_MAX];
 static char ipc_lock_name[PATH_MAX];
 static char ipc_socket_name[PATH_MAX];
 static int32 ipc_socket_name_len;
-static File ipc_lock = {.file = NULL, .fd = -1, .name = ipc_lock_name};
+static File ipc_lock = {
+    .file = NULL,
+    .fd = -1,
+    .name = ipc_lock_name,
+};
 static File ipc_socket = {.file = NULL, .fd = -1, .name = ipc_socket_name};
 
 static void ipc_daemon_history_save(int32);
