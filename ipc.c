@@ -30,7 +30,11 @@ static File ipc_lock = {
     .fd = -1,
     .name = ipc_lock_name,
 };
-static File ipc_socket = {.file = NULL, .fd = -1, .name = ipc_socket_name};
+static File ipc_socket = {
+    .file = NULL,
+    .fd = -1,
+    .name = ipc_socket_name,
+};
 
 static void ipc_daemon_history_save(int32);
 static void ipc_client_check_save(int32 *);
