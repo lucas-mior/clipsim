@@ -134,8 +134,8 @@ enum CAT(ENUM_NAME, _XenumIndices) {
 // For bit flag enums, the optional second X macro parameter is a value unless
 // ENUM_CHAR_REPR is 1. Only use compositions of previous enum values there, not
 // numeric values.
-// For non-bit flag enums, the optional second X macro parameter is a parse
-// alias token. Custom numeric values are not supported for non-bit flag enums.
+// For non-bit flag enums, the optional second X macro parameter is a string
+// literal parse alias. Custom numeric values are not supported for these enums.
 // If ENUM_CHAR_REPR is 1, enum aliases are char literals instead.
 //
 // Passing multiple ENUM names for the same value will break compilation.
@@ -341,8 +341,8 @@ CAT(ENUM_PREFIX_, alias_len)(enum ENUM_NAME val, char **out) {
                                *out = #e;                                  \
                                return STRLIT_LEN(#e);
     #define XX_2(e, alias) case e:                                         \
-                               *out = #alias;                              \
-                               return STRLIT_LEN(#alias);
+                               *out = alias;                              \
+                               return STRLIT_LEN(alias);
 #endif
     #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
 
@@ -639,7 +639,7 @@ CAT(ENUM_PREFIX_, parse_loose)(char *string, int32 string_len) {
         #define XENUM_PARSE_ALIAS(e, alias)                               \
             XENUM_PARSE_ONE(e)                                            \
             if (!matched                                                  \
-                && XENUM_TOKEN_EQUALS(token, token_len, #alias)) {        \
+                && XENUM_TOKEN_EQUALS(token, token_len, alias)) {         \
                 result = (EnumUnderlyingType)e;                         \
                 matched = 1;                                              \
             }
@@ -703,7 +703,7 @@ CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
             return e;                                                   \
         }
     #define XX_2(e, alias)                                              \
-        if (strequal2(string, string_len, #alias, STRLIT_LEN(#alias))) {\
+        if (strequal2(string, string_len, alias, STRLIT_LEN(alias))) { \
             return e;                                                   \
         }
     #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
@@ -771,19 +771,20 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #define ENUM_BITFLAGS 0
 #define ENUM_FIELDS                               \
     XX(TEST_NORMAL_APPLE)                         \
-    XX(TEST_NORMAL_BANANA, banana)                \
-    XX(TEST_NORMAL_CHERRY, cherry)                \
-    XX(TEST_NORMAL_PEANUT_BUTTER, peanut butter)
+    XX(TEST_NORMAL_BANANA, "banana")                \
+    XX(TEST_NORMAL_CHERRY, "cherry")                \
+    XX(TEST_NORMAL_PEANUT_BUTTER, "peanut butter")
 #include "xenums.c"
 
 #define ENUM_NAME TestStrictNormal
 #define ENUM_PREFIX_ TEST_STRICT_NORMAL_
 #define ENUM_BITFLAGS 0
 #define ENUM_PARSE_STRICT
-#define ENUM_FIELDS                                      \
-    XX(TEST_STRICT_NORMAL_APPLE)                         \
-    XX(TEST_STRICT_NORMAL_BANANA, banana)                \
-    XX(TEST_STRICT_NORMAL_PEANUT_BUTTER, peanut butter)
+#define ENUM_FIELDS                                        \
+    XX(TEST_STRICT_NORMAL_APPLE)                           \
+    XX(TEST_STRICT_NORMAL_BANANA, "banana")                \
+    XX(TEST_STRICT_NORMAL_PEANUT_BUTTER, "peanut butter")  \
+    XX(TEST_STRICT_NORMAL_DOUBLE_SPACE, "two  spaces")
 #include "xenums.c"
 
 #define ENUM_NAME TestStrictFlags
@@ -953,6 +954,11 @@ main(void) {
     ASSERT_ZERO(TEST_STRICT_NORMAL_parse(STRLIT("PeAnUt BuTtEr")));
     ASSERT(TEST_STRICT_NORMAL_parse(STRLIT("peanut butter"))
            == TEST_STRICT_NORMAL_PEANUT_BUTTER);
+    ASSERT(TEST_STRICT_NORMAL_parse(STRLIT("two  spaces"))
+           == TEST_STRICT_NORMAL_DOUBLE_SPACE);
+    ASSERT_ZERO(TEST_STRICT_NORMAL_parse(STRLIT("two spaces")));
+    s = TEST_STRICT_NORMAL_alias(TEST_STRICT_NORMAL_DOUBLE_SPACE);
+    ASSERT_EQ(s, "two  spaces");
 
     {
         char counted[] = {'c', 'h', 'e', 'r', 'r', 'y',};

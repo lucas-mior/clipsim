@@ -137,7 +137,8 @@ for (uint32 x = EXAMPLE_A; x < EXAMPLE_COUNT; x += 1) {
 ### parsing policy
 By default, `_parse` is loose. For normal enums it is case-insensitive, accepts
 full enum names or names without the enum prefix, and treats spaces and hyphens
-like underscores. Two-argument fields also accept their alias.
+like underscores. Two-argument fields accept a quoted string-literal alias.
+Unlike token stringization, the literal preserves exact whitespace.
 
 Define `ENUM_PARSE_STRICT` before including `xenums.c` when the enum belongs
 to a syntax where only the exact textual representation is valid:
@@ -149,7 +150,7 @@ to a syntax where only the exact textual representation is valid:
 #define ENUM_PARSE_STRICT
 #define ENUM_FIELDS          \
     XX(EXAMPLE_A)            \
-    XX(EXAMPLE_PLUS, +)
+    XX(EXAMPLE_PLUS, "+")
 #include "xenums.c"
 ```
 
