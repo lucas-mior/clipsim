@@ -430,6 +430,21 @@ typedef struct MyStruct {
 } MyStruct;
 ```
 
+Note: for struct of array design, use plurals:
+```c
+// bad
+typedef struct MyStructOfArrays {
+    char **names;
+    int32 *name_lens;
+} MyStructOfArrays;
+
+// good
+typedef struct MyStructOfArrays {
+    char **names;
+    int32 *names_lens;
+} MyStructOfArrays;
+```
+
 That means to also avoid calling `strlen32`:
 
 - `strlen32` shall be viewed as an interface for code that we do not control.
