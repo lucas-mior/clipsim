@@ -4554,23 +4554,27 @@ fmt_strftime_format(FormatSink *sink, char *format,
 
         switch (conversion) {
         case 'a':
-            fmt_strftime_write_name(sink, locale->weekday_abbr,
+            fmt_strftime_write_name(sink,
+                                    locale->weekday_abbr,
                                     LENGTH(locale->weekday_abbr),
                                     time_info->tm_wday);
             break;
         case 'A':
-            fmt_strftime_write_name(sink, locale->weekday,
+            fmt_strftime_write_name(sink,
+                                    locale->weekday,
                                     LENGTH(locale->weekday),
                                     time_info->tm_wday);
             break;
         case 'b':
         case 'h':
-            fmt_strftime_write_name(sink, locale->month_abbr,
+            fmt_strftime_write_name(sink,
+                                    locale->month_abbr,
                                     LENGTH(locale->month_abbr),
                                     time_info->tm_mon);
             break;
         case 'B':
-            fmt_strftime_write_name(sink, locale->month,
+            fmt_strftime_write_name(sink,
+                                    locale->month,
                                     LENGTH(locale->month),
                                     time_info->tm_mon);
             break;

@@ -591,8 +591,8 @@ function_with_long_name_and_multiple_arguments(MyStruct *handle,
                                                double a, double b);
 ```
 
-In function calls/definitions/headers, try to make the `_len` of a variable in
-the same line of the object it refers to:
+In calls/definitions/headers, keep a variable with its `_len`, or an
+array with `LENGTH(array)`, on the same line whenever possible:
 ```c
 // bad
 static void
