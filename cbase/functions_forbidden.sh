@@ -316,9 +316,6 @@ if [ -n "$common_libc_never" ] \
             || [ -s "$common_libc_matches5" ] \
             || [ "$common_csanecheck_status" -eq 1 ]; then
         common_libc_status=1
-        error "%s %s\n" \
-            "In order to understand and learn how to fix the problems above," \
-            "read cbase/c-guidelines.md and cbase/c-format.md"
     fi
     if [ "$common_csanecheck_status" -gt 1 ]; then
         common_libc_status=$common_csanecheck_status

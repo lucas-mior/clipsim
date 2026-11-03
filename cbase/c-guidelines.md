@@ -1080,8 +1080,10 @@ if (enum & ENUM_BITFLAG) {
 - Do not use `ASSERT_EQ` for enums.
   * Use `ASSERT(enumvalue1 == enumvalue2)` instead, so that the compiler does
     not complain.
-- Use `ASSERT_EQ(a, b)` instead of `ASSERT_CLOSE(a, b, 0.0)`. A zero
+- For floats, Use `ASSERT_EQ(a, b)` instead of `ASSERT_CLOSE(a, b, 0.0)`. A zero
   tolerance requires exact equality, not a closeness assertion.
+  * For tolerance equality, use `ASSERT_CLOSE(a, b, tol);`. Don't do stupid shit
+    like: `ASSERT(fabs(a - b) < tol);`.
 - For asserting that a function did or didn't fail/return NULL:
   ```c
   // bad
@@ -1109,8 +1111,6 @@ if (enum & ENUM_BITFLAG) {
   ASSERT_EQ(access(path, F_OK), 0);
   ```
 - Prefer `ASSERT_EQ(value, 0);` instead of `ASSERT(value == 0)`.
-  * Note: if zero means "function succeded", use
-    `ASSERT(!function_call());` instead of `ASSERT_EQ(function_call(), 0);`
 - `ASSERT_EQ` and `ASSERT_NE` accept either constant or variable
   operands. For integer comparisons, both operands are normalized to `llong`.
   Unsigned integer values above `LLONG_MAX` are not supported and trigger an
@@ -1144,7 +1144,6 @@ if (enum & ENUM_BITFLAG) {
 - Constant-RHS ordered integer comparisons also normalize integer operands to
   `llong`. Unsigned integer values above `LLONG_MAX` are not supported. The
   three- and four-argument string equality forms are unaffected.
-- Use `ASSERT_EQ(value, 0);` for exact zero checks.
 - Prefer `ASSERT_BETWEEN(value, 0, max);`
   instead of `ASSERT_GE(value, 0); ASSERT_LE(value, max);`
 - Prefer `ASSERT_BETWEEN(value, 0, SIZE - 1);`
