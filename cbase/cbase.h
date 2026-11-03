@@ -1037,9 +1037,10 @@ void generic_array_set_count(void *array, int32 count);
     }                                                            \
 } while (0)
 
-#define ARRAY_PUSH(ARRAY, ...)                                   \
-    ((ARRAY) = generic_array_grow((ARRAY), SIZEOF(*(ARRAY))),    \
-     (ARRAY)[ARRAY_HEADER(ARRAY)->count++] = (__VA_ARGS__))
+#define ARRAY_PUSH(ARRAY, ...)                                      \
+    (((ARRAY) && ARRAY_HEADER(ARRAY)->count < ARRAY_HEADER(ARRAY)->cap \
+      ? (ARRAY) : ((ARRAY) = generic_array_grow((ARRAY), SIZEOF(*(ARRAY)))), \
+     (ARRAY)[ARRAY_HEADER(ARRAY)->count++] = (__VA_ARGS__)))
 #define ARRAY_INIT(ARRAY, CAPACITY)                              \
     ((ARRAY) = generic_array_init((CAPACITY), SIZEOF(*(ARRAY))))
 

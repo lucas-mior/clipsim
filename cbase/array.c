@@ -45,7 +45,9 @@ generic_array_grow(void *array, int64 item_size) {
             return array;
         }
         old_cap = header->cap;
-        if (old_cap <= (MAXOF(old_cap)/2)) {
+        if (old_cap == 0) {
+            new_cap = 8;
+        } else if (old_cap <= (MAXOF(old_cap)/2)) {
             new_cap = old_cap*2;
         } else {
             error("Array is too large.\n");
@@ -216,10 +218,52 @@ array_test_reserve_and_counts(void) {
     return;
 }
 
+static void
+array_test_push_growth(void) {
+    int32 *items = NULL;
+    int32 *empty = NULL;
+    int32 *reserved = NULL;
+    int32 initial_cap;
+    int32 pushed;
+
+    pushed = ARRAY_PUSH(items, 10);
+    ASSERT_EQ(pushed, 10);
+    initial_cap = ARRAY_CAPACITY(items);
+    ASSERT_GT(initial_cap, 0);
+    for (int32 i = 1; i <= initial_cap; i += 1) {
+        ARRAY_PUSH(items, i);
+    }
+    ASSERT_EQ(ARRAY_LEN(items), initial_cap + 1);
+    ASSERT_GT_VAR(ARRAY_CAPACITY(items), initial_cap);
+    for (int32 i = 1; i <= initial_cap; i += 1) {
+        ASSERT_EQ(items[i], i);
+    }
+
+    ARRAY_INIT(empty, 0);
+    ARRAY_PUSH(empty, 42);
+    ASSERT_EQ(ARRAY_LEN(empty), 1);
+    ASSERT_EQ(empty[0], 42);
+
+    ARRAY_INIT(reserved, 4);
+    initial_cap = ARRAY_CAPACITY(reserved);
+    ARRAY_PUSH(reserved, 11);
+    ARRAY_PUSH(reserved, 12);
+    ASSERT_EQ(ARRAY_CAPACITY(reserved), initial_cap);
+    ASSERT_EQ(ARRAY_LEN(reserved), 2);
+    ASSERT_EQ(reserved[0], 11);
+    ASSERT_EQ(reserved[1], 12);
+
+    ARRAY_FREE(items);
+    ARRAY_FREE(empty);
+    ARRAY_FREE(reserved);
+    return;
+}
+
 int
 main(void) {
     array_sink();
     array_test_reserve_and_counts();
+    array_test_push_growth();
     exit(EXIT_SUCCESS);
 }
 #endif
