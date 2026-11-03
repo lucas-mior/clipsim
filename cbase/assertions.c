@@ -1357,9 +1357,6 @@ main(void) {
     ASSERT(true);
     ASSERT(!false);
     ASSERT(1);
-    ASSERT_ZERO(0);
-    ASSERT_ZERO(0u);
-    ASSERT_ZERO(0ll);
 
     ASSERT_EQ(1, 1);
     ASSERT_EQ(3, 1 + 2);

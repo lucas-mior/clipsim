@@ -339,7 +339,7 @@ main(void) {
         llong max11 = MAX(1, 1);
         llong max01 = MAX(0, 1);
 
-        ASSERT_ZERO(min01);
+        ASSERT_EQ(min01, 0);
         ASSERT_EQ(min11, 1);
         ASSERT_EQ(max11, 1);
         ASSERT_EQ(max01, 1);
@@ -390,7 +390,7 @@ main(void) {
         llong min = MIN(a, 0);
         llong max = MAX(a, 0);
         ASSERT_EQ(min, -1);
-        ASSERT_ZERO(max);
+        ASSERT_EQ(max, 0);
     } {
         double a = 2.123;
         double min = MIN(a, 2);

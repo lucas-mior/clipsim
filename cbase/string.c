@@ -963,7 +963,7 @@ main(void) {
         ASSERT_EQ(formatted->data, "x abc 7");
         ASSERT_EQ(formatted->len, 7);
         ASSERT_EQ(count, formatted->len);
-        ASSERT_ZERO(formatted->data[formatted->len]);
+        ASSERT_EQ(formatted->data[formatted->len], 0);
         ASSERT_EQ(strflex_list_len(&list), 1);
         ASSERT(strflex_list_at(&list, 0) == formatted);
         strflex_list_destroy(&list);

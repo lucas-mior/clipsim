@@ -974,9 +974,9 @@ main(void) {
     ASSERT_EQ(hash_ndeleted_map(map), 1);
 
     hash_zero_map(map);
-    ASSERT_ZERO(hash_length(map));
-    ASSERT_ZERO(hash_ndeleted_map(map));
-    ASSERT_ZERO(map->occupied);
+    ASSERT_EQ(hash_length(map), 0);
+    ASSERT_EQ(hash_ndeleted_map(map), 0);
+    ASSERT_EQ(map->occupied, 0);
 
     for (uint32 i = 0; i < 10; i += 1) {
         ASSERT(hash_insert_map(map,

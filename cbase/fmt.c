@@ -5046,7 +5046,7 @@ test_fmt_parser_valid_specs(void) {
 
     spec = fmt_test_parse_one("%%");
     ASSERT_EQ(spec.conversion, '%');
-    ASSERT_ZERO(spec.flags);
+    ASSERT_EQ(spec.flags, 0);
     ASSERT(spec.length == FMT_LENGTH_NONE);
 
     spec = fmt_test_parse_one("%08.3d");
@@ -5643,7 +5643,7 @@ fmt_test_ldouble_supported(void) {
     if (status == -ENOSYS) {
         return false;
     }
-    ASSERT_ZERO(status);
+    ASSERT_EQ(status, 0);
     return true;
 }
 
@@ -6121,14 +6121,14 @@ test_fmt_strftime(void) {
 
     ASSERT_EQ(fmt_strftime(buffer, 5, "%Y", &time_info), 4);
     ASSERT_EQ(buffer, "2022");
-    ASSERT_ZERO(fmt_strftime(tiny, SIZEOF(tiny), "%Y", &time_info));
+    ASSERT_EQ(fmt_strftime(tiny, SIZEOF(tiny), "%Y", &time_info), 0);
     ASSERT_EQ(tiny, "");
-    ASSERT_ZERO(fmt_strftime(NULL, 0, "%Y", &time_info));
-    ASSERT_ZERO(fmt_strftime(buffer, SIZEOF(buffer), "", &time_info));
+    ASSERT_EQ(fmt_strftime(NULL, 0, "%Y", &time_info), 0);
+    ASSERT_EQ(fmt_strftime(buffer, SIZEOF(buffer), "", &time_info), 0);
     ASSERT_EQ(buffer, "");
-    ASSERT_ZERO(fmt_strftime(buffer, SIZEOF(buffer), NULL, &time_info));
+    ASSERT_EQ(fmt_strftime(buffer, SIZEOF(buffer), NULL, &time_info), 0);
     ASSERT_EQ(buffer, "");
-    ASSERT_ZERO(fmt_strftime(buffer, SIZEOF(buffer), "%Y", NULL));
+    ASSERT_EQ(fmt_strftime(buffer, SIZEOF(buffer), "%Y", NULL), 0);
     ASSERT_EQ(buffer, "");
 
     return;

@@ -897,8 +897,8 @@ int main(void) {
 
         mapping = xmmap_commit(&size);
         ASSERT_GT(size, 1);
-        ASSERT_ZERO(size % memory_page_size);
-        ASSERT_ZERO(mapping[0]);
+        ASSERT_EQ(size % memory_page_size, 0);
+        ASSERT_EQ(mapping[0], 0);
         xmunmap(mapping, size);
     }
 
@@ -992,7 +992,7 @@ int main(void) {
 
         mem_dup = xmemdup(dup, len);
         ASSERT(mem_dup != dup);
-        ASSERT_ZERO(memcmp(mem_dup, dup, (size_t)len));
+        ASSERT_EQ(memcmp(mem_dup, dup, (size_t)len), 0);
         fmt_printf("xmemdup successful.\n");
 
         free2(dup, len);

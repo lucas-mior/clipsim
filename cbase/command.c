@@ -1579,8 +1579,8 @@ main(int argc, char **argv) {
         cmd_print(&cmd);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
-        ASSERT_ZERO(cmd.argv_arena->npushed);
+        ASSERT_EQ(cmd.argc, 0);
+        ASSERT_EQ(cmd.argv_arena->npushed, 0);
         ASSERT(cmd.argv[0] == NULL);
 
         cmd_printf(&cmd, "%f", 1.0);
@@ -1597,7 +1597,7 @@ main(int argc, char **argv) {
         ASSERT(cmd.argv[cmd.argc] == NULL);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         CMD_PUSH(&cmd, "first", "second");
         ASSERT_EQ(cmd.argc, 2);
@@ -1608,7 +1608,7 @@ main(int argc, char **argv) {
         ASSERT_NULL(cmd.argv[cmd.argc]);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         {
             enum {
@@ -1647,7 +1647,7 @@ main(int argc, char **argv) {
         }
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         {
             enum {
@@ -1668,22 +1668,22 @@ main(int argc, char **argv) {
         }
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
 #if OS_UNIX
         CMD_PUSH(&cmd, "sh", "-c", "exit 7");
-        ASSERT_ZERO((cmd_run_sync(&cmd, NULL)));
+        ASSERT_EQ((cmd_run_sync(&cmd, NULL)), 0);
         ASSERT_EQ(cmd.result.status, 7);
         ASSERT(cmd.result.exited);
         ASSERT_EQ(cmd.result.exit_status, 7);
         ASSERT_GT(cmd.run_elapsed_ns, 0);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
-        ASSERT_ZERO(cmd.run_elapsed_ns);
+        ASSERT_EQ(cmd.argc, 0);
+        ASSERT_EQ(cmd.run_elapsed_ns, 0);
 
         CMD_PUSH(&cmd, "sh", "-c", "printf stdout; printf stderr >&2; exit 7");
-        ASSERT_ZERO((cmd_run_capture_combined(&cmd)));
+        ASSERT_EQ((cmd_run_capture_combined(&cmd)), 0);
         ASSERT_EQ(cmd.result.output, "stdoutstderr");
         ASSERT_EQ(cmd.result.stdout_output, "stdoutstderr");
         ASSERT_EQ(cmd.result.stderr_output, "");
@@ -1691,10 +1691,10 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.result.status, 7);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         CMD_PUSH(&cmd, "sh", "-c", "printf stdout; printf stderr >&2; exit 6");
-        ASSERT_ZERO((cmd_run_capture_all(&cmd)));
+        ASSERT_EQ((cmd_run_capture_all(&cmd)), 0);
         ASSERT_EQ(cmd.result.stdout_output, "stdout");
         ASSERT_EQ(cmd.result.stderr_output, "stderr");
         ASSERT_EQ(cmd.result.stdout_len, 6);
@@ -1702,16 +1702,16 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.result.status, 6);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         CMD_PUSH(&cmd, "cat");
-        ASSERT_ZERO((cmd_stdin_buffer_set(&cmd, STRLIT("stdin-buffer"))));
-        ASSERT_ZERO((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)));
+        ASSERT_EQ((cmd_stdin_buffer_set(&cmd, STRLIT("stdin-buffer"))), 0);
+        ASSERT_EQ((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)), 0);
         ASSERT_EQ(cmd.result.stdout_output, "stdin-buffer");
-        ASSERT_ZERO(cmd.result.status);
+        ASSERT_EQ(cmd.result.status, 0);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
         ASSERT(cmd.stdin_buffer == NULL);
         ASSERT_LT((cmd_stdin_buffer_set(&cmd, NULL, 0)), 0);
 
@@ -1727,12 +1727,12 @@ main(int argc, char **argv) {
             ASSERT(!cmd_stdin_buffer_set(&cmd, stdin_data, CMD_STDIN_TEST_LEN));
             ASSERT(!cmd_run_capture_all(&cmd));
             ASSERT_EQ(cmd.result.stdout_output, "done");
-            ASSERT_ZERO(cmd.result.status);
+            ASSERT_EQ(cmd.result.status, 0);
             free2(stdin_data, CMD_STDIN_TEST_LEN);
         }
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         {
             enum {
@@ -1744,26 +1744,26 @@ main(int argc, char **argv) {
             memset64(stdin_data, 'x', CMD_EPIPE_TEST_LEN);
             CMD_PUSH(&cmd, "sh", "-c", "exit 3");
             ASSERT(!cmd_stdin_buffer_set(&cmd, stdin_data, CMD_EPIPE_TEST_LEN));
-            ASSERT_ZERO((cmd_run_capture_all(&cmd)));
+            ASSERT_EQ((cmd_run_capture_all(&cmd)), 0);
             ASSERT_EQ(cmd.result.status, 3);
             free2(stdin_data, CMD_EPIPE_TEST_LEN);
         }
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         {
             char *empty_input = "";
 
             CMD_PUSH(&cmd, "cat");
-            ASSERT_ZERO((cmd_stdin_buffer_set(&cmd, empty_input, 0)));
-            ASSERT_ZERO((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)));
+            ASSERT_EQ((cmd_stdin_buffer_set(&cmd, empty_input, 0)), 0);
+            ASSERT_EQ((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)), 0);
             ASSERT_EQ(cmd.result.stdout_output, "");
-            ASSERT_ZERO(cmd.result.status);
+            ASSERT_EQ(cmd.result.status, 0);
         }
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         {
             char expected_cwd[PATH_MAX];
@@ -1779,14 +1779,14 @@ main(int argc, char **argv) {
 
             cmd_cwd_set(&cmd, test_cwd);
             CMD_PUSH(&cmd, "pwd", "-P");
-            ASSERT_ZERO((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)));
+            ASSERT_EQ((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)), 0);
             ASSERT_EQ(cmd.result.stdout_output, expected_cwd);
             cmd_cwd_clear(&cmd);
             test_remove_tree(test_cwd);
         }
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         cmd_env_push(&cmd, "CMD_TEST_VALUE=works");
         cmd_env_printf(&cmd, "CMD_TEST_NUMBER=%d", 42);
@@ -1796,28 +1796,28 @@ main(int argc, char **argv) {
                      "printf %s:%s "
                      "$CMD_TEST_VALUE "
                      "$CMD_TEST_NUMBER");
-        ASSERT_ZERO((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)));
+        ASSERT_EQ((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)), 0);
         ASSERT_EQ(cmd.result.stdout_output, "works:42");
         cmd_env_clear(&cmd);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 #endif
 
 #if OS_WINDOWS
         CMD_PUSH(&cmd, "cmd", "/C", "exit /B 7");
-        ASSERT_ZERO((cmd_run_sync(&cmd, NULL)));
+        ASSERT_EQ((cmd_run_sync(&cmd, NULL)), 0);
         ASSERT_EQ(cmd.result.status, 7);
         ASSERT(cmd.result.exited);
         ASSERT_EQ(cmd.result.exit_status, 7);
         ASSERT_GT(cmd.run_elapsed_ns, 0);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
-        ASSERT_ZERO(cmd.run_elapsed_ns);
+        ASSERT_EQ(cmd.argc, 0);
+        ASSERT_EQ(cmd.run_elapsed_ns, 0);
 
         CMD_PUSH(&cmd, "cmd", "/C", "echo stdout&echo stderr>&2&exit /B 7");
-        ASSERT_ZERO((cmd_run_capture_combined(&cmd)));
+        ASSERT_EQ((cmd_run_capture_combined(&cmd)), 0);
         ASSERT_EQ(cmd.result.output, "stdout\r\nstderr\r\n");
         ASSERT_EQ(cmd.result.stdout_output, "stdout\r\nstderr\r\n");
         ASSERT_EQ(cmd.result.stderr_output, "");
@@ -1825,10 +1825,10 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.result.status, 7);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         CMD_PUSH(&cmd, "cmd", "/C", "echo stdout&echo stderr>&2&exit /B 6");
-        ASSERT_ZERO((cmd_run_capture_all(&cmd)));
+        ASSERT_EQ((cmd_run_capture_all(&cmd)), 0);
         ASSERT_EQ(cmd.result.stdout_output, "stdout\r\n");
         ASSERT_EQ(cmd.result.stderr_output, "stderr\r\n");
         ASSERT_EQ(cmd.result.stdout_len, 8);
@@ -1836,7 +1836,7 @@ main(int argc, char **argv) {
         ASSERT_EQ(cmd.result.status, 6);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 #endif
 
         {
@@ -1851,41 +1851,41 @@ main(int argc, char **argv) {
 
 #if OS_UNIX
         CMD_PUSH(&cmd, "sh", "-c", "exit 9");
-        ASSERT_ZERO((cmd_run_async(&cmd, CMD_NEW_PROCESS_GROUP)));
+        ASSERT_EQ((cmd_run_async(&cmd, CMD_NEW_PROCESS_GROUP)), 0);
         ASSERT_GT(cmd.result.pid, 0);
-        ASSERT_ZERO(cmd_wait(&cmd));
+        ASSERT_EQ(cmd_wait(&cmd), 0);
         ASSERT_EQ(cmd.result.status, 9);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         CMD_PUSH(&cmd, "sh", "-c", "printf asyncout; printf asyncerr >&2");
         ASSERT(!cmd_run_async(&cmd, CMD_CAPTURE_STDOUT |CMD_CAPTURE_STDERR));
         ASSERT_GT(cmd.result.pid, 0);
         cmd_result_read_captured(&cmd);
-        ASSERT_ZERO(cmd_wait(&cmd));
+        ASSERT_EQ(cmd_wait(&cmd), 0);
         ASSERT_EQ(cmd.result.stdout_output, "asyncout");
         ASSERT_EQ(cmd.result.stderr_output, "asyncerr");
-        ASSERT_ZERO(cmd.result.status);
+        ASSERT_EQ(cmd.result.status, 0);
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
 
         CMD_PUSH(&cmd, "sh", "-c", "exit 0");
-        ASSERT_ZERO(cmd_run(&cmd, CMD_DETACHED));
-        ASSERT_ZERO(cmd.result.status);
+        ASSERT_EQ(cmd_run(&cmd, CMD_DETACHED), 0);
+        ASSERT_EQ(cmd.result.status, 0);
 #endif
 
         cmd_reset(&cmd);
-        ASSERT_ZERO(cmd.argc);
+        ASSERT_EQ(cmd.argc, 0);
         cmd_free(&cmd);
         ASSERT(cmd.argv == NULL);
         ASSERT(cmd.argv_lens == NULL);
         ASSERT(cmd.env == NULL);
         ASSERT(cmd.env_lens == NULL);
         ASSERT(cmd.argv_arena == NULL);
-        ASSERT_ZERO(cmd.cap);
-        ASSERT_ZERO(cmd.env_cap);
+        ASSERT_EQ(cmd.cap, 0);
+        ASSERT_EQ(cmd.env_cap, 0);
     }
 
     NCALLS(1);

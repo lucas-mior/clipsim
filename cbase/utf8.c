@@ -627,7 +627,7 @@ main(void) {
 
             ASSERT_GT(gen_len, 10);
             ASSERT_LT(gen_len, 256);
-            ASSERT_ZERO(test_buf[gen_len]);
+            ASSERT_EQ(test_buf[gen_len], 0);
 
             while (consumed < gen_len) {
                 uint32 u;

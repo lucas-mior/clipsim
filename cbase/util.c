@@ -1225,7 +1225,7 @@ main(int argc, char **argv) {
     ASSERT_EQ(CLAMP(0.2, -0.1, 0.1),   0.1);
     ASSERT_EQ(CLAMP(-0.2, -0.1, 0.1), -0.1);
 
-    ASSERT_ZERO(CLAMP(+0, -1, +1));
+    ASSERT_EQ(CLAMP(+0, -1, +1), 0);
     ASSERT_EQ(CLAMP(+2, -1, +1), +1);
     ASSERT_EQ(CLAMP(-2, -1, +1), -1);
 

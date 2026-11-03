@@ -282,19 +282,6 @@ bool UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
     }                                                              \
 } while (0)
 
-#define ASSERT_ZERO(VAR1) do {                                     \
-    llong ASSERT_ZERO = VAR1;                                      \
-    if (ASSERT_ZERO != 0) {                                        \
-        if (DEBUGGING) {                                           \
-            assert_error(__FILE__, __LINE__, FUNC__,               \
-                         "%s = %lld == 0\n", #VAR1, ASSERT_ZERO);  \
-            TRAP();                                                \
-        } else {                                                   \
-            UNREACHABLE();                                         \
-        }                                                          \
-    }                                                              \
-} while (0)
-
 #if OS_UNIX
 extern sigjmp_buf assert_traps_env;
 extern volatile sig_atomic_t assert_traps_caught;

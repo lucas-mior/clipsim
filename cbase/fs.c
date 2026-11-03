@@ -1515,18 +1515,18 @@ main(void) {
         int32 fd;
 
         SNPRINTF(dir_path, "%s/wrapped_dir", temp_dir);
-        ASSERT_ZERO(cbase_mkdir(dir_path));
-        ASSERT_ZERO(cbase_remove_empty_dir(dir_path));
+        ASSERT_EQ(cbase_mkdir(dir_path), 0);
+        ASSERT_EQ(cbase_remove_empty_dir(dir_path), 0);
 
         SNPRINTF(file_path, "%s/wrapped_file", temp_dir);
         WRITE_FILE(file_path, "x");
         ASSERT(util_file_exists(file_path));
-        ASSERT_ZERO(cbase_unlink(file_path));
+        ASSERT_EQ(cbase_unlink(file_path), 0);
         ASSERT(!util_file_exists(file_path));
 
         WRITE_FILE(file_path, "x");
         ASSERT(util_file_exists(file_path));
-        ASSERT_ZERO(cbase_remove_file(file_path));
+        ASSERT_EQ(cbase_remove_file(file_path), 0);
         ASSERT(!util_file_exists(file_path));
 
         SNPRINTF(template_path, "%s/stem_XXXXXX%s", temp_dir, suffix);
@@ -1535,7 +1535,7 @@ main(void) {
         ASSERT_EQ(write64(fd, "x", 1), 1);
         XCLOSE(&fd, template_path);
         ASSERT(util_file_exists(template_path));
-        ASSERT_ZERO(cbase_remove_file(template_path));
+        ASSERT_EQ(cbase_remove_file(template_path), 0);
 
         fd = cbase_make_temp_file(temp_file_path,
                                   SIZEOF(temp_file_path),
@@ -1545,7 +1545,7 @@ main(void) {
         ASSERT_EQ(write64(fd, "y", 1), 1);
         XCLOSE(&fd, temp_file_path);
         ASSERT(util_file_exists(temp_file_path));
-        ASSERT_ZERO(cbase_remove_file(temp_file_path));
+        ASSERT_EQ(cbase_remove_file(temp_file_path), 0);
     }
 
     {

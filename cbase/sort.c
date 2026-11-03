@@ -169,7 +169,7 @@ sort_merge_subsorted(
         }
     }
 
-    ASSERT_ZERO(heap_length);
+    ASSERT_EQ(heap_length, 0);
     memcpy64(array2, output, memory_size);
     free2(output, memory_size);
     return;

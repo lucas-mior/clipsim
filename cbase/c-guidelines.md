@@ -855,6 +855,7 @@ result encodes an error number.
 
 ### Control flow and error handling
 - Avoid `goto`. Use it only for common cleanup logic.
+- Never use `goto` to jump to a previous line in the function.
 - Sometimes a useful pattern to avoid using goto:
   ```c
   do {

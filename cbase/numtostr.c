@@ -373,7 +373,7 @@ test_numtostr_bytes_pretty(void) {
     int32 len;
 
     len = bytes_pretty(buffer, -1);
-    ASSERT_ZERO(len);
+    ASSERT_EQ(len, 0);
     ASSERT_EQ((char *)buffer, "");
 
     len = bytes_pretty(buffer, 512);
