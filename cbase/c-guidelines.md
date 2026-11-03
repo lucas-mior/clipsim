@@ -1058,7 +1058,6 @@ if (enum & ENUM_BITFLAG) {
 - Use the assertions defined in `cbase/assertions.c`.
   - `ASSERT(expression)`
   - `ASSERT_NULL(pointer)`
-  - `ASSERT_ZERO(integer expression)`
   - `ASSERT_EQ(value1, value2)`
   - `ASSERT_NE(value1, value2)`
   - `ASSERT_EQ(string, string_len, other_string)`
@@ -1109,9 +1108,9 @@ if (enum & ENUM_BITFLAG) {
   // good, if we care about the specific negative error code.
   ASSERT_EQ(access(path, F_OK), 0);
   ```
-- Prefer `ASSERT_ZERO(value);` instead of `ASSERT(value == 0)`.
+- Prefer `ASSERT_EQ(value, 0);` instead of `ASSERT(value == 0)`.
   * Note: if zero means "function succeded", use
-    `ASSERT(!function_call());` instead of `ASSERT_ZERO(function_call());`
+    `ASSERT(!function_call());` instead of `ASSERT_EQ(function_call(), 0);`
 - `ASSERT_EQ` and `ASSERT_NE` accept either constant or variable
   operands. For integer comparisons, both operands are normalized to `llong`.
   Unsigned integer values above `LLONG_MAX` are not supported and trigger an
@@ -1145,7 +1144,7 @@ if (enum & ENUM_BITFLAG) {
 - Constant-RHS ordered integer comparisons also normalize integer operands to
   `llong`. Unsigned integer values above `LLONG_MAX` are not supported. The
   three- and four-argument string equality forms are unaffected.
-- Prefer `ASSERT_ZERO(value);` instead of `ASSERT_EQ(a, 0)`
+- Use `ASSERT_EQ(value, 0);` for exact zero checks.
 - Prefer `ASSERT_BETWEEN(value, 0, max);`
   instead of `ASSERT_GE(value, 0); ASSERT_LE(value, max);`
 - Prefer `ASSERT_BETWEEN(value, 0, SIZE - 1);`
