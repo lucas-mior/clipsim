@@ -524,6 +524,21 @@ if (this_condition
 }
 ```
 
+For an `if` or `else if` with just one comparison operator, keep the entire
+`if (...) {` header on one line when it fits within the 80-column limit.
+This includes comparisons with parenthesized operands.
+
+```c
+// bad: the combined header fits
+if (fields
+    == (FIELD_T1 | FIELD_NSTEPS)) {
+}
+
+// good
+if (fields == (FIELD_T1 | FIELD_NSTEPS)) {
+}
+```
+
 ## Function declaration and definition
 
 In the definition, put a newline before the function name and parameters:
