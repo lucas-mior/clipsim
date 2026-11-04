@@ -546,9 +546,7 @@ main(void) {
                 ASSERT_EQ(small_len, small_chunk_len);
                 ASSERT_EQ(memcmp64(small_save,
                                    small_chunk, small_chunk_len), 0);
-                if (small_save != NULL) {
-                    free2(small_save, ENTRY_MAX_LENGTH);
-                }
+                free2(small_save, ENTRY_MAX_LENGTH);
                 wait(NULL);
             }
         }
