@@ -498,9 +498,7 @@ main(void) {
                 sleep_ms(100);
                 clipboard_incremental_case(&large_save, &large_len);
                 ASSERT_EQ(large_len, 0);
-                if (large_save != NULL) {
-                    free2(large_save, ENTRY_MAX_LENGTH);
-                }
+                free2(large_save, ENTRY_MAX_LENGTH);
                 wait(NULL);
             }
 
