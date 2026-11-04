@@ -23,8 +23,8 @@ main(int argc, char **argv) {
     }
 
     is_large = atoi(argv[1]);
-    d = XOpenDisplay(NULL);
-    if (!d) {
+    
+    if ((d = XOpenDisplay(NULL)) == NULL) {
         return 1;
     }
 
