@@ -21,7 +21,7 @@ util_close(File *file) {
         }
         file->fd = -1;
     }
-    if (file->file != NULL) {
+    if (file->file) {
         if (fclose(file->file) != 0) {
             error2("Error closing %s: %s\n", file->name, strerror(errno));
         }
