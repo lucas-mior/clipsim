@@ -9,14 +9,16 @@
 
 int
 main(void) {
-    Display *d = XOpenDisplay(NULL);
-    if (!d) {
+    Display *d;
+    Window w;
+    Atom clip;
+
+    if ((d = XOpenDisplay(NULL)) == NULL) {
         return 1;
     }
 
-    Window w = XCreateSimpleWindow(d, DefaultRootWindow(d),
-                                   0, 0, 1, 1, 0, 0, 0);
-    Atom clip = XInternAtom(d, "CLIPBOARD", False);
+    w = XCreateSimpleWindow(d, DefaultRootWindow(d), 0, 0, 1, 1, 0, 0, 0);
+    clip = XInternAtom(d, "CLIPBOARD", False);
 
     XSetSelectionOwner(d, clip, w, CurrentTime);
     XFlush(d);
