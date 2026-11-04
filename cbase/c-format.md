@@ -136,6 +136,39 @@ Important: only try 2 if 1 does not work, only try 3 if 2 and 1 do not work,
 only try 4 if 1, 2, and 3 do not work, and so on. Remember to do a final pass,
 do the alignment, as explained in 2.
 
+## Array indexing
+Similar to the function calls rules above, never break immediately after the
+opening bracket:
+```c
+    // bad
+    int32 value = my_array_has_a_long_name[
+        idx];
+    // good
+    int32 value = my_array_has_a_long_name[idx];
+```
+
+Sometimes it might be useful to break at arithmetic operators:
+```c
+    // bad
+    int32 value = my_array_has_a_long_name[
+        variable_long_name*cols + another_variable];
+
+    // good
+    int32 value = my_array_has_a_long_name[variable_long_name*cols
+                                           + another_variable];
+```
+
+Sometimes it might be useful to create auxiliar variables.
+```c
+    // bad
+    int32 value = my_array_has_a_long_name[
+        function_that_returns_index_does_not_fit_here()];
+
+    // good
+    int32 idx = function_that_returns_index_does_not_fit_here();
+    int32 value = my_array_has_a_long_name[idx];
+```
+
 ## Rules for reducing long lines.
 When it happens that a line of code has more than 80 chars, the rules are:
 For function calls, check the rules above.
