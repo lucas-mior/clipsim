@@ -1498,3 +1498,25 @@ still do not know, use common sense.
   ```
   This applies to direct literal arguments, not casts in expressions or
   casts of variables.
+
+## Arithmetic line wrapping aand aligning
+1. Break before operators, if needed to not exceed column limit.
+2. Align according to precedence:
+```c
+// bad
+double x = 2.0*a_long_variable
+   + (some_other_variable*(xyz + 4.0)) / SQUARE(varibale);
+
+// bad
+double x = 2.0*a_long_variable
+               + (some_other_variable*(xyz + 4.0)) / SQUARE(varibale);
+
+// good
+double x = 2.0*a_long_variable
+           + (some_other_variable*(xyz + 4.0)) / SQUARE(varibale);
+
+// also good. Note how they nest according to precedence.
+double x = 2.0*a_long_variable
+           + (some_other_variable*(xyz + 4.0))
+             / SQUARE(varibale);
+```

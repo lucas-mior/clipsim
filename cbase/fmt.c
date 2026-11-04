@@ -1841,8 +1841,8 @@ fmt_decode_binary128_ldouble(ldouble value, FormatBinaryFloat *parts) {
             - FMT_LDOUBLE_BINARY128_EXPONENT_BIAS
             - FMT_LDOUBLE_BINARY128_FRACTION_BITS;
     } else {
-        parts->binary_exponent = 1
-            - FMT_LDOUBLE_BINARY128_EXPONENT_BIAS
+        parts->binary_exponent =
+            1 - FMT_LDOUBLE_BINARY128_EXPONENT_BIAS
             - FMT_LDOUBLE_BINARY128_FRACTION_BITS;
     }
     parts->precision_bits = LDBL_MANT_DIG;

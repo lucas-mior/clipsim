@@ -158,7 +158,31 @@ Sometimes it might be useful to break at arithmetic operators:
                                            + another_variable];
 ```
 
-Sometimes it might be useful to create auxiliar variables.
+When an index expression spans multiple lines, align each continuation line
+with the first index token (immediately after `[`), not with the indentation
+of the containing statement:
+```c
+    // bad
+    int32 value = my_array_has_a_long_name[variable_long_name*cols
+        + another_variable];
+
+    // good
+    int32 value = my_array_has_a_long_name[variable_long_name*cols
+                                           + another_variable];
+```
+
+Sometimes it might be useful to break after the assignment operator:
+```c
+    // bad
+    int32 value = my_array_has_a_long_name[
+        function_that_returns_index_does_not_fit()];
+
+    // good
+    int32 value =
+        my_array_has_a_long_name[function_that_returns_index_does_not_fit()];
+```
+
+As a last resource, sometimes it might be useful to create auxiliar variables.
 ```c
     // bad
     int32 value = my_array_has_a_long_name[
@@ -168,6 +192,36 @@ Sometimes it might be useful to create auxiliar variables.
     int32 idx = function_that_returns_index_does_not_fit_here();
     int32 value = my_array_has_a_long_name[idx];
 ```
+
+## Arithmetic line wrapping and alignment
+For simple assignments to arithmetic expressions, break before binary
+arithmetic operators (`+`, `-`, `*`, `/`, `%`) when a line break is needed.
+Align a wrapped operator with the beginning of its left-hand precedence
+subexpression. Higher-precedence operations can therefore be indented further
+than lower-precedence operations:
+
+```c
+// bad: continuation is not aligned with the right-hand expression
+// and the next operator is not aligned with its precedence group.
+double x = 2.0*a_long_variable
+   + (some_other_variable*(xyz + 4.0)) / SQUARE(variable);
+
+double x = 2.0*a_long_variable
+               + (some_other_variable*(xyz + 4.0)) / SQUARE(variable);
+
+// good: + aligns with the first token after =
+double x = 2.0*a_long_variable
+           + (some_other_variable*(xyz + 4.0)) / SQUARE(variable);
+
+// also good: / aligns with the parenthesized right-hand term
+double x = 2.0*a_long_variable
+           + (some_other_variable*(xyz + 4.0))
+             / SQUARE(variable);
+```
+
+The arithmetic-assignment check does not inspect arithmetic inside function
+calls or array subscripts. Parenthesized arithmetic subexpressions follow
+their own precedence alignment.
 
 ## Rules for reducing long lines.
 When it happens that a line of code has more than 80 chars, the rules are:

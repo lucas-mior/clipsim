@@ -516,8 +516,9 @@ parallel_for_max_threads_min_items(
         }
 
         thread_pool_queue.items[thread_pool_queue.tail] = &slices[i];
-        thread_pool_queue.tail = (thread_pool_queue.tail + 1)
-                                    % LENGTH(thread_pool_queue.items);
+        thread_pool_queue.tail =
+            (thread_pool_queue.tail + 1)
+            % LENGTH(thread_pool_queue.items);
         thread_pool_queue.count += 1;
         thread_pool_work_pending += 1;
         thread_pool_signal_new_work();
