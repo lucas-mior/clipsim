@@ -526,7 +526,7 @@ history_append(char *content, int32 length, bool incr_buffer) {
     int32 size;
     Entry *e;
 
-    if (!content) {
+    if (content == NULL) {
         error("Error getting data from clipboard. Skipping entry...\n");
         recovered = false;
         return;
