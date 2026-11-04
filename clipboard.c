@@ -449,7 +449,7 @@ main(void) {
             ASSERT_EQ(res_clip, CLIPBOARD_TEXT);
             ASSERT_GT(len, 0);
 
-            if (res_save != NULL) {
+            if (res_save) {
                 XFree(res_save);
             }
 
