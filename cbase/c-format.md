@@ -611,9 +611,12 @@ if (this_condition
 }
 ```
 
-For an `if` or `else if` with just one comparison operator, keep the entire
-`if (...) {` header on one line when it fits within the 80-column limit.
-This includes comparisons with parenthesized operands.
+For a simple `if` or `else if` condition, keep the entire `if (...) {`
+header on one line when it fits within the 80-column limit. This applies to
+single comparisons (including parenthesized operands), predicates, and
+assignments used as conditions. Compound boolean expressions with `&&` or
+`||` and ternary expressions are exempt, since line breaks can clarify their
+structure.
 
 ```c
 // bad: the combined header fits
@@ -623,6 +626,15 @@ if (fields
 
 // good
 if (fields == (FIELD_T1 | FIELD_NSTEPS)) {
+}
+
+// bad: the assignment condition and its function call fit
+} else if ((p = BEGINS_WITH(line, line_len,
+                            "CY_META_POLY2_VALUE"))) {
+}
+
+// good
+} else if ((p = BEGINS_WITH(line, line_len, "CY_META_POLY2_VALUE"))) {
 }
 ```
 
