@@ -5,11 +5,11 @@
 #define CMD_C
 
 #if !defined(TESTING_command)
-#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
-#define TESTING_command 1
-#else
-#define TESTING_command 0
-#endif
+  #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+  #define TESTING_command 1
+  #else
+  #define TESTING_command 0
+  #endif
 #endif
 
 #include "cbase.h"

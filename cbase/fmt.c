@@ -4827,7 +4827,7 @@ fmt_strftime_l(char *buffer, int64 capacity, char *format,
     ASSERT(locale != NULL);
 
     if ((format == NULL) || (time_info == NULL) || (locale == NULL)) {
-        if ((buffer != NULL) && (capacity > 0)) {
+        if ((buffer) && (capacity > 0)) {
             buffer[0] = '\0';
         }
         return 0;

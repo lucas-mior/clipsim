@@ -375,8 +375,7 @@ main(void) {
         ASSERT_EQ(num_events, LASTEvent);
     }
 
-    display = XOpenDisplay(NULL);
-    if (display != NULL) {
+    if ((display = XOpenDisplay(NULL)) != NULL) {
         {
             pid_t pid = fork();
             if (pid == 0) {

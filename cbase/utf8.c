@@ -369,13 +369,13 @@ utf8_capitalize_first_letters(char *string, int32 string_len,
         encoded_len = utf8_encode((uint32)wc, encoded, SIZEOF(encoded));
         if (encoded_len <= 0) {
             encoded_len = length;
-            if ((buffer != NULL)
+            if ((buffer)
                 && ((result_len + encoded_len) <= buffer_capacity)) {
                 for (int32 i = 0; i < encoded_len; i += 1) {
                     buffer[result_len + i] = string[byte + i];
                 }
             }
-        } else if ((buffer != NULL)
+        } else if ((buffer)
                    && ((result_len + encoded_len) <= buffer_capacity)) {
             for (int32 i = 0; i < encoded_len; i += 1) {
                 buffer[result_len + i] = encoded[i];

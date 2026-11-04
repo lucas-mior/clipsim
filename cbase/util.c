@@ -825,7 +825,7 @@ void
 xkill(pid_t pid, int signum) {
     if (kill(pid, signum) < 0) {
         char *name = signal_get_name(signum);
-        if (name != NULL) {
+        if (name) {
             error("Error sending signal %d=%s to %d: %s.\n",
                   signum, name, pid, strerror(errno));
         } else {

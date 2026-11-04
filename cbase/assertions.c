@@ -1001,7 +1001,7 @@ assert_double_special_close(double var1, double var2,
     bool sign1;
     bool sign2;
 
-    if (diff_out != NULL) {
+    if (diff_out) {
         *diff_out = (double)0;
     }
     *handled_out = true;
@@ -1010,14 +1010,14 @@ assert_double_special_close(double var1, double var2,
         if (var1 == var2) {
             return true;
         }
-        if (diff_out != NULL) {
+        if (diff_out) {
             *diff_out = assert_double_abs(var1 - var2);
         }
         return false;
     }
 
     if (assert_double_is_nan(var1) || assert_double_is_nan(var2)) {
-        if (diff_out != NULL) {
+        if (diff_out) {
             *diff_out = var1 - var2;
         }
         return false;
@@ -1033,7 +1033,7 @@ assert_double_special_close(double var1, double var2,
             *handled_out = false;
             return false;
         }
-        if (diff_out != NULL) {
+        if (diff_out) {
             *diff_out = assert_double_abs(var1 - var2);
         }
         return false;
@@ -1077,7 +1077,7 @@ assert_double_close_ulps(double var1, double var2,
     }
 
     diff = assert_double_abs(var1 - var2);
-    if (diff_out != NULL) {
+    if (diff_out) {
         *diff_out = diff;
     }
 
@@ -1119,7 +1119,7 @@ assert_double_close_tol(double var1, double var2,
         tolerance = -tolerance;
     }
 
-    if (tolerance_out != NULL) {
+    if (tolerance_out) {
         *tolerance_out = tolerance;
     }
 
@@ -1131,7 +1131,7 @@ assert_double_close_tol(double var1, double var2,
     }
 
     diff = assert_double_abs(var1 - var2);
-    if (diff_out != NULL) {
+    if (diff_out) {
         *diff_out = diff;
     }
 
