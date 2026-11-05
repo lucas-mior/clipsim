@@ -55,6 +55,20 @@ preconditions; assert those instead.
   that is only used inside a short loop.
 - Use `i`, `j`, and `k` for `for` loop counters.
   * Exception: enum iterating, you can use other names in that case.
+  * Note: never use `i`, `j`, and `k` as function argument names:
+  ```c
+  // bad
+  static void
+  function(double *array, int32 i) {
+      return;
+  }
+
+  // good
+  static void
+  function(double *array, int32 idx) {
+      return;
+  }
+  ```
 - Don't use `error` for names of variables, it is already used to print error
   messages. Use something like `${some_prefix}_error`.
 

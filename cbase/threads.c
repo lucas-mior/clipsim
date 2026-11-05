@@ -244,8 +244,9 @@ thread_pool_worker(void *arg) {
 }
 
 static void
-thread_pool_start_worker(int32 i) {
-    xpthread_create(&thread_pool_threads[i], NULL, thread_pool_worker, NULL);
+thread_pool_start_worker(int32 worker_index) {
+    xpthread_create(&thread_pool_threads[worker_index], NULL,
+                    thread_pool_worker, NULL);
     return;
 }
 
@@ -331,7 +332,7 @@ thread_pool_worker(void *arg) {
 }
 
 static void
-thread_pool_start_worker(int32 i) {
+thread_pool_start_worker(int32 worker_index) {
     HANDLE thread;
 
     thread = CreateThread(NULL, 0, thread_pool_worker, NULL, 0, NULL);
@@ -339,7 +340,7 @@ thread_pool_start_worker(int32 i) {
         error("Error creating thread: %llu.\n", (ullong)GetLastError());
         fatal(EXIT_FAILURE);
     }
-    thread_pool_threads[i] = thread;
+    thread_pool_threads[worker_index] = thread;
     return;
 }
 

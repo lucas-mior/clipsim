@@ -5044,7 +5044,7 @@ test_fmt_parser_valid_specs(void) {
 
     spec = fmt_test_parse_one("%%");
     ASSERT_EQ(spec.conversion, '%');
-    ASSERT_EQ(spec.flags, 0);
+    ASSERT(spec.flags == 0);
     ASSERT(spec.length == FMT_LENGTH_NONE);
 
     spec = fmt_test_parse_one("%08.3d");

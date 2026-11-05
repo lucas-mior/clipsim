@@ -57,13 +57,13 @@ sort_shuffle(void *array, int64 n, int64 size) {
 }
 
 void
-sort_heapify(HeapNode *heap, int32 p, int32 i,
+sort_heapify(HeapNode *heap, int32 p, int32 idx,
              int32 (*compare_func)(void *a, void *b)) {
     (void)compare_func;
     while (true) {
-        int32 smallest = i;
-        int32 left = 2*i + 1;
-        int32 right = 2*i + 2;
+        int32 smallest = idx;
+        int32 left = 2*idx + 1;
+        int32 right = 2*idx + 2;
 
         if (left >= p) {
             break;
@@ -77,15 +77,15 @@ sort_heapify(HeapNode *heap, int32 p, int32 i,
             smallest = right;
         }
 
-        if (smallest == i) {
+        if (smallest == idx) {
             break;
         }
 
         {
-            HeapNode temp = heap[i];
-            heap[i] = heap[smallest];
+            HeapNode temp = heap[idx];
+            heap[idx] = heap[smallest];
             heap[smallest] = temp;
-            i = smallest;
+            idx = smallest;
         }
     }
     return;

@@ -181,28 +181,28 @@ atoi_would_overflow(llong value, int32 digit, AtoiLimit limit) {
 }
 
 static int32
-atoi_detect_base(char *str, int32 *i) {
+atoi_detect_base(char *str, int32 *index) {
     int32 base = 10;
 
-    if (str[*i] != '0') {
+    if (str[*index] != '0') {
         return base;
     }
 
-    switch (str[*i + 1]) {
+    switch (str[*index + 1]) {
     case 'b':
     case 'B':
         base = 2;
-        *i += 2;
+        *index += 2;
         break;
     case 'o':
     case 'O':
         base = 8;
-        *i += 2;
+        *index += 2;
         break;
     case 'x':
     case 'X':
         base = 16;
-        *i += 2;
+        *index += 2;
         break;
     default:
         break;

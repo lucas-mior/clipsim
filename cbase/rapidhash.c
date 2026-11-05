@@ -245,7 +245,7 @@ read32(uint8 *p) {
  *  Reads and combines 3 bytes of input.
  *
  *  @param p  Buffer to read from.
- *  @param k  Length of @p, in bytes.
+ *  @param length  Length of @p, in bytes.
  *
  *  Always reads and combines 3 bytes from memory.
  *  Guarantees to read each buffer position at least once.
@@ -253,8 +253,9 @@ read32(uint8 *p) {
  *  Returns a 64-bit value containing all three bytes read.
  */
 INLINE uint64
-readSmall(uint8 *p, uint64 k) {
-    return (((uint64)p[0]) << 56) | (((uint64)p[k >> 1]) << 32) | p[k - 1];
+readSmall(uint8 *p, uint64 length) {
+    uint64 middle = ((uint64)p[length >> 1]) << 32;
+    return (((uint64)p[0]) << 56) | middle | p[length - 1];
 }
 
 /*
