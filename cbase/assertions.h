@@ -43,12 +43,9 @@ _Static_assert(SIZEOF(double)*CHAR_BIT == 64,
 
 void assert_error(char *, int32, char *,
                   char *, ...) ATTR_PRINTF(4, 5);
-bool assert_file_contains(char *, int32, char *,
-                          char *, char *);
-bool assert_contains(char *, int32, char *,
-                     char *, int32, char *);
-bool assert_not_contains(char *, int32, char *,
-                         char *, int32, char *);
+bool assert_file_contains(char *, int32, char *, char *, char *);
+bool assert_contains(char *, int32, char *, char *, int32, char *);
+bool assert_not_contains(char *, int32, char *, char *, int32, char *);
 bool assert_glob_match_impl(char *, int32, char *,
                             char *, char *, char *, int32,
                             char *, int32, bool);

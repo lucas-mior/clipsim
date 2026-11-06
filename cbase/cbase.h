@@ -288,16 +288,14 @@ int32 fmt_time_elapsed(char *buffer, double elapsed);
 void catfile(int where, char *file);
 double deg2rad(double degrees);
 int32 dirname2(char *buffer, char *path, int32 *path_len);
-char *ends_with(char *string, int32 string_len, char *suffix,
-                int32 suffix_len);
+char *ends_with(char *string, int32 string_len, char *suffix, int32 suffix_len);
 void error_async_safe(char *message, int32 message_len);
 void normalize(char *restrict path, int32 *restrict length);
 int32 parse_option(char **parsed, char *arg, char *option_name);
 char *path_basename(char *path, int32 path_len);
 void print_timings(char *file, int32 line, char *func, int64 nitems,
                    struct timespec t0, struct timespec t1);
-void qsort64(void *base, int64 n, int64 size,
-             int (*compar)(void *a, void *b));
+void qsort64(void *base, int64 n, int64 size, int (*compar)(void *a, void *b));
 void random_filename_inplace(char *buffer, int32 buffer_len);
 void rand_int_seed(uint64 seed);
 int32 rand_int(void);
@@ -662,15 +660,13 @@ int32 parallel_for_max_threads_min_items(int64 length, int32 max_threads,
                                          void *user_data);
 void write_all(int fd, char *buffer, int64 left);
 int64 write_entire_file(char *path, char *text, int64 text_len);
-int xclose(char *file, int line, int *fd, char *fd_var_name,
-           char *filename);
+int xclose(char *file, int line, int *fd, char *fd_var_name, char *filename);
 #if HAS_POSIX_WIN_SUBSET
 int xclosedir(DIR *dir, char *dirname);
 #endif
 char *cbase_mkdtemp(char *template_path);
 int xfclose(char *file, int32 line, char *func, FILE *f, char *filename);
-FILE *xfopen(char *file, int32 line, char *func, char *filename,
-             char *mode);
+FILE *xfopen(char *file, int32 line, char *func, char *filename, char *mode);
 #if OS_WINDOWS
 void windows_set_errno(DWORD error_code);
 #endif
@@ -920,10 +916,9 @@ noreturn void cmd_child_exec(
     int stderr_pipe[2]
 );
 #if OS_WINDOWS
-void cmd_windows_cmd_line(Command *command, char *cmdline,
-                                  int64 cmdline_len);
+void cmd_windows_cmd_line(Command *command, char *cmdline, int64 cmdline_len);
 char *cmd_windows_argv0(Command *command, char *argv0_windows,
-                            int32 *argv0_len);
+                        int32 *argv0_len);
 int32 cmd_windows_run_process(Command *command, enum CommandFlag flags);
 #endif
 void cmd_cwd_clear(Command *);
@@ -932,7 +927,7 @@ void cmd_env_clear(Command *);
 void cmd_env_printf(Command *command, char *fmt, ...);
 void cmd_env_push(Command *command, char *assignment);
 void cmd_env_push_length(Command *command, char *assignment,
-                             int32 assignment_len);
+                         int32 assignment_len);
 void cmd_error_set(Command *command, int32 error_status);
 bool cmd_flags_capture(enum CommandFlag);
 enum CommandFlag cmd_flags_normalized(enum CommandFlag);
@@ -942,15 +937,15 @@ void cmd_printf(Command *command, char *fmt, ...);
 void cmd_push_length(Command *command, char *argument, int32 argument_len);
 void cmd_push_array(Command *command, int32 argc, char **argv);
 void cmd_push_owned_length(Command *command,
-                               char *argument, int32 argument_len);
+                           char *argument, int32 argument_len);
 void cmd_push_split(Command *command, char *arguments, char *delimiters);
 int32 cmd_stdin_buffer_set(Command *command, char *data, int64 data_len);
 void cmd_stdin_buffer_clear(Command *);
 void cmd_reset(Command *);
 void cmd_result_append(String *output,
-                           String *stdout_output, String *stderr_output,
-                           bool is_stderr,
-                           char *data, int32 data_len);
+                       String *stdout_output, String *stderr_output,
+                       bool is_stderr,
+                       char *data, int32 data_len);
 void cmd_result_file_descriptors_close(CommandResult *);
 void cmd_result_free(CommandResult *);
 void cmd_result_init(CommandResult *);
@@ -962,8 +957,7 @@ int32 cmd_run_capture(Command *command, enum CommandFlag flags);
 int32 cmd_run_capture_all(Command *);
 int32 cmd_run_capture_combined(Command *);
 int32 cmd_run_sync(Command *command, int *exit_status);
-int32 cmd_signal(Command *command, int32 signal_number,
-                     bool process_group);
+int32 cmd_signal(Command *command, int32 signal_number, bool process_group);
 int32 cmd_start(Command *command, enum CommandFlag flags);
 int32 cmd_status_from_wait(int status, CommandResult *result);
 char *cmd_str(Command *command, int32 *len);
@@ -1003,8 +997,7 @@ union GenericArrayHeader {
 
 void *generic_array_init(int32 cap, int64 item_size);
 void *generic_array_grow(void *array, int64 item_size);
-bool generic_array_reserve(void **array, int32 needed_count,
-                           int64 item_size);
+bool generic_array_reserve(void **array, int32 needed_count, int64 item_size);
 int32 generic_array_capacity(void *array);
 void generic_array_set_count(void *array, int32 count);
 
