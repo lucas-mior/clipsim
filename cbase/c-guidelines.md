@@ -365,34 +365,39 @@ In general, we must always know the lengths of our strings:
 - Pass string length around when we already know it (see below).
 - Use STRLIT("literal") to pass a string literal and its length to a
   function/struct without repeating the literal itself.
-- Never call `strlen32` directly on a string literal, including concatenated
-  or parenthesized literals. The length is known at compile time, so there is
-  no reason to scan the literal at runtime. Use `STRLIT("literal")` when a
-  function accepts both the pointer and its length, or pass an already-known
-  length when only the length is needed.
+- Never call `strlen32("literal")`, `SIZEOF("literal")`,
+  `LENGTH("literal")`, or `STRLIT_LEN("literal")` directly. This also applies
+  to concatenated and parenthesized literals. All four spellings are forbidden
+  at call sites, even if a compiler could compute their result at compile time.
+  Instead, choose a macro that handles the literal and its length together:
+    + `STRLIT("literal")` for a function taking `(string, string_len)`;
+    + `STRPASS(field, "literal")` for initializing paired struct fields;
+    + `STREQUAL(string, string_len, "literal")` for equality;
+    + `BEGINS_WITH(string, string_len, "prefix")` or
+      `ENDS_WITH(string, string_len, "suffix")` for prefix/suffix checks.
+  These macros handle literal lengths internally; do not call `STRLIT_LEN`
+  yourself in application code.
   ```c
   // bad
   int32 len = strlen32("literal");
+  int64 bytes = SIZEOF("literal");
+  int32 count = LENGTH("literal");
+  int32 length = STRLIT_LEN("literal");
 
-  // good: pass the string and its length together
+  // good: pass the literal and its length together
   consume_string(STRLIT("literal"));
   ```
-- Note: `STRLIT_LEN("literal")` is always a mistake. There is no reason to use
-  it. If you need to pass the length of a literal, we have other options,
-  depending on the use case:
-    + `STRLIT("literal")` passes the literal and its length;
-    + `STRPASS(field, "literal")` in struct literals to auto assign
-       `.field = "literal", .field_len = sizeof("literal") - 1`
-    + assign the literal to a variable and use `strlen32`. This is a good option
-      for long strings used in tests, and also for functions that return the
-          string length and assign to a `char **double_pointer` out parameter.
-      ```c
-      int32
-      function_returns_len(char **string_out) {
-          *string_out = "literal";
-          return strlen32(*string_out);
-      }
-      ```
+  When an API really needs only a standalone length, avoid a direct literal
+  length call. One option is to bind the literal to a string variable and
+  obtain its length from that variable, particularly in tests or APIs that
+  return a string and its length separately:
+  ```c
+  int32
+  function_returns_len(char **string_out) {
+      *string_out = "literal";
+      return strlen32(*string_out);
+  }
+  ```
 - Use `memchr64`, `memmem64`, or other function to parse whatever we are
   parsing. Example:
   ```c
@@ -488,11 +493,11 @@ typedef struct MyStructOfArrays {
 That means to also avoid calling `strlen32`:
 
 - `strlen32` shall be viewed as an interface for code that we do not control.
-- `STRLIT_LEN("literal")` is for getting the length of a literal at compile time
-  (it uses `SIZEOF`). Only use it if you need to pass the length of a string
-  literal, but not the string literal itself (which only happens inside macros).
-  * Never do stupid shit like: `my_function("literal", STRLIT_LEN("literal"))`
-    + Instead, use `my_function(STRLIT("literal"))`
+- `STRLIT_LEN` is an implementation detail used *inside* macros such as
+  `STRLIT`, `STRPASS`, and `STREQUAL`; never invoke it directly on a literal.
+  The same prohibition applies to direct `LENGTH`, `SIZEOF`, and `strlen32`
+  calls on literals. Do not manually write a literal and its length as separate
+  arguments: use `my_function(STRLIT("literal"))` instead.
 - `STRLIT("literal")` can be used to pass the string literal and its length
   in an "don't repeat yourself" way, that also does not depend on the compiler
   to optimize the `strlen32`, since it uses `SIZEOF` to get the length of the
