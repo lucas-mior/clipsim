@@ -37,7 +37,6 @@ static void history_free_entry(Entry *, int32);
 static void history_reorder(int32);
 static void history_prune(void);
 static int32 history_save_image(char **, int32 *);
-static bool history_recover_write(int32, Entry *);
 static void history_prepare_tmp_directory(void);
 
 static void history_append(char *, int32, bool);
@@ -117,40 +116,6 @@ history_callback_delete(const char *path, const struct stat *stat,
     }
 
     return 0;
-}
-
-static bool
-history_recover_write(int32 fd, Entry *e) {
-    int64 written = 0;
-
-    if (e->content_length < 0) {
-        error("Error writing negative length to xclip.\n");
-        return false;
-    }
-
-    while (written < e->content_length) {
-        int64 w;
-
-        errno = 0;
-        w = write64(fd, e->content + written, e->content_length - written);
-        if (w < 0) {
-            if (errno == EINTR) {
-                continue;
-            }
-            if (errno == EPIPE) {
-                error("xclip closed stdin before clipsim finished writing.\n");
-            } else {
-                error("Error writing to xclip: %s.\n", strerror(errno));
-            }
-            return false;
-        }
-        if (w == 0) {
-            error("Error writing to xclip: short write.\n");
-            return false;
-        }
-        written += w;
-    }
-    return true;
 }
 
 int32
@@ -715,7 +680,35 @@ history_recover(int32 id) {
     }
 
     if (istext) {
-        history_recover_write(fd[1], e);
+        int64 written = 0;
+
+        if (e->content_length < 0) {
+            error("Error writing negative length to xclip.\n");
+        }
+        while (written < e->content_length) {
+            int64 w;
+
+            errno = 0;
+            w = write64(fd[1], e->content + written,
+                        e->content_length - written);
+            if (w < 0) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                if (errno == EPIPE) {
+                    error("xclip closed stdin before clipsim finished "
+                          "writing.\n");
+                } else {
+                    error("Error writing to xclip: %s.\n", strerror(errno));
+                }
+                break;
+            }
+            if (w == 0) {
+                error("Error writing to xclip: short write.\n");
+                break;
+            }
+            written += w;
+        }
         XCLOSE(&fd[1]);
     }
     if (wait(NULL) < 0) {
