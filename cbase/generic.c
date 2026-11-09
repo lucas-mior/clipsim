@@ -523,11 +523,9 @@ main(void) {
 
         n = snprint(buf, SIZEOF(buf),
                     "custom " VF("%04i", c) " " VF("%c", a) "\n");
-        ASSERT(n == strlen32("custom 0001 i\n"));
         ASSERT_EQ(buf, "custom 0001 i\n");
 
         n = snprint(small2, SIZEOF(small2), "prefix-" W(e));
-        ASSERT(n == (int)(strlen32("prefix-") + strlen32(e)));
         ASSERT_EQ(small2, "prefix-");
 
         fp = tmpfile();

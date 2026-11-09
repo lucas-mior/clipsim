@@ -273,7 +273,7 @@ getopt_long(
     if ((arg[0] != '-') || (arg[1] == '\0')) {
         return -1;
     }
-    if (strcmp(arg, "--") == 0) {
+    if (strequal(arg, "--")) {
         optind += 1;
         return -1;
     }
