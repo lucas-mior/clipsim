@@ -365,6 +365,15 @@ In general, we must always know the lengths of our strings:
 - Pass string length around when we already know it (see below).
 - Use STRLIT("literal") to pass a string literal and its length to a
   function/struct without repeating the literal itself.
+- Use `opt_strlen32(string)` when a string may be NULL. Never spell the
+  NULL-safe operation as `string ? strlen32(string) : 0`.
+  ```c
+  // bad
+  int32 len = color ? strlen32(color) : 0;
+
+  // good
+  int32 len = opt_strlen32(color);
+  ```
 - Never call `strlen32("literal")`, `SIZEOF("literal")`,
   `LENGTH("literal")`, or `STRLIT_LEN("literal")` directly. This also applies
   to concatenated and parenthesized literals. All four spellings are forbidden
