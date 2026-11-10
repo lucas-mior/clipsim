@@ -282,7 +282,7 @@ append_n_digits(uint32 olength, uint32 digits, char *result) {
 #endif
 
     while (digits >= 10000) {
-#if defined(__clang__) // https://bugs.llvm.org/show_bug.cgi?id=38217
+#if CC_CLANG // https://bugs.llvm.org/show_bug.cgi?id=38217
         c = digits - 10000*(digits / 10000);
 #else
         c = digits % 10000;
@@ -326,7 +326,7 @@ append_d_digits(uint32 olength, uint32 digits, char *result) {
 #endif
 
     while (digits >= 10000) {
-#if defined(__clang__) // https://bugs.llvm.org/show_bug.cgi?id=38217
+#if CC_CLANG // https://bugs.llvm.org/show_bug.cgi?id=38217
         c = digits - 10000*(digits / 10000);
 #else
         c = digits % 10000;
@@ -403,7 +403,7 @@ append_nine_digits(uint32 digits, char *result) {
     }
 
     for (uint32 i = 0; i < 5; i += 4) {
-#if defined(__clang__) // https://bugs.llvm.org/show_bug.cgi?id=38217
+#if CC_CLANG // https://bugs.llvm.org/show_bug.cgi?id=38217
         c = digits - 10000*(digits / 10000);
 #else
         c = digits % 10000;
@@ -436,7 +436,7 @@ length_for_index(uint32 idx) {
 
 static inline int
 copy_special_str_printf(char *result, bool sign, uint64 mantissa) {
-#if defined(_MSC_VER)
+#if CC_MSVC
     // TODO: Check that -nan is expected output on Windows.
     if (sign) {
         result[0] = '-';

@@ -458,7 +458,7 @@ d2s_to_chars(FloatingDecimal64 value, bool sign, char *result) {
 
     output2 = (uint32)output;
     while (output2 >= 10000) {
-#if defined(__clang__)
+#if CC_CLANG
         // https://bugs.llvm.org/show_bug.cgi?id=38217
         c = output2 - 10000*(output2 / 10000);
 #else

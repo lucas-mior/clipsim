@@ -222,7 +222,7 @@ _Generic((SIZE), \
 
 #if __has_builtin(__builtin_unreachable) || CC_TCC
   #define UNREACHABLE() __builtin_unreachable()
-#elif defined(_MSC_VER)
+#elif CC_MSVC
   #define UNREACHABLE() __assume(0)
 #else
   #define UNREACHABLE() abort()
@@ -242,7 +242,7 @@ _Generic((SIZE), \
 #else
   #if CC_GCC || CC_CLANG
     #define TRAP(...) __builtin_trap()
-  #elif defined(_MSC_VER)
+  #elif CC_MSVC
     #define TRAP(...) __debugbreak()
   #else
     #define TRAP(...) *(int *)0 = 0

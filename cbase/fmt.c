@@ -1832,9 +1832,9 @@ fmt_decode_binary128_ldouble(ldouble value, FormatBinaryFloat *parts) {
         int32 status;
         int32 fraction_bits = FMT_LDOUBLE_BINARY128_FRACTION_BITS;
 
-        if ((status =
-                 fmt_binary_float_set_significand_bit(parts,
-                                                      fraction_bits)) < 0) {
+        if ((status = fmt_binary_float_set_significand_bit(parts,
+                                                           fraction_bits))
+                < 0) {
             return status;
         }
         parts->binary_exponent = (int32)exponent_bits

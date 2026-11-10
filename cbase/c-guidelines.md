@@ -690,6 +690,12 @@ STR_APPEND(&str, string, string_len);
 str_itoa(&str, number);
 ```
 
+## Compiler detection guards
+Use `CC_CLANG`, `CC_GCC`, `CC_TCC`, or `CC_MSVC` when selecting code for a
+compiler. Do not use `#if defined(__clang__)`, `defined(__GNUC__)`,
+`defined(__TINYC__)`, or `defined(_MSC_VER)` (or `#ifdef` / `#ifndef` forms)
+outside `cbase/platform_detection.h`, which defines the `CC_*` flags.
+
 ## Avoid printf from libc.
 Do not call libc `printf`-family functions directly in project code, including
 `printf`, `fprintf`, `sprintf`, `snprintf`, their `v` variants, and POSIX/GNU

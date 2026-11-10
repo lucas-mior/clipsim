@@ -142,9 +142,9 @@ history_save(void) {
         error("History file name unresolved, can't save history.");
         return 0;
     }
-    if ((history.fd =
-            open(history.name,
-                 O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
+    if ((history.fd = open(history.name,
+                           O_WRONLY | O_CREAT | O_TRUNC,
+                           S_IRUSR | S_IWUSR)) < 0) {
         error("Error opening history file for saving: %s\n", strerror(errno));
         return 0;
     }
