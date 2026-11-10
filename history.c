@@ -163,9 +163,9 @@ history_save(void) {
                                                    &e->content_length, NULL));
 
             if (!STREQUAL(image_save, n, e->content, e->content_length)) {
-                if ((pipes[nfds].fd =
-                            util_copy_file_async(image_save, e->content,
-                                                 &dests[nfds])) < 0) {
+                if ((pipes[nfds].fd = util_copy_file_async(image_save,
+                                                           e->content,
+                                                           &dests[nfds])) < 0) {
                     error("Error copying %s to %s: %s.\n",
                           e->content, image_save, strerror(errno));
                     history_remove(i);
