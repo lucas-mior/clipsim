@@ -9,13 +9,7 @@
 #endif
 #endif
 
-// usage: cc -std=c11 -c cbase.c -o cbase.o
-// We could simply do:
-// cc -DCBASE_IMPLEMENT cbase.h -o cbase.o
-// but then we would have to pass -x c flag to clang and gcc
-// to inform we don't want a pre compiled header.
-// -x c breaks tcc (not to mention other compilers).
-// So we use this cbase.c file to avoid complications
+// This wrapper builds cbase as C without compiler-specific -x options.
 
 #define CBASE_IMPLEMENT
 #include "cbase.h"
