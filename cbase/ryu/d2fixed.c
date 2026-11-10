@@ -747,7 +747,6 @@ d2fixed(double d, uint32 precision) {
     return buffer;
 }
 
-
 int
 d2exp_buffered_n(double d, uint32 precision, char *result) {
     uint64 bits;

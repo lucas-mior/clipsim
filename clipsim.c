@@ -46,7 +46,6 @@ reopen_magic(void) {
     return;
 }
 
-
 #if TESTING_clipsim
 #define CBASE_IMPLEMENT
 #include "cbase.h"

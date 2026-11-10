@@ -478,7 +478,6 @@ main(void) {
         FILE *fp;
         int n;
 
-
         s = S_(a);
         ASSERT_EQ(s, "i");
         s = S_(b);

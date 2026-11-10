@@ -191,8 +191,6 @@ main_usage(FILE *stream) {
     exit(stream != stdout);
 }
 
-
-
 void
 main_launch_daemon(void) {
     DEBUG_PRINT("%s", "void")

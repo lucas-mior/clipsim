@@ -437,7 +437,6 @@ main(void) {
             tgt = clipboard_check_target(UTF8_STRING);
             ASSERT_EQ(tgt, UTF8_STRING);
 
-
             mock_event2.type = SelectionNotify;
             mock_event2.xselection.requestor = window;
             mock_event2.xselection.selection = CLIPBOARD;

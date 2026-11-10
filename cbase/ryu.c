@@ -1009,7 +1009,6 @@ tryu_s2f_deterministic_roundtrip(void) {
     return;
 }
 
-
 static void
 tryu_benchmark_d2s(int32 nitems) {
     uint64 state = 0x243f6a8885a308d3ull;

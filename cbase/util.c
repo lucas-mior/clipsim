@@ -206,7 +206,6 @@ memmem64(void *haystack, int64 haystack_len, void *needle, int64 needle_len) {
         return NULL;
     }
 
-
     ASSERT(haystack != NULL);
     ASSERT(needle != NULL);
 
@@ -1198,7 +1197,6 @@ main(int argc, char **argv) {
             seen[values[i]] = true;
         }
     }
-
 
     {
         int32 arr[] = {10, 5, 20, 1,};

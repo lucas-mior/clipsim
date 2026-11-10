@@ -12,6 +12,7 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
   * Use 4 spaces for each indentation level.
     + Macros are more free: use 0, 2, or 4 spaces for continuation lines.
 - Trim trailing whitespace.
+- Use at most two consecutive newline characters (one blank line).
 - Keep line length at maximum 80 characters.
 
 ## Operators

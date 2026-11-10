@@ -1943,7 +1943,6 @@ fmt_load_float_width_precision(FormatSpec *spec, FormatArgs *args) {
     return 0;
 }
 
-
 static int32
 fmt_float_special_body(double value, FormatSpec *spec,
                        char *body, int32 *body_len) {
@@ -2017,7 +2016,6 @@ fmt_float_force_decimal_point(char *body, int32 body_len, int32 capacity) {
     body[exponent_index] = '.';
     return body_len + 1;
 }
-
 
 static int32
 fmt_hex_digit_value(char digit) {
@@ -2727,7 +2725,6 @@ fmt_ldouble_generate_exp_body(FormatSpec *spec, ldouble value,
     }
     return status;
 }
-
 
 static int32
 fmt_ldouble_generate_body(FormatSpec *spec, ldouble value,
@@ -5354,7 +5351,6 @@ test_fmt_char_string_outputs(void) {
     return;
 }
 
-
 static void
 test_fmt_pointer_count_outputs(void) {
     char buffer[16];
@@ -5565,7 +5561,6 @@ test_fmt_printf_general_outputs(void) {
     return;
 }
 
-
 static void
 test_fmt_printf_hex_float_outputs(void) {
     char buffer[64];
@@ -5630,7 +5625,6 @@ test_fmt_printf_hex_float_outputs(void) {
 
     return;
 }
-
 
 static bool
 fmt_test_ldouble_supported(void) {
