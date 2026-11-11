@@ -1062,10 +1062,10 @@ assert_double_close_ulps(double var1, double var2,
     common_kind = assert_fp_common_kind(kind1, kind2);
     max_ulps = assert_fp_max_ulps(common_kind);
 
-    if (ulps_out != NULL) {
+    if (ulps_out) {
         *ulps_out = 0;
     }
-    if (max_ulps_out != NULL) {
+    if (max_ulps_out) {
         *max_ulps_out = max_ulps;
     }
 
@@ -1087,7 +1087,7 @@ assert_double_close_ulps(double var1, double var2,
 
         if ((assert_double_abs(var1) > (double)FLT_MAX)
             || (assert_double_abs(var2) > (double)FLT_MAX)) {
-            if (ulps_out != NULL) {
+            if (ulps_out) {
                 *ulps_out = ULLONG_MAX;
             }
             return false;
@@ -1100,7 +1100,7 @@ assert_double_close_ulps(double var1, double var2,
         ulps = assert_double_ulp_distance(var1, var2);
     }
 
-    if (ulps_out != NULL) {
+    if (ulps_out) {
         *ulps_out = ulps;
     }
 
