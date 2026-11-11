@@ -1587,17 +1587,16 @@ main(void) {
         ASSERT_BETWEEN(x, 5, 10);
         ASSERT_BETWEEN(x, 0, 5);
         ASSERT_BETWEEN(x, 0, 10);
-    } {
-        // uncomment to trigger linking error in the variable path
-        /* double x = 0.1; */
-        /* void *a = NULL; */
-        /* ASSERT_GE_VAR(x, a); */
-        /* ASSERT_GE_VAR(a, x); */
-
-        // uncomment to trigger a non-constant RHS compile error
-        /* int32 y = 1; */
-        /* ASSERT_LT(1, y); */
     }
+    // uncomment to trigger linking error in the variable path
+    /* double x = 0.1; */
+    /* void *a = NULL; */
+    /* ASSERT_GE_VAR(x, a); */
+    /* ASSERT_GE_VAR(a, x); */
+
+    // uncomment to trigger a non-constant RHS compile error
+    /* int32 y = 1; */
+    /* ASSERT_LT(1, y); */
 
 #if OS_UNIX
     {

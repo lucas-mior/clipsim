@@ -874,11 +874,9 @@ main(void) {
         ASSERT_EQ(history_length, 2);
     }
 
-    {
-        history_remove(0);
-        ASSERT_EQ(history_length, 1);
-        ASSERT_EQ(clipsim_entries[0].content_length, 9);
-    }
+    history_remove(0);
+    ASSERT_EQ(history_length, 1);
+    ASSERT_EQ(clipsim_entries[0].content_length, 9);
 
     {
         history.name = "/tmp/clipsim_test_cache/clipsim/history";

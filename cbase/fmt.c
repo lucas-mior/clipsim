@@ -1868,12 +1868,10 @@ fmt_decompose_ldouble(ldouble value, FormatBinaryFloat *parts) {
 #if FLT_RADIX != 2
     return -ENOSYS;
 #elif LDBL_MANT_DIG == DBL_MANT_DIG && LDBL_MAX_EXP == DBL_MAX_EXP
-    {
-        if (SIZEOF(ldouble) != SIZEOF(double)) {
-            return -ENOSYS;
-        }
-        return fmt_decode_binary64_ldouble(value, parts);
+    if (SIZEOF(ldouble) != SIZEOF(double)) {
+        return -ENOSYS;
     }
+    return fmt_decode_binary64_ldouble(value, parts);
 #elif LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384
     return fmt_decode_x87_ldouble(value, parts);
 #elif LDBL_MANT_DIG == 113 && LDBL_MAX_EXP == 16384

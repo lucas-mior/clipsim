@@ -1103,29 +1103,27 @@ main(int argc, char **argv) {
 
     util_test_mem_literal_short();
 
-    {
-        ASSERT_GLOB_MATCH("", "");
-        ASSERT_GLOB_MATCH("", "*");
-        ASSERT_GLOB_MATCH("abc", "abc");
-        ASSERT_GLOB_MATCH("abc", "*");
-        ASSERT_GLOB_MATCH("abc", "a*");
-        ASSERT_GLOB_MATCH("abc", "*c");
-        ASSERT_GLOB_MATCH("abc", "a*c");
-        ASSERT_GLOB_MATCH("abc", "a**c");
-        ASSERT_GLOB_MATCH("abc", "*b*");
-        ASSERT_GLOB_MATCH("abc", "a*b*c");
-        ASSERT_GLOB_MATCH("abbc", "a*bc");
-        ASSERT_GLOB_MATCH("abc", "abc*");
-        ASSERT_GLOB_MATCH("abc", "*abc");
+    ASSERT_GLOB_MATCH("", "");
+    ASSERT_GLOB_MATCH("", "*");
+    ASSERT_GLOB_MATCH("abc", "abc");
+    ASSERT_GLOB_MATCH("abc", "*");
+    ASSERT_GLOB_MATCH("abc", "a*");
+    ASSERT_GLOB_MATCH("abc", "*c");
+    ASSERT_GLOB_MATCH("abc", "a*c");
+    ASSERT_GLOB_MATCH("abc", "a**c");
+    ASSERT_GLOB_MATCH("abc", "*b*");
+    ASSERT_GLOB_MATCH("abc", "a*b*c");
+    ASSERT_GLOB_MATCH("abbc", "a*bc");
+    ASSERT_GLOB_MATCH("abc", "abc*");
+    ASSERT_GLOB_MATCH("abc", "*abc");
 
-        ASSERT_GLOB_NO_MATCH("", "a");
-        ASSERT_GLOB_NO_MATCH("abc", "");
-        ASSERT_GLOB_NO_MATCH("abc", "abd");
-        ASSERT_GLOB_NO_MATCH("abc", "a*d");
-        ASSERT_GLOB_NO_MATCH("abc", "ab*d");
-        ASSERT_GLOB_NO_MATCH("abc", "*d");
-        ASSERT_GLOB_NO_MATCH("abc", "a*c*d");
-    }
+    ASSERT_GLOB_NO_MATCH("", "a");
+    ASSERT_GLOB_NO_MATCH("abc", "");
+    ASSERT_GLOB_NO_MATCH("abc", "abd");
+    ASSERT_GLOB_NO_MATCH("abc", "a*d");
+    ASSERT_GLOB_NO_MATCH("abc", "ab*d");
+    ASSERT_GLOB_NO_MATCH("abc", "*d");
+    ASSERT_GLOB_NO_MATCH("abc", "a*c*d");
 
     {
         int a = 10;
@@ -1170,14 +1168,12 @@ main(int argc, char **argv) {
 
     rand_int_seed((uint64)time(NULL));
 
-    {
-        rand_int_seed(1234);
-        for (int32 i = 0; i < 100; i += 1) {
-            double value = rand_float();
+    rand_int_seed(1234);
+    for (int32 i = 0; i < 100; i += 1) {
+        double value = rand_float();
 
-            ASSERT_GE(value, 0.0);
-            ASSERT_LT(value, 1.0);
-        }
+        ASSERT_GE(value, 0.0);
+        ASSERT_LT(value, 1.0);
     }
 
     {

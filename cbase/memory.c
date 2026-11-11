@@ -1067,136 +1067,133 @@ int main(void) {
     }
 
 #if OS_LINUX
+    // These tests must run last because they leave garbage to be detected.
+
+    fmt_printf("\n--- Starting Failure Case Tests ---\n");
+
     {
-        // this block has to execute last,
-        // because it leaves garbage still to be detected
-
-        fmt_printf("\n--- Starting Failure Case Tests ---\n");
-
-        {
-            void *untracked = (void *)0xDEADBEEF;
-            ASSERT_TRAPS({
-                free2(untracked, 16);
-            });
-            allocations_unlock();
-        }
-
-        {
-            int64 size = 64;
-            uchar *p = malloc2(size);
-            ASSERT_TRAPS({
-                free2(p, size + 1); // Incorrect size
-            });
-            allocations_unlock();
-            free(p - MEMORY_PADDING);
-        }
-
-        {
-            int64 size = 16;
-            uchar *p = malloc2(size);
-            free2(p, size);
-            ASSERT_TRAPS({
-                free2(p, size); // Double free
-            });
-            allocations_unlock();
-            free(p - MEMORY_PADDING);
-        }
-
-        {
-            int64 count = 10;
-            int64 *arr = malloc2(count*SIZEOF(int64));
-            ASSERT_TRAPS({
-                // Realloc with wrong old size
-                realloc2(arr, count + 5, 20, SIZEOF(int64));
-            });
-            allocations_unlock();
-            free2(arr, count*SIZEOF(int64));
-        }
-
-        {
-            int64 count = 5;
-            int64 initial_size;
-            TestFlex *flex;
-
-            initial_size = SIZEOF(TestFlex) + (count*SIZEOF(int64));
-            flex = malloc2(initial_size);
-
-            ASSERT_TRAPS({
-                // Realloc flex with wrong old capacity
-                realloc_flex(flex, count + 2, 10, SIZEOF(int64));
-            });
-            allocations_unlock();
-            free2(flex, initial_size);
-        }
-
-        {
-            void *invalid_ptr = (void *)0xBAADF00D;
-            ASSERT_TRAPS({
-                // Realloc with untracked pointer
-                realloc2(invalid_ptr, 1, 10, SIZEOF(int64));
-            });
-            allocations_unlock();
-        }
-
-        {
-            int64 size = 64;
-            uchar *p = malloc2(size);
-            ASSERT_TRAPS({
-                p[-MEMORY_PADDING] = 0x00; // Corrupt underflow canary
-                memory_check();
-            });
-            allocations_unlock();
-            free(p - MEMORY_PADDING);
-        }
-
-        {
-            int64 size = 64;
-            uchar *p = malloc2(size);
-            ASSERT_TRAPS({
-                p[size] = 0x00; // Corrupt overflow canary
-                memory_check();
-            });
-            allocations_unlock();
-            free(p - MEMORY_PADDING);
-        }
-
-        {
-            int64 size = 32;
-            uchar *p = malloc2(size);
-            ASSERT_TRAPS({
-                p[-4] = 0xFF; // Corrupt underflow canary
-                free2(p, size);
-            });
-            allocations_unlock();
-            free(p - MEMORY_PADDING);
-        }
-
-        {
-            int64 size = 32;
-            uchar *p = malloc2(size);
-            ASSERT_TRAPS({
-                p[size] = 0xFF; // Corrupt overflow canary
-                free2(p, size);
-            });
-            allocations_unlock();
-            free(p - MEMORY_PADDING);
-        }
-
-        {
-            int64 size = 32;
-            uchar *p = malloc2(size);
-            free2(p, size);
-            ASSERT_TRAPS({
-                p[0] = 0xAA; // Use after free
-                memory_check();
-            });
-            allocations_unlock();
-            free(p - MEMORY_PADDING);
-        }
-
-        fsync(STDOUT_FILENO);
-        fsync(STDERR_FILENO);
+        void *untracked = (void *)0xDEADBEEF;
+        ASSERT_TRAPS({
+            free2(untracked, 16);
+        });
+        allocations_unlock();
     }
+
+    {
+        int64 size = 64;
+        uchar *p = malloc2(size);
+        ASSERT_TRAPS({
+            free2(p, size + 1); // Incorrect size
+        });
+        allocations_unlock();
+        free(p - MEMORY_PADDING);
+    }
+
+    {
+        int64 size = 16;
+        uchar *p = malloc2(size);
+        free2(p, size);
+        ASSERT_TRAPS({
+            free2(p, size); // Double free
+        });
+        allocations_unlock();
+        free(p - MEMORY_PADDING);
+    }
+
+    {
+        int64 count = 10;
+        int64 *arr = malloc2(count*SIZEOF(int64));
+        ASSERT_TRAPS({
+            // Realloc with wrong old size
+            realloc2(arr, count + 5, 20, SIZEOF(int64));
+        });
+        allocations_unlock();
+        free2(arr, count*SIZEOF(int64));
+    }
+
+    {
+        int64 count = 5;
+        int64 initial_size;
+        TestFlex *flex;
+
+        initial_size = SIZEOF(TestFlex) + (count*SIZEOF(int64));
+        flex = malloc2(initial_size);
+
+        ASSERT_TRAPS({
+            // Realloc flex with wrong old capacity
+            realloc_flex(flex, count + 2, 10, SIZEOF(int64));
+        });
+        allocations_unlock();
+        free2(flex, initial_size);
+    }
+
+    {
+        void *invalid_ptr = (void *)0xBAADF00D;
+        ASSERT_TRAPS({
+            // Realloc with untracked pointer
+            realloc2(invalid_ptr, 1, 10, SIZEOF(int64));
+        });
+        allocations_unlock();
+    }
+
+    {
+        int64 size = 64;
+        uchar *p = malloc2(size);
+        ASSERT_TRAPS({
+            p[-MEMORY_PADDING] = 0x00; // Corrupt underflow canary
+            memory_check();
+        });
+        allocations_unlock();
+        free(p - MEMORY_PADDING);
+    }
+
+    {
+        int64 size = 64;
+        uchar *p = malloc2(size);
+        ASSERT_TRAPS({
+            p[size] = 0x00; // Corrupt overflow canary
+            memory_check();
+        });
+        allocations_unlock();
+        free(p - MEMORY_PADDING);
+    }
+
+    {
+        int64 size = 32;
+        uchar *p = malloc2(size);
+        ASSERT_TRAPS({
+            p[-4] = 0xFF; // Corrupt underflow canary
+            free2(p, size);
+        });
+        allocations_unlock();
+        free(p - MEMORY_PADDING);
+    }
+
+    {
+        int64 size = 32;
+        uchar *p = malloc2(size);
+        ASSERT_TRAPS({
+            p[size] = 0xFF; // Corrupt overflow canary
+            free2(p, size);
+        });
+        allocations_unlock();
+        free(p - MEMORY_PADDING);
+    }
+
+    {
+        int64 size = 32;
+        uchar *p = malloc2(size);
+        free2(p, size);
+        ASSERT_TRAPS({
+            p[0] = 0xAA; // Use after free
+            memory_check();
+        });
+        allocations_unlock();
+        free(p - MEMORY_PADDING);
+    }
+
+    fsync(STDOUT_FILENO);
+    fsync(STDERR_FILENO);
 #endif
     fmt_printf("\nAll memory tests passed.\n");
     return EXIT_SUCCESS;

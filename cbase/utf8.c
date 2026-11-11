@@ -591,13 +591,11 @@ main(void) {
         ASSERT_EQ(u, UTF_INVALID);
     }
 
-    {
-        ASSERT(utf8_random_rune_allowed(0x41));
-        ASSERT(utf8_random_rune_allowed(0x10000));
-        ASSERT(!utf8_random_rune_allowed(0xD800));
-        ASSERT(!utf8_random_rune_allowed(0xDFFF));
-        ASSERT(!utf8_random_rune_allowed(UTF_INVALID));
-    }
+    ASSERT(utf8_random_rune_allowed(0x41));
+    ASSERT(utf8_random_rune_allowed(0x10000));
+    ASSERT(!utf8_random_rune_allowed(0xD800));
+    ASSERT(!utf8_random_rune_allowed(0xDFFF));
+    ASSERT(!utf8_random_rune_allowed(UTF_INVALID));
 
     {
         int32 bad_offset;
