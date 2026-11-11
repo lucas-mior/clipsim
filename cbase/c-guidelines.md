@@ -969,22 +969,92 @@ error. Check `< 0` instead, since it works for the case where the negative
 result encodes an error number.
 
 ### Control flow and error handling
-- Avoid `goto`. Use it only for common cleanup logic.
-- Never use `goto` to jump to a previous line in the function.
-- Sometimes a useful pattern to avoid using goto:
+- Prefer ordinary `return`, `break`, `continue`, and conditional control flow
+  when they express the intended exit directly. Do not create a status variable,
+  a `goto`, or a `do { ... } while (0)` solely to reach an immediate `return`.
+- Use a forward `goto` for shared cleanup or when execution must leave multiple
+  nested loops and continue after them. An ordinary `break` leaves only the
+  innermost enclosing loop or `switch`; it cannot escape two nested loops. If
+  the required jump must leave nested loops (rather than return from the
+  function), use `goto` to reach the common post-loop code. Keep the target
+  clearly named and below the jump. Never use backward `goto` as a substitute
+  for a loop.
+- In ordinary function code, `do { ... } while (0)` is useful as a
+  single-pass, early-exit region **only when common work actually follows the
+  block**, such as releasing resources or processing a partial result. `break`
+  leaves that synthetic loop, allowing the common work to execute once. If
+  the code after `while (0)` only checks a status and returns, or the function
+  would return immediately on error anyway, omit the wrapper and return
+  directly. Do not introduce an extra status variable merely to support it.
+- A `do { ... } while (0)` is itself a loop. A `break` inside it exits only
+  that loop (or a more deeply nested loop or `switch`), **not** an enclosing
+  `for` or `while`. Consequently, it cannot replace `goto` for jumping out of
+  multiple nested loops. Multi-statement macros using `do { ... } while (0)`
+  as a single-statement wrapper are a separate use of the idiom.
+
   ```c
-  // This pattern only is useful if we need to do some cleanup after it. If
-  after the `while (0);` we simply return, then we don't need `goto` nor `do
-  while`.
+  // Bad: after the artificial loop there is no shared work, only a return.
+  for (int32 i = 0; i < configuration->resolvers_len; i += 1) {
+      CyArgsSubsystemResolver *resolver = &configuration->resolvers[i];
+      int32 resolver_status;
+
+      do {
+          if (resolver->resolve == NULL) {
+              resolver_status = -EINVAL;
+              break;
+          }
+          resolver_status = 0;
+      } while (0);
+      if (resolver_status < 0) {
+          return resolver_status;
+      }
+  }
+
+  // Good: validate and return directly.
+  for (int32 i = 0; i < configuration->resolvers_len; i += 1) {
+      CyArgsSubsystemResolver *resolver = &configuration->resolvers[i];
+
+      if (resolver->resolve == NULL) {
+          return -EINVAL;
+      }
+  }
+  ```
+
+  ```c
+  // Useful single-pass region: cleanup must run on success and failure.
+  int32 status = 0;
+  Resource *resource = NULL;
+
   do {
-      if ((a = may_fail()) < 0) {
+      if ((resource = acquire_resource()) == NULL) {
+          status = -ENOMEM;
           break;
       }
-      if ((b = may_fail2()) < 0) {
+      if ((status = configure_resource(resource)) < 0) {
           break;
       }
-      do_something(a, b);
   } while (0);
+  if (resource != NULL) {
+      release_resource(resource);
+  }
+  return status;
+  ```
+
+  ```c
+  // Useful forward goto: leave both loops, then perform shared cleanup.
+  int32 status = 0;
+
+  for (int32 i = 0; i < rows; i += 1) {
+      for (int32 j = 0; j < columns; j += 1) {
+          if ((status = process_cell(i, j)) < 0) {
+              goto cleanup;
+          }
+      }
+  }
+
+  cleanup:
+  release_resources();
+  return status;
   ```
 
 ### Struct initialization
