@@ -878,19 +878,17 @@ main(void) {
     ASSERT_EQ(history_length, 1);
     ASSERT_EQ(clipsim_entries[0].content_length, 9);
 
-    {
-        history.name = "/tmp/clipsim_test_cache/clipsim/history";
-        mkdir("/tmp/clipsim_test_cache/clipsim", 0770);
+    history.name = "/tmp/clipsim_test_cache/clipsim/history";
+    mkdir("/tmp/clipsim_test_cache/clipsim", 0770);
 
-        ASSERT(history_save());
+    ASSERT(history_save());
 
-        history_length = 0;
-        memset64(length_counts, 0, SIZEOF(length_counts));
+    history_length = 0;
+    memset64(length_counts, 0, SIZEOF(length_counts));
 
-        history_read();
-        ASSERT_EQ(history_length, 1);
-        ASSERT_EQ(clipsim_entries[0].content_length, 9);
-    }
+    history_read();
+    ASSERT_EQ(history_length, 1);
+    ASSERT_EQ(clipsim_entries[0].content_length, 9);
 
     {
         char *img_content = malloc2(256);
