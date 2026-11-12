@@ -2567,8 +2567,7 @@ fmt_ldouble_exp_digits(FormatBinaryFloat *parts, ldouble value,
 
             round_digit = digits[significant_len] - '0';
             tail_nonzero = false;
-            for (int32 i = significant_len + 1; i < integer_digit_len;
-                 i += 1) {
+            for (int32 i = significant_len + 1; i < integer_digit_len; i += 1) {
                 if (digits[i] != '0') {
                     tail_nonzero = true;
                     break;

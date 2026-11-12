@@ -612,6 +612,27 @@ if (this_condition
 }
 ```
 
+For `for` loops, keep the complete header on one line whenever the joined
+header (including indentation and the opening `{` when present) fits within
+the configured 80-column limit. Do not wrap a short increment expression onto
+its own line.
+
+```c
+// bad: the entire header fits within 80 columns
+for (int32 i = 0; i < nmpc->prediction_horizon_steps;
+     i += 1) {
+    run_step(i);
+}
+
+// good
+for (int32 i = 0; i < nmpc->prediction_horizon_steps; i += 1) {
+    run_step(i);
+}
+```
+
+This applies only when the header can be joined without changing comments,
+preprocessor directives, or other significant source structure.
+
 For a simple `if` or `else if` condition, keep the entire `if (...) {`
 header on one line when it fits within the 80-column limit. This applies to
 single comparisons (including parenthesized operands), predicates, and

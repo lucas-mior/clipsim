@@ -1827,3 +1827,10 @@ double x = 2.0*a_long_variable
            + (some_other_variable*(xyz + 4.0))
              / SQUARE(varibale);
 ```
+
+## Abbreviations (and not abbreviate)
+- length -> len
+- column -> col
+- color -> color (not col)
+- index -> idx
+- parameter -> param
