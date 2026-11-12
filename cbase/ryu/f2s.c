@@ -182,7 +182,7 @@ f2s_to_decimal(uint32 ieee_mantissa, uint32 ieee_exponent) {
     if (vm_is_trailing_zeros || vr_is_trailing_zeros) {
         // General case, which happens rarely (~4.0%).
         while (vp / 10 > vm / 10) {
-#if defined(__clang__)
+#if CC_CLANG
             // https://bugs.llvm.org/show_bug.cgi?id=23106
             // The compiler does not realize that vm % 10 can be computed from
             // vm / 10 as vm - (vm / 10) * 10.
@@ -292,7 +292,7 @@ f2s_to_chars(FloatingDecimal32 value, bool sign, char *result) {
     // }
     // result[index] = '0' + output % 10;
     while (output >= 10000) {
-#if defined(__clang__)
+#if CC_CLANG
         // https://bugs.llvm.org/show_bug.cgi?id=38217
         c = output - 10000*(output / 10000);
 #else

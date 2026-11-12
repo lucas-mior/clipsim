@@ -43,7 +43,6 @@ fi
 common_libc_never=
 common_libc_cbase_only=
 common_libc_cbase_dir=
-common_forbidden_patterns=
 common_no_column_limit=
 common_status_temporary_patterns=
 
@@ -85,12 +84,6 @@ elif [ -f functions_allowed_cbase_only.txt ]; then
     common_libc_cbase_dir=.
 fi
 
-if [ -f cbase/functions_forbidden_patterns.pl ]; then
-    common_forbidden_patterns=cbase/functions_forbidden_patterns.pl
-elif [ -f functions_forbidden_patterns.pl ]; then
-    common_forbidden_patterns=functions_forbidden_patterns.pl
-fi
-
 if [ -f piscou.1 ] && [ -f config.h ]; then
     common_no_column_limit=config.h
 fi
@@ -106,7 +99,6 @@ fi
 
 if [ -n "$common_libc_never" ] \
         || [ -n "$common_libc_cbase_only" ] \
-        || [ -n "$common_forbidden_patterns" ] \
         || [ -n "$common_status_temporary_patterns" ]; then
     common_libc_pattern=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_sources=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
@@ -115,12 +107,15 @@ if [ -n "$common_libc_never" ] \
     common_libc_matches2=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_matches3=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_matches4=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
+    common_libc_matches5=$(mktemp "${TMPDIR:-/tmp}/common_libc.XXXXXX")
     common_libc_cbase_abs=
+    common_csanecheck_status=0
 
     : > "$common_libc_matches"
     : > "$common_libc_matches2"
     : > "$common_libc_matches3"
     : > "$common_libc_matches4"
+    : > "$common_libc_matches5"
 
     if [ -n "$common_libc_cbase_dir" ]; then
         common_libc_cbase_abs=$(
@@ -270,18 +265,19 @@ if [ -n "$common_libc_never" ] \
         common_profile_report 'cbase-only libc scan'
     fi
 
-    if [ -n "$common_forbidden_patterns" ]; then
-        perl "$common_forbidden_patterns" \
+    if [ -x cbase/csanecheck ]; then
+        cbase/csanecheck \
             --no-column-limit "$common_no_column_limit" \
-            --file-list "$common_libc_sources" >> "$common_libc_matches3"
+            >> "$common_libc_matches4" \
+            || common_csanecheck_status=$?
     fi
 
     if [ -n "$common_profile_enabled" ]; then
-        common_profile_report 'Perl pattern checker'
+        common_profile_report 'csanecheck'
     fi
 
     python3 "$common_status_temporary_patterns" \
-        --file-list "$common_libc_sources" >> "$common_libc_matches4"
+        --file-list "$common_libc_sources" >> "$common_libc_matches5"
 
     if [ -n "$common_profile_enabled" ]; then
         common_profile_report 'Python status checker'
@@ -303,19 +299,26 @@ if [ -n "$common_libc_never" ] \
     fi
 
     if [ -s "$common_libc_matches4" ]; then
-        error "\nError: status temporaries whose assignment/use pairs should be inlined:\n"
+        error "\nError: csanecheck findings:\n"
         cat "$common_libc_matches4" >&2
+    fi
+
+    if [ -s "$common_libc_matches5" ]; then
+        error "\nError: status temporaries whose assignment/use pairs should be inlined:\n"
+        cat "$common_libc_matches5" >&2
     fi
 
     common_libc_status=0
     if [ -s "$common_libc_matches" ] \
             || [ -s "$common_libc_matches2" ] \
             || [ -s "$common_libc_matches3" ] \
-            || [ -s "$common_libc_matches4" ]; then
+            || [ -s "$common_libc_matches4" ] \
+            || [ -s "$common_libc_matches5" ] \
+            || [ "$common_csanecheck_status" -eq 1 ]; then
         common_libc_status=1
-        error "%s %s\n" \
-            "In order to understand and learn how to fix the problems above," \
-            "read cbase/c-guidelines.md and cbase/c-format.md"
+    fi
+    if [ "$common_csanecheck_status" -gt 1 ]; then
+        common_libc_status=$common_csanecheck_status
     fi
 
     rm -f \
@@ -325,7 +328,8 @@ if [ -n "$common_libc_never" ] \
         "$common_libc_matches" \
         "$common_libc_matches2" \
         "$common_libc_matches3" \
-        "$common_libc_matches4"
+        "$common_libc_matches4" \
+        "$common_libc_matches5"
 
     if [ -n "$common_profile_enabled" ]; then
         common_profile_report 'reporting / cleanup'
@@ -338,6 +342,6 @@ if [ -n "$common_libc_never" ] \
     fi
 
     if [ "$common_libc_status" -ne 0 ]; then
-        exit 1
+        exit "$common_libc_status"
     fi
 fi

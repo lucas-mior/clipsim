@@ -35,6 +35,23 @@ include (just like all other files). The other project files must:
 ```
 before any other includes.
 
+### Comment density
+Avoid overcommenting. The maximum proportion of nonblank physical lines
+containing comments depends on file size:
+
+- `.c` files: **20%** when smaller than 1000 physical lines, otherwise **10%**.
+- `.h` files: **50%** when smaller than 1000 physical lines, otherwise **40%**.
+
+For the 1000-line threshold, count all physical lines, including blank lines;
+a file with exactly 1000 lines uses the lower limit. For comment density, count
+a line once when it contains any actual `//` or `/* ... */` comment, including
+comments after code and lines inside block comments. Ignore empty or
+whitespace-only lines in both the density numerator and denominator; do not
+count comment markers inside string or character literals. A file exactly at
+its limit is allowed. `csanecheck` reports `SRC-COMMENT-RATIO` when the limit
+is exceeded. Prefer removing redundant comments instead of padding files with
+blank lines.
+
 ### APIs and error handling
 User-facing APIs must do explicit input validation and error handling and return
 an error in case of invalid input, except functions whose contract explicitly
@@ -55,6 +72,20 @@ preconditions; assert those instead.
   that is only used inside a short loop.
 - Use `i`, `j`, and `k` for `for` loop counters.
   * Exception: enum iterating, you can use other names in that case.
+  * Note: never use `i`, `j`, and `k` as function argument names:
+  ```c
+  // bad
+  static void
+  function(double *array, int32 i) {
+      return;
+  }
+
+  // good
+  static void
+  function(double *array, int32 idx) {
+      return;
+  }
+  ```
 - Don't use `error` for names of variables, it is already used to print error
   messages. Use something like `${some_prefix}_error`.
 
@@ -157,6 +188,48 @@ preconditions; assert those instead.
 - Allow postfix `--` as a complete `while` condition and postfix `++` in
   assignments such as `value = *pointer++;` that consume a pointer.
 - Avoid helper functions that exit; call `fatal(EXIT_FAILURE)` at the call site.
+- Do not add standalone brace-delimited blocks solely for grouping code.
+  A block not owned by a control-flow statement (`if`, `else`, `for`, `while`,
+  `do`, or `switch`) must directly declare at least one local variable, so
+  that its scope has a purpose. Declarations only inside nested control-flow
+  bodies do not justify an extra outer block. `csanecheck` reports
+  `AST-ARTIFICIAL-BLOCK` for redundant standalone blocks.
+  An artificial block must also occupy **at most 80%** of its enclosing
+  function body: if nearly all of a function is inside one extra scope,
+  declare those variables in the function body instead. The size is measured
+  in source bytes, from each opening brace through its matching closing brace,
+  including both braces; a block occupying exactly 80% is allowed. The limit
+  applies even when the block directly declares local variables.
+  `csanecheck` reports `AST-ARTIFICIAL-BLOCK-LARGE` above this limit.
+  ```c
+  // bad: no variable introduced by the extra block
+  {
+      fmt_printf("using default\n");
+      switch (option.type) {
+      case CY_OPTION_TYPE_BOOL:
+          fmt_printf("%s\n", bool_str(option.boolean));
+          break;
+      default:
+          UNREACHABLE();
+      }
+  }
+
+  // good: no extra scope
+  fmt_printf("using default\n");
+  switch (option.type) {
+  case CY_OPTION_TYPE_BOOL:
+      fmt_printf("%s\n", bool_str(option.boolean));
+      break;
+  default:
+      UNREACHABLE();
+  }
+
+  // good: the local variable requires a scope
+  {
+      int32 temporary = compute_value();
+      use_value(temporary);
+  }
+  ```
 
 ## `sizeof`
 
@@ -200,6 +273,20 @@ Avoid using `SIZEOF(TypePointedTo)`. Prefer to use `SIZEOF(*pointer)`.
   * `realloc2` does overflow check internally.
   * `free2` already checks if the passed pointer is NULL. Never guard a call to
     free2 solely with a NULL check.
+  * When freeing a null-terminated string whose length is not tracked, use
+    `free2(pointer, opt_strlen32(pointer) + 1)`, not
+    `free2(pointer, strlen32(pointer) + 1)`. `strlen32` requires a non-NULL
+    argument, whereas `opt_strlen32(NULL)` returns 0. A NULL check around
+    `free2` is not a substitute for the NULL-safe length function.
+    ```c
+    // bad
+    if (name) {
+        free2(name, strlen32(name) + 1);
+    }
+
+    // good
+    free2(name, opt_strlen32(name) + 1);
+    ```
 - Choose what is best in each situation:
   * Use the `arena.c` bump allocator for groups of allocations with the same
     lifetime, either of equal or different sizes.
@@ -306,6 +393,31 @@ to avoid unused function warnings when compiling the main program.
 
 ## Struct declarations
 
+When two or more pointer/length pairs are declared consecutively, group the
+pointer fields before their matching length fields. A single pointer/length pair
+is fine, and unrelated declarations between pairs break the sequence. The
+signed length fields may use `int16`, `int32`, or `int64`, with the name
+`n<array>` or `<array>_len`. This also applies to pointers to pointers.
+
+```c
+// bad: pointer and length fields are interleaved
+typedef struct BadArrays {
+    char *values;
+    int32 nvalues;
+    char **values2;
+    int64 values2_len;
+} BadArrays;
+
+// good: pointer fields precede their length fields
+typedef struct GoodArrays {
+    char *values;
+    char **values2;
+    int32 nvalues;
+    int64 values2_len;
+} GoodArrays;
+```
+
+
 Try to organize big structs in logical groups or types with empty lines:
 
 ```c
@@ -337,22 +449,48 @@ In general, we must always know the lengths of our strings:
 - Pass string length around when we already know it (see below).
 - Use STRLIT("literal") to pass a string literal and its length to a
   function/struct without repeating the literal itself.
-- Note: `STRLIT_LEN("literal")` is always a mistake. There is no reason to use
-  it. If you need to pass the length of a literal, we have other options,
-  depending on the use case:
-    + `STRLIT("literal")` passes the literal and its length;
-    + `STRPASS(field, "literal")` in struct literals to auto assign
-       `.field = "literal", .field_len = sizeof("literal") - 1`
-    + assign the literal to a variable and use `strlen32`. This is a good option
-      for long strings used in tests, and also for functions that return the
-          string length and assign to a `char **double_pointer` out parameter.
-      ```c
-      int32
-      function_returns_len(char **string_out) {
-          *string_out = "literal";
-          return strlen32(*string_out);
-      }
-      ```
+- Use `opt_strlen32(string)` when a string may be NULL. Never spell the
+  NULL-safe operation as `string ? strlen32(string) : 0`.
+  ```c
+  // bad
+  int32 len = color ? strlen32(color) : 0;
+
+  // good
+  int32 len = opt_strlen32(color);
+  ```
+- Never call `strlen32("literal")`, `SIZEOF("literal")`,
+  `LENGTH("literal")`, or `STRLIT_LEN("literal")` directly. This also applies
+  to concatenated and parenthesized literals. All four spellings are forbidden
+  at call sites, even if a compiler could compute their result at compile time.
+  Instead, choose a macro that handles the literal and its length together:
+    + `STRLIT("literal")` for a function taking `(string, string_len)`;
+    + `STRPASS(field, "literal")` for initializing paired struct fields;
+    + `STREQUAL(string, string_len, "literal")` for equality;
+    + `BEGINS_WITH(string, string_len, "prefix")` or
+      `ENDS_WITH(string, string_len, "suffix")` for prefix/suffix checks.
+  These macros handle literal lengths internally; do not call `STRLIT_LEN`
+  yourself in application code.
+  ```c
+  // bad
+  int32 len = strlen32("literal");
+  int64 bytes = SIZEOF("literal");
+  int32 count = LENGTH("literal");
+  int32 length = STRLIT_LEN("literal");
+
+  // good: pass the literal and its length together
+  consume_string(STRLIT("literal"));
+  ```
+  When an API really needs only a standalone length, avoid a direct literal
+  length call. One option is to bind the literal to a string variable and
+  obtain its length from that variable, particularly in tests or APIs that
+  return a string and its length separately:
+  ```c
+  int32
+  function_returns_len(char **string_out) {
+      *string_out = "literal";
+      return strlen32(*string_out);
+  }
+  ```
 - Use `memchr64`, `memmem64`, or other function to parse whatever we are
   parsing. Example:
   ```c
@@ -448,11 +586,11 @@ typedef struct MyStructOfArrays {
 That means to also avoid calling `strlen32`:
 
 - `strlen32` shall be viewed as an interface for code that we do not control.
-- `STRLIT_LEN("literal")` is for getting the length of a literal at compile time
-  (it uses `SIZEOF`). Only use it if you need to pass the length of a string
-  literal, but not the string literal itself (which only happens inside macros).
-  * Never do stupid shit like: `my_function("literal", STRLIT_LEN("literal"))`
-    + Instead, use `my_function(STRLIT("literal"))`
+- `STRLIT_LEN` is an implementation detail used *inside* macros such as
+  `STRLIT`, `STRPASS`, and `STREQUAL`; never invoke it directly on a literal.
+  The same prohibition applies to direct `LENGTH`, `SIZEOF`, and `strlen32`
+  calls on literals. Do not manually write a literal and its length as separate
+  arguments: use `my_function(STRLIT("literal"))` instead.
 - `STRLIT("literal")` can be used to pass the string literal and its length
   in an "don't repeat yourself" way, that also does not depend on the compiler
   to optimize the `strlen32`, since it uses `SIZEOF` to get the length of the
@@ -645,6 +783,12 @@ STR_APPEND(&str, string, string_len);
 str_itoa(&str, number);
 ```
 
+## Compiler detection guards
+Use `CC_CLANG`, `CC_GCC`, `CC_TCC`, or `CC_MSVC` when selecting code for a
+compiler. Do not use `#if defined(__clang__)`, `defined(__GNUC__)`,
+`defined(__TINYC__)`, or `defined(_MSC_VER)` (or `#ifdef` / `#ifndef` forms)
+outside `cbase/platform_detection.h`, which defines the `CC_*` flags.
+
 ## Avoid printf from libc.
 Do not call libc `printf`-family functions directly in project code, including
 `printf`, `fprintf`, `sprintf`, `snprintf`, their `v` variants, and POSIX/GNU
@@ -665,7 +809,10 @@ In general, avoid `strcmp()`, use the alternatives below instead:
 - For strings that we know the length of both (they might be null terminated,
   but not necessarly):
   * use `STREQUAL(s1, s1_len, s2, s2_len)`
-- Use `strcmp()` when comparing strings for sorting purposes.
+- Use `strcmp()` when comparing strings for sorting purposes, but only
+  as the direct value of a `return` statement or a variable assignment.
+  Never use `strcmp()` in `if` conditions or other boolean comparisons,
+  including `strcmp(a, b) == 0`. Use `STREQUAL` or `strequal` for equality.
 
 ## Checking if a string begins or ends with something:
 Don't use `strncmp` to check if a string begins or ends with something.
@@ -854,19 +1001,182 @@ error. Check `< 0` instead, since it works for the case where the negative
 result encodes an error number.
 
 ### Control flow and error handling
-- Avoid `goto`. Use it only for common cleanup logic.
-- Never use `goto` to jump to a previous line in the function.
-- Sometimes a useful pattern to avoid using goto:
+- Prefer ordinary `return`, `break`, `continue`, and conditional control flow
+  when they express the intended exit directly. Do not create a status variable,
+  a `goto`, or a `do { ... } while (0)` solely to reach an immediate `return`.
+- Use a forward `goto` for shared cleanup or when execution must leave multiple
+  nested loops and continue after them. An ordinary `break` leaves only the
+  innermost enclosing loop or `switch`; it cannot escape two nested loops. If
+  the required jump must leave nested loops (rather than return from the
+  function), use `goto` to reach the common post-loop code. Keep the target
+  clearly named and below the jump. Never use backward `goto` as a substitute
+  for a loop.
+- In ordinary function code, `do { ... } while (0)` is useful as a
+  single-pass, early-exit region **only when common work actually follows the
+  block**, such as releasing resources or processing a partial result. `break`
+  leaves that synthetic loop, allowing the common work to execute once. If
+  the code after `while (0)` only checks a status and returns, or the function
+  would return immediately on error anyway, omit the wrapper and return
+  directly. Do not introduce an extra status variable merely to support it.
+- A `do { ... } while (0)` is itself a loop. A `break` inside it exits only
+  that loop (or a more deeply nested loop or `switch`), **not** an enclosing
+  `for` or `while`. Consequently, it cannot replace `goto` for jumping out of
+  multiple nested loops. Multi-statement macros using `do { ... } while (0)`
+  as a single-statement wrapper are a separate use of the idiom.
+
   ```c
+  // Bad: after the artificial loop there is no shared work, only a return.
+  for (int32 i = 0; i < configuration->resolvers_len; i += 1) {
+      CyArgsSubsystemResolver *resolver = &configuration->resolvers[i];
+      int32 resolver_status;
+
+      do {
+          if (resolver->resolve == NULL) {
+              resolver_status = -EINVAL;
+              break;
+          }
+          resolver_status = 0;
+      } while (0);
+      if (resolver_status < 0) {
+          return resolver_status;
+      }
+  }
+
+  // Good: validate and return directly.
+  for (int32 i = 0; i < configuration->resolvers_len; i += 1) {
+      CyArgsSubsystemResolver *resolver = &configuration->resolvers[i];
+
+      if (resolver->resolve == NULL) {
+          return -EINVAL;
+      }
+  }
+  ```
+
+  ```c
+  // Bad: the do/while (0) is the last work in the function. Its break
+  // only skips to an unconditional return, so direct control flow is simpler.
   do {
-      if ((a = may_fail()) < 0) {
+      int32 inline_src_out = conn->src_out;
+      int32 inline_dst_in = conn->dst_in;
+      char *src_sys_name = "(null)";
+      char *dst_sys_name = "(null)";
+      char *src_signal_name = "(null)";
+      char *dst_signal_name = "(null)";
+      char *src_unit_name = "(none)";
+      char *dst_unit_name = "(none)";
+
+      result->warnings += 1;
+      if (!print) {
           break;
       }
-      if ((b = may_fail2()) < 0) {
-          break;
+
+      if (src->name) {
+          src_sys_name = src->name;
       }
-      do_something(a, b);
+      if (dst->name) {
+          dst_sys_name = dst->name;
+      }
+      if (src->sig->outputs[inline_src_out]) {
+          src_signal_name = src->sig->outputs[inline_src_out];
+      }
+      if (dst->sig->inputs[inline_dst_in]) {
+          dst_signal_name = dst->sig->inputs[inline_dst_in];
+      }
+      if (cy_unit_name(&src->sig->output_units[inline_src_out])) {
+          src_unit_name =
+              cy_unit_name(&src->sig->output_units[inline_src_out]);
+      }
+      if (cy_unit_name(&dst->sig->input_units[inline_dst_in])) {
+          dst_unit_name = cy_unit_name(&dst->sig->input_units[inline_dst_in]);
+      }
+
+      error("Consistency warning: connected subsystem units do not match: "
+            "%s.%s [%s] -> %s.%s [%s]\n",
+            src_sys_name, src_signal_name, src_unit_name,
+            dst_sys_name, dst_signal_name, dst_unit_name);
   } while (0);
+  return;
+  ```
+
+  The checker reports `STYLE-FINAL-DO-WHILE-ZERO` when a function ends
+  with a `do { ... } while (0);` or has only a simple `return` after it.
+  The same applies when the loop is followed only by a fixed boolean-like
+  member assignment (for example, `job->committed = true;`) and a simple
+  `return`. A computed assignment or actual cleanup after the loop remains
+  legitimate shared work. It also reports a one-shot loop that assigns a flag
+  immediately before `break`, followed directly by an `if` that only uses
+  that flag to return.
+  This includes code that continues after the conditional return. The rule
+  does not apply to multi-statement macro wrappers, unrelated work between
+  the loop and the return guard, or cleanup performed by that guard.
+
+  ```c
+  // Bad: the break only passes a flag to the following return check.
+  bool symbols_equal = false;
+  do {
+      char *src_name = cy_unit_name(src_unit);
+      char *dst_name = cy_unit_name(dst_unit);
+
+      if (src_name == NULL || dst_name == NULL) {
+          symbols_equal = src_name == dst_name;
+          break;
+      }
+      symbols_equal = STREQUAL(src_name, strlen32(src_name), dst_name,
+                               strlen32(dst_name));
+  } while (0);
+  if (symbols_equal) {
+      return;
+  }
+
+  // Good: use the condition to return directly without a synthetic loop.
+  char *src_name = cy_unit_name(src_unit);
+  char *dst_name = cy_unit_name(dst_unit);
+
+  if (src_name == NULL || dst_name == NULL) {
+      if (src_name == dst_name) {
+          return;
+      }
+  } else if (STREQUAL(src_name, strlen32(src_name), dst_name,
+                      strlen32(dst_name))) {
+      return;
+  }
+  ```
+
+  ```c
+  // Useful single-pass region: cleanup must run on success and failure.
+  int32 status = 0;
+  Resource *resource = NULL;
+
+  do {
+      if ((resource = acquire_resource()) == NULL) {
+          status = -ENOMEM;
+          break;
+      }
+      if ((status = configure_resource(resource)) < 0) {
+          break;
+      }
+  } while (0);
+  if (resource != NULL) {
+      release_resource(resource);
+  }
+  return status;
+  ```
+
+  ```c
+  // Useful forward goto: leave both loops, then perform shared cleanup.
+  int32 status = 0;
+
+  for (int32 i = 0; i < rows; i += 1) {
+      for (int32 j = 0; j < columns; j += 1) {
+          if ((status = process_cell(i, j)) < 0) {
+              goto cleanup;
+          }
+      }
+  }
+
+  cleanup:
+  release_resources();
+  return status;
   ```
 
 ### Struct initialization
@@ -986,9 +1296,28 @@ if (number_of_stuff >= capacity) {
 }
 ```
 
-Only check if something is different than zero, if zero is more meaningfull
-than simply "zero items" (i.e. zero is a valid value in all circumstances for
-that variable).
+When checking whether a count, length, or capacity is nonzero, prefer
+`> 0` over `!= 0`: these quantities represent non-negative amounts. For
+`csanecheck`, this rule applies to direct comparisons with literal `0`,
+including `0 != ...`, when a variable, final struct member, or directly
+called function has a count-shaped name:
+
+- The suffixes `_count`, `_len`, `_cap`, or `_capacity` (e.g., `get_count()`).
+- The plural-count prefix `n<name>s` (e.g., `nitems`, `ninput_channels`),
+  including struct members such as `mstruct->nitems`.
+- The plural-count suffix `_n<name>s` (e.g., `file_nitems`, `get_nrows()`).
+- For struct members, the exact names `count`, `len`, `cap`, and `capacity`,
+  including direct calls such as `mstruct->count()`. Standalone variables
+  or functions with those bare names are not matched.
+
+The check accepts `.` and `->` member access, parentheses around operands,
+and direct calls with or without arguments. It does not infer the meaning of
+arithmetic expressions, indexing, or chained calls. Names ending in
+`_status`, `_success`, `nstatus`, or `nsuccess` are excluded from the
+plural-count patterns.
+
+Use `!= 0` only when zero is a distinct sentinel or value, rather than an
+empty count (for example, a coordinate that can be negative).
 
 ```c
 // bad
@@ -996,9 +1325,61 @@ if (nitems != 0) {
     // there are items
 }
 
+// bad
+if (logged_count != 0 || array_len != 0) {
+    // at least one collection has elements
+}
+
 // good
 if (nitems > 0) {
     // there are items
+}
+
+// good
+if (logged_count > 0 || array_len > 0) {
+    // at least one collection has elements
+}
+
+// bad
+if (buffer_cap != 0 || buffer_capacity != 0) {
+    // one or both capacities are nonzero
+}
+
+// good
+if (buffer_cap > 0 || buffer_capacity > 0) {
+    // one or both capacities are nonzero
+}
+
+// bad
+if (mstruct->len != 0 || mstruct->count != 0) {
+    // at least one member is nonzero
+}
+
+// good
+if (mstruct->len > 0 || mstruct->count > 0) {
+    // at least one member is nonzero
+}
+
+// bad: plural-count member and suffixed variable
+if (mstruct->nitems != 0 || buffer_nrows != 0) {
+    // at least one count is nonzero
+}
+
+// good
+if (mstruct->nitems > 0 || buffer_nrows > 0) {
+    // at least one count is nonzero
+}
+
+// bad: direct functions returning counts
+if (get_count() != 0 || buffer_capacity() != 0
+    || get_nitems() != 0 || obj->len() != 0) {
+    // at least one count is nonzero
+}
+
+// good
+if (get_count() > 0 || buffer_capacity() > 0
+    || get_nitems() > 0 || obj->len() > 0) {
+    // at least one count is nonzero
 }
 
 // bad
@@ -1058,7 +1439,6 @@ if (enum & ENUM_BITFLAG) {
 - Use the assertions defined in `cbase/assertions.c`.
   - `ASSERT(expression)`
   - `ASSERT_NULL(pointer)`
-  - `ASSERT_ZERO(integer expression)`
   - `ASSERT_EQ(value1, value2)`
   - `ASSERT_NE(value1, value2)`
   - `ASSERT_EQ(string, string_len, other_string)`
@@ -1081,8 +1461,10 @@ if (enum & ENUM_BITFLAG) {
 - Do not use `ASSERT_EQ` for enums.
   * Use `ASSERT(enumvalue1 == enumvalue2)` instead, so that the compiler does
     not complain.
-- Use `ASSERT_EQ(a, b)` instead of `ASSERT_CLOSE(a, b, 0.0)`. A zero
+- For floats, Use `ASSERT_EQ(a, b)` instead of `ASSERT_CLOSE(a, b, 0.0)`. A zero
   tolerance requires exact equality, not a closeness assertion.
+  * For tolerance equality, use `ASSERT_CLOSE(a, b, tol);`. Don't do stupid shit
+    like: `ASSERT(fabs(a - b) < tol);`.
 - For asserting that a function did or didn't fail/return NULL:
   ```c
   // bad
@@ -1109,9 +1491,7 @@ if (enum & ENUM_BITFLAG) {
   // good, if we care about the specific negative error code.
   ASSERT_EQ(access(path, F_OK), 0);
   ```
-- Prefer `ASSERT_ZERO(value);` instead of `ASSERT(value == 0)`.
-  * Note: if zero means "function succeded", use
-    `ASSERT(!function_call());` instead of `ASSERT_ZERO(function_call());`
+- Prefer `ASSERT_EQ(value, 0);` instead of `ASSERT(value == 0)`.
 - `ASSERT_EQ` and `ASSERT_NE` accept either constant or variable
   operands. For integer comparisons, both operands are normalized to `llong`.
   Unsigned integer values above `LLONG_MAX` are not supported and trigger an
@@ -1145,7 +1525,6 @@ if (enum & ENUM_BITFLAG) {
 - Constant-RHS ordered integer comparisons also normalize integer operands to
   `llong`. Unsigned integer values above `LLONG_MAX` are not supported. The
   three- and four-argument string equality forms are unaffected.
-- Prefer `ASSERT_ZERO(value);` instead of `ASSERT_EQ(a, 0)`
 - Prefer `ASSERT_BETWEEN(value, 0, max);`
   instead of `ASSERT_GE(value, 0); ASSERT_LE(value, max);`
 - Prefer `ASSERT_BETWEEN(value, 0, SIZE - 1);`
@@ -1153,6 +1532,14 @@ if (enum & ENUM_BITFLAG) {
 
 ## Modules
 - Define internal functions as `static`.
+- If a `static` function is called exactly once in its defining `.c` file,
+  inline its body at that call site and remove its definition (and any
+  forward declaration). This does not apply to functions inside
+  `#if TESTING_module` blocks, or when the function is referenced as a
+  callback or function pointer, is recursive, or has conditional or
+  macro-dependent uses, or when the call is indented three levels (12
+  spaces) or more. `csanecheck` reports `STYLE-STATIC-ONCE` only when
+  the single direct call can be established conservatively.
 
 ## Magic numbers and magic literals
 
@@ -1500,3 +1887,32 @@ still do not know, use common sense.
   ```
   This applies to direct literal arguments, not casts in expressions or
   casts of variables.
+
+## Arithmetic line wrapping aand aligning
+1. Break before operators, if needed to not exceed column limit.
+2. Align according to precedence:
+```c
+// bad
+double x = 2.0*a_long_variable
+   + (some_other_variable*(xyz + 4.0)) / SQUARE(varibale);
+
+// bad
+double x = 2.0*a_long_variable
+               + (some_other_variable*(xyz + 4.0)) / SQUARE(varibale);
+
+// good
+double x = 2.0*a_long_variable
+           + (some_other_variable*(xyz + 4.0)) / SQUARE(varibale);
+
+// also good. Note how they nest according to precedence.
+double x = 2.0*a_long_variable
+           + (some_other_variable*(xyz + 4.0))
+             / SQUARE(varibale);
+```
+
+## Abbreviations (and not abbreviate)
+- length -> len
+- column -> col
+- color -> color (not col)
+- index -> idx
+- parameter -> param

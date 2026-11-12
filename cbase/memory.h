@@ -47,10 +47,8 @@ void memset64(void *buffer, int value, int64 size);
 
 void memory_check(void);
 void free2_(void *pointer, int64 size);
-void free_debug(char *file, int32 line, char *func,
-                void *pointer, int64 size);
-void *malloc_debug(char *file, int32 line, char *func,
-                   int64 size, bool zero);
+void free_debug(char *file, int32 line, char *func, void *pointer, int64 size);
+void *malloc_debug(char *file, int32 line, char *func, int64 size, bool zero);
 void *realloc4(void *old,
                int64 old_capacity, int64 new_capacity, int64 obj_size);
 void *realloc_debug(char *file, int32 line, char *func,

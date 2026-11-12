@@ -37,7 +37,7 @@
 #define RAPIDHASH_C
 
 #include "cbase.h"
-#if defined(_MSC_VER)
+#if CC_MSVC
 #include <intrin.h>
 #if defined(_M_X64) && !defined(_M_ARM64EC)
 #pragma intrinsic(_umul128)
@@ -106,7 +106,7 @@ rapid_mum(uint64 *A, uint64 *B) {
     *A = (uint64)r;
     *B = (uint64)(r >> 64);
   #endif
-#elif defined(_MSC_VER) && (defined(_WIN64) || defined(_M_HYBRID_CHPE_ARM64))
+#elif CC_MSVC && (defined(_WIN64) || defined(_M_HYBRID_CHPE_ARM64))
   #if defined(_M_X64)
     #if defined(RAPIDHASH_PROTECTED)
     uint64 a;
@@ -190,7 +190,7 @@ read32(uint8 *p) {
     memcpy64(&v, p, SIZEOF(*(&v)));
     return v;
 }
-#elif defined(__GNUC__) || defined(__INTEL_COMPILER) || defined(__clang__)
+#elif CC_GCC || defined(__INTEL_COMPILER) || CC_CLANG
 INLINE uint64
 rapid_read_64(uint8 *p) {
     uint64 v;
@@ -203,7 +203,7 @@ read32(uint8 *p) {
     memcpy64(&v, p, SIZEOF(*(&v)));
     return __builtin_bswap32(v);
 }
-#elif defined(_MSC_VER)
+#elif CC_MSVC
 INLINE uint64
 rapid_read_64(uint8 *p) {
     uint64 v;
@@ -245,7 +245,7 @@ read32(uint8 *p) {
  *  Reads and combines 3 bytes of input.
  *
  *  @param p  Buffer to read from.
- *  @param k  Length of @p, in bytes.
+ *  @param length  Length of @p, in bytes.
  *
  *  Always reads and combines 3 bytes from memory.
  *  Guarantees to read each buffer position at least once.
@@ -253,8 +253,9 @@ read32(uint8 *p) {
  *  Returns a 64-bit value containing all three bytes read.
  */
 INLINE uint64
-readSmall(uint8 *p, uint64 k) {
-    return (((uint64)p[0]) << 56) | (((uint64)p[k >> 1]) << 32) | p[k - 1];
+readSmall(uint8 *p, uint64 length) {
+    uint64 middle = ((uint64)p[length >> 1]) << 32;
+    return (((uint64)p[0]) << 56) | middle | p[length - 1];
 }
 
 /*

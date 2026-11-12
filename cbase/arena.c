@@ -8,11 +8,11 @@
 #define BYTE_PUSHED_UNINITIALIZED 0xCD
 
 #if !defined(TESTING_arena)
-#if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
-#define TESTING_arena 1
-#else
-#define TESTING_arena 0
-#endif
+  #if defined(__INCLUDE_LEVEL__) && (__INCLUDE_LEVEL__ == 0)
+  #define TESTING_arena 1
+  #else
+  #define TESTING_arena 0
+  #endif
 #endif
 
 #include "cbase.h"
@@ -517,7 +517,7 @@ main(void) {
         int64 first_arena_capacity;
         char *error_message;
 
-        arena_count = LENGTH(arenas);
+        arena_count = (int64)LENGTH(arenas);
         ASSERT((arenas[0] = arena_create(SIZEMB(1), "arenas[0]")));
         ASSERT((arenas[1] = arena_create(SIZEMB(1), "arenas[1]")));
 

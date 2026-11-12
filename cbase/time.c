@@ -335,8 +335,14 @@ int
 main(void) {
     struct timespec t0;
     struct timespec t1;
-    struct timespec td0 = {.tv_sec = 1, .tv_nsec = 250000000};
-    struct timespec td1 = {.tv_sec = 3, .tv_nsec = 750000000};
+    struct timespec td0 = {
+        .tv_sec = 1,
+        .tv_nsec = 250000000,
+    };
+    struct timespec td1 = {
+        .tv_sec = 3,
+        .tv_nsec = 750000000,
+    };
 
     {
         char buffer[128];

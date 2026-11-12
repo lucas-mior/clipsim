@@ -34,7 +34,6 @@
 #define SFA_LINKAGE static
 #endif
 
-
 SFA_LINKAGE int32
 CAT(string_from_, SFA_NAME)(char *buffer, int32 size,
                             char *sep, SFA_TYPE *array, int32 array_length) {

@@ -44,10 +44,10 @@ static uint32 utf8_max[] = {
 };
 
 uint32
-utf8_decode_byte(char c, int32 *i) {
-    for (*i = 0; *i < LENGTH(utf8_mask); *i += 1) {
-        if (((uint8)c & utf8_mask[*i]) == utf8_byte[*i]) {
-            return (uint8)c & ~utf8_mask[*i];
+utf8_decode_byte(char c, int32 *index) {
+    for (*index = 0; *index < LENGTH(utf8_mask); *index += 1) {
+        if (((uint8)c & utf8_mask[*index]) == utf8_byte[*index]) {
+            return (uint8)c & ~utf8_mask[*index];
         }
     }
 
@@ -55,20 +55,20 @@ utf8_decode_byte(char c, int32 *i) {
 }
 
 char
-utf8_encode_byte(uint32 u, int32 i) {
-    return (char)(utf8_byte[i] | (u & (uint32)~utf8_mask[i]));
+utf8_encode_byte(uint32 u, int32 idx) {
+    return (char)(utf8_byte[idx] | (u & (uint32)~utf8_mask[idx]));
 }
 
 int32
-utf8_validate(uint32 *u, int32 i) {
-    if (!BETWEEN(*u, utf8_min[i], utf8_max[i])
+utf8_validate(uint32 *u, int32 idx) {
+    if (!BETWEEN(*u, utf8_min[idx], utf8_max[idx])
         || BETWEEN(*u, 0xD800, 0xDFFF)) {
         *u = UTF_INVALID;
     }
-    for (i = 1; *u > utf8_max[i]; i += 1) {
+    for (idx = 1; *u > utf8_max[idx]; idx += 1) {
     }
 
-    return i;
+    return idx;
 }
 
 int32
@@ -369,13 +369,13 @@ utf8_capitalize_first_letters(char *string, int32 string_len,
         encoded_len = utf8_encode((uint32)wc, encoded, SIZEOF(encoded));
         if (encoded_len <= 0) {
             encoded_len = length;
-            if ((buffer != NULL)
+            if ((buffer)
                 && ((result_len + encoded_len) <= buffer_capacity)) {
                 for (int32 i = 0; i < encoded_len; i += 1) {
                     buffer[result_len + i] = string[byte + i];
                 }
             }
-        } else if ((buffer != NULL)
+        } else if ((buffer)
                    && ((result_len + encoded_len) <= buffer_capacity)) {
             for (int32 i = 0; i < encoded_len; i += 1) {
                 buffer[result_len + i] = encoded[i];
@@ -591,13 +591,11 @@ main(void) {
         ASSERT_EQ(u, UTF_INVALID);
     }
 
-    {
-        ASSERT(utf8_random_rune_allowed(0x41));
-        ASSERT(utf8_random_rune_allowed(0x10000));
-        ASSERT(!utf8_random_rune_allowed(0xD800));
-        ASSERT(!utf8_random_rune_allowed(0xDFFF));
-        ASSERT(!utf8_random_rune_allowed(UTF_INVALID));
-    }
+    ASSERT(utf8_random_rune_allowed(0x41));
+    ASSERT(utf8_random_rune_allowed(0x10000));
+    ASSERT(!utf8_random_rune_allowed(0xD800));
+    ASSERT(!utf8_random_rune_allowed(0xDFFF));
+    ASSERT(!utf8_random_rune_allowed(UTF_INVALID));
 
     {
         int32 bad_offset;

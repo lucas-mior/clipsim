@@ -904,8 +904,14 @@ main(void) {
     struct Hash_map *map = hash_create_map(100, "strings_map");
     Arena *arena = arena_create(NBYTES*NSTRINGS, "strings_arena");
     HashBenchString *strings = malloc(NSTRINGS*SIZEOF(*strings));
-    HashBenchString str1 = {.s = "aaaaaaaaaaaaaaaa", .value = 10};
-    HashBenchString str2 = {.s = "bbbbbbbbbbbbbbb", .value = 20};
+    HashBenchString str1 = {
+        .s = "aaaaaaaaaaaaaaaa",
+        .value = 10,
+    };
+    HashBenchString str2 = {
+        .s = "bbbbbbbbbbbbbbb",
+        .value = 20,
+    };
     uint32 initial_capacity;
     int32 test = 0;
 

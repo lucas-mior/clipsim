@@ -1001,7 +1001,7 @@ assert_double_special_close(double var1, double var2,
     bool sign1;
     bool sign2;
 
-    if (diff_out != NULL) {
+    if (diff_out) {
         *diff_out = (double)0;
     }
     *handled_out = true;
@@ -1010,14 +1010,14 @@ assert_double_special_close(double var1, double var2,
         if (var1 == var2) {
             return true;
         }
-        if (diff_out != NULL) {
+        if (diff_out) {
             *diff_out = assert_double_abs(var1 - var2);
         }
         return false;
     }
 
     if (assert_double_is_nan(var1) || assert_double_is_nan(var2)) {
-        if (diff_out != NULL) {
+        if (diff_out) {
             *diff_out = var1 - var2;
         }
         return false;
@@ -1033,7 +1033,7 @@ assert_double_special_close(double var1, double var2,
             *handled_out = false;
             return false;
         }
-        if (diff_out != NULL) {
+        if (diff_out) {
             *diff_out = assert_double_abs(var1 - var2);
         }
         return false;
@@ -1062,10 +1062,10 @@ assert_double_close_ulps(double var1, double var2,
     common_kind = assert_fp_common_kind(kind1, kind2);
     max_ulps = assert_fp_max_ulps(common_kind);
 
-    if (ulps_out != NULL) {
+    if (ulps_out) {
         *ulps_out = 0;
     }
-    if (max_ulps_out != NULL) {
+    if (max_ulps_out) {
         *max_ulps_out = max_ulps;
     }
 
@@ -1077,7 +1077,7 @@ assert_double_close_ulps(double var1, double var2,
     }
 
     diff = assert_double_abs(var1 - var2);
-    if (diff_out != NULL) {
+    if (diff_out) {
         *diff_out = diff;
     }
 
@@ -1087,7 +1087,7 @@ assert_double_close_ulps(double var1, double var2,
 
         if ((assert_double_abs(var1) > (double)FLT_MAX)
             || (assert_double_abs(var2) > (double)FLT_MAX)) {
-            if (ulps_out != NULL) {
+            if (ulps_out) {
                 *ulps_out = ULLONG_MAX;
             }
             return false;
@@ -1100,7 +1100,7 @@ assert_double_close_ulps(double var1, double var2,
         ulps = assert_double_ulp_distance(var1, var2);
     }
 
-    if (ulps_out != NULL) {
+    if (ulps_out) {
         *ulps_out = ulps;
     }
 
@@ -1119,7 +1119,7 @@ assert_double_close_tol(double var1, double var2,
         tolerance = -tolerance;
     }
 
-    if (tolerance_out != NULL) {
+    if (tolerance_out) {
         *tolerance_out = tolerance;
     }
 
@@ -1131,7 +1131,7 @@ assert_double_close_tol(double var1, double var2,
     }
 
     diff = assert_double_abs(var1 - var2);
-    if (diff_out != NULL) {
+    if (diff_out) {
         *diff_out = diff;
     }
 
@@ -1357,9 +1357,6 @@ main(void) {
     ASSERT(true);
     ASSERT(!false);
     ASSERT(1);
-    ASSERT_EQ(0, 0);
-    ASSERT_EQ(0u, 0);
-    ASSERT_EQ(0ll, 0);
 
     ASSERT_EQ(1, 1);
     ASSERT_EQ(3, 1 + 2);
@@ -1590,17 +1587,16 @@ main(void) {
         ASSERT_BETWEEN(x, 5, 10);
         ASSERT_BETWEEN(x, 0, 5);
         ASSERT_BETWEEN(x, 0, 10);
-    } {
-        // uncomment to trigger linking error in the variable path
-        /* double x = 0.1; */
-        /* void *a = NULL; */
-        /* ASSERT_GE_VAR(x, a); */
-        /* ASSERT_GE_VAR(a, x); */
-
-        // uncomment to trigger a non-constant RHS compile error
-        /* int32 y = 1; */
-        /* ASSERT_LT(1, y); */
     }
+    // uncomment to trigger linking error in the variable path
+    /* double x = 0.1; */
+    /* void *a = NULL; */
+    /* ASSERT_GE_VAR(x, a); */
+    /* ASSERT_GE_VAR(a, x); */
+
+    // uncomment to trigger a non-constant RHS compile error
+    /* int32 y = 1; */
+    /* ASSERT_LT(1, y); */
 
 #if OS_UNIX
     {
