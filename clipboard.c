@@ -376,6 +376,22 @@ main(void) {
     }
 
     if ((display = XOpenDisplay(NULL)) != NULL) {
+        ulong color;
+        ulong len = 0;
+        char *res_save = NULL;
+        int32 res_clip;
+        bool incr;
+        XEvent mock_event;
+        XEvent mock_event2;
+        Atom tgt;
+        char *large_save;
+        ulong large_len;
+        pid_t incr_pid;
+        char *small_save;
+        ulong small_len;
+        char *small_chunk;
+        int32 small_chunk_len;
+
         {
             pid_t pid = fork();
             if (pid == 0) {
@@ -395,159 +411,140 @@ main(void) {
             }
         }
 
-        {
-            ulong color;
-            ulong len = 0;
-            char *res_save = NULL;
-            int32 res_clip;
-            bool incr;
-            XEvent mock_event;
-            XEvent mock_event2;
-            Atom tgt;
-            char *large_save;
-            ulong large_len;
-            pid_t pid;
-            char *small_save;
-            ulong small_len;
-            char *small_chunk;
-            int32 small_chunk_len;
+        CLIPBOARD = XInternAtom(display, "CLIPBOARD", False);
+        XSEL_DATA = XInternAtom(display, "XSEL_DATA", False);
+        INCR = XInternAtom(display, "INCR", False);
+        UTF8_STRING = XInternAtom(display, "UTF8_STRING", False);
+        image_png = XInternAtom(display, "image/png", False);
+        TARGETS = XInternAtom(display, "TARGETS", False);
 
-            CLIPBOARD = XInternAtom(display, "CLIPBOARD", False);
-            XSEL_DATA = XInternAtom(display, "XSEL_DATA", False);
-            INCR = XInternAtom(display, "INCR", False);
-            UTF8_STRING = XInternAtom(display, "UTF8_STRING", False);
-            image_png = XInternAtom(display, "image/png", False);
-            TARGETS = XInternAtom(display, "TARGETS", False);
+        root = DefaultRootWindow(display);
+        color = BlackPixel(display, DefaultScreen(display));
+        window = XCreateSimpleWindow(display, root, 0, 0, 1, 1, 0,
+                                     color, color);
 
-            root = DefaultRootWindow(display);
-            color = BlackPixel(display, DefaultScreen(display));
-            window = XCreateSimpleWindow(display, root, 0, 0, 1, 1, 0,
-                                         color, color);
+        XChangeProperty(display, window, XSEL_DATA, UTF8_STRING, 8,
+                        PropModeReplace, (uchar *)STRLIT("test_clip"));
 
-            XChangeProperty(display, window, XSEL_DATA, UTF8_STRING, 8,
-                            PropModeReplace, (uchar *)STRLIT("test_clip"));
+        mock_event.type = SelectionNotify;
+        mock_event.xselection.requestor = window;
+        mock_event.xselection.selection = CLIPBOARD;
+        mock_event.xselection.target = UTF8_STRING;
+        mock_event.xselection.property = UTF8_STRING;
+        XPutBackEvent(display, &mock_event);
 
-            mock_event.type = SelectionNotify;
-            mock_event.xselection.requestor = window;
-            mock_event.xselection.selection = CLIPBOARD;
-            mock_event.xselection.target = UTF8_STRING;
-            mock_event.xselection.property = UTF8_STRING;
-            XPutBackEvent(display, &mock_event);
+        tgt = clipboard_check_target(UTF8_STRING);
+        ASSERT_EQ(tgt, UTF8_STRING);
 
-            tgt = clipboard_check_target(UTF8_STRING);
-            ASSERT_EQ(tgt, UTF8_STRING);
+        mock_event2.type = SelectionNotify;
+        mock_event2.xselection.requestor = window;
+        mock_event2.xselection.selection = CLIPBOARD;
+        mock_event2.xselection.target = UTF8_STRING;
+        mock_event2.xselection.property = UTF8_STRING;
+        XPutBackEvent(display, &mock_event2);
 
-            mock_event2.type = SelectionNotify;
-            mock_event2.xselection.requestor = window;
-            mock_event2.xselection.selection = CLIPBOARD;
-            mock_event2.xselection.target = UTF8_STRING;
-            mock_event2.xselection.property = UTF8_STRING;
-            XPutBackEvent(display, &mock_event2);
+        res_clip = clipboard_get_clipboard(&res_save, &len, &incr);
+        ASSERT_EQ(res_clip, CLIPBOARD_TEXT);
+        ASSERT_GT(len, 0);
 
-            res_clip = clipboard_get_clipboard(&res_save, &len, &incr);
-            ASSERT_EQ(res_clip, CLIPBOARD_TEXT);
-            ASSERT_GT(len, 0);
+        if (res_save) {
+            XFree(res_save);
+        }
 
-            if (res_save) {
-                XFree(res_save);
-            }
+        large_save = NULL;
+        large_len = 0;
+        incr_pid = fork();
 
-            large_save = NULL;
-            large_len = 0;
-            pid = fork();
+        if (incr_pid == 0) {
+            Display *d2;
+            XEvent event;
+            char *big_chunk;
 
-            if (pid == 0) {
-                Display *d2;
-                XEvent event;
-                char *big_chunk;
+            d2 = XOpenDisplay(NULL);
+            big_chunk = malloc(ENTRY_MAX_LENGTH + 10);
+            memset64(big_chunk, 'B', ENTRY_MAX_LENGTH + 10);
 
-                d2 = XOpenDisplay(NULL);
-                big_chunk = malloc(ENTRY_MAX_LENGTH + 10);
-                memset64(big_chunk, 'B', ENTRY_MAX_LENGTH + 10);
+            XSelectInput(d2, window, PropertyChangeMask);
+            XChangeProperty(d2, window, XSEL_DATA, INCR, 32,
+                            PropModeReplace, NULL, 0);
+            XFlush(d2);
 
-                XSelectInput(d2, window, PropertyChangeMask);
-                XChangeProperty(d2, window, XSEL_DATA, INCR, 32,
-                                PropModeReplace, NULL, 0);
-                XFlush(d2);
+            do {
+                XNextEvent(d2, &event);
+            } while ((event.type != PropertyNotify)
+                     || (event.xproperty.state != PropertyDelete)
+                     || (event.xproperty.atom != XSEL_DATA));
 
-                do {
-                    XNextEvent(d2, &event);
-                } while ((event.type != PropertyNotify)
-                         || (event.xproperty.state != PropertyDelete)
-                         || (event.xproperty.atom != XSEL_DATA));
+            XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
+                            PropModeReplace, (uchar *)big_chunk,
+                            ENTRY_MAX_LENGTH + 10);
+            XFlush(d2);
 
-                XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
-                                PropModeReplace, (uchar *)big_chunk,
-                                ENTRY_MAX_LENGTH + 10);
-                XFlush(d2);
+            do {
+                XNextEvent(d2, &event);
+            } while ((event.type != PropertyNotify)
+                     || (event.xproperty.state != PropertyDelete)
+                     || (event.xproperty.atom != XSEL_DATA));
 
-                do {
-                    XNextEvent(d2, &event);
-                } while ((event.type != PropertyNotify)
-                         || (event.xproperty.state != PropertyDelete)
-                         || (event.xproperty.atom != XSEL_DATA));
+            XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
+                            PropModeReplace, NULL, 0);
+            XFlush(d2);
+            XCloseDisplay(d2);
+            free(big_chunk);
+            exit(0);
+        } else {
+            sleep_ms(100);
+            clipboard_incremental_case(&large_save, &large_len);
+            ASSERT_EQ(large_len, 0);
+            free2(large_save, ENTRY_MAX_LENGTH);
+            wait(NULL);
+        }
 
-                XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
-                                PropModeReplace, NULL, 0);
-                XFlush(d2);
-                XCloseDisplay(d2);
-                free(big_chunk);
-                exit(0);
-            } else {
-                sleep_ms(100);
-                clipboard_incremental_case(&large_save, &large_len);
-                ASSERT_EQ(large_len, 0);
-                free2(large_save, ENTRY_MAX_LENGTH);
-                wait(NULL);
-            }
+        small_save = NULL;
+        small_len = 0;
+        small_chunk = "small_incr_test";
+        small_chunk_len = strlen32(small_chunk);
+        incr_pid = fork();
 
-            small_save = NULL;
-            small_len = 0;
-            small_chunk = "small_incr_test";
-            small_chunk_len = strlen32(small_chunk);
-            pid = fork();
+        if (incr_pid == 0) {
+            Display *d2;
+            XEvent event;
 
-            if (pid == 0) {
-                Display *d2;
-                XEvent event;
+            d2 = XOpenDisplay(NULL);
+            XSelectInput(d2, window, PropertyChangeMask);
+            XChangeProperty(d2, window, XSEL_DATA, INCR, 32,
+                            PropModeReplace, NULL, 0);
+            XFlush(d2);
 
-                d2 = XOpenDisplay(NULL);
-                XSelectInput(d2, window, PropertyChangeMask);
-                XChangeProperty(d2, window, XSEL_DATA, INCR, 32,
-                                PropModeReplace, NULL, 0);
-                XFlush(d2);
+            do {
+                XNextEvent(d2, &event);
+            } while ((event.type != PropertyNotify)
+                     || (event.xproperty.state != PropertyDelete)
+                     || (event.xproperty.atom != XSEL_DATA));
 
-                do {
-                    XNextEvent(d2, &event);
-                } while ((event.type != PropertyNotify)
-                         || (event.xproperty.state != PropertyDelete)
-                         || (event.xproperty.atom != XSEL_DATA));
+            XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
+                            PropModeReplace, (uchar *)small_chunk,
+                            small_chunk_len);
+            XFlush(d2);
 
-                XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
-                                PropModeReplace, (uchar *)small_chunk,
-                                small_chunk_len);
-                XFlush(d2);
+            do {
+                XNextEvent(d2, &event);
+            } while ((event.type != PropertyNotify)
+                     || (event.xproperty.state != PropertyDelete)
+                     || (event.xproperty.atom != XSEL_DATA));
 
-                do {
-                    XNextEvent(d2, &event);
-                } while ((event.type != PropertyNotify)
-                         || (event.xproperty.state != PropertyDelete)
-                         || (event.xproperty.atom != XSEL_DATA));
-
-                XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
-                                PropModeReplace, NULL, 0);
-                XFlush(d2);
-                XCloseDisplay(d2);
-                exit(0);
-            } else {
-                sleep_ms(100);
-                clipboard_incremental_case(&small_save, &small_len);
-                ASSERT_EQ(small_len, small_chunk_len);
-                ASSERT_EQ(memcmp64(small_save,
-                                   small_chunk, small_chunk_len), 0);
-                free2(small_save, ENTRY_MAX_LENGTH);
-                wait(NULL);
-            }
+            XChangeProperty(d2, window, XSEL_DATA, UTF8_STRING, 8,
+                            PropModeReplace, NULL, 0);
+            XFlush(d2);
+            XCloseDisplay(d2);
+            exit(0);
+        } else {
+            sleep_ms(100);
+            clipboard_incremental_case(&small_save, &small_len);
+            ASSERT_EQ(small_len, small_chunk_len);
+            ASSERT_EQ(memcmp64(small_save, small_chunk, small_chunk_len), 0);
+            free2(small_save, ENTRY_MAX_LENGTH);
+            wait(NULL);
         }
         XCloseDisplay(display);
     }
