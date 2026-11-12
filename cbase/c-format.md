@@ -172,6 +172,11 @@ of the containing statement:
                                            + another_variable];
 ```
 
+Break after an assignment operator (`=`, `+=`, `-=`, and the other compound
+assignment operators) only when the entire statement would otherwise exceed the
+80-column limit. For example, `total += object.value;` must remain on one line
+when it fits, rather than breaking immediately after `+=`.
+
 Sometimes it might be useful to break after the assignment operator:
 ```c
     // bad
