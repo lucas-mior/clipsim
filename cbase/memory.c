@@ -299,6 +299,8 @@ realloc_debug(char *file, int32 line, char *func,
               int64 obj_size) {
     int64 old_size;
     int64 new_size;
+    DebugAllocInfo info;
+    intptr p_key;
     void *p;
     void *old_base;
     void *base_p;
@@ -333,118 +335,113 @@ realloc_debug(char *file, int32 line, char *func,
     new_size = new_capacity*obj_size;
     ASSERT_LE(new_size, MAXOF(new_size) - 2*MEMORY_PADDING);
 
-    {
-        DebugAllocInfo info;
-        intptr p_key;
+    info.size = new_size;
+    info.file = file;
+    info.line = line;
+    info.func = func;
+    info.reallocated = 0;
 
-        info.size = new_size;
-        info.file = file;
-        info.line = line;
-        info.func = func;
-        info.reallocated = 0;
+    allocations_lock();
 
-        allocations_lock();
+    if (old && (allocations == NULL)) {
+        error_impl(file, line, func,
+                   "Tried to reallocate invalid pointer: %p.", old);
+        fatal(EXIT_FAILURE);
+    } else if (allocations == NULL) {
+        allocations = hash_create_alloc_map(1024, "DebugAllocations");
+    }
+    if (old) {
+        DebugAllocInfo old_info;
+        intptr old_key = (intptr)old;
 
-        if (old && (allocations == NULL)) {
+        if (!hash_lookup_alloc_map(allocations, &old_key, &old_info)) {
             error_impl(file, line, func,
-                       "Tried to reallocate invalid pointer: %p.", old);
+                       "Tried to reallocate invalid pointer: %p.\n", old);
             fatal(EXIT_FAILURE);
-        } else if (allocations == NULL) {
-            allocations = hash_create_alloc_map(1024, "DebugAllocations");
         }
-        if (old) {
-            DebugAllocInfo old_info;
-            intptr old_key = (intptr)old;
+        if (old_info.reallocated == -1) {
+            ASSERT(MEMORY_CHECK_DOUBLE_FREE);
+            error_impl(file, line, func,
+                       "Tried to reallocate freed pointer.\n");
+            error_impl(old_info.file, old_info.line, old_info.func,
+                       "Freed here.\n");
+            fatal(EXIT_FAILURE);
+        }
+        if (old_info.size != old_size) {
+            error_impl(file, line, func,
+                       "Reallocation old size does not match size"
+                       " allocated on %s:%d: %s(): %lld != %lld\n",
+                       old_info.file, old_info.line, old_info.func,
+                       old_info.size, old_size);
+            fatal(EXIT_FAILURE);
+        }
 
-            if (!hash_lookup_alloc_map(allocations, &old_key, &old_info)) {
+        for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+            if (((uchar *)old)[-MEMORY_PADDING + j] != 0xDC) {
                 error_impl(file, line, func,
-                           "Tried to reallocate invalid pointer: %p.\n", old);
-                fatal(EXIT_FAILURE);
-            }
-            if (old_info.reallocated == -1) {
-                ASSERT(MEMORY_CHECK_DOUBLE_FREE);
-                error_impl(file, line, func,
-                           "Tried to reallocate freed pointer.\n");
+                           "Memory underflow detected before realloc.\n");
                 error_impl(old_info.file, old_info.line, old_info.func,
-                           "Freed here.\n");
+                           "Allocated here (old size = %lld bytes).\n",
+                           old_size);
                 fatal(EXIT_FAILURE);
             }
-            if (old_info.size != old_size) {
+        }
+        for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+            if (((uchar *)old)[old_size + j] != 0xDC) {
                 error_impl(file, line, func,
-                           "Reallocation old size does not match size"
-                           " allocated on %s:%d: %s(): %lld != %lld\n",
-                           old_info.file, old_info.line, old_info.func,
-                           old_info.size, old_size);
+                           "Memory overflow detected before realloc.\n");
+                error_impl(old_info.file, old_info.line, old_info.func,
+                           "Allocated here (old size = %lld bytes).\n",
+                           old_size);
                 fatal(EXIT_FAILURE);
             }
+        }
 
-            for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
-                if (((uchar *)old)[-MEMORY_PADDING + j] != 0xDC) {
-                    error_impl(file, line, func,
-                               "Memory underflow detected before realloc.\n");
-                    error_impl(old_info.file, old_info.line, old_info.func,
-                               "Allocated here (old size = %lld bytes).\n",
-                               old_size);
-                    fatal(EXIT_FAILURE);
-                }
+        info.reallocated = old_info.reallocated + 1;
+        hash_remove_alloc_map(allocations, &old_key);
+
+        if (MEMORY_CHECK_DOUBLE_FREE || MEMORY_CHECK_USE_AFTER_FREE) {
+            int64 copy_size = old_size;
+            base_p = xmalloc(new_size + 2*MEMORY_PADDING, false);
+
+            if (new_size < old_size) {
+                copy_size = new_size;
             }
-            for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
-                if (((uchar *)old)[old_size + j] != 0xDC) {
-                    error_impl(file, line, func,
-                               "Memory overflow detected before realloc.\n");
-                    error_impl(old_info.file, old_info.line, old_info.func,
-                               "Allocated here (old size = %lld bytes).\n",
-                               old_size);
-                    fatal(EXIT_FAILURE);
-                }
+            if (copy_size > 0) {
+                memcpy64((uchar *)base_p + MEMORY_PADDING, old, copy_size);
             }
 
-            info.reallocated = old_info.reallocated + 1;
-            hash_remove_alloc_map(allocations, &old_key);
-
-            if (MEMORY_CHECK_DOUBLE_FREE || MEMORY_CHECK_USE_AFTER_FREE) {
-                int64 copy_size = old_size;
-                base_p = xmalloc(new_size + 2*MEMORY_PADDING, false);
-
-                if (new_size < old_size) {
-                    copy_size = new_size;
-                }
-                if (copy_size > 0) {
-                    memcpy64((uchar *)base_p + MEMORY_PADDING, old, copy_size);
-                }
-
-                old_info.file = file;
-                old_info.line = line;
-                old_info.func = func;
-                old_info.reallocated = -1;
-                hash_insert_alloc_map(allocations, &old_key, old_info);
-                if (MEMORY_CHECK_USE_AFTER_FREE) {
-                    memset64(old, 0xCD, old_info.size);
-                }
-            } else {
-                old_base = ((uchar *)old - MEMORY_PADDING);
-                base_p = xrealloc(old_base, new_size + 2*MEMORY_PADDING);
+            old_info.file = file;
+            old_info.line = line;
+            old_info.func = func;
+            old_info.reallocated = -1;
+            hash_insert_alloc_map(allocations, &old_key, old_info);
+            if (MEMORY_CHECK_USE_AFTER_FREE) {
+                memset64(old, 0xCD, old_info.size);
             }
         } else {
-            old_base = NULL;
+            old_base = ((uchar *)old - MEMORY_PADDING);
             base_p = xrealloc(old_base, new_size + 2*MEMORY_PADDING);
         }
-
-        ptr = (uchar *)base_p;
-
-        for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
-            ptr[j] = 0xDC;
-        }
-        for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
-            ptr[MEMORY_PADDING + new_size + j] = 0xDC;
-        }
-
-        p = ptr + MEMORY_PADDING;
-        p_key = (intptr)p;
-        hash_insert_alloc_map(allocations, &p_key, info);
-
-        allocations_unlock();
+    } else {
+        old_base = NULL;
+        base_p = xrealloc(old_base, new_size + 2*MEMORY_PADDING);
     }
+
+    ptr = (uchar *)base_p;
+
+    for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+        ptr[j] = 0xDC;
+    }
+    for (int32 j = 0; j < MEMORY_PADDING; j += 1) {
+        ptr[MEMORY_PADDING + new_size + j] = 0xDC;
+    }
+
+    p = ptr + MEMORY_PADDING;
+    p_key = (intptr)p;
+    hash_insert_alloc_map(allocations, &p_key, info);
+
+    allocations_unlock();
 
     return p;
 }

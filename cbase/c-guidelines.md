@@ -194,6 +194,13 @@ preconditions; assert those instead.
   that its scope has a purpose. Declarations only inside nested control-flow
   bodies do not justify an extra outer block. `csanecheck` reports
   `AST-ARTIFICIAL-BLOCK` for redundant standalone blocks.
+  An artificial block must also occupy **at most 80%** of its enclosing
+  function body: if nearly all of a function is inside one extra scope,
+  declare those variables in the function body instead. The size is measured
+  in source bytes, from each opening brace through its matching closing brace,
+  including both braces; a block occupying exactly 80% is allowed. The limit
+  applies even when the block directly declares local variables.
+  `csanecheck` reports `AST-ARTIFICIAL-BLOCK-LARGE` above this limit.
   ```c
   // bad: no variable introduced by the extra block
   {
