@@ -902,7 +902,7 @@ assert_double_is_negative(double x) {
     uint64 sign_mask = 0x8000000000000000ull;
 
     bits.as_double = x;
-    return (bits.as_uint & sign_mask) != 0;
+    return bits.as_uint & sign_mask;
 }
 
 static bool

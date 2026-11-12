@@ -310,7 +310,7 @@ test_ryu_s2d_hex(void) {
         ASSERT_GT(len, 0);
         used = s2d(buffer, &value);
         if (((cases[i] >> 52) & 0x7ff) == 0
-            && (cases[i] & 0x000fffffffffffffull) != 0) {
+            && (cases[i] & 0x000fffffffffffffull)) {
             ASSERT_EQ(used, -FLOAT_UNDERFLOW);
         } else {
             ASSERT_EQ(used, len);
@@ -576,7 +576,7 @@ tryu_double_bits_are_subnormal(uint64 bits) {
     bool result;
 
     result = ((bits & 0x7ff0000000000000ull) == 0)
-             && ((bits & 0x000fffffffffffffull) != 0);
+             && (bits & 0x000fffffffffffffull);
     return result;
 }
 
@@ -998,7 +998,7 @@ tryu_s2f_deterministic_roundtrip(void) {
         if (!tryu_s2f_is_finite(bits)) {
             bits &= 0x7f7fffffu;
         }
-        if ((bits & 0x7f800000u) == 0 && (bits & 0x007fffffu) != 0) {
+        if ((bits & 0x7f800000u) == 0 && ((bits & 0x007fffffu))) {
             bits |= 0x00800000u;
         }
         original = tryu_s2f_from_bits(bits);

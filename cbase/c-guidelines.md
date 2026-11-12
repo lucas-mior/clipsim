@@ -1422,17 +1422,32 @@ if (pointer) {
 ASSERT(pointer != NULL);
 ```
 
-Don't check if ((enum & ENUM_BITFLAG) != 0), since true is implicit:
+Do not compare a parenthesized bitwise-AND flag test against zero with
+`!= 0`. The bitwise expression already converts to false when its result is
+zero and true otherwise. This applies to `if` and `while` conditions,
+assignments to booleans, return expressions, and other boolean contexts.
+Keep the parentheses around the bitwise expression where needed to preserve
+operator precedence. `csanecheck` reports `STYLE-BITWISE-NONZERO` for
+comparisons with literal zero in either operand order.
+
 ```c
 // bad
-if ((enum & ENUM_BITFLAG) != 0) {
-    // do stuff
+if ((enum_value & ENUM_BITWISE_FLAG) != 0) {
+    use();
 }
 
 // good
-if (enum & ENUM_BITFLAG) {
-    // do stuff
+if (enum_value & ENUM_BITWISE_FLAG) {
+    use();
 }
+
+// bad
+use_discrete_tree =
+    (resolved.capabilities.required_model & CY_SIM_MODEL_DISCRETE) != 0;
+
+// good
+use_discrete_tree =
+    (resolved.capabilities.required_model & CY_SIM_MODEL_DISCRETE);
 ```
 
 ## Assertions
