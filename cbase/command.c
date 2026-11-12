@@ -326,7 +326,7 @@ char *
 cmd_windows_argv0(Command *command, char *argv0_windows, int32 *argv0_len) {
     char *exe = ".exe";
     int64 exe_len = strlen32(exe);
-    int64 len0 = strlen32(command->argv[0]);
+    int64 len0 = command->argv_lens[0];
 
     if (len0 >= BUFSIZ) {
         error("Invalid arguments.\n");
