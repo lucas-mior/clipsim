@@ -386,6 +386,31 @@ to avoid unused function warnings when compiling the main program.
 
 ## Struct declarations
 
+When two or more pointer/length pairs are declared consecutively, group the
+pointer fields before their matching length fields. A single pointer/length pair
+is fine, and unrelated declarations between pairs break the sequence. The
+signed length fields may use `int16`, `int32`, or `int64`, with the name
+`n<array>` or `<array>_len`. This also applies to pointers to pointers.
+
+```c
+// bad: pointer and length fields are interleaved
+typedef struct BadArrays {
+    char *values;
+    int32 nvalues;
+    char **values2;
+    int64 values2_len;
+} BadArrays;
+
+// good: pointer fields precede their length fields
+typedef struct GoodArrays {
+    char *values;
+    char **values2;
+    int32 nvalues;
+    int64 values2_len;
+} GoodArrays;
+```
+
+
 Try to organize big structs in logical groups or types with empty lines:
 
 ```c
@@ -1019,6 +1044,57 @@ result encodes an error number.
       }
   }
   ```
+
+  ```c
+  // Bad: the do/while (0) is the last work in the function. Its break
+  // only skips to an unconditional return, so direct control flow is simpler.
+  do {
+      int32 inline_src_out = conn->src_out;
+      int32 inline_dst_in = conn->dst_in;
+      char *src_sys_name = "(null)";
+      char *dst_sys_name = "(null)";
+      char *src_signal_name = "(null)";
+      char *dst_signal_name = "(null)";
+      char *src_unit_name = "(none)";
+      char *dst_unit_name = "(none)";
+
+      result->warnings += 1;
+      if (!print) {
+          break;
+      }
+
+      if (src->name) {
+          src_sys_name = src->name;
+      }
+      if (dst->name) {
+          dst_sys_name = dst->name;
+      }
+      if (src->sig->outputs[inline_src_out]) {
+          src_signal_name = src->sig->outputs[inline_src_out];
+      }
+      if (dst->sig->inputs[inline_dst_in]) {
+          dst_signal_name = dst->sig->inputs[inline_dst_in];
+      }
+      if (cy_unit_name(&src->sig->output_units[inline_src_out])) {
+          src_unit_name =
+              cy_unit_name(&src->sig->output_units[inline_src_out]);
+      }
+      if (cy_unit_name(&dst->sig->input_units[inline_dst_in])) {
+          dst_unit_name = cy_unit_name(&dst->sig->input_units[inline_dst_in]);
+      }
+
+      error("Consistency warning: connected subsystem units do not match: "
+            "%s.%s [%s] -> %s.%s [%s]\n",
+            src_sys_name, src_signal_name, src_unit_name,
+            dst_sys_name, dst_signal_name, dst_unit_name);
+  } while (0);
+  return;
+  ```
+
+  The checker reports `STYLE-FINAL-DO-WHILE-ZERO` when a function ends
+  with a `do { ... } while (0);` or has only a simple `return` after it.
+  This does not apply to multi-statement macro wrappers, nested loops,
+  or a one-pass block followed by meaningful shared work.
 
   ```c
   // Useful single-pass region: cleanup must run on success and failure.
