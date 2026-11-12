@@ -244,9 +244,8 @@ thread_pool_worker(void *arg) {
 }
 
 static void
-thread_pool_start_worker(int32 worker_index) {
-    xpthread_create(&thread_pool_threads[worker_index], NULL,
-                    thread_pool_worker, NULL);
+thread_pool_start_worker(int32 i) {
+    xpthread_create(&thread_pool_threads[i], NULL, thread_pool_worker, NULL);
     return;
 }
 
@@ -332,7 +331,7 @@ thread_pool_worker(void *arg) {
 }
 
 static void
-thread_pool_start_worker(int32 worker_index) {
+thread_pool_start_worker(int32 i) {
     HANDLE thread;
 
     thread = CreateThread(NULL, 0, thread_pool_worker, NULL, 0, NULL);
@@ -340,7 +339,7 @@ thread_pool_start_worker(int32 worker_index) {
         error("Error creating thread: %llu.\n", (ullong)GetLastError());
         fatal(EXIT_FAILURE);
     }
-    thread_pool_threads[worker_index] = thread;
+    thread_pool_threads[i] = thread;
     return;
 }
 
@@ -517,9 +516,8 @@ parallel_for_max_threads_min_items(
         }
 
         thread_pool_queue.items[thread_pool_queue.tail] = &slices[i];
-        thread_pool_queue.tail =
-            (thread_pool_queue.tail + 1)
-            % LENGTH(thread_pool_queue.items);
+        thread_pool_queue.tail = (thread_pool_queue.tail + 1)
+                                    % LENGTH(thread_pool_queue.items);
         thread_pool_queue.count += 1;
         thread_pool_work_pending += 1;
         thread_pool_signal_new_work();

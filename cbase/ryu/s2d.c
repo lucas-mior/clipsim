@@ -39,7 +39,7 @@
 #define DOUBLE_EXPONENT_BITS 11
 #define DOUBLE_EXPONENT_BIAS 1023
 
-#if CC_MSVC
+#if defined(_MSC_VER)
 #include <intrin.h>
 
 static inline uint32
@@ -370,6 +370,7 @@ ryu_decimal_extended(const char *buffer, int32 parsed_len,
     int32 approximate_len = 0;
     int64 approximate_exponent;
     double estimate;
+    int32 status;
 
     if (order >= 309) {
         bits = 0x7ff0000000000000ull;
@@ -440,8 +441,8 @@ ryu_decimal_extended(const char *buffer, int32 parsed_len,
             approximate_len += 1;
         }
     }
-    ASSERT_GE(abs(s2d_n(approximate, approximate_len, &estimate)),
-              FLOAT_UNDERFLOW);
+    status = s2d_n(approximate, approximate_len, &estimate);
+    assert(status > 0 || status == -FLOAT_UNDERFLOW);
     memcpy(&bits, &estimate, SIZEOF(bits));
     if (bits == 0x7ff0000000000000ull) {
         bits -= 1;
@@ -800,7 +801,8 @@ ryu_hex_lower_nonzero(uint64 prefix, int32 lower_prefix_bits, bool sticky) {
 }
 
 static uint64
-ryu_hex_round(uint64 prefix, int32 prefix_bits, int32 kept_bits, bool sticky) {
+ryu_hex_round(uint64 prefix, int32 prefix_bits, int32 kept_bits,
+              bool sticky) {
     int32 discarded_prefix_bits = prefix_bits - kept_bits;
     int32 lower_prefix_bits = discarded_prefix_bits - 1;
     uint64 significand = prefix >> discarded_prefix_bits;
@@ -1007,7 +1009,8 @@ ryu_parse_hex_double(const char *buffer, int32 len, int32 index,
             } else if (kept_bits == 0) {
                 int32 lower_prefix_bits = prefix_bits - 1;
 
-                if (ryu_hex_lower_nonzero(prefix, lower_prefix_bits, sticky)) {
+                if (ryu_hex_lower_nonzero(prefix, lower_prefix_bits,
+                                          sticky)) {
                     significand = 1;
                 }
             }
@@ -1034,7 +1037,8 @@ ryu_parse_hex_double(const char *buffer, int32 len, int32 index,
 }
 
 static int32
-ryu_parse_nondecimal_double(const char *buffer, int32 len, double *result) {
+ryu_parse_nondecimal_double(const char *buffer, int32 len,
+                            double *result) {
     int32 index = 0;
     bool negative = false;
     int32 status;

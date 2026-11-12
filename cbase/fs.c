@@ -394,7 +394,7 @@ realpath(char *path, char *resolved_path) {
     }
 
     result = _fullpath(buffer, path, PATH_MAX);
-    if (result) {
+    if (result != NULL) {
         char long_buffer[PATH_MAX];
         DWORD capacity = (DWORD)SIZEOF(long_buffer);
         DWORD len;

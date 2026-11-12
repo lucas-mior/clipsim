@@ -206,6 +206,7 @@ memmem64(void *haystack, int64 haystack_len, void *needle, int64 needle_len) {
         return NULL;
     }
 
+
     ASSERT(haystack != NULL);
     ASSERT(needle != NULL);
 
@@ -272,7 +273,7 @@ getopt_long(
     if ((arg[0] != '-') || (arg[1] == '\0')) {
         return -1;
     }
-    if (strequal(arg, "--")) {
+    if (strcmp(arg, "--") == 0) {
         optind += 1;
         return -1;
     }
@@ -824,7 +825,7 @@ void
 xkill(pid_t pid, int signum) {
     if (kill(pid, signum) < 0) {
         char *name = signal_get_name(signum);
-        if (name) {
+        if (name != NULL) {
             error("Error sending signal %d=%s to %d: %s.\n",
                   signum, name, pid, strerror(errno));
         } else {
@@ -981,13 +982,13 @@ test_cmd_exists(char *command) {
 #define ENUM_BITFLAGS 0
 #define ENUM_PREFIX_ WEEK_DAY_
 #define ENUM_FIELDS \
-    XX(WEEK_DAY_SUNDAY, "sunday")  \
-    XX(WEEK_DAY_MONDAY, "monday")  \
-    XX(WEEK_DAY_TUESDAY, "tuesday") \
+    XX(WEEK_DAY_SUNDAY, sunday)    \
+    XX(WEEK_DAY_MONDAY, monday)    \
+    XX(WEEK_DAY_TUESDAY, tuesday)  \
     XX(WEEK_DAY_WEDNESDAY)         \
     XX(WEEK_DAY_THURSDAY)          \
-    XX(WEEK_DAY_FRIDAY, "friday")  \
-    XX(WEEK_DAY_SATURDAY, "saturday")
+    XX(WEEK_DAY_FRIDAY, friday)    \
+    XX(WEEK_DAY_SATURDAY, saturday)
 #include "xenums.c"
 
 #define ENUM_NAME PowerOfTwo
@@ -1103,27 +1104,29 @@ main(int argc, char **argv) {
 
     util_test_mem_literal_short();
 
-    ASSERT_GLOB_MATCH("", "");
-    ASSERT_GLOB_MATCH("", "*");
-    ASSERT_GLOB_MATCH("abc", "abc");
-    ASSERT_GLOB_MATCH("abc", "*");
-    ASSERT_GLOB_MATCH("abc", "a*");
-    ASSERT_GLOB_MATCH("abc", "*c");
-    ASSERT_GLOB_MATCH("abc", "a*c");
-    ASSERT_GLOB_MATCH("abc", "a**c");
-    ASSERT_GLOB_MATCH("abc", "*b*");
-    ASSERT_GLOB_MATCH("abc", "a*b*c");
-    ASSERT_GLOB_MATCH("abbc", "a*bc");
-    ASSERT_GLOB_MATCH("abc", "abc*");
-    ASSERT_GLOB_MATCH("abc", "*abc");
+    {
+        ASSERT_GLOB_MATCH("", "");
+        ASSERT_GLOB_MATCH("", "*");
+        ASSERT_GLOB_MATCH("abc", "abc");
+        ASSERT_GLOB_MATCH("abc", "*");
+        ASSERT_GLOB_MATCH("abc", "a*");
+        ASSERT_GLOB_MATCH("abc", "*c");
+        ASSERT_GLOB_MATCH("abc", "a*c");
+        ASSERT_GLOB_MATCH("abc", "a**c");
+        ASSERT_GLOB_MATCH("abc", "*b*");
+        ASSERT_GLOB_MATCH("abc", "a*b*c");
+        ASSERT_GLOB_MATCH("abbc", "a*bc");
+        ASSERT_GLOB_MATCH("abc", "abc*");
+        ASSERT_GLOB_MATCH("abc", "*abc");
 
-    ASSERT_GLOB_NO_MATCH("", "a");
-    ASSERT_GLOB_NO_MATCH("abc", "");
-    ASSERT_GLOB_NO_MATCH("abc", "abd");
-    ASSERT_GLOB_NO_MATCH("abc", "a*d");
-    ASSERT_GLOB_NO_MATCH("abc", "ab*d");
-    ASSERT_GLOB_NO_MATCH("abc", "*d");
-    ASSERT_GLOB_NO_MATCH("abc", "a*c*d");
+        ASSERT_GLOB_NO_MATCH("", "a");
+        ASSERT_GLOB_NO_MATCH("abc", "");
+        ASSERT_GLOB_NO_MATCH("abc", "abd");
+        ASSERT_GLOB_NO_MATCH("abc", "a*d");
+        ASSERT_GLOB_NO_MATCH("abc", "ab*d");
+        ASSERT_GLOB_NO_MATCH("abc", "*d");
+        ASSERT_GLOB_NO_MATCH("abc", "a*c*d");
+    }
 
     {
         int a = 10;
@@ -1168,12 +1171,14 @@ main(int argc, char **argv) {
 
     rand_int_seed((uint64)time(NULL));
 
-    rand_int_seed(1234);
-    for (int32 i = 0; i < 100; i += 1) {
-        double value = rand_float();
+    {
+        rand_int_seed(1234);
+        for (int32 i = 0; i < 100; i += 1) {
+            double value = rand_float();
 
-        ASSERT_GE(value, 0.0);
-        ASSERT_LT(value, 1.0);
+            ASSERT_GE(value, 0.0);
+            ASSERT_LT(value, 1.0);
+        }
     }
 
     {
@@ -1193,6 +1198,7 @@ main(int argc, char **argv) {
             seen[values[i]] = true;
         }
     }
+
 
     {
         int32 arr[] = {10, 5, 20, 1,};

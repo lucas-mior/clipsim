@@ -32,7 +32,7 @@
 #define FLOAT_EXPONENT_BITS 8
 #define FLOAT_EXPONENT_BIAS 127
 
-#if CC_MSVC
+#if defined(_MSC_VER)
 #include <intrin.h>
 
 static inline uint32

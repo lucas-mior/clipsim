@@ -43,9 +43,12 @@ _Static_assert(SIZEOF(double)*CHAR_BIT == 64,
 
 void assert_error(char *, int32, char *,
                   char *, ...) ATTR_PRINTF(4, 5);
-bool assert_file_contains(char *, int32, char *, char *, char *);
-bool assert_contains(char *, int32, char *, char *, int32, char *);
-bool assert_not_contains(char *, int32, char *, char *, int32, char *);
+bool assert_file_contains(char *, int32, char *,
+                          char *, char *);
+bool assert_contains(char *, int32, char *,
+                     char *, int32, char *);
+bool assert_not_contains(char *, int32, char *,
+                         char *, int32, char *);
 bool assert_glob_match_impl(char *, int32, char *,
                             char *, char *, char *, int32,
                             char *, int32, bool);
@@ -272,6 +275,19 @@ bool UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_CLOSE_SECOND(void);
         if (DEBUGGING) {                                           \
             assert_error(__FILE__, __LINE__, FUNC__,               \
                          "%s = %p == NULL\n", #VAR1, ASSERT_NULL); \
+            TRAP();                                                \
+        } else {                                                   \
+            UNREACHABLE();                                         \
+        }                                                          \
+    }                                                              \
+} while (0)
+
+#define ASSERT_ZERO(VAR1) do {                                     \
+    llong ASSERT_ZERO = VAR1;                                      \
+    if (ASSERT_ZERO != 0) {                                        \
+        if (DEBUGGING) {                                           \
+            assert_error(__FILE__, __LINE__, FUNC__,               \
+                         "%s = %lld == 0\n", #VAR1, ASSERT_ZERO);  \
             TRAP();                                                \
         } else {                                                   \
             UNREACHABLE();                                         \
