@@ -1093,8 +1093,43 @@ result encodes an error number.
 
   The checker reports `STYLE-FINAL-DO-WHILE-ZERO` when a function ends
   with a `do { ... } while (0);` or has only a simple `return` after it.
-  This does not apply to multi-statement macro wrappers, nested loops,
-  or a one-pass block followed by meaningful shared work.
+  It also reports a one-shot loop that assigns a flag immediately before
+  `break`, followed directly by an `if` that only uses that flag to return.
+  This includes code that continues after the conditional return. The rule
+  does not apply to multi-statement macro wrappers, unrelated work between
+  the loop and the return guard, or cleanup performed by that guard.
+
+  ```c
+  // Bad: the break only passes a flag to the following return check.
+  bool symbols_equal = false;
+  do {
+      char *src_name = cy_unit_name(src_unit);
+      char *dst_name = cy_unit_name(dst_unit);
+
+      if (src_name == NULL || dst_name == NULL) {
+          symbols_equal = src_name == dst_name;
+          break;
+      }
+      symbols_equal = STREQUAL(src_name, strlen32(src_name), dst_name,
+                               strlen32(dst_name));
+  } while (0);
+  if (symbols_equal) {
+      return;
+  }
+
+  // Good: use the condition to return directly without a synthetic loop.
+  char *src_name = cy_unit_name(src_unit);
+  char *dst_name = cy_unit_name(dst_unit);
+
+  if (src_name == NULL || dst_name == NULL) {
+      if (src_name == dst_name) {
+          return;
+      }
+  } else if (STREQUAL(src_name, strlen32(src_name), dst_name,
+                      strlen32(dst_name))) {
+      return;
+  }
+  ```
 
   ```c
   // Useful single-pass region: cleanup must run on success and failure.
