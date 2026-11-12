@@ -1093,8 +1093,12 @@ result encodes an error number.
 
   The checker reports `STYLE-FINAL-DO-WHILE-ZERO` when a function ends
   with a `do { ... } while (0);` or has only a simple `return` after it.
-  It also reports a one-shot loop that assigns a flag immediately before
-  `break`, followed directly by an `if` that only uses that flag to return.
+  The same applies when the loop is followed only by a fixed boolean-like
+  member assignment (for example, `job->committed = true;`) and a simple
+  `return`. A computed assignment or actual cleanup after the loop remains
+  legitimate shared work. It also reports a one-shot loop that assigns a flag
+  immediately before `break`, followed directly by an `if` that only uses
+  that flag to return.
   This includes code that continues after the conditional return. The rule
   does not apply to multi-statement macro wrappers, unrelated work between
   the loop and the return guard, or cleanup performed by that guard.
