@@ -704,6 +704,26 @@ if (fields == (FIELD_T1 | FIELD_NSTEPS)) {
 }
 ```
 
+When a long `if` or `else if` header must stay multiline, do not put its
+final comparison on a separate line if that comparison and the preceding line
+fit together within the 80-column limit. This applies to `==`, `!=`, `<`,
+`<=`, `>` and `>=`; `FMT-IF-COMPARATOR-WRAP` reports unnecessary breaks.
+The check does not force joins across comments or preprocessor directives,
+or within compound logical conditions.
+
+```c
+// bad: the final comparison fits on the preceding line
+if ((status = CY_OPTIONS_GET_FOR_GROUP(generic, "composite", name,
+                                       &integer))
+    < 0) {
+}
+
+// good
+if ((status = CY_OPTIONS_GET_FOR_GROUP(generic, "composite", name,
+                                       &integer)) < 0) {
+}
+```
+
 ## Function declaration and definition
 
 In the definition, put a newline before the function name and parameters:

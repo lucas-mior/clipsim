@@ -152,8 +152,7 @@ lstat(const char *path, struct stat *statbuf) {
     wide_path_size = wide_path_length*SIZEOF(*wide_path);
     wide_path = malloc2(wide_path_size);
     if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1,
-                            wide_path, wide_path_length)
-        != wide_path_length) {
+                            wide_path, wide_path_length) != wide_path_length) {
         error_code = GetLastError();
         free2(wide_path, wide_path_size);
         windows_set_errno(error_code);
