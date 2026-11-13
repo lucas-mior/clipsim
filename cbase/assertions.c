@@ -536,7 +536,7 @@ assert_equal_4(char *file, int32 line, char *func,
     if ((var1 == NULL) && (var2 == NULL)) {
         return true;
     }
-    if (memcmp64(var1, var2, var1_len) != 0) {
+    if (memcmp64(var1, var2, var1_len)) {
         if (DEBUGGING) {
             assert_error(file, line, func,
                          "%s = %.*s == %.*s = %s\n",

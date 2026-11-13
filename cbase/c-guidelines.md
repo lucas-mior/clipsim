@@ -822,6 +822,24 @@ Instead use:
 - `ENDS_WITH(string, string_len, "suffix_as_literal")` or
   `ENDS_WITH(string, string_len, suffix, suffix_len)`
 
+Never pre-check the string length against a prefix or suffix length with
+`>=` or `>` immediately before `BEGINS_WITH` or `ENDS_WITH`. These macros
+already handle shorter strings safely. `csanecheck` reports
+`STYLE-STRING-LENGTH-GUARD` when a comparison on the same length expression
+is joined with `&&` to either macro.
+
+```c
+// bad
+if (name->len >= 6 && ENDS_WITH(name->text, name->len, "_count")) {
+    use();
+}
+
+// good
+if (ENDS_WITH(name->text, name->len, "_count")) {
+    use();
+}
+```
+
 ## Standard-library wrappers
 
 Use the project's own `int64`/`int32` wrappers for useful standard-library
@@ -1023,6 +1041,12 @@ result encodes an error number.
   `for` or `while`. Consequently, it cannot replace `goto` for jumping out of
   multiple nested loops. Multi-statement macros using `do { ... } while (0)`
   as a single-statement wrapper are a separate use of the idiom.
+- A function-level `do { ... } while (0);` must contain an `if`- or
+  `else`-guarded `break;` that actually exits that one-shot loop. Without
+  such an early exit, use a normal block or direct statements instead.
+  Unconditional `break;` does not justify the wrapper, nor does a `break;`
+  in a nested loop or `switch`. The checker reports
+  `STYLE-DO-WHILE-ZERO-COND-BREAK` for these cases; macro wrappers are exempt.
 
   ```c
   // Bad: after the artificial loop there is no shared work, only a return.

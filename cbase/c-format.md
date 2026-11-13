@@ -137,6 +137,25 @@ Important: only try 2 if 1 does not work, only try 3 if 2 and 1 do not work,
 only try 4 if 1, 2, and 3 do not work, and so on. Remember to do a final pass,
 do the alignment, as explained in 2.
 
+### Keep the first `SIZEOF` operand on the opening line
+
+Never break immediately after `SIZEOF(`, even if a comment separates the
+opening parenthesis from its operand. Move the operand to the opening line,
+and wrap the containing expression elsewhere if necessary.
+
+```c
+// bad
+free2(ctrl->delay_U,
+      ctrl->delay_U_capacity_steps*ninputs*SIZEOF(
+          *ctrl->delay_U));
+
+// good
+free2(ctrl->delay_U,
+      ctrl->delay_U_capacity_steps*ninputs*SIZEOF(*ctrl->delay_U));
+```
+
+The checker reports `FMT-SIZEOF-FIRST` for this formatting violation.
+
 ## Array indexing
 Similar to the function calls rules above, never break immediately after the
 opening bracket:
@@ -157,6 +176,18 @@ Sometimes it might be useful to break at arithmetic operators:
     // good
     int32 value = my_array_has_a_long_name[variable_long_name*cols
                                            + another_variable];
+```
+
+If joining a multiline array subscript (including the surrounding text on
+its first and last lines) fits within the 80-column limit, keep it on one line.
+The checker reports `FMT-ARRAY-WRAP` for unnecessary breaks inside a subscript:
+```c
+    // bad
+    nmpc->du_qf = nmpc->plan[boiler_nmpc_plan_idx(0,
+                                                  BOILER_NMPC_MOVE_QF)];
+
+    // good
+    nmpc->du_qf = nmpc->plan[boiler_nmpc_plan_idx(0, BOILER_NMPC_MOVE_QF)];
 ```
 
 When an index expression spans multiple lines, align each continuation line
