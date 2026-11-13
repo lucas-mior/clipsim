@@ -404,6 +404,9 @@ is_ident(int32 c) {
     return is_alnum(c) || c == '_';
 }
 
+char ascii_normalization_lower(char c);
+char ascii_normalization_upper(char c);
+
 // Caller-owned parsed-format storage. Treat all fields as implementation
 // details. Normal format strings include at most 255 bytes plus the null
 // terminator. Cached plans keep a pointer to at most 127 format bytes plus the

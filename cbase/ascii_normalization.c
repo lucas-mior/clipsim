@@ -6,7 +6,7 @@
 
 #include "cbase.h"
 
-static char
+char
 ascii_normalization_lower(char c) {
     if ((c >= 'A') && (c <= 'Z')) {
         c = (char)(c - 'A' + 'a');
@@ -15,7 +15,7 @@ ascii_normalization_lower(char c) {
     return c;
 }
 
-static char
+char
 ascii_normalization_upper(char c) {
     if ((c >= 'a') && (c <= 'z')) {
         c = (char)(c - 'a' + 'A');

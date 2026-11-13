@@ -1990,3 +1990,19 @@ double x = 2.0*a_long_variable
 - color -> color (not col)
 - index -> idx
 - parameter -> param
+
+## More on if conditions
+```c
+// bad (the comparison fits in the previous line but the line is wrapped):
+    if ((status = CY_OPTIONS_GET_FOR_GROUP(generic, "composite", name,
+                                           &integer))
+        < 0) {
+        work();
+    }
+
+// good (no unnecessary wrap)
+    if ((status = CY_OPTIONS_GET_FOR_GROUP(generic, "composite", name,
+                                           &integer)) < 0) {
+        work();
+    }
+```
