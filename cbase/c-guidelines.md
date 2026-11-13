@@ -1990,6 +1990,7 @@ double x = 2.0*a_long_variable
 - color -> color (not col)
 - index -> idx
 - parameter -> param
+- reference -> ref
 
 ## More on if conditions
 ```c
