@@ -357,18 +357,14 @@ append_c_digits(uint32 count, uint32 digits, char *result) {
 
     // Copy pairs of digits from ryu_digit_table.
     for (; i < count - 1; i += 2) {
-        uint32 c;
-
-        c = (digits % 100) << 1;
+        uint32 c = (digits % 100) << 1;
         digits /= 100;
         memcpy(result + count - i - 2, ryu_digit_table + c, 2);
     }
 
     // Generate the last digit if count is odd.
     if (i < count) {
-        char c;
-
-        c = (char)('0' + (digits % 10));
+        char c = (char)('0' + (digits % 10));
         result[count - i - 1] = c;
     }
     return;
@@ -521,13 +517,9 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
     }
 
     if (e2 >= -52) {
-        uint32 idx;
-        uint32 p10bits;
-        int32 len;
-
-        idx = e2 < 0 ? 0 : index_for_exponent((uint32)e2);
-        p10bits = pow10_bits_for_index(idx);
-        len = (int32)length_for_index(idx);
+        uint32 idx = e2 < 0 ? 0 : index_for_exponent((uint32)e2);
+        uint32 p10bits = pow10_bits_for_index(idx);
+        int32 len = (int32)length_for_index(idx);
 #if defined(RYU_DEBUG)
         fmt_printf("idx=%u\n", idx);
         fmt_printf("len=%d\n", len);

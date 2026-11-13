@@ -396,9 +396,8 @@ realpath(char *path, char *resolved_path) {
     if (result) {
         char long_buffer[PATH_MAX];
         DWORD capacity = (DWORD)SIZEOF(long_buffer);
-        DWORD len;
+        DWORD len = GetLongPathNameA(buffer, long_buffer, capacity);
 
-        len = GetLongPathNameA(buffer, long_buffer, capacity);
         if ((len > 0) && (len < capacity)) {
             memcpy64(buffer, long_buffer, len + 1);
         }

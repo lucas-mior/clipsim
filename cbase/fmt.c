@@ -1454,9 +1454,7 @@ fmt_big_uint_has_low_bits(FormatBigUInt *value, int32 bits) {
         }
     }
     if (partial_bits != 0 && full_words < value->len) {
-        uint32 mask;
-
-        mask = (UINT32_C(1) << partial_bits) - 1;
+        uint32 mask = (UINT32_C(1) << partial_bits) - 1;
         if (value->words[full_words] & mask) {
             return true;
         }
@@ -1501,9 +1499,7 @@ fmt_big_uint_mul_small(FormatBigUInt *value, uint32 factor) {
 
     carry = 0;
     for (int32 i = 0; i < value->len; i += 1) {
-        uint64 product;
-
-        product = (uint64)value->words[i]*factor + carry;
+        uint64 product = (uint64)value->words[i]*factor + carry;
         value->words[i] = (uint32)product;
         carry = product >> 32;
     }
@@ -2043,11 +2039,8 @@ fmt_float_hex_fraction_digits(uint64 fraction, char *digits, bool upper) {
     ASSERT(digits != NULL);
 
     for (int32 i = 0; i < FMT_DOUBLE_HEX_DIGITS; i += 1) {
-        int32 shift;
-        int32 digit;
-
-        shift = FMT_DOUBLE_FRACTION_BITS - 4*(i + 1);
-        digit = (int32)((fraction >> shift) & 0xf);
+        int32 shift = FMT_DOUBLE_FRACTION_BITS - 4*(i + 1);
+        int32 digit = (int32)((fraction >> shift) & 0xf);
         digits[i] = fmt_hex_digit_char(digit, upper);
     }
     return;
@@ -2106,9 +2099,7 @@ fmt_float_hex_round(char *first_digit, char *digits, int32 precision,
     }
 
     for (int32 i = precision - 1; i >= 0; i -= 1) {
-        int32 digit;
-
-        digit = fmt_hex_digit_value(digits[i]);
+        int32 digit = fmt_hex_digit_value(digits[i]);
         if (digit < 15) {
             digits[i] = fmt_hex_digit_char(digit + 1, upper);
             return;
@@ -2905,9 +2896,7 @@ fmt_ldouble_hex_fraction_digits(FormatBinaryFloat *parts,
 
         digit = 0;
         for (int32 j = 0; j < 4; j += 1) {
-            int32 bit_index;
-
-            bit_index = fraction_bits - 1 - i*4 - j;
+            int32 bit_index = fraction_bits - 1 - i*4 - j;
             if (bit_index >= 0
                 && fmt_binary_float_test_significand_bit(parts, bit_index)) {
                 digit |= 1 << (3 - j);
@@ -2977,9 +2966,7 @@ fmt_ldouble_hex_round(char *first_digit, char *digits,
     }
 
     for (int32 i = precision - 1; i >= 0; i -= 1) {
-        int32 digit;
-
-        digit = fmt_hex_digit_value(digits[i]);
+        int32 digit = fmt_hex_digit_value(digits[i]);
         if (digit < 15) {
             digits[i] = fmt_hex_digit_char(digit + 1, upper);
             return;
@@ -4724,9 +4711,7 @@ fmt_strftime_format(FormatSink *sink, char *format,
             break;
         }
         case 'U': {
-            int32 week;
-
-            week = (time_info->tm_yday + 7 - time_info->tm_wday)/7;
+            int32 week = (time_info->tm_yday + 7 - time_info->tm_wday)/7;
             fmt_strftime_write_number(sink, week, 2, '0');
             break;
         }
@@ -4743,9 +4728,7 @@ fmt_strftime_format(FormatSink *sink, char *format,
             break;
         case 'W': {
             int32 monday_weekday = (time_info->tm_wday + 6)%7;
-            int32 week;
-
-            week = (time_info->tm_yday + 7 - monday_weekday)/7;
+            int32 week = (time_info->tm_yday + 7 - monday_weekday)/7;
             fmt_strftime_write_number(sink, week, 2, '0');
             break;
         }
