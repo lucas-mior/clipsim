@@ -54,6 +54,45 @@ static char *signal_names[] = {
 #undef XSIGNAL
 #endif
 
+#define XX(NAME) [NAME] = #NAME
+static char *error_names[] = {
+    XX(EPERM),
+    XX(ENOENT),
+    XX(ESRCH),
+    XX(EINTR),
+    XX(EIO),
+    XX(ENXIO),
+    XX(E2BIG),
+    XX(ENOEXEC),
+    XX(EBADF),
+    XX(ECHILD),
+    XX(EAGAIN),
+    XX(ENOMEM),
+    XX(EACCES),
+    XX(EFAULT),
+    XX(ENOTBLK),
+    XX(EBUSY),
+    XX(EEXIST),
+    XX(EXDEV),
+    XX(ENODEV),
+    XX(ENOTDIR),
+    XX(EISDIR),
+    XX(EINVAL),
+    XX(ENFILE),
+    XX(EMFILE),
+    XX(ENOTTY),
+    XX(ETXTBSY),
+    XX(EFBIG),
+    XX(ENOSPC),
+    XX(ESPIPE),
+    XX(EROFS),
+    XX(EMLINK),
+    XX(EPIPE),
+    XX(EDOM),
+    XX(ERANGE),
+};
+#undef XX
+
 char *
 signal_get_name(int32 signum) {
 #if OS_UNIX
