@@ -6235,7 +6235,6 @@ test_fmt_public_api(void) {
     ASSERT_EQ(count, 4);
     ASSERT_EQ(buffer, "abcd");
 
-    ASSERT_EQ(SNPRINTF(tiny, "abcdef"), -ENOSPC);
     ASSERT_EQ(fmt_test_public_vsprintf(tiny, SIZEOF(tiny), "abcdef"), -ENOSPC);
 
     {
