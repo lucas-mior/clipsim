@@ -356,11 +356,11 @@ main(void) {
     ASSERT_EQ(parse_integer(SL("0123"), &result), 4);
     ASSERT_EQ(result, 123);
     ASSERT_EQ(parse_integer(SL("0b1111111111111111111111111111111"
-                                   "11111111111111111111111111111111"),
+                               "11111111111111111111111111111111"),
                             &result), 65);
     ASSERT_EQ(result, LLONG_MAX);
     ASSERT_EQ(parse_integer(SL("-0b1000000000000000000000000000000"
-                                   "000000000000000000000000000000000"),
+                               "000000000000000000000000000000000"),
                             &result), 67);
     ASSERT_EQ(result, LLONG_MIN);
     ASSERT_EQ(parse_integer(SL("0o777777777777777777777"), &result),
@@ -382,7 +382,7 @@ main(void) {
     ASSERT_EQ(parse_integer(SL("-9223372036854775809"), &result),
               -ERANGE);
     ASSERT_EQ(parse_integer(SL("0b10000000000000000000000000000000"
-                                   "00000000000000000000000000000000"),
+                               "00000000000000000000000000000000"),
                             &result), -ERANGE);
     ASSERT_EQ(parse_integer(SL("0o1000000000000000000000"), &result),
               -ERANGE);
@@ -444,10 +444,10 @@ main(void) {
     ASSERT_EQ(atoi_base(SL("0x7fffffffffffffff")), LLONG_MAX);
     ASSERT_EQ(atoi_base(SL("-0x8000000000000000")), LLONG_MIN);
     ASSERT_EQ(atoi_base(SL("0b1111111111111111111111111111111"
-                               "11111111111111111111111111111111")),
+                           "11111111111111111111111111111111")),
               LLONG_MAX);
     ASSERT_EQ(atoi_base(SL("-0b1000000000000000000000000000000"
-                               "000000000000000000000000000000000")),
+                           "000000000000000000000000000000000")),
               LLONG_MIN);
 #if OS_UNIX
     ASSERT_TRAPS(atoi_base(SL("0x8000000000000000")));

@@ -1788,12 +1788,7 @@ main(int argc, char **argv) {
 
     cmd_env_push(&cmd, "CMD_TEST_VALUE=works");
     cmd_env_printf(&cmd, "CMD_TEST_NUMBER=%d", 42);
-    CMD_PUSH(&cmd,
-                 "sh",
-                 "-c",
-                 "printf %s:%s "
-                 "$CMD_TEST_VALUE "
-                 "$CMD_TEST_NUMBER");
+    CMD_PUSH(&cmd, "sh", "-c", "printf %s:%s $CMD_TEST_VALUE $CMD_TEST_NUMBER");
     ASSERT_EQ((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)), 0);
     ASSERT_EQ(cmd.result.stdout_output, "works:42");
     cmd_env_clear(&cmd);

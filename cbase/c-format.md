@@ -285,6 +285,10 @@ assignments, macro definitions, array declarations, string literals, etc:
    reducing the name of local variables and local static functions, but if
    unavoidable, prefer to break them at punctuation or right before prepositions
    and conjuctions (of, in, to, with, on, and, but, or, because, if, etc).
+   Adjacent string literals on separate source lines must be combined when the
+   complete resulting line, including the surrounding expression, fits the
+   configured column limit. This also applies inside `SL()`.
+   `csanecheck` reports `FMT-STRING-SPLIT` for unnecessary splits.
 
 ## Identation
 When breaking long lines that are long expressions, try to make them readable

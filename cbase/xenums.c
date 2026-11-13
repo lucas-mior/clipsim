@@ -888,11 +888,11 @@ main(void) {
     ASSERT(TEST_STRICT_FLAGS_parse(SL("TEST_STRICT_FLAGS_READ"))
            == TEST_STRICT_FLAGS_READ);
     ASSERT(TEST_STRICT_FLAGS_parse(SL("TEST_STRICT_FLAGS_READ|"
-                                          "TEST_STRICT_FLAGS_EXEC"))
+                                      "TEST_STRICT_FLAGS_EXEC"))
            == (TEST_STRICT_FLAGS_READ | TEST_STRICT_FLAGS_EXEC));
     ASSERT(TEST_STRICT_FLAGS_parse(SL("READ")) == TEST_STRICT_FLAGS_NONE);
     ASSERT(TEST_STRICT_FLAGS_parse(SL("TEST_STRICT_FLAGS_READ | "
-                                          "TEST_STRICT_FLAGS_EXEC"))
+                                      "TEST_STRICT_FLAGS_EXEC"))
            == TEST_STRICT_FLAGS_NONE);
 
     {
@@ -928,15 +928,11 @@ main(void) {
     ASSERT(TEST_NORMAL_parse(SL("TEST_NORMAL_APPLE")) == TEST_NORMAL_APPLE);
     ASSERT(TEST_NORMAL_parse(SL("BANANA")) == TEST_NORMAL_BANANA);
     ASSERT(TEST_NORMAL_parse(SL("banana")) == TEST_NORMAL_BANANA);
-    ASSERT(TEST_NORMAL_parse(SL("TEST_NORMAL_CHERRY"))
-           == TEST_NORMAL_CHERRY);
+    ASSERT(TEST_NORMAL_parse(SL("TEST_NORMAL_CHERRY")) == TEST_NORMAL_CHERRY);
     ASSERT(TEST_NORMAL_parse(SL("cherry")) == TEST_NORMAL_CHERRY);
-    ASSERT(TEST_NORMAL_parse(SL("peanut_butter"))
-           == TEST_NORMAL_PEANUT_BUTTER);
-    ASSERT(TEST_NORMAL_parse(SL("PeAnUt BuTtEr"))
-           == TEST_NORMAL_PEANUT_BUTTER);
-    ASSERT(TEST_NORMAL_parse(SL("PEANUT-BUTTER"))
-           == TEST_NORMAL_PEANUT_BUTTER);
+    ASSERT(TEST_NORMAL_parse(SL("peanut_butter")) == TEST_NORMAL_PEANUT_BUTTER);
+    ASSERT(TEST_NORMAL_parse(SL("PeAnUt BuTtEr")) == TEST_NORMAL_PEANUT_BUTTER);
+    ASSERT(TEST_NORMAL_parse(SL("PEANUT-BUTTER")) == TEST_NORMAL_PEANUT_BUTTER);
     ASSERT(TEST_NORMAL_parse(SL("TEST_NORMAL_COUNT")) == 0);
     ASSERT(TEST_NORMAL_parse(SL("COUNT")) == 0);
     ASSERT(TEST_NORMAL_parse(SL("")) == 0);

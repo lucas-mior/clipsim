@@ -631,8 +631,7 @@ assert_glob_match_impl(char *file, int32 line, char *func,
             }
 
             assert_error(file, line, func,
-                         "%s:\n"
-                         "  string: %s[%d] = '''"BLUE("%.*s")"'''\n"
+                         "%s:\n  string: %s[%d] = '''"BLUE("%.*s")"'''\n"
                          "  glob:   %s[%d] = '''"GREEN("%.*s")"'''\n",
                          expected_text,
                          string_name, string_len, string_len, string,

@@ -5329,8 +5329,7 @@ test_fmt_char_string_outputs(void) {
     test_fmt_bytes_cap("", 0, "%.*s", 0, (char *)NULL);
     test_fmt_bytes_cap(spaces, 3, "%3.*s", 0, (char *)NULL);
 
-    test_fmt_bytes_cap(SL("x=abc n=7 c=Z"),
-                       "x=%s n=%d c=%c", "abc", 7, 'Z');
+    test_fmt_bytes_cap(SL("x=abc n=7 c=Z"), "x=%s n=%d c=%c", "abc", 7, 'Z');
 
     memset64(buffer, 0x7f, SIZEOF(buffer));
     ASSERT_EQ(fmt_test_snprintf(buffer, SIZEOF(buffer), "%.*s", -1, "abc"),
@@ -5596,8 +5595,7 @@ test_fmt_printf_hex_float_outputs(void) {
     test_fmt_bytes_cap(SL("0x1.0000000000001p+0"), "%a", lsb_after_one);
     test_fmt_bytes_cap(SL("0x0.0000000000001p-1022"), "%a", true_min);
     test_fmt_bytes_cap(SL("0x1p-1022"), "%a", normal_min);
-    test_fmt_bytes_cap(SL("0x0.fffffffffffffp-1022"),
-                       "%a", largest_subnormal);
+    test_fmt_bytes_cap(SL("0x0.fffffffffffffp-1022"), "%a", largest_subnormal);
     test_fmt_bytes_cap(SL("0x1p-1022"), "%.0a", largest_subnormal);
     test_fmt_bytes_cap(SL("0x1.0p-1022"), "%.1a", largest_subnormal);
 
@@ -6200,7 +6198,7 @@ test_fmt_public_api(void) {
     ASSERT_EQ(buffer, len + 1, "public:42:ok", 13);
 
     ASSERT_LE_VAR(SIZEOF(buffer), fmt_snprintf_estimate("%g", 1.0));
-    len = fmt_sprintf(buffer, SIZEOF(buffer), "%g", 1.0);
+    len = SNPRINTF(buffer, "%g", 1.0);
     ASSERT_EQ(len, 1);
     ASSERT_EQ(buffer, "1");
 
@@ -6222,7 +6220,7 @@ test_fmt_public_api(void) {
     ASSERT_EQ(count, 4);
     ASSERT_EQ(tiny, SIZEOF(tiny), "abc", 4);
 
-    len = fmt_sprintf(buffer, SIZEOF(buffer), "fast:%d:%s", 42, "ok");
+    len = SNPRINTF(buffer, "fast:%d:%s", 42, "ok");
     ASSERT_EQ(len, 10);
     ASSERT_EQ(buffer, len + 1, "fast:42:ok", 11);
 
@@ -6232,12 +6230,12 @@ test_fmt_public_api(void) {
     ASSERT_EQ(buffer, len + 1, "<nil>:a\0b", 10);
 
     count = -1;
-    len = fmt_sprintf(buffer, SIZEOF(buffer), "abcd%n", &count);
+    len = SNPRINTF(buffer, "abcd%n", &count);
     ASSERT_EQ(len, 4);
     ASSERT_EQ(count, 4);
     ASSERT_EQ(buffer, "abcd");
 
-    ASSERT_EQ(fmt_sprintf(tiny, SIZEOF(tiny), "abcdef"), -ENOSPC);
+    ASSERT_EQ(SNPRINTF(tiny, "abcdef"), -ENOSPC);
     ASSERT_EQ(fmt_test_public_vsprintf(tiny, SIZEOF(tiny), "abcdef"), -ENOSPC);
 
     {
