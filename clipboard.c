@@ -424,7 +424,7 @@ main(void) {
                                      color, color);
 
         XChangeProperty(display, window, XSEL_DATA, UTF8_STRING, 8,
-                        PropModeReplace, (uchar *)STRLIT("test_clip"));
+                        PropModeReplace, (uchar *)SL("test_clip"));
 
         mock_event.type = SelectionNotify;
         mock_event.xselection.requestor = window;

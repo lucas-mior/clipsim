@@ -447,7 +447,7 @@ typedef struct MyStruct {
 
 In general, we must always know the lengths of our strings:
 - Pass string length around when we already know it (see below).
-- Use STRLIT("literal") to pass a string literal and its length to a
+- Use SL("literal") to pass a string literal and its length to a
   function/struct without repeating the literal itself.
 - Use `opt_strlen32(string)` when a string may be NULL. Never spell the
   NULL-safe operation as `string ? strlen32(string) : 0`.
@@ -463,7 +463,7 @@ In general, we must always know the lengths of our strings:
   to concatenated and parenthesized literals. All four spellings are forbidden
   at call sites, even if a compiler could compute their result at compile time.
   Instead, choose a macro that handles the literal and its length together:
-    + `STRLIT("literal")` for a function taking `(string, string_len)`;
+    + `SL("literal")` for a function taking `(string, string_len)`;
     + `STRPASS(field, "literal")` for initializing paired struct fields;
     + `STREQUAL(string, string_len, "literal")` for equality;
     + `BEGINS_WITH(string, string_len, "prefix")` or
@@ -478,7 +478,7 @@ In general, we must always know the lengths of our strings:
   int32 length = STRLIT_LEN("literal");
 
   // good: pass the literal and its length together
-  consume_string(STRLIT("literal"));
+  consume_string(SL("literal"));
   ```
   When an API really needs only a standalone length, avoid a direct literal
   length call. One option is to bind the literal to a string variable and
@@ -587,11 +587,11 @@ That means to also avoid calling `strlen32`:
 
 - `strlen32` shall be viewed as an interface for code that we do not control.
 - `STRLIT_LEN` is an implementation detail used *inside* macros such as
-  `STRLIT`, `STRPASS`, and `STREQUAL`; never invoke it directly on a literal.
+  `SL`, `STRPASS`, and `STREQUAL`; never invoke it directly on a literal.
   The same prohibition applies to direct `LENGTH`, `SIZEOF`, and `strlen32`
   calls on literals. Do not manually write a literal and its length as separate
-  arguments: use `my_function(STRLIT("literal"))` instead.
-- `STRLIT("literal")` can be used to pass the string literal and its length
+  arguments: use `my_function(SL("literal"))` instead.
+- `SL("literal")` can be used to pass the string literal and its length
   in an "don't repeat yourself" way, that also does not depend on the compiler
   to optimize the `strlen32`, since it uses `SIZEOF` to get the length of the
   literal.
@@ -718,7 +718,7 @@ functions.
       options, depending on the application, are `"NULL"` and `""` (empty
       string).
 - `char *string` without length: Avoid it at all costs:
-  * literals can use `STRLIT("literal")` to pass themselves and their length
+  * literals can use `SL("literal")` to pass themselves and their length
     cost-free;
   * the 3 representations above already know their length;
   * the only semi-justifiable reasons for using `char *string` without length
@@ -1429,6 +1429,15 @@ if (pointer == NULL) {
     // pointer is NULL
 }
 ```
+
+A `static` function must not defensively check a pointer parameter against
+`NULL` when all call sites are visible in the same file and pass an address
+such as `&variable`. Remove the redundant entry guard instead of accepting an
+impossible argument. `csanecheck` reports `STYLE-STATIC-NULL-GUARD` for simple
+entry guards of the form `if (pointer == NULL) { return; }` (also the
+reversed comparison and `!pointer`) when it can establish this property. If a call uses a
+pointer value, the function address escapes, or callers cannot be fully
+verified, retain any NULL handling required by the contract.
 
 Don't use `!= NULL` to check if a pointer is not null (except in assertions):
 ```c

@@ -601,7 +601,7 @@ main(void) {
         int32 bad_offset;
 
         bad_offset = -1;
-        ASSERT(utf8_valid(STRLIT("Aé水"), &bad_offset));
+        ASSERT(utf8_valid(SL("Aé水"), &bad_offset));
         ASSERT_EQ(bad_offset, -1);
 
         bad_offset = -1;

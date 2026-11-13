@@ -281,7 +281,7 @@ cmd_windows_result_read_captured(Command *command,
 
     if (flags & CMD_CAPTURE_STDERR) {
         if (flags & CMD_MERGE_STDERR) {
-            stderr_output = xstrndup(STRLIT(""));
+            stderr_output = xstrndup(SL(""));
             stderr_len = 0;
         } else if (!cmd_windows_capture_file_read(command,
                                                   stderr_capture,
@@ -1703,7 +1703,7 @@ main(int argc, char **argv) {
     ASSERT_EQ(cmd.argc, 0);
 
     CMD_PUSH(&cmd, "cat");
-    ASSERT_EQ((cmd_stdin_buffer_set(&cmd, STRLIT("stdin-buffer"))), 0);
+    ASSERT_EQ((cmd_stdin_buffer_set(&cmd, SL("stdin-buffer"))), 0);
     ASSERT_EQ((cmd_run_capture(&cmd, CMD_CAPTURE_STDOUT)), 0);
     ASSERT_EQ(cmd.result.stdout_output, "stdin-buffer");
     ASSERT_EQ(cmd.result.status, 0);
@@ -1843,7 +1843,7 @@ main(int argc, char **argv) {
         flags_str = CMD_str(CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR);
         ASSERT_EQ(flags_str, "CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR");
         CMD_str_free(flags_str);
-        ASSERT(CMD_parse(STRLIT("CAPTURE_STDOUT|CAPTURE_STDERR"))
+        ASSERT(CMD_parse(SL("CAPTURE_STDOUT|CAPTURE_STDERR"))
                == (CMD_CAPTURE_STDOUT |CMD_CAPTURE_STDERR));
     }
 

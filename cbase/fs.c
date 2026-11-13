@@ -465,13 +465,13 @@ xclose(char *file, int line, int *fd, char *fd_var_name, char *filename) {
 #endif
 
         error_async_safe(file, strlen32(file));
-        error_async_safe(STRLIT(":"));
+        error_async_safe(SL(":"));
         error_async_safe(itoa_buffer, itoa_len);
-        error_async_safe(STRLIT(" Error closing "));
+        error_async_safe(SL(" Error closing "));
         error_async_safe(filename, strlen32(file));
-        error_async_safe(STRLIT(": "));
+        error_async_safe(SL(": "));
         error_async_safe(error_buffer, strlen32(error_buffer));
-        error_async_safe(STRLIT(".\n"));
+        error_async_safe(SL(".\n"));
 
         *fd = -1;
         return -1;
@@ -1652,7 +1652,7 @@ main(void) {
         ASSERT_EQ(read_entire_file(missing_path, &missing_contents), -ENOENT);
         ASSERT_EQ(missing_contents, NULL);
 
-        ASSERT_EQ(write_entire_file(path, STRLIT("abcdef")), 6);
+        ASSERT_EQ(write_entire_file(path, SL("abcdef")), 6);
         ASSERT(util_file_exists(path));
         ASSERT_GE((contents_len = read_entire_file(path, &contents)), 0);
         ASSERT_EQ(contents_len, 6);

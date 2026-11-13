@@ -255,12 +255,12 @@ the enum prefix. It is case-insensitive and treats spaces and hyphens like
 underscores:
 
 ```c
-ASSERT(EXAMPLE_parse(STRLIT("EXAMPLE_READ|EXAMPLE_WRITE"))
+ASSERT(EXAMPLE_parse(SL("EXAMPLE_READ|EXAMPLE_WRITE"))
        == (EXAMPLE_READ | EXAMPLE_WRITE));
-ASSERT(EXAMPLE_parse(STRLIT("read | write"))
+ASSERT(EXAMPLE_parse(SL("read | write"))
        == (EXAMPLE_READ | EXAMPLE_WRITE));
-ASSERT(EXAMPLE_parse(STRLIT("example-read")) == EXAMPLE_READ);
-ASSERT(EXAMPLE_parse(STRLIT("NONE")) == EXAMPLE_NONE);
+ASSERT(EXAMPLE_parse(SL("example-read")) == EXAMPLE_READ);
+ASSERT(EXAMPLE_parse(SL("NONE")) == EXAMPLE_NONE);
 ```
 
 Tokens may be separated with `|` and may be wrapped in parentheses. Invalid
@@ -273,9 +273,9 @@ accepts the exact alias string for the parsed value. For normal bitflag enums,
 that means exact enum names joined by `|` with no spaces:
 
 ```c
-ASSERT(EXAMPLE_parse(STRLIT("EXAMPLE_READ|EXAMPLE_WRITE"))
+ASSERT(EXAMPLE_parse(SL("EXAMPLE_READ|EXAMPLE_WRITE"))
        == (EXAMPLE_READ | EXAMPLE_WRITE));
-ASSERT(EXAMPLE_parse(STRLIT("READ")) == EXAMPLE_NONE);
+ASSERT(EXAMPLE_parse(SL("READ")) == EXAMPLE_NONE);
 ```
 
 For `ENUM_CHAR_REPR 1` bitflag enums, `_parse` accepts only a run of known

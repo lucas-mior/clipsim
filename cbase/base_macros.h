@@ -19,7 +19,7 @@
 #define QUOTE(x) S(x)
 
 #define STRLIT_LEN(s) ((int32)(SIZEOF("" s) - 1))
-#define STRLIT(s) s, STRLIT_LEN(s)
+#define SL(s) s, STRLIT_LEN(s)
 #define STRPASS(FIELD, s) .FIELD = s, .FIELD##_len = STRLIT_LEN(s)
 // I don't think there is any advantage of STRPASS2 over STRPASS. Don't use it.
 #define STRPASS2(FIELD, s) FIELD = s, FIELD##_len = STRLIT_LEN(s)
