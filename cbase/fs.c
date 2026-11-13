@@ -180,9 +180,8 @@ cbase_make_temp_file(
     tmpdir = getenv("TMPDIR");
 #if OS_WINDOWS
     if (tmpdir == NULL) {
-        DWORD temp_len;
+        DWORD temp_len = GetTempPathA((DWORD)capacity, buffer);
 
-        temp_len = GetTempPathA((DWORD)capacity, buffer);
         if ((temp_len <= 0) || (temp_len >= (DWORD)capacity)) {
             windows_set_errno(GetLastError());
             return -1;
@@ -1249,9 +1248,8 @@ test_make_temp_dir(char *buffer, int32 capacity, char *name) {
     tmpdir = getenv("TMPDIR");
 #if OS_WINDOWS
     if (tmpdir == NULL) {
-        DWORD temp_len;
+        DWORD temp_len = GetTempPathA((DWORD)capacity, buffer);
 
-        temp_len = GetTempPathA((DWORD)capacity, buffer);
         if ((temp_len <= 0) || (temp_len >= (DWORD)capacity)) {
             error("Temporary directory path too long.\n");
             fatal(EXIT_FAILURE);

@@ -233,33 +233,22 @@ mul_shift_mod1e9(uint64 m, uint64 const *mul, int32 j) {
 
 #if defined(HAS_64_BIT_INTRINSICS)
     {
-        uint32 dist;
-        uint64 shifted_high;
-        uint64 shifted_low;
-
-        dist = (uint32)(j - 128); // dist: [0, 52]
-        shifted_high = s1_high >> dist;
-        shifted_low = shift_right128(s1_low, s1_high, dist);
+        uint32 dist = (uint32)(j - 128); // dist: [0, 52]
+        uint64 shifted_high = s1_high >> dist;
+        uint64 shifted_low = shift_right128(s1_low, s1_high, dist);
         return uint128_mod1e9(shifted_high, shifted_low);
     }
 #else /* HAS_64_BIT_INTRINSICS */
     if (j < 160) {
-        uint64 r0;
-        uint64 r1;
-        uint64 r2;
-
         // j: [128, 160)
-        r0 = mod1e9(s1_high);
-        r1 = mod1e9((r0 << 32) | (s1_low >> 32));
-        r2 = (r1 << 32) | (s1_low & 0xffffffff);
+        uint64 r0 = mod1e9(s1_high);
+        uint64 r1 = mod1e9((r0 << 32) | (s1_low >> 32));
+        uint64 r2 = (r1 << 32) | (s1_low & 0xffffffff);
         return mod1e9(r2 >> (j - 128));
     } else {
-        uint64 r0;
-        uint64 r1;
-
         // j: [160, 192)
-        r0 = mod1e9(s1_high);
-        r1 = (r0 << 32) | (s1_low >> 32);
+        uint64 r0 = mod1e9(s1_high);
+        uint64 r1 = (r0 << 32) | (s1_low >> 32);
         return mod1e9(r1 >> (j - 160));
     }
 #endif /* HAS_64_BIT_INTRINSICS */
@@ -557,9 +546,7 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
                 append_nine_digits(digits, result + index);
                 index += 9;
             } else if (digits != 0) {
-                uint32 olength;
-
-                olength = decimal_length9(digits);
+                uint32 olength = decimal_length9(digits);
                 append_n_digits(olength, digits, result + index);
                 index += olength;
                 nonzero = true;
@@ -608,11 +595,9 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
             uint32 p = pow10_offset_2[idx] + i - min_block_2[idx];
 
             if (p >= pow10_offset_2[idx + 1]) {
-                uint32 fill;
-
                 // If the remaining digits are all 0, then we might as well
                 // use memset. No rounding required in this case.
-                fill = precision - 9*i;
+                uint32 fill = precision - 9*i;
                 memset(result + index, '0', fill);
                 index += fill;
                 break;
@@ -628,9 +613,7 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
                 append_nine_digits(digits, result + index);
                 index += 9;
             } else {
-                uint32 maximum;
-
-                maximum = precision - 9*i;
+                uint32 maximum = precision - 9*i;
                 last_digit = 0;
                 for (uint32 k = 0; k < 9 - maximum; k += 1) {
                     last_digit = digits % 10;
@@ -649,9 +632,7 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
                     required_twos = -e2 - (int32)precision - 1;
                     trailing_zeros = required_twos <= 0;
                     if (!trailing_zeros && (required_twos < 60)) {
-                        uint32 twos;
-
-                        twos = (uint32)required_twos;
+                        uint32 twos = (uint32)required_twos;
                         trailing_zeros = multiple_of_power_of2(m2, twos);
                     }
                     round_up = trailing_zeros ? 2 : 1;
@@ -824,13 +805,9 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
     available_digits = 0;
     exp = 0;
     if (e2 >= -52) {
-        uint32 idx;
-        uint32 p10bits;
-        int32 len;
-
-        idx = e2 < 0 ? 0 : index_for_exponent((uint32)e2);
-        p10bits = pow10_bits_for_index(idx);
-        len = (int32)length_for_index(idx);
+        uint32 idx = e2 < 0 ? 0 : index_for_exponent((uint32)e2);
+        uint32 p10bits = pow10_bits_for_index(idx);
+        int32 len = (int32)length_for_index(idx);
 #if defined(RYU_DEBUG)
         fmt_printf("idx=%u\n", idx);
         fmt_printf("len=%d\n", len);
@@ -933,9 +910,7 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
     }
     last_digit = 0;
     if (available_digits > maximum) {
-        uint32 remove_count;
-
-        remove_count = available_digits - maximum;
+        uint32 remove_count = available_digits - maximum;
         for (uint32 k = 0; k < remove_count; k += 1) {
             last_digit = digits % 10;
             digits /= 10;
@@ -961,9 +936,7 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
                              && multiple_of_power_of2(m2,
                                                       (uint32)required_twos));
         if (rexp < 0) {
-            int32 required_fives;
-
-            required_fives = -rexp;
+            int32 required_fives = -rexp;
             trailing_zeros = trailing_zeros
                              && multiple_of_power_of5(m2,
                                                       (uint32)required_fives);
@@ -1038,9 +1011,7 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
     }
 
     if (exp >= 100) {
-        int32 c;
-
-        c = exp % 100;
+        int32 c = exp % 100;
         result[index] = (char)('0' + exp/100);
         memcpy(result + index + 1, ryu_digit_table + 2*c, 2);
         index += 3;

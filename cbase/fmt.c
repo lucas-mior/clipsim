@@ -1247,9 +1247,7 @@ fmt_big_uint_add_one(FormatBigUInt *value) {
 
     carry = 1;
     for (int32 i = 0; i < value->len; i += 1) {
-        uint64 sum;
-
-        sum = (uint64)value->words[i] + carry;
+        uint64 sum = (uint64)value->words[i] + carry;
         value->words[i] = (uint32)sum;
         carry = sum >> 32;
         if (carry == 0) {
@@ -1381,9 +1379,8 @@ fmt_big_uint_shift_left(FormatBigUInt *value, int32 shift) {
         uint32 carry = 0;
 
         for (int32 i = word_shift; i < value->len; i += 1) {
-            uint64 shifted;
+            uint64 shifted = ((uint64)value->words[i] << bit_shift) | carry;
 
-            shifted = ((uint64)value->words[i] << bit_shift) | carry;
             value->words[i] = (uint32)shifted;
             carry = (uint32)(shifted >> 32);
         }

@@ -716,9 +716,8 @@ cmd_result_process_io(Command *command, enum CommandFlag flags) {
     }
 
     while (left > 0) {
-        int32 ready;
+        int32 ready = poll(pipes, (nfds_t)nfds, -1);
 
-        ready = poll(pipes, (nfds_t)nfds, -1);
         if (ready < 0) {
             if (errno == EINTR) {
                 continue;
@@ -1717,9 +1716,7 @@ main(int argc, char **argv) {
         enum {
             CMD_STDIN_TEST_LEN = 100000,
         };
-        char *stdin_data;
-
-        stdin_data = malloc2(CMD_STDIN_TEST_LEN);
+        char *stdin_data = malloc2(CMD_STDIN_TEST_LEN);
         memset64(stdin_data, 'x', CMD_STDIN_TEST_LEN);
         CMD_PUSH(&cmd, "sh", "-c", "cat >/dev/null; printf done");
         ASSERT(!cmd_stdin_buffer_set(&cmd, stdin_data, CMD_STDIN_TEST_LEN));
@@ -1736,9 +1733,7 @@ main(int argc, char **argv) {
         enum {
             CMD_EPIPE_TEST_LEN = 100000,
         };
-        char *stdin_data;
-
-        stdin_data = malloc2(CMD_EPIPE_TEST_LEN);
+        char *stdin_data = malloc2(CMD_EPIPE_TEST_LEN);
         memset64(stdin_data, 'x', CMD_EPIPE_TEST_LEN);
         CMD_PUSH(&cmd, "sh", "-c", "exit 3");
         ASSERT(!cmd_stdin_buffer_set(&cmd, stdin_data, CMD_EPIPE_TEST_LEN));
@@ -1833,9 +1828,8 @@ main(int argc, char **argv) {
 #endif
 
     {
-        char *flags_str;
+        char *flags_str = CMD_str(CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR);
 
-        flags_str = CMD_str(CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR);
         ASSERT_EQ(flags_str, "CMD_CAPTURE_STDOUT|CMD_CAPTURE_STDERR");
         CMD_str_free(flags_str);
         ASSERT(CMD_parse(SL("CAPTURE_STDOUT|CAPTURE_STDERR"))

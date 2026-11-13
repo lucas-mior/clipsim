@@ -1022,9 +1022,8 @@ generic_compute_inv_pow5(uint32 i, uint64 *result) {
         uint32 offset = base2 - i;
         const uint64 *m = generic_pow5_table[offset];
         uint32 delta = generic_pow5_bits(base2) - generic_pow5_bits(i);
-        uint32 corr;
-
-        corr = (uint32)((pow5_inv_errors[i / 32] >> (2*(i%32))) & 3) + 1;
+        uint32 corr =
+            (uint32)((pow5_inv_errors[i / 32] >> (2*(i%32))) & 3) + 1;
         mul_128_256_shift(m, mul, delta, corr, result);
     }
     return;
