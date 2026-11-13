@@ -1985,12 +1985,16 @@ double x = 2.0*a_long_variable
 ```
 
 ## Abbreviations (and not abbreviate)
+As a general rule, avoid new abbreviations, keeping those already found in the
+code. Some good, allowed abbreviations are:
 - length -> len
 - column -> col
-- color -> color (not col)
 - index -> idx
 - parameter -> param
 - reference -> ref
+
+### Not abbreviate:
+- color -> color (not col)
 
 ## More on if conditions
 ```c
