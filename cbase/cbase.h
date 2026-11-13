@@ -788,8 +788,8 @@ _Generic((char (*)[STRLIT_LEN(LITERAL)])0,                             \
 
 #define ITOA(BUFFER, NUM) itoa2(BUFFER, SIZEOF(BUFFER), NUM)
 
-#define SNPRINTF(BUFFER, FORMAT, ...)                                  \
-    fmt_sprintf(BUFFER, SIZEOF(BUFFER), FORMAT, __VA_ARGS__)
+#define SNPRINTF(BUFFER, ...)                                          \
+    fmt_sprintf(BUFFER, SIZEOF(BUFFER), __VA_ARGS__)
 #define STRFTIME(BUFFER, FORMAT, TIME)                                 \
     strftime2(BUFFER, SIZEOF(BUFFER), FORMAT, TIME)
 

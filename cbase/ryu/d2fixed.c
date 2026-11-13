@@ -544,10 +544,9 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
         fmt_printf("len=%d\n", len);
 #endif
         for (int32 i = len - 1; i >= 0; i -= 1) {
-            int32 j;
+            int32 j = (int32)p10bits - e2;
             uint32 digits;
 
-            j = (int32)p10bits - e2;
             // Temporary: j is usually around 128, and by shifting a bit, we
             // push it to 128 or above, which is a slightly faster code path in
             // mul_shift_mod1e9. Instead, we can just increase the multipliers.
@@ -582,11 +581,10 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
 #endif
 
     if (e2 < 0) {
-        int32 idx;
         uint32 blocks;
+        int32 idx = -e2 / 16;
         uint32 i = 0;
 
-        idx = -e2 / 16;
 #if defined(RYU_DEBUG)
         fmt_printf("idx=%d\n", idx);
 #endif
@@ -606,11 +604,9 @@ d2fixed_buffered_n(double d, uint32 precision, char *result) {
         }
         for (; i < blocks; i += 1) {
             uint32 digits;
-            int32 j;
-            uint32 p;
+            int32 j = POW10_ADDITIONAL_BITS_2 + (-e2 - 16*idx);
+            uint32 p = pow10_offset_2[idx] + i - min_block_2[idx];
 
-            j = POW10_ADDITIONAL_BITS_2 + (-e2 - 16*idx);
-            p = pow10_offset_2[idx] + i - min_block_2[idx];
             if (p >= pow10_offset_2[idx + 1]) {
                 uint32 fill;
 
@@ -840,9 +836,8 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
         fmt_printf("len=%d\n", len);
 #endif
         for (int32 i = len - 1; i >= 0; i -= 1) {
-            int32 j;
+            int32 j = (int32)p10bits - e2;
 
-            j = (int32)p10bits - e2;
             // Temporary: j is usually around 128, and by shifting a bit, we
             // push it to 128 or above, which is a slightly faster code path in
             // mul_shift_mod1e9. Instead, we can just increase the multipliers.
@@ -877,18 +872,15 @@ d2exp_buffered_n(double d, uint32 precision, char *result) {
     }
 
     if ((e2 < 0) && (available_digits == 0)) {
-        int32 idx;
+        int32 idx = -e2 / 16;
 
-        idx = -e2 / 16;
 #if defined(RYU_DEBUG)
         fmt_printf("idx=%d, e2=%d, min=%d\n", idx, e2, min_block_2[idx]);
 #endif
         for (int32 i = min_block_2[idx]; i < 200; i += 1) {
-            int32 j;
-            uint32 p;
+            int32 j = POW10_ADDITIONAL_BITS_2 + (-e2 - 16*idx);
+            uint32 p = pow10_offset_2[idx] + (uint32)i - min_block_2[idx];
 
-            j = POW10_ADDITIONAL_BITS_2 + (-e2 - 16*idx);
-            p = pow10_offset_2[idx] + (uint32)i - min_block_2[idx];
             // Temporary: j is usually around 128, and by shifting a bit, we
             // push it to 128 or above, which is a slightly faster code path in
             // mul_shift_mod1e9. Instead, we can just increase the multipliers.
