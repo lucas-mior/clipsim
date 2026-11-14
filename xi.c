@@ -144,7 +144,7 @@ main(void) {
     sleep_ms(100);
 
     pthread_cancel(thread_id);
-    pthread_join(thread_i, NULL);
+    pthread_join(thread_id, NULL);
 
     exit(EXIT_SUCCESS);
 }
