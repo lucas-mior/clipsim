@@ -450,9 +450,8 @@ ryu_decimal_extended(const char *buffer, int32 parsed_len,
     // The first 17 significant digits already locate the correct value
     // within one ULP. Correct it using exact round-to-nearest, ties-to-even.
     for (;;) {
-        int32 comparison = ryu_decimal_midpoint(&prefix,
-                                                decimal_exponent, sticky,
-                                                bits);
+        int32 comparison = ryu_decimal_midpoint(&prefix, decimal_exponent,
+                                                sticky, bits);
 
         if (comparison > 0 || (comparison == 0 && (bits & 1) != 0)) {
             bits += 1;
@@ -462,8 +461,7 @@ ryu_decimal_extended(const char *buffer, int32 parsed_len,
             continue;
         }
         if (bits != 0) {
-            comparison = ryu_decimal_midpoint(&prefix,
-                                              decimal_exponent, sticky,
+            comparison = ryu_decimal_midpoint(&prefix, decimal_exponent, sticky,
                                               bits - 1);
             if (comparison < 0 || (comparison == 0 && (bits & 1) != 0)) {
                 bits -= 1;

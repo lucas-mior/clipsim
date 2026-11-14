@@ -135,17 +135,16 @@ xi_daemon_loop(void *unused) {
 
 int
 main(void) {
-    pthread_t thread_identifier;
+    pthread_t thread_id;
     int32 create_result;
 
-    create_result =
-        pthread_create(&thread_identifier, NULL, xi_daemon_loop, NULL);
+    create_result = pthread_create(&thread_id, NULL, xi_daemon_loop, NULL);
     ASSERT_EQ(create_result, 0);
 
     sleep_ms(100);
 
-    pthread_cancel(thread_identifier);
-    pthread_join(thread_identifier, NULL);
+    pthread_cancel(thread_id);
+    pthread_join(thread_i, NULL);
 
     exit(EXIT_SUCCESS);
 }

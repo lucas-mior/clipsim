@@ -195,13 +195,10 @@ cmd_windows_capture_file_open(Command *command,
     security_attributes.lpSecurityDescriptor = NULL;
     security_attributes.bInheritHandle = TRUE;
 
-    capture->handle = CreateFileA(capture->path,
-                                  GENERIC_WRITE,
+    capture->handle = CreateFileA(capture->path, GENERIC_WRITE,
                                   FILE_SHARE_READ |FILE_SHARE_WRITE,
-                                  &security_attributes,
-                                  CREATE_ALWAYS,
-                                  FILE_ATTRIBUTE_TEMPORARY,
-                                  NULL);
+                                  &security_attributes, CREATE_ALWAYS,
+                                  FILE_ATTRIBUTE_TEMPORARY, NULL);
     if (capture->handle == INVALID_HANDLE_VALUE) {
         cmd_windows_error_set(command, GetLastError());
         DeleteFileA(capture->path);
@@ -465,16 +462,8 @@ cmd_windows_run_process(Command *command, enum CommandFlag flags) {
         }
     }
 
-    success = CreateProcessA(NULL,
-                             cmdline,
-                             NULL,
-                             NULL,
-                             inherit_handles,
-                             0,
-                             NULL,
-                             command->cwd,
-                             &startup_info,
-                             &proc_info);
+    success = CreateProcessA(NULL, cmdline, NULL, NULL, inherit_handles, 0,
+                             NULL, command->cwd, &startup_info, &proc_info);
     if (!success) {
         DWORD err = GetLastError();
 
@@ -596,8 +585,7 @@ cmd_result_process_stdin_event(Command *command,
     }
 
     bytes_written = write64(command->result.stdin_fd,
-                            command->stdin_buffer + *stdin_offset,
-                            chunk_len);
+                            command->stdin_buffer + *stdin_offset, chunk_len);
     if (bytes_written > 0) {
         *stdin_offset += bytes_written;
         if (*stdin_offset >= command->stdin_buffer_len) {
@@ -644,12 +632,8 @@ cmd_result_process_output_event(Command *command,
             error("Command output is too long.\n");
             fatal(EXIT_FAILURE);
         }
-        cmd_result_append(output,
-                          stdout_output,
-                          stderr_output,
-                          is_stderr,
-                          buffer,
-                          (int32)read_bytes);
+        cmd_result_append(output, stdout_output, stderr_output, is_stderr,
+                          buffer, (int32)read_bytes);
         pipe->revents = 0;
         return;
     }
@@ -737,31 +721,21 @@ cmd_result_process_io(Command *command, enum CommandFlag flags) {
 
             ready -= 1;
             if (i == CMD_STDIN_PIPE_INDEX) {
-                cmd_result_process_stdin_event(command,
-                                               &pipes[i],
-                                               &left,
+                cmd_result_process_stdin_event(command, &pipes[i], &left,
                                                &stdin_offset);
                 continue;
             }
 
             if (i == CMD_STDERR_PIPE_INDEX) {
-                cmd_result_process_output_event(command,
-                                                &pipes[i],
+                cmd_result_process_output_event(command, &pipes[i],
                                                 &command->result.stderr_fd,
-                                                &left,
-                                                &output,
-                                                &stdout_output,
-                                                &stderr_output,
-                                                true);
+                                                &left, &output, &stdout_output,
+                                                &stderr_output, true);
             } else {
-                cmd_result_process_output_event(command,
-                                                &pipes[i],
+                cmd_result_process_output_event(command, &pipes[i],
                                                 &command->result.stdout_fd,
-                                                &left,
-                                                &output,
-                                                &stdout_output,
-                                                &stderr_output,
-                                                false);
+                                                &left, &output, &stdout_output,
+                                                &stderr_output, false);
             }
         }
     }
@@ -954,10 +928,7 @@ cmd_start(Command *command, enum CommandFlag flags) {
             }
         }
         if (command->stdin_buffer != NULL) {
-            cmd_child_exec(command,
-                           flags,
-                           stdin_pipe,
-                           stdout_pipe,
+            cmd_child_exec(command, flags, stdin_pipe, stdout_pipe,
                            stderr_pipe);
         }
         cmd_child_exec(command, flags, NULL, stdout_pipe, stderr_pipe);
@@ -1196,15 +1167,12 @@ cmd_array_reserve(Command *command, bool environment, int32 extra) {
 
         *capacity += 16;
         if (environment) {
-            command->env = realloc2(command->env,
-                                    old_capacity, *capacity,
+            command->env = realloc2(command->env, old_capacity, *capacity,
                                     SIZEOF(*command->env));
-            command->env_lens = realloc2(command->env_lens,
-                                         old_capacity, *capacity,
-                                         SIZEOF(*command->env_lens));
+            command->env_lens = realloc2(command->env_lens, old_capacity,
+                                         *capacity, SIZEOF(*command->env_lens));
         } else {
-            command->argv = realloc2(command->argv,
-                                     old_capacity, *capacity,
+            command->argv = realloc2(command->argv, old_capacity, *capacity,
                                      SIZEOF(*command->argv));
             command->argv_lens = realloc2(command->argv_lens,
                                           old_capacity, *capacity,

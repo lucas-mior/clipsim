@@ -373,9 +373,8 @@ generic_binary_to_decimal(__uint128_t bits, uint32 mantissa_bits,
 
     // Step 4: Find the shortest decimal representation in the interval of
     // legal representations.
-    generic_remove_digits(&vr, &vp, &vm, &vr_trailing_zeros,
-                          &vm_trailing_zeros, &removed,
-                          &last_removed_digit);
+    generic_remove_digits(&vr, &vp, &vm, &vr_trailing_zeros, &vm_trailing_zeros,
+                          &removed, &last_removed_digit);
 #if defined(RYU_DEBUG)
     fmt_printf("V+=%s\nV =%s\nV-=%s\n", ryu_s(vp), ryu_s(vr), ryu_s(vm));
     fmt_printf("d-10=%s\n", generic_bool_string(vm_trailing_zeros));

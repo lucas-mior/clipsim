@@ -74,8 +74,8 @@ ipc_resolve_socket_name(void) {
     if (XDG_RUNTIME_DIR && (XDG_RUNTIME_DIR[0] != '\0')) {
         n = SNPRINTF(ipc_directory, "%s/clipsim", XDG_RUNTIME_DIR);
         if ((n > 0) && (n < (int32)SIZEOF(ipc_directory))) {
-            socket_name_len =
-                SNPRINTF(ipc_socket_name, "%s/daemon.sock", ipc_directory);
+            socket_name_len = SNPRINTF(ipc_socket_name,
+                                       "%s/daemon.sock", ipc_directory);
             if ((socket_name_len > 0)
                 && (socket_name_len
                     < (int32)SIZEOF(((struct sockaddr_un *)0)->sun_path))) {

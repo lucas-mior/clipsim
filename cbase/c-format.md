@@ -137,6 +137,50 @@ Important: only try 2 if 1 does not work, only try 3 if 2 and 1 do not work,
 only try 4 if 1, 2, and 3 do not work, and so on. Remember to do a final pass,
 do the alignment, as explained in 2.
 
+When a multiline call uses more physical lines than necessary, combine
+adjacent top-level arguments on the same line whenever doing so respects the
+column limit and keeps the remaining argument lines aligned with the first
+argument. For example:
+
+```c
+// bad (three lines)
+fixture_metadata_path(base_name, ".pass.not_contains",
+                      not_contains_path,
+                      SIZEOF(not_contains_path));
+
+// good (two lines)
+fixture_metadata_path(base_name, ".pass.not_contains",
+                      not_contains_path, SIZEOF(not_contains_path));
+```
+
+`FMT-CALL-FEWER-LINES` checks direct function-call statements, returns and
+assignments, conservatively excluding comments, preprocessor branches,
+format-string calls and arguments with their own internal line breaks. The
+repacking respects related-argument and string-literal-pair formatting rules.
+It only reports when a valid layout uses fewer lines, but still requires at
+least two lines (the existing `FMT-CALL-WRAP` checks calls that fit entirely
+on one line).
+
+When a direct function call is assigned, prefer breaking between arguments
+instead of directly after `=` whenever the call can be reformatted within the
+**same number of physical lines** and the configured column limit. For example:
+
+```c
+// bad (two lines)
+int32 name_len =
+    SNPRINTF(data->names[slot], "tf_y%d_u%d_b%d", j, i, k);
+
+// good (two lines)
+int32 name_len = SNPRINTF(data->names[slot],
+                          "tf_y%d_u%d_b%d", j, i, k);
+```
+
+`FMT-ASSIGN-CALL-WRAP` checks this only for direct calls with **at least
+three top-level arguments** on the right-hand side of `=` in declarations and
+standalone assignments, including calls originally spread across three or more
+lines. Calls with zero, one, or two arguments are exempt. It does not move
+comments, preprocessor branches, or split nested expressions to force a fit.
+
 ### Keep the first `SIZEOF` operand on the opening line
 
 Never break immediately after `SIZEOF(`, even if a comment separates the
@@ -231,7 +275,9 @@ As a last resource, sometimes it might be useful to create auxiliar variables.
 ```
 
 ## Arithmetic line wrapping and alignment
-For simple assignments to arithmetic expressions, break before binary
+For standalone assignments to arithmetic expressions, including compound
+assignments (`+=`, `-=`, `*=`, `/=`, `%=` and other assignment operators) and
+assignments to indexed or member expressions, break before binary
 arithmetic operators (`+`, `-`, `*`, `/`, `%`) when a line break is needed.
 Align a wrapped operator with the beginning of its left-hand precedence
 subexpression. Higher-precedence operations can therefore be indented further
@@ -256,9 +302,26 @@ double x = 2.0*a_long_variable
              / SQUARE(variable);
 ```
 
-The arithmetic-assignment check does not inspect arithmetic inside function
-calls or array subscripts. Parenthesized arithmetic subexpressions follow
-their own precedence alignment.
+For compound assignments, align continuation operators against the first
+right-hand operand, not the left-hand target:
+
+```c
+// bad: * is not aligned with direct
+        y[path->output] += direct
+            *(cy_tf_runtime_input(sys, path, t, u, p)
+              - sys->sigv.U0[path->input]);
+
+// good: * aligns with direct; - aligns within the parentheses
+        y[path->output] += direct
+                           *(cy_tf_runtime_input(sys, path, t, u, p)
+                             - sys->sigv.U0[path->input]);
+```
+
+The `FMT-ARITH-ALIGN` rule checks wrapped arithmetic operators, and
+`FMT-ARITH-WRAP` reports breaks immediately after these operators. These rules
+do not inspect arithmetic inside function calls or array subscripts.
+Parenthesized arithmetic subexpressions follow their own precedence
+alignment. Ambiguous or unsupported expressions are skipped.
 
 ## Rules for reducing long lines.
 When it happens that a line of code has more than 80 chars, the rules are:

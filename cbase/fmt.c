@@ -2696,10 +2696,9 @@ fmt_ldouble_generate_exp_body(FormatSpec *spec, ldouble value,
     }
 
     significant_len = spec->precision + 1;
-    status = fmt_ldouble_exp_digits(&parts, fabsl(value),
-                                    exponent, significant_len,
-                                    buffer, capacity, &digit_len,
-                                    &decimal_exponent, integer);
+    status = fmt_ldouble_exp_digits(&parts, fabsl(value), exponent,
+                                    significant_len, buffer, capacity,
+                                    &digit_len, &decimal_exponent, integer);
     if (status == 0) {
         bool alternate = spec->flags & FMT_FLAG_ALTERNATE;
         bool upper = fmt_float_is_upper(spec->conversion);
@@ -3097,16 +3096,14 @@ fmt_ldouble_generate_hex_body(FormatSpec *spec, ldouble value,
         digit_len = fmt_ldouble_hex_trim_digits(digits, available_digits);
     } else {
         if (spec->precision < available_digits) {
-            fmt_ldouble_hex_round(&first_digit, digits,
-                                  available_digits, spec->precision,
-                                  upper);
+            fmt_ldouble_hex_round(&first_digit, digits, available_digits,
+                                  spec->precision, upper);
         }
         digit_len = spec->precision;
     }
 
-    status = fmt_ldouble_write_hex_body(spec, buffer, capacity,
-                                        first_digit, digits,
-                                        available_digits, digit_len,
+    status = fmt_ldouble_write_hex_body(spec, buffer, capacity, first_digit,
+                                        digits, available_digits, digit_len,
                                         exponent);
     return status;
 }
@@ -4537,8 +4534,7 @@ fmt_strftime_format(FormatSink *sink, char *format,
             break;
         case 'A':
             fmt_strftime_write_name(sink,
-                                    locale->weekday,
-                                    LENGTH(locale->weekday),
+                                    locale->weekday, LENGTH(locale->weekday),
                                     time_info->tm_wday);
             break;
         case 'b':
@@ -4549,9 +4545,7 @@ fmt_strftime_format(FormatSink *sink, char *format,
                                     time_info->tm_mon);
             break;
         case 'B':
-            fmt_strftime_write_name(sink,
-                                    locale->month,
-                                    LENGTH(locale->month),
+            fmt_strftime_write_name(sink, locale->month, LENGTH(locale->month),
                                     time_info->tm_mon);
             break;
         case 'c':

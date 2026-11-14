@@ -1534,10 +1534,8 @@ main(void) {
         ASSERT(util_file_exists(template_path));
         ASSERT_EQ(cbase_remove_file(template_path), 0);
 
-        fd = cbase_make_temp_file(temp_file_path,
-                                  SIZEOF(temp_file_path),
-                                  "fs_file",
-                                  ".tmp");
+        fd = cbase_make_temp_file(temp_file_path, SIZEOF(temp_file_path),
+                                  "fs_file", ".tmp");
         ASSERT_GE(fd, 0);
         ASSERT_EQ(write64(fd, "y", 1), 1);
         XCLOSE(&fd, temp_file_path);

@@ -1565,6 +1565,19 @@ use_discrete_tree =
   // good, if we care about the specific negative error code.
   ASSERT_EQ(access(path, F_OK), 0);
   ```
+- Do not assign to a variable and immediately assert that same variable in a
+  separate statement. Put the assignment inside `ASSERT` instead, with an
+  extra pair of parentheses. Whitespace and comments between the two
+  statements do not make the separate assertion acceptable; intervening code
+  does not fall under this rule.
+  ```c
+  // bad
+  baseline = cy_create_input(sys, 4, 0.5, 10.0);
+  ASSERT(baseline);
+
+  // good
+  ASSERT((baseline = cy_create_input(sys, 4, 0.5, 10.0)));
+  ```
 - Prefer `ASSERT_EQ(value, 0);` instead of `ASSERT(value == 0)`.
 - `ASSERT_EQ` and `ASSERT_NE` accept either constant or variable
   operands. For integer comparisons, both operands are normalized to `llong`.

@@ -762,8 +762,7 @@ xmmap_commit(int64 *size) {
         if ((size_original >= SIZEMB(2)) && FLAGS_HUGE_PAGES) {
             *size = ALIGN_POWER_OF_2(size_original, SIZEMB(2));
             p = mmap(NULL, (size_t)*size, PROT_READ | PROT_WRITE,
-                     MAP_ANONYMOUS | MAP_PRIVATE | FLAGS_HUGE_PAGES,
-                     -1, 0);
+                     MAP_ANONYMOUS | MAP_PRIVATE | FLAGS_HUGE_PAGES, -1, 0);
             if (p != MAP_FAILED) {
                 break;
             }

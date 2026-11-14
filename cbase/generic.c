@@ -527,8 +527,7 @@ main(void) {
         n = snprint(small2, SIZEOF(small2), "prefix-" W(e));
         ASSERT_EQ(small2, "prefix-");
 
-        fp = tmpfile();
-        ASSERT(fp);
+        ASSERT((fp = tmpfile()));
         n = fprint(fp, "file ", V(c), " ", VF("%04i", c), "\n");
         snprintf(expected, SIZEOF(expected),
                  "file c=" RED0 "%d" RESET "  0001\n", c);

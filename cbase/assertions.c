@@ -407,8 +407,7 @@ assert_compare_const(char *file, int32 line, char *func,
                          var2.boolean, name2);
         }
     } else {
-        return assert_compare_const_unsupported(file, line, func,
-                                                name1, name2,
+        return assert_compare_const_unsupported(file, line, func, name1, name2,
                                                 var1, var2);
     }
 
