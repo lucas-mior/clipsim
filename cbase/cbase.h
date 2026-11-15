@@ -849,14 +849,14 @@ _Generic((char (*)[STRLIT_LEN(LITERAL)])0,                             \
 #define ENUM_BITFLAGS 1
 #define ENUM_PREFIX_ CMD_
 #define ENUM_FIELDS                                                    \
-    XX(CMD_CAPTURE_STDOUT)                                         \
-    XX(CMD_CAPTURE_STDERR)                                         \
-    XX(CMD_MERGE_STDERR)                                           \
-    XX(CMD_ASYNC)                                                  \
-    XX(CMD_DETACHED)                                               \
-    XX(CMD_NEW_SESSION)                                            \
-    XX(CMD_NEW_PROCESS_GROUP)                                      \
-    XX(CMD_STDIN_TTY)                                              \
+    XX(CMD_CAPTURE_STDOUT)                                             \
+    XX(CMD_CAPTURE_STDERR)                                             \
+    XX(CMD_MERGE_STDERR)                                               \
+    XX(CMD_ASYNC)                                                      \
+    XX(CMD_DETACHED)                                                   \
+    XX(CMD_NEW_SESSION)                                                \
+    XX(CMD_NEW_PROCESS_GROUP)                                          \
+    XX(CMD_STDIN_TTY)                                                  \
     XX(CMD_CLOSE_STDIN)
 #define XENUMS_DECLARE_ONLY 1
 #define XENUMS_NO_TESTS 1
@@ -966,10 +966,10 @@ int32 cmd_status_from_wait(int status, CommandResult *result);
 char *cmd_str(Command *command, int32 *len);
 int32 cmd_wait(Command *);
 
-#define CMD_PUSH(CMD, ...)                                    \
-    cmd_push_array(CMD,                                       \
+#define CMD_PUSH(CMD, ...)                                      \
+    cmd_push_array(CMD,                                         \
                    (int32)(SIZEOF((char *[]){__VA_ARGS__})      \
-                           /SIZEOF(char *)),                   \
+                           /SIZEOF(char *)),                    \
                    (char *[]){__VA_ARGS__})
 
 #define CMD_ENV_PUSH_2(A, B) cmd_env_push(A, B)
@@ -1024,17 +1024,17 @@ void generic_array_set_count(void *array, int32 count);
         ARRAY_HEADER(ARRAY)->count = 0;                          \
     }                                                            \
 } while (0)
-#define ARRAY_FREE(ARRAY) do {                                   \
-    if (ARRAY) {                                                 \
+#define ARRAY_FREE(ARRAY) do {                                         \
+    if (ARRAY) {                                                       \
         union GenericArrayHeader *array_header_ = ARRAY_HEADER(ARRAY); \
-        free2(array_header_, SIZEOF(*array_header_)              \
-              + array_header_->cap*SIZEOF(*(ARRAY)));            \
-        (ARRAY) = NULL;                                          \
-    }                                                            \
+        free2(array_header_, SIZEOF(*array_header_)                    \
+              + array_header_->cap*SIZEOF(*(ARRAY)));                  \
+        (ARRAY) = NULL;                                                \
+    }                                                                  \
 } while (0)
 
-#define ARRAY_PUSH(ARRAY, ...)                                      \
-    (((ARRAY) && ARRAY_HEADER(ARRAY)->count < ARRAY_HEADER(ARRAY)->cap \
+#define ARRAY_PUSH(ARRAY, ...)                                               \
+    (((ARRAY) && ARRAY_HEADER(ARRAY)->count < ARRAY_HEADER(ARRAY)->cap       \
       ? (ARRAY) : ((ARRAY) = generic_array_grow((ARRAY), SIZEOF(*(ARRAY)))), \
      (ARRAY)[ARRAY_HEADER(ARRAY)->count++] = (__VA_ARGS__)))
 #define ARRAY_INIT(ARRAY, CAPACITY)                              \

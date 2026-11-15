@@ -80,7 +80,7 @@ allocations_unlock(void) {
 #endif
 
 #define X64(FUNC)                                                 \
-void                                                \
+void                                                              \
 CAT(FUNC, 64)(void *dest, void *source, int64 n) {                \
     if (n == 0) {                                                 \
         return;                                                   \

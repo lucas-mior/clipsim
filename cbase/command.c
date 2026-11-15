@@ -19,14 +19,14 @@
 #define ENUM_PREFIX_ CMD_
 #define EnumUnderlyingType uint32
 #define ENUM_FIELDS                   \
-    XX(CMD_CAPTURE_STDOUT)        \
-    XX(CMD_CAPTURE_STDERR)        \
-    XX(CMD_MERGE_STDERR)          \
-    XX(CMD_ASYNC)                 \
-    XX(CMD_DETACHED)              \
-    XX(CMD_NEW_SESSION)           \
-    XX(CMD_NEW_PROCESS_GROUP)     \
-    XX(CMD_STDIN_TTY)             \
+    XX(CMD_CAPTURE_STDOUT)            \
+    XX(CMD_CAPTURE_STDERR)            \
+    XX(CMD_MERGE_STDERR)              \
+    XX(CMD_ASYNC)                     \
+    XX(CMD_DETACHED)                  \
+    XX(CMD_NEW_SESSION)               \
+    XX(CMD_NEW_PROCESS_GROUP)         \
+    XX(CMD_STDIN_TTY)                 \
     XX(CMD_CLOSE_STDIN)
 #define XENUMS_FUNCTIONS_ONLY 1
 #define XENUMS_NO_TESTS 1

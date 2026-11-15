@@ -530,7 +530,7 @@ _Generic((VAR2),                                                             \
     double:  A_FIRST_DOUBLE(MODE, VAR1, VAR2, TYPE_DOUBLE ),                 \
     bool:    A_FIRST_BOOL(MODE,   VAR1, VAR2, TYPE_BOOL),                    \
     default: UNSUPPORTED_TYPE_FOR_GENERIC_ASSERT_COMPARE()                   \
-  ) \
+  )                                                                          \
 )
 #endif
 

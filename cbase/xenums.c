@@ -280,7 +280,7 @@ CAT(ENUM_PREFIX_, str_len)(enum ENUM_NAME val, char **out) {
             buffer_len += len;                                                 \
                                                                                \
             is_first = false;                                                  \
-            val &= (EnumUnderlyingType)~e;                                   \
+            val &= (EnumUnderlyingType)~e;                                     \
         }
 
     #define XX_1(e)    XX_BITCHECK(e)
@@ -341,7 +341,7 @@ CAT(ENUM_PREFIX_, alias_len)(enum ENUM_NAME val, char **out) {
                                *out = #e;                                  \
                                return STRLIT_LEN(#e);
     #define XX_2(e, alias) case e:                                         \
-                               *out = alias;                              \
+                               *out = alias;                               \
                                return STRLIT_LEN(alias);
 #endif
     #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
@@ -369,14 +369,14 @@ CAT(ENUM_PREFIX_, alias_len)(enum ENUM_NAME val, char **out) {
         return 0;
     }
 
-    #define XX_BITCHECK(e, alias)                                             \
+    #define XX_BITCHECK(e, alias)                                              \
         if (val && ((val & e) == e)) {                                         \
             buffer = realloc2(buffer, buffer_cap, buffer_len + 2,              \
-                              SIZEOF(*buffer));                               \
+                              SIZEOF(*buffer));                                \
             buffer_cap = buffer_len + 2;                                       \
             buffer[buffer_len] = alias;                                        \
             buffer_len += 1;                                                   \
-            val &= (EnumUnderlyingType)~e;                                   \
+            val &= (EnumUnderlyingType)~e;                                     \
         }
     #define XX_1(e)
     #define XX_2(e, alias) XX_BITCHECK(e, alias)
@@ -478,7 +478,7 @@ CAT(ENUM_PREFIX_, parse_chars)(char **cursor) {
         switch (**cursor) {
             #define XX_1(e)
             #define XX_2(e, alias) case alias:                            \
-                                       result |= (EnumUnderlyingType)e; \
+                                       result |= (EnumUnderlyingType)e;   \
                                        break;
             #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
 
@@ -509,7 +509,7 @@ CAT(ENUM_PREFIX_, parse_loose)(char *string, int32 string_len) {
         switch (*p) {
             #define XX_1(e)
             #define XX_2(e, alias) case alias:                           \
-                                       result |= (EnumUnderlyingType)e; \
+                                       result |= (EnumUnderlyingType)e;  \
                                        break;
             #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
 
@@ -624,7 +624,7 @@ CAT(ENUM_PREFIX_, parse_loose)(char *string, int32 string_len) {
         #define XENUM_PARSE_ONE(e)                                        \
             if (!matched                                                  \
                 && XENUM_TOKEN_EQUALS_ENUM_NAME(token, token_len, #e)) {  \
-                result |= (EnumUnderlyingType)e;                        \
+                result |= (EnumUnderlyingType)e;                          \
                 matched = 1;                                              \
             }
         #define XX_1(e)    XENUM_PARSE_ONE(e)
@@ -633,14 +633,14 @@ CAT(ENUM_PREFIX_, parse_loose)(char *string, int32 string_len) {
         #define XENUM_PARSE_ONE(e)                                        \
             if (!matched                                                  \
                 && XENUM_TOKEN_EQUALS_ENUM_NAME(token, token_len, #e)) {  \
-                result = (EnumUnderlyingType)e;                         \
+                result = (EnumUnderlyingType)e;                           \
                 matched = 1;                                              \
             }
         #define XENUM_PARSE_ALIAS(e, alias)                               \
             XENUM_PARSE_ONE(e)                                            \
             if (!matched                                                  \
                 && XENUM_TOKEN_EQUALS(token, token_len, alias)) {         \
-                result = (EnumUnderlyingType)e;                         \
+                result = (EnumUnderlyingType)e;                           \
                 matched = 1;                                              \
             }
         #define XX_1(e)        XENUM_PARSE_ONE(e)
@@ -699,11 +699,11 @@ CAT(ENUM_PREFIX_, parse)(char *string, int32 string_len) {
     }
 
     #define XX_1(e)                                                     \
-        if (strequal2(string, string_len, #e, STRLIT_LEN(#e))) {       \
+        if (strequal2(string, string_len, #e, STRLIT_LEN(#e))) {        \
             return e;                                                   \
         }
     #define XX_2(e, alias)                                              \
-        if (strequal2(string, string_len, alias, STRLIT_LEN(alias))) { \
+        if (strequal2(string, string_len, alias, STRLIT_LEN(alias))) {  \
             return e;                                                   \
         }
     #define XX(...) SELECT_ON_NUM_ARGS(XX_, __VA_ARGS__)
@@ -769,8 +769,8 @@ CAT(ENUM_PREFIX_, functions_sink)(void) {
 #define ENUM_NAME TestNormal
 #define ENUM_PREFIX_ TEST_NORMAL_
 #define ENUM_BITFLAGS 0
-#define ENUM_FIELDS                               \
-    XX(TEST_NORMAL_APPLE)                         \
+#define ENUM_FIELDS                                 \
+    XX(TEST_NORMAL_APPLE)                           \
     XX(TEST_NORMAL_BANANA, "banana")                \
     XX(TEST_NORMAL_CHERRY, "cherry")                \
     XX(TEST_NORMAL_PEANUT_BUTTER, "peanut butter")

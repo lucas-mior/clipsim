@@ -14,6 +14,19 @@ For non-formatting coding guidelines, see `c-guidelines.md`.
 - Trim trailing whitespace.
 - Use at most two consecutive newline characters (one blank line).
 - Keep line length at maximum 80 characters.
+- Do not nest code more than seven indentation levels deep (the function body
+  is level one). `csanecheck` reports `FMT-INDENT-DEPTH` at the block or
+  unbraced control body that would introduce an eighth level. Wrapped
+  expressions, aggregate initializers, and preprocessor macro continuation
+  lines do not add indentation levels.
+  To reduce nesting, use these techniques in order of preference:
+  1. Prefer early `return`, `break`, or `continue` to nested conditionals.
+  2. When multiple exits share cleanup, combine an early `break` with
+     `do { ... } while (0);` and perform cleanup after the loop.
+  3. Use `goto` to exit multiple nested loops when needed.
+  4. Extract a deeply nested block into a separate function. A `static`
+     helper called only once is permitted at a call site indented five
+     levels or more (see `STYLE-STATIC-ONCE` in `c-guidelines.md`).
 
 ## Operators
 - Space or newline (if at end of line) is mandatory after comma.
@@ -939,6 +952,31 @@ first argument fits in the first line:
 ## Preprocessor directives
 - Macro continuation line: indent using 0, 2 or 4 spaces (feel free to decide at
   each case).
+- In a multiline `#define`, align all line-continuation backslashes in the
+  same column, including the backslash on the `#define` line. Pad shorter
+  lines with spaces before the backslash, keeping the line within 80 columns.
+  `csanecheck` enforces this with `FMT-MACRO-BACKSLASH-ALIGN`:
+  ```c
+  // bad: the continuation backslashes are staggered
+  #define CY_EMIT_DEFAULT_FLAG(FIELD) \
+      if (sys->simulation_defaults[CY_META_SIM_FIELD_##FIELD].set) { \
+          if (any_default) { \
+              STR_APPEND(out, "\n        | "); \
+          } \
+          STR_APPEND(out, "CY_SIM_DEFAULT_FIELD(" #FIELD ")"); \
+          any_default = true; \
+      }
+
+  // good: every continuation backslash is in the same column
+  #define CY_EMIT_DEFAULT_FLAG(FIELD)                                  \
+      if (sys->simulation_defaults[CY_META_SIM_FIELD_##FIELD].set) {   \
+          if (any_default) {                                           \
+              STR_APPEND(out, "\n        | ");                         \
+          }                                                            \
+          STR_APPEND(out, "CY_SIM_DEFAULT_FIELD(" #FIELD ")");         \
+          any_default = true;                                          \
+      }
+  ```
 Don't use `#ifdef` and `#ifndef`, use `#if defined()` and `#if !defined()`
 instead. Prefer explicitly setting the macro to 0 or 1 and checking its value
 directly instead of checking if it is defined:

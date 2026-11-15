@@ -89,7 +89,7 @@ void UNSUPPORTED_TYPE_FOR_DOUBLE_GET_GENERIC(void);
 #define snprint(BUF, BSZ, ...) snprint_0((BUF), (BSZ), __VA_ARGS__, (char *)0)
 #define print0(...)            fprint_0(stdout,        __VA_ARGS__, (char *)0)
 
-#define S_(X) \
+#define S_(X)                                           \
 toString((char[S_BSZ]){ "" }, S_BSZ, _Generic((X),      \
     void *:  "%p",                                      \
     char *:  "%s",                                      \
@@ -242,8 +242,8 @@ _Generic((x),                                        \
   fprintf(stderr, "["GREEN("%s%d")"]%s = "FORMAT" ", \
                   typename(TYPE), typebits(TYPE), #VAR, (CAST)(uintptr)(VAR))
 
-#define PRINT_(VAR) \
-_Generic((VAR), \
+#define PRINT_(VAR)                                                    \
+_Generic((VAR),                                                        \
     void*:   PRINT_OTHER(VAR,    TYPE_VOIDP,   "%p",           void*), \
     char*:   PRINT_OTHER(VAR,    TYPE_CHARP,   RED("\"%s\""),  char*), \
     bool:    PRINT_OTHER(VAR,    TYPE_BOOL,    "%u",           bool),  \

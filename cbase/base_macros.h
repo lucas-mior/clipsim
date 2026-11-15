@@ -92,8 +92,8 @@
 
 #define BETWEEN(x, a, b)    ((a) <= (x) && (x) <= (b))
 
-#define ALIGN_POWER_OF_2(SIZE, A) \
-_Generic((SIZE), \
+#define ALIGN_POWER_OF_2(SIZE, A)                       \
+_Generic((SIZE),                                        \
     ullong: ALIGN_POWER_OF_2_((ullong)SIZE, (ullong)A), \
     ulong:  ALIGN_POWER_OF_2_((ulong)SIZE,  (ulong)A),  \
     uint:   ALIGN_POWER_OF_2_((uint)SIZE,   (uint)A),   \
@@ -117,7 +117,7 @@ _Generic((SIZE), \
 
 #if CC_GCC || CC_CLANG
 #define ASSUME_ALIGNED_EXPR(X) __builtin_assume_aligned((X), ALIGNMENT)
-#define ASSUME_ALIGNED(X) do { \
+#define ASSUME_ALIGNED(X) do {                  \
     X = __builtin_assume_aligned(X, ALIGNMENT); \
 } while (0)
 #else

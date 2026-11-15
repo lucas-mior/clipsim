@@ -749,9 +749,9 @@ a_both_##SIGN##_##MODE(char *file, int32 line, char *func,                    \
     if (!(var1 SYMBOL var2)) {                                                \
         if (DEBUGGING) {                                                      \
             assert_error(file, line, func,                                    \
-                        "[%s%d]%s = "FMT" " #SYMBOL " "FMT" = %s[%s%d]\n",   \
-                        type1, bits1, name1, var1, var2, name2, type2,       \
-                        bits2);                                              \
+                        "[%s%d]%s = "FMT" " #SYMBOL " "FMT" = %s[%s%d]\n",    \
+                        type1, bits1, name1, var1, var2, name2, type2,        \
+                        bits2);                                               \
         }                                                                     \
         return false;                                                         \
     }                                                                         \
