@@ -276,8 +276,10 @@ if [ -n "$common_libc_never" ] \
         common_profile_report 'csanecheck'
     fi
 
-    python3 "$common_status_temporary_patterns" \
-        --file-list "$common_libc_sources" >> "$common_libc_matches5"
+    if command -v python; then
+        python "$common_status_temporary_patterns" \
+            --file-list "$common_libc_sources" >> "$common_libc_matches5"
+    fi
 
     if [ -n "$common_profile_enabled" ]; then
         common_profile_report 'Python status checker'
