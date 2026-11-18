@@ -70,7 +70,9 @@ static UNUSED char *error_names[] = {
     XX(ENOMEM),
     XX(EACCES),
     XX(EFAULT),
+#if defined(ENOTBLK)
     XX(ENOTBLK),
+#endif
     XX(EBUSY),
     XX(EEXIST),
     XX(EXDEV),
@@ -81,7 +83,9 @@ static UNUSED char *error_names[] = {
     XX(ENFILE),
     XX(EMFILE),
     XX(ENOTTY),
+#if defined(ETXTBSY)
     XX(ETXTBSY),
+#endif
     XX(EFBIG),
     XX(ENOSPC),
     XX(ESPIPE),

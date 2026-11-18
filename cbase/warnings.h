@@ -229,7 +229,9 @@
   #pragma clang diagnostic warning "-Wunknown-warning-option"
 
   IGNORE("-Wassign-enum")
-  IGNORE("-Wc++-keyword")
+  #if __has_warning("-Wc++-keyword")
+    IGNORE("-Wc++-keyword")
+  #endif
   IGNORE("-Wc++98-compat")
   IGNORE("-Wcast-function-type-strict")
   IGNORE("-Wcast-qual")
@@ -239,17 +241,27 @@
   IGNORE("-Wdisabled-macro-expansion")
   IGNORE("-Wfloat-equal")
   IGNORE("-Wformat-nonliteral")
-  IGNORE("-Wimplicit-int-enum-cast")
-  IGNORE("-Wimplicit-void-ptr-cast")
-  IGNORE("-Wnrvo")
+  #if __has_warning("-Wimplicit-int-enum-cast")
+    IGNORE("-Wimplicit-int-enum-cast")
+  #endif
+  #if __has_warning("-Wimplicit-void-ptr-cast")
+    IGNORE("-Wimplicit-void-ptr-cast")
+  #endif
+  #if __has_warning("-Wnrvo")
+    IGNORE("-Wnrvo")
+  #endif
   IGNORE("-Wpadded")
   IGNORE("-Wpre-c11-compat")
-  IGNORE("-Wtentative-definition-compat")
+  #if __has_warning("-Wtentative-definition-compat")
+    IGNORE("-Wtentative-definition-compat")
+  #endif
   IGNORE("-Wunsafe-buffer-usage")
   IGNORE("-Wunused-macros")
   IGNORE("-Wused-but-marked-unused")
   IGNORE("-Wdeprecated-declarations")
-  IGNORE("-Wdefault-const-init-var")
+  #if __has_warning("-Wdefault-const-init-var")
+    IGNORE("-Wdefault-const-init-var")
+  #endif
   IGNORE("-Wunneeded-internal-declaration")
   IGNORE("-Wunreachable-code-break")
 

@@ -9,6 +9,7 @@ names, and preprocessor directives do not count as uses.
 """
 
 import argparse
+from contextlib import nullcontext
 import hashlib
 import json
 from dataclasses import dataclass
@@ -263,7 +264,9 @@ def collect_paths(inputs):
 def listed_paths(path):
     values = []
     try:
-        with path.open(encoding="utf-8", errors="replace") as file_handle:
+        source = (nullcontext(sys.stdin) if path == Path("-")
+                  else path.open(encoding="utf-8", errors="replace"))
+        with source as file_handle:
             for line in file_handle:
                 value = line.rstrip("\r\n")
                 if value:
@@ -353,7 +356,7 @@ def parse_args(argv):
                         help="parse sources without reading or writing cache")
     parser.add_argument(
         "--file-list", metavar="PATH",
-        help="read C file paths from PATH, one per line",
+        help="read C file paths from PATH, or stdin with -, one per line",
     )
     return parser.parse_args(argv)
 

@@ -10,6 +10,9 @@
 #pragma clang diagnostic ignored "-Wc23-extensions"
 #pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma clang diagnostic ignored "-Wfixed-enum-extension"
+#if CBASE_CRT_MSVC
+#pragma clang diagnostic ignored "-Wmicrosoft-fixed-enum"
+#endif
 #endif
 
 #if !defined(TESTING_xenums)

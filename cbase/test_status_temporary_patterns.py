@@ -13,13 +13,17 @@ SCRIPT = Path(__file__).with_name("status_temporary_patterns.py")
 
 
 class StatusTemporaryPatternsTests(unittest.TestCase):
-    def run_checker(self, source, *, file_list=False):
+    def run_checker(self, source, *, file_list=False, stdin_file_list=False):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             path = root / "sample.c"
             path.write_text(source)
             command = ["python", str(SCRIPT)]
-            if file_list:
+            input_text = None
+            if stdin_file_list:
+                command.extend(["--file-list", "-"])
+                input_text = f"\n{path}\n\n"
+            elif file_list:
                 paths = root / "sources.txt"
                 paths.write_text(f"{path}\n")
                 command.extend(["--file-list", str(paths)])
@@ -30,6 +34,7 @@ class StatusTemporaryPatternsTests(unittest.TestCase):
                 check=False,
                 capture_output=True,
                 text=True,
+                input=input_text,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             return result.stdout
@@ -293,6 +298,21 @@ example(void) {
 }
 """,
             file_list=True,
+        )
+        self.assertIn("inline the int32 status", output)
+
+    def test_stdin_file_list_input(self):
+        output = self.run_checker(
+            """\
+static int32
+example(void) {
+    int32 status;
+
+    status = operation();
+    return status;
+}
+""",
+            stdin_file_list=True,
         )
         self.assertIn("inline the int32 status", output)
 

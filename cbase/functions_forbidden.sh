@@ -278,7 +278,7 @@ if [ -n "$common_libc_never" ] \
 
     if command -v python; then
         python "$common_status_temporary_patterns" \
-            --file-list "$common_libc_sources" >> "$common_libc_matches5"
+            --file-list - < "$common_libc_sources" >> "$common_libc_matches5"
     fi
 
     if [ -n "$common_profile_enabled" ]; then

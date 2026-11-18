@@ -447,7 +447,8 @@ cmd_windows_run_process(Command *command, enum CommandFlag flags) {
 
 #if CBASE_CRT_MSVC
         if (flags & CMD_STDIN_TTY) {
-            startup_info.hStdInput = (HANDLE)_get_osfhandle(STDIN_FILENO);
+            intptr input_handle = _get_osfhandle(STDIN_FILENO);
+            startup_info.hStdInput = (HANDLE)input_handle;
         }
 #endif
         if (flags & CMD_CAPTURE_STDOUT) {

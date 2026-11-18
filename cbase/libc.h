@@ -86,9 +86,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#if !CC_MSVC
-#include <stdnoreturn.h>
-#endif
 #include <string.h>
 
 // optional C11 headers
@@ -228,10 +225,13 @@ char *realpath(char *, char *);
 #endif
 
 #if OS_WINDOWS
-#include <windows.h>
-#if CC_MSVC && !defined(noreturn)
-#define noreturn __declspec(noreturn)
+#include <Windows.h>
 #endif
+
+#if !CC_MSVC
+#include <stdnoreturn.h>
+#elif OS_WINDOWS && !defined(noreturn)
+#define noreturn __declspec(noreturn)
 #endif
 
 // POSIX headers

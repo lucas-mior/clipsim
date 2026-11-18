@@ -48,7 +48,7 @@ mkstemp(char *template) {
         state = (uint32)GetCurrentProcessId();
         state ^= (uint32)GetCurrentThreadId();
         state ^= (uint32)GetTickCount64();
-        state ^= (uint32)(attempt*2654435761u);
+        state ^= (uint32)attempt*2654435761u;
         for (int32 i = 0; i < 6; i += 1) {
             state = state*1103515245u + 12345u;
             template[len - 6 + i] =
@@ -96,7 +96,7 @@ cbase_mkdtemp(char *template) {
         state = (uint32)GetCurrentProcessId();
         state ^= (uint32)GetCurrentThreadId();
         state ^= (uint32)GetTickCount64();
-        state ^= (uint32)(attempt*2654435761u);
+        state ^= (uint32)attempt*2654435761u;
         for (int32 i = 0; i < 6; i += 1) {
             state = state*1103515245u + 12345u;
             template[len - 6 + i] =
