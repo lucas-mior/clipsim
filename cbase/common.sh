@@ -1222,7 +1222,6 @@ common_test () {
 }
 
 common_build_tags () {
-    echo "xxx"
     if [ "$#" -eq 0 ]; then
         set -- .
     fi
