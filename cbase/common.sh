@@ -65,10 +65,6 @@ common_get_compiler() {
         CC=cc
     fi
 
-    if [ "$CC" = "ccache" ]; then
-        CC="ccache cc"
-    fi
-
     if [ "$CC" = "cc" ]; then
         CC=$(basename "$(realpath "$(command -v cc)")")
         
