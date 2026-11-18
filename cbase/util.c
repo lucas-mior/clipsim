@@ -55,7 +55,7 @@ static char *signal_names[] = {
 #endif
 
 #define XX(NAME) [NAME] = #NAME
-static char *error_names[] = {
+static UNUSED char *error_names[] = {
     XX(EPERM),
     XX(ENOENT),
     XX(ESRCH),

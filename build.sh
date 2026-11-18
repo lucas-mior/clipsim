@@ -33,7 +33,7 @@ mkdir -p "$(dirname "$exe")"
 
 CC=$(common_get_compiler "$mode")
 
-CPPFLAGS="$CPPFLAGS -Icbase"
+CPPFLAGS="$CPPFLAGS -I cbase"
 
 CFLAGS="$CFLAGS -std=c11"
 CFLAGS="$CFLAGS -Wfatal-errors"
