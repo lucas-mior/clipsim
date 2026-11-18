@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Regression tests for Ryu discovery and forbidden-pattern checks."""
 
 import os

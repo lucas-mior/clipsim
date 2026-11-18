@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Report potentially redundant C functions and file-scope struct types.
 
 This is a conservative lexical check, not a preprocessor or a C compiler.

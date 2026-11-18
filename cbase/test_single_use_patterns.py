@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Regression tests for single_use_patterns.py (stdlib only)."""
 
 import json

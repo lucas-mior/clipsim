@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Regression tests for status_temporary_patterns.py."""
 
 from pathlib import Path
@@ -18,7 +18,7 @@ class StatusTemporaryPatternsTests(unittest.TestCase):
             root = Path(directory)
             path = root / "sample.c"
             path.write_text(source)
-            command = ["python3", str(SCRIPT)]
+            command = ["python", str(SCRIPT)]
             if file_list:
                 paths = root / "sources.txt"
                 paths.write_text(f"{path}\n")
@@ -258,7 +258,7 @@ example(void) {
 
             def run_check(*options):
                 result = subprocess.run(
-                    ["python3", str(SCRIPT), *options, str(source)],
+                    ["python", str(SCRIPT), *options, str(source)],
                     capture_output=True, text=True, check=False, env=env,
                 )
                 self.assertEqual(result.returncode, 0, result.stderr)

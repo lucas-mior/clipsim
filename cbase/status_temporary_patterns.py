@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Report int32 status temporaries whose assignment/use pairs should be inlined.
 
 The narrow pattern is a function-local declaration ``int32 status;`` followed
