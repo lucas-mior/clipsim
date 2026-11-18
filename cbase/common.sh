@@ -71,7 +71,12 @@ common_get_compiler() {
 
     if [ "$CC" = "cc" ]; then
         CC=$(basename "$(realpath "$(command -v cc)")")
-        
+
+        # makepkg's ccache puts a cc -> ccache symlink first in PATH.
+        if [ "$CC" = "ccache" ]; then
+            CC=cc
+        fi
+
         if [ "$CC" = "cc" ]; then
             if cc --version 2>&1 | grep -qi "clang"; then
                 CC="clang"
