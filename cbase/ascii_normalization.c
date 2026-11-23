@@ -7,7 +7,7 @@
 #include "cbase.h"
 
 char
-ascii_normalization_lower(char c) {
+ascii_to_lower(char c) {
     if ((c >= 'A') && (c <= 'Z')) {
         c = (char)(c - 'A' + 'a');
     }
@@ -16,7 +16,7 @@ ascii_normalization_lower(char c) {
 }
 
 char
-ascii_normalization_upper(char c) {
+ascii_to_upper(char c) {
     if ((c >= 'a') && (c <= 'z')) {
         c = (char)(c - 'a' + 'A');
     }
@@ -36,7 +36,7 @@ ascii_normalize_lower_snake(char *out, char *string, int32 string_len) {
         if (string[i] == ' ') {
             out[written] = '_';
         } else {
-            out[written] = ascii_normalization_lower(string[i]);
+            out[written] = ascii_to_lower(string[i]);
         }
         written += 1;
     }
@@ -56,7 +56,7 @@ ascii_normalize_upper_snake(char *out, char *string, int32 string_len) {
         if (string[i] == ' ') {
             out[written] = '_';
         } else {
-            out[written] = ascii_normalization_upper(string[i]);
+            out[written] = ascii_to_upper(string[i]);
         }
         written += 1;
     }
@@ -76,7 +76,7 @@ ascii_normalize_upper_compact(char *out, char *string, int32 string_len) {
         if (string[i] == ' ') {
             continue;
         }
-        out[written] = ascii_normalization_upper(string[i]);
+        out[written] = ascii_to_upper(string[i]);
         written += 1;
     }
     out[written] = '\0';
@@ -98,10 +98,10 @@ ascii_normalize_camel_compact(char *out, char *string, int32 string_len) {
             continue;
         }
         if (capitalize) {
-            out[written] = ascii_normalization_upper(string[i]);
+            out[written] = ascii_to_upper(string[i]);
             capitalize = false;
         } else {
-            out[written] = ascii_normalization_lower(string[i]);
+            out[written] = ascii_to_lower(string[i]);
         }
         written += 1;
     }
