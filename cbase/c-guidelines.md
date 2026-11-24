@@ -535,6 +535,8 @@ In general, we must always know the lengths of our strings:
   - `read_entire_file`
   - lots of other functions in cbase/.
 - Use `strlen32`:
+  - in the public inline wrappers described below when NULL is explicitly a
+    programmer error (otherwise prefer `opt_strlen32` to preserve validation);
   - for strings coming from code that we don't control but have a upper limit
     * This is very very very rare. The only case I can even conceive is a file
       with null terminated strings in it, and we know the size of the file, so
@@ -546,6 +548,45 @@ In general, we must always know the lengths of our strings:
 
 In general, pass `char *string` and `int32 string_len` around. Also use this
 convention in struct definitions.
+
+### Public name/path APIs with optional explicit lengths
+
+For typically short state, input, output, parameter, or option names/paths in
+APIs that are not called in hot loops, a pair of ordinary functions is a
+legitimate convenience pattern:
+
+- `function(...)` takes a null-terminated `char *name` without a separate
+  length. **Define this wrapper as `static inline` in the public header**, not
+  only as a declaration. It computes the length once and delegates immediately.
+- `function_wlen(...)` takes `char *name, int32 name_len` and contains the
+  centralized implementation. Declare it in the public header as an ordinary
+  public function. It must support a string slice that is not null-terminated.
+- Both variants are usable by callers of the public header. The `static inline`
+  wrapper has header-local linkage; `_wlen` is the separately callable function
+  symbol. Do not introduce variadic-macro dispatch for this pattern.
+- Prefer `_wlen` when the caller already knows the length or has a string
+  slice. The null-terminated wrapper is for convenient calls with short names,
+  including string literals. Do not use it in hot loops just to recompute a
+  length already available.
+- Use `opt_strlen32(name)` when `_wlen` reports invalid NULL inputs or
+  accepts NULL, so that the wrapper preserves its error handling. Use
+  `strlen32(name)` only when NULL is explicitly a programmer error.
+
+For example, in the public header:
+
+```c
+CY_PUBLIC int32 cy_fit_add_input_wlen(CyFitProblem *fit, char *name,
+                                     int32 name_len, double interval);
+
+static inline int32
+cy_fit_add_input(CyFitProblem *fit, char *name, double interval) {
+    return cy_fit_add_input_wlen(fit, name, opt_strlen32(name), interval);
+}
+```
+
+This is a narrow exception to the preference for always passing known string
+lengths. Do not add a second API when the null-terminated form has no useful
+callers or the string may be large or performance-critical.
 
 If the string is expected to be appended to later, use String directly:
 ```c
@@ -611,7 +652,8 @@ typedef struct MyStructOfArrays {
 
 That means to also avoid calling `strlen32`:
 
-- `strlen32` shall be viewed as an interface for code that we do not control.
+- Outside the short-name public-wrapper exception above, `strlen32` shall
+  be viewed as an interface for code that we do not control.
 - `STRLIT_LEN` is an implementation detail used *inside* macros such as
   `SL`, `STRPASS`, and `STREQUAL`; never invoke it directly on a literal.
   The same prohibition applies to direct `LENGTH`, `SIZEOF`, and `strlen32`
